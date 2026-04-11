@@ -1,0 +1,40 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "building-guard-app",
+          "appId": "1:692713078513:android:977f247a01af8fab10b350",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "building-guard-app",
+          "configurations": {
+            "android": "1:692713078513:android:977f247a01af8fab10b350",
+            "ios": "1:692713078513:ios:9b9bdf150570c93a10b350",
+            "macos": "1:692713078513:ios:9b9bdf150570c93a10b350",
+            "web": "1:692713078513:web:fb2d423a5f57479d10b350",
+            "windows": "1:692713078513:web:a8a2693f16c1f37b10b350"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "predeploy": [],
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}
