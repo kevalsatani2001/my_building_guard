@@ -1,7 +1,76 @@
 const {onDocumentCreated, onDocumentUpdated} = require("firebase-functions/v2/firestore");
+const {onCall, HttpsError} = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
+
+/**
+ * વોચમેન એપમાંથી સીધું FCM — Firestore `notifications` ટ્રિગર પર નિર્ભર નથી.
+ * Flutter: FirebaseFunctions.instance.httpsCallable('sendMemberPush')
+ */
+exports.sendMemberPush = onCall(async (request) => {
+    if (!request.auth) {
+        throw new HttpsError("unauthenticated", "લોગિન જરૂરી છે");
+    }
+
+    const callerDoc = await admin.firestore().collection("users").doc(request.auth.uid).get();
+    const role = callerDoc.exists ? callerDoc.data().role : "";
+    if (role !== "watchman" && role !== "admin") {
+        throw new HttpsError("permission-denied", "માત્ર વોચમેન અથવા એડમિન");
+    }
+
+    const memberUid = request.data.memberUid;
+    const title = request.data.title;
+    const body = request.data.body;
+    const type = request.data.type || "visitor_alert";
+
+    if (!memberUid || !title || !body) {
+        throw new HttpsError("invalid-argument", "memberUid, title, body જરૂરી છે");
+    }
+
+    const userDoc = await admin.firestore().collection("users").doc(String(memberUid)).get();
+    if (!userDoc.exists) {
+        throw new HttpsError("not-found", "મેમ્બર મળ્યો નથી");
+    }
+
+    const fcmToken = userDoc.data().fcmToken;
+    if (!fcmToken) {
+        console.warn("sendMemberPush: no fcmToken", memberUid);
+        return { ok: false, reason: "no_token" };
+    }
+
+    const dataPayload = {
+        type: String(type),
+        click_action: "FLUTTER_NOTIFICATION_CLICK",
+    };
+
+    try {
+        await admin.messaging().send({
+            token: fcmToken,
+            notification: { title, body },
+            data: dataPayload,
+            android: {
+                priority: "high",
+                notification: {
+                    channelId: "high_importance_channel",
+                    sound: "default",
+                },
+            },
+            apns: {
+                payload: {
+                    aps: {
+                        sound: "default",
+                    },
+                },
+            },
+        });
+        console.log("sendMemberPush ok", memberUid);
+        return { ok: true };
+    } catch (e) {
+        console.error("sendMemberPush send error", e);
+        return { ok: false, reason: String(e.message || e) };
+    }
+});
 
 // ૧. મેન્યુઅલ નોટિફિકેશન મોકલવા માટે (v2)
 exports.sendNotification = onDocumentCreated("notifications/{notifId}", async (event) => {
@@ -11,6 +80,10 @@ exports.sendNotification = onDocumentCreated("notifications/{notifId}", async (e
     const targetUID = data.targetUID;
 
     try {
+        if (!title || !body) {
+            console.warn("sendNotification: missing title or body", event.params.notifId);
+            return null;
+        }
         const dataPayload = {
             type: String(data.type || "general"),
             click_action: "FLUTTER_NOTIFICATION_CLICK",
@@ -71,23 +144,7 @@ exports.onStatusChange = onDocumentUpdated("visitors/{visitorId}", async (event)
     const visitorDocId = event.params.visitorId;
 
     try {
-        if (newData.status === "checked_out") {
-            const memberId = newData.memberId;
-            if (!memberId || String(memberId).trim() === "") {
-                console.error("onStatusChange checked_out: missing memberId", visitorDocId);
-                return null;
-            }
-            await db.collection("notifications").add({
-                title: "મહેમાન બહાર ગયા 🚪",
-                body: `${visitorName} સોસાયટીની બહાર નીકળી ગયા છે.`,
-                targetUID: String(memberId),
-                type: "visitor_checked_out",
-                relatedVisitorId: visitorDocId,
-                timestamp: admin.firestore.FieldValue.serverTimestamp(),
-            });
-            console.log("checkout notification queued for member", memberId);
-            return null;
-        }
+        // checked_out મેમ્બર પુશ: વોચમેન એપ `sendMemberPush` callable થી મોકલે (વધુ વિશ્વસનીય)
 
         if (newData.status === "approved" || newData.status === "rejected") {
             const widRaw = newData.watchmanId;

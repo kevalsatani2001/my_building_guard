@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
+import '../services/notification_service.dart';
 import 'admin_complaints_screen.dart';
 import 'architecture_preview.dart';
 
@@ -22,6 +25,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(NotificationService.instance.ensureTokenRegistered());
+    });
     _checkSetupStatus();
   }
 

@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../models/user_model.dart';
+import '../services/notification_service.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class WatchmanScreen extends StatefulWidget {
@@ -43,6 +46,9 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(NotificationService.instance.ensureTokenRegistered());
+    });
   }
 
   // ૧. વિઝિટરનો ફોટો પાડવો
@@ -136,34 +142,32 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       // String photoUrl = await uploadTask.ref.getDownloadURL();
 
       bool isPreApproved = _purposeController.text == "Pre-Approved Guest";
-      // Firestore માં વિઝિટર એન્ટ્રી
+      final guestName = _nameController.text.trim();
+      final memberUid = _selectedMember!.uid;
+
       await FirebaseFirestore.instance.collection('visitors').add({
-        'name': _nameController.text.trim(),
+        'name': guestName,
         'phone': _phoneController.text.trim(),
         'purpose': _purposeController.text.trim(),
         'watchmanId': FirebaseAuth.instance.currentUser!.uid,
         'photoUrl': photoUrl,
-        'memberId': _selectedMember!.uid,
+        'memberId': memberUid,
         'memberName': _selectedMember!.name,
         'blockName': _selectedBlock,
         'unitNumber': _selectedMember!.unitNumber,
         'status': isPreApproved ? 'approved' : 'pending',
-        // 🔥 જો પ્રી-એપ્રુવ્ડ હોય તો સીધું approved
         'entryTime': FieldValue.serverTimestamp(),
       });
 
-      // 🔥 Cloud Function માટે નોટિફિકેશન એન્ટ્રી
-      await FirebaseFirestore.instance.collection('notifications').add({
-        'title': "નવા મુલાકાતી (Gate Alert)",
-        'body': "${_nameController.text.trim()} તમને મળવા આવ્યા છે.",
-        'targetUID': _selectedMember!.uid,
-        'type': 'visitor_alert',
-        'senderId': FirebaseAuth.instance.currentUser!.uid,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+      await _notifyMemberPush(
+        memberUid: memberUid,
+        title: 'નવા મુલાકાતી (Gate Alert)',
+        body: '$guestName તમને મળવા આવ્યા છે.',
+        type: 'visitor_alert',
+      );
 
       _clearForm();
-      _showSnackBar('એન્ટ્રી સફળ અને મેમ્બરને જાણ કરી!', Colors.green);
+      _showSnackBar('એન્ટ્રી સફળ. મેમ્બરને સૂચના મોકલાઈ.', Colors.green);
       _tabController.animateTo(1); // હિસ્ટ્રી ટેબ પર લઈ જાઓ
     } catch (e) {
       _showSnackBar('ભૂલ આવી: $e', Colors.red);
@@ -203,6 +207,63 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   void _showSnackBar(String msg, Color color) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
+  }
+
+  /// સીધું FCM (callable) — `notifications` ટ્રિગર પર નિર્ભર નથી. ફેલ થાય તો `notifications` બેકઅપ.
+  Future<void> _notifyMemberPush({
+    required String memberUid,
+    required String title,
+    required String body,
+    required String type,
+  }) async {
+    try {
+      final callable =
+          FirebaseFunctions.instance.httpsCallable('sendMemberPush');
+      final result = await callable.call(<String, dynamic>{
+        'memberUid': memberUid,
+        'title': title,
+        'body': body,
+        'type': type,
+      });
+      final data = result.data;
+      if (data is Map) {
+        if (data['ok'] == true) return;
+        if (data['reason'] == 'no_token') {
+          if (mounted) {
+            _showSnackBar(
+              'મેમ્બરે એપ ખોલીને નોટિફિકેશન ચાલુ રાખવું (ફોન પર ટોકન નથી).',
+              Colors.orange,
+            );
+          }
+          return;
+        }
+      }
+      await _fallbackQueueNotification(memberUid, title, body, type);
+    } catch (e) {
+      await _fallbackQueueNotification(memberUid, title, body, type);
+      if (mounted) {
+        _showSnackBar(
+          'નોટિફિકેશન બેકઅપ મોકલ્યું. સર્વર માટે: firebase deploy --only functions\n$e',
+          Colors.amber,
+        );
+      }
+    }
+  }
+
+  Future<void> _fallbackQueueNotification(
+    String memberUid,
+    String title,
+    String body,
+    String type,
+  ) async {
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'title': title,
+      'body': body,
+      'targetUID': memberUid,
+      'type': type,
+      'senderId': FirebaseAuth.instance.currentUser!.uid,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
   }
 
   void _openContactsAndStaffSheet() {
@@ -747,10 +808,28 @@ class _WatchmanScreenState extends State<WatchmanScreen>
 
   // Check-out કરવાનું ફંક્શન
   Future<void> _checkOutVisitor(String docId) async {
-    await FirebaseFirestore.instance.collection('visitors').doc(docId).update({
+    final ref = FirebaseFirestore.instance.collection('visitors').doc(docId);
+    final snap = await ref.get();
+    final m = snap.data();
+    final memberUid = m?['memberId'] as String?;
+    final rawName = m?['name'] as String?;
+    final guestName =
+        (rawName != null && rawName.trim().isNotEmpty) ? rawName.trim() : 'મહેમાન';
+
+    await ref.update({
       'status': 'checked_out',
       'exitTime': FieldValue.serverTimestamp(),
     });
+
+    if (memberUid != null && memberUid.isNotEmpty) {
+      await _notifyMemberPush(
+        memberUid: memberUid,
+        title: 'મહેમાન બહાર ગયા 🚪',
+        body: '$guestName સોસાયટીની બહાર નીકળી ગયા છે.',
+        type: 'visitor_checked_out',
+      );
+    }
+
     _showSnackBar("મહેમાન ચેક-આઉટ થઈ ગયા છે", Colors.blue);
   }
 

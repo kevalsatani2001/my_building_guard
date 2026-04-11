@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -13,6 +14,7 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/visitor_model.dart';
+import '../services/notification_service.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class MemberScreen extends StatefulWidget {
@@ -25,6 +27,14 @@ class MemberScreen extends StatefulWidget {
 class _MemberScreenState extends State<MemberScreen> {
   final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
   final GlobalKey _qrKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(NotificationService.instance.ensureTokenRegistered());
+    });
+  }
 
   // ૧. સ્ટેટસ અપડેટ ફંક્શન (watchmanId ડોક પર રહે — Cloud Function થી વોચમેનને નોટિફિકેશન)
   Future<void> _updateStatus(String docId, String status) async {

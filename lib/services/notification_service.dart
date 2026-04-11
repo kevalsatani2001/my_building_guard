@@ -50,6 +50,27 @@ class NotificationService {
     _schedulePushSyncDebounced(FirebaseAuth.instance.currentUser);
   }
 
+  /// હોમ સ્ક્રીન ખુલે ત્યારે ફોનમાં `fcmToken` તાજો રાખો — ગેટ એલર્ટ માટે જરૂરી.
+  Future<void> ensureTokenRegistered() async {
+    if (FirebaseAuth.instance.currentUser == null) return;
+    try {
+      final token = await _fcm.getToken();
+      if (token != null) {
+        await _saveTokenToFirestore(token);
+        return;
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('ensureTokenRegistered: $e');
+    }
+    await Future<void>.delayed(const Duration(seconds: 2));
+    try {
+      final token = await _fcm.getToken();
+      if (token != null) await _saveTokenToFirestore(token);
+    } catch (e) {
+      if (kDebugMode) debugPrint('ensureTokenRegistered retry: $e');
+    }
+  }
+
   Future<void> dispose() async {
     _pushSyncDebounce?.cancel();
     await _authSub?.cancel();
