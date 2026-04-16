@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../services/society_service.dart';
+
 /// Admin: list member complaints and mark resolved.
 class AdminComplaintsScreen extends StatelessWidget {
   const AdminComplaintsScreen({super.key});
@@ -17,7 +19,7 @@ class AdminComplaintsScreen extends StatelessWidget {
         stream: FirebaseFirestore.instance
             .collection('complaints')
             .orderBy('createdAt', descending: true)
-            .limit(100)
+            .limit(120)
             .snapshots(),
         builder: (context, snap) {
           if (snap.hasError) {
@@ -26,7 +28,11 @@ class AdminComplaintsScreen extends StatelessWidget {
           if (!snap.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
-          final docs = snap.data!.docs;
+          final docs = snap.data!.docs
+              .where((d) => SocietyService.instance
+                  .documentBelongsToCurrentTenant(
+                      d.data() as Map<String, dynamic>?))
+              .toList();
           if (docs.isEmpty) {
             return const Center(child: Text('હજી કોઈ ફરિયાદ નથી.'));
           }

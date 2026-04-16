@@ -2,6 +2,7 @@ import 'package:building_guard/screens/watchmen_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/society_service.dart';
 import 'admin_dashboard.dart';
 import 'member_screen.dart';
 
@@ -32,6 +33,9 @@ class _LoginScreenState extends State<LoginScreen> {
           .collection('users')
           .doc(userCredential.user!.uid)
           .get();
+
+      SocietyService.instance
+          .bindFromUserMap(userDoc.data() as Map<String, dynamic>?);
 
       String role = userDoc.get('role');
 
@@ -159,6 +163,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
         'role': _selectedRole,
+        'societyId': SocietyService.kDefaultSocietyId,
         'createdAt': FieldValue.serverTimestamp(),
       });
 

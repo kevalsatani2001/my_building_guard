@@ -10,6 +10,7 @@ class UserModel extends Equatable {
   final String? blockName;
   final String? fcmToken;
   final String? phone;
+  final String? societyId;
 
   const UserModel({
     required this.uid,
@@ -21,6 +22,7 @@ class UserModel extends Equatable {
     this.blockName,
     this.fcmToken,
     this.phone,
+    this.societyId,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> data, String id) {
@@ -34,6 +36,7 @@ class UserModel extends Equatable {
       blockName: data['blockName'],
       fcmToken: data['fcmToken'],
       phone: data['phone'] as String?,
+      societyId: data['societyId'] as String?,
     );
   }
 
@@ -47,10 +50,11 @@ class UserModel extends Equatable {
       'blockName': blockName,
       'fcmToken': fcmToken,
       'phone': phone,
+      'societyId': societyId,
     };
   }
 
   @override
   List<Object?> get props =>
-      [uid, name, email, role, unitNumber, blockName, subGroup, fcmToken, phone];
+      [uid, name, email, role, unitNumber, blockName, subGroup, fcmToken, phone, societyId];
 }

@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,8 +15,12 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/visitor_model.dart';
+import '../services/firebase_app_guard.dart';
 import '../services/notification_service.dart';
+import '../services/society_service.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+
+const String _kMemberFunctionsRegion = 'us-central1';
 
 class MemberScreen extends StatefulWidget {
   const MemberScreen({super.key});
@@ -48,6 +53,118 @@ class _MemberScreenState extends State<MemberScreen> {
           content: Text(status == 'approved' ? 'મંજૂરી મોકલી.' : 'નકાર મોકલ્યો.'),
         ),
       );
+    }
+  }
+
+  /// મેમ્બર ઘરે પ્રોબ્લેમ / ઇમરજન્સી — એડમિન + ગેટ વોચમેનને નોટિફિકેશન
+  Future<void> _showMemberEmergencyDialog() async {
+    final noteC = TextEditingController();
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('ઇમરજન્સી મદદ'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'એડમિન અને સોસાયટી ગેટને સૂચના જશે. ખોટી કૉલ ન કરતાં.',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: noteC,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'વિગત (વૈકલ્પિક)',
+                  hintText: 'દા.ત. તબિયત, સલામતી...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('રદ'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Colors.red[800]),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('મદદ મોકલો'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUserId)
+          .get();
+      final d = userDoc.data() ?? {};
+      final name = d['name'] ?? 'મેમ્બર';
+      final block = d['blockName'] ?? '';
+      final unit = d['unitNumber'] ?? '';
+      final flat =
+          [block, unit].where((e) => e.toString().isNotEmpty).join('-');
+      final note = noteC.text.trim();
+      final bodyBase =
+          '$name — ઘર: ${flat.isEmpty ? "?" : flat}. મેમ્બર ઇમરજન્સી માંગે છે.';
+      final body = note.isEmpty ? bodyBase : '$bodyBase\nવિગત: $note';
+
+      final app = await ensureDefaultFirebaseApp();
+      final functions = FirebaseFunctions.instanceFor(
+        app: app,
+        region: _kMemberFunctionsRegion,
+      );
+      final callable = functions.httpsCallable(
+        'sendTopicAlertPush',
+        options: HttpsCallableOptions(timeout: const Duration(seconds: 55)),
+      );
+      await callable.call<Map<String, dynamic>>({
+        'topicKind': 'admins',
+        'title': '🚨 મેમ્બર ઇમરજન્સી',
+        'body': body,
+        'type': 'member_emergency',
+      });
+      await callable.call<Map<String, dynamic>>({
+        'topicKind': 'watchmen',
+        'title': '🚨 મેમ્બર ઇમરજન્સી (ગેટ)',
+        'body': body,
+        'type': 'member_emergency',
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('મદદની સૂચના મોકલાઈ. શાંતિ રાખો.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } on FirebaseFunctionsException catch (e) {
+      if (mounted) {
+        final detail = e.message?.trim();
+        final line = detail != null && detail.isNotEmpty
+            ? '${e.code}: $detail'
+            : e.code;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('ભૂલ: $line'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ભૂલ: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      noteC.dispose();
     }
   }
 
@@ -106,6 +223,7 @@ class _MemberScreenState extends State<MemberScreen> {
                     'memberId': currentUserId,
                     'createdAt': FieldValue.serverTimestamp(),
                     'status': 'pre-approved',
+                    'societyId': SocietyService.instance.societyId,
                   });
 
                   Navigator.pop(context); // ડાયલોગ બંધ કરો
@@ -166,6 +284,12 @@ class _MemberScreenState extends State<MemberScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.emergency_share),
+            tooltip: 'ઇમરજન્સી મદદ',
+            color: Colors.amberAccent,
+            onPressed: _showMemberEmergencyDialog,
+          ),
           IconButton(
               icon: const Icon(Icons.logout),
               onPressed: () => FirebaseAuth.instance.signOut()),
@@ -238,12 +362,18 @@ class _MemberScreenState extends State<MemberScreen> {
       stream: FirebaseFirestore.instance
           .collection('notices')
           .orderBy('createdAt', descending: true)
-          .limit(1)
+          .limit(20)
           .snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const SizedBox();
-        var notice = snapshot.data!.docs.first;
+        }
+        final tenantDocs = snapshot.data!.docs.where((d) {
+          return SocietyService.instance.documentBelongsToCurrentTenant(
+              d.data() as Map<String, dynamic>?);
+        }).toList();
+        if (tenantDocs.isEmpty) return const SizedBox();
+        var notice = tenantDocs.first;
         return Container(
           width: double.infinity,
           margin: const EdgeInsets.all(16),
@@ -368,6 +498,7 @@ class _MemberScreenState extends State<MemberScreen> {
                   'memberName': memberName,
                   'status': 'pending',
                   'createdAt': FieldValue.serverTimestamp(),
+                  'societyId': SocietyService.instance.societyId,
                 });
                 if (ctx.mounted) Navigator.pop(ctx);
                 if (mounted) {
@@ -421,6 +552,7 @@ class _MemberScreenState extends State<MemberScreen> {
                 'staffPhone': phoneC.text.trim(),
                 'staffRole': roleC.text.trim(),
                 'createdAt': FieldValue.serverTimestamp(),
+                'societyId': SocietyService.instance.societyId,
               });
               if (ctx.mounted) Navigator.pop(ctx);
               if (mounted) {
@@ -438,22 +570,41 @@ class _MemberScreenState extends State<MemberScreen> {
   // વિઝિટર લિસ્ટ વિજેટ
   Widget _buildVisitorList() {
     return StreamBuilder<QuerySnapshot>(
+      // societyId ફિલ્ટર ક્વેરીમાં નહીં — જૂના visitors પાસે ફીલ્ડ ન હોય તો પણ દેખાય; ક્લાયન્ટ પર ટેનન્ટ ચેક.
       stream: FirebaseFirestore.instance
           .collection('visitors')
           .where('memberId', isEqualTo: currentUserId)
           .orderBy('entryTime', descending: true)
+          .limit(100)
           .snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData)
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'લોડ ભૂલ: ${snapshot.error}\n'
+                '(Firestore કમ્પોઝિટ ઇન્ડેક્સ જોઈએ: memberId + entryTime)',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        }
+        if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
-        if (snapshot.data!.docs.isEmpty)
+        }
+        final docs = snapshot.data!.docs.where((d) {
+          return SocietyService.instance.documentBelongsToCurrentTenant(
+              d.data() as Map<String, dynamic>?);
+        }).toList();
+        if (docs.isEmpty) {
           return const Center(child: Text("કોઈ ડેટા નથી"));
+        }
 
         return ListView.builder(
-          itemCount: snapshot.data!.docs.length,
+          itemCount: docs.length,
           itemBuilder: (context, index) {
-            var visitor =
-            VisitorModel.fromFirestore(snapshot.data!.docs[index]);
+            var visitor = VisitorModel.fromFirestore(docs[index]);
             return Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
@@ -489,7 +640,7 @@ class _MemberScreenState extends State<MemberScreen> {
                   children: [
                     // જૂનું હેતુ અને સમયનું ટેક્સ્ટ
                     Text(
-                      "${visitor.purpose}\n${visitor.entryTime != null ? DateFormat('jm').format(visitor.entryTime!) : ''}",
+                      "${visitor.purpose}\n${DateFormat('jm').format(visitor.entryTime)}",
                     ),
 
                     // 🔥 અહીં નવું 'Checked Out' સમયનું લોજિક

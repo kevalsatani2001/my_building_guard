@@ -13,6 +13,7 @@ import 'screens/admin_dashboard.dart';
 import 'screens/login_screen.dart';
 import 'screens/member_screen.dart';
 import 'services/notification_service.dart';
+import 'services/society_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,9 +67,11 @@ class AuthWrapper extends StatelessWidget {
                 return const Scaffold(body: Center(child: CircularProgressIndicator()));
               }
               if (!userSnap.hasData || !userSnap.data!.exists) {
+                SocietyService.instance.clear();
                 return const LoginScreen();
               }
               final userData = userSnap.data!.data() as Map<String, dynamic>?;
+              SocietyService.instance.bindFromUserMap(userData);
               if (userData != null && userData['isActive'] == false) {
                 return const _AccountBlockedMessage();
               }
@@ -79,6 +82,7 @@ class AuthWrapper extends StatelessWidget {
             },
           );
         }
+        SocietyService.instance.clear();
         return const LoginScreen();
       },
     );

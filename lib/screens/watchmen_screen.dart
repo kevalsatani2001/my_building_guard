@@ -6,16 +6,40 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import '../models/user_model.dart';
+import '../services/firebase_app_guard.dart';
 import '../services/notification_service.dart';
+import '../services/society_service.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+
+/// Cloud Functions v2 `sendMemberPush` નું રીજન — [GCP Console] → Functions માં ચેક કરો (ઘણી વખત `us-central1`).
+const String _kSendMemberPushRegion = 'us-central1';
+
+class _MemberPushResult {
+  const _MemberPushResult._({
+    this.sentDirect = false,
+    this.noToken = false,
+    this.failureMessage,
+  });
+
+  final bool sentDirect;
+  final bool noToken;
+  final String? failureMessage;
+
+  static const direct = _MemberPushResult._(sentDirect: true);
+  static const noTokenResult = _MemberPushResult._(noToken: true);
+
+  static _MemberPushResult failed(String msg) =>
+      _MemberPushResult._(failureMessage: msg);
+}
 
 class WatchmanScreen extends StatefulWidget {
   const WatchmanScreen({super.key});
 
   @override
-  _WatchmanScreenState createState() => _WatchmanScreenState();
+  State<WatchmanScreen> createState() => _WatchmanScreenState();
 }
 
 class _WatchmanScreenState extends State<WatchmanScreen>
@@ -51,6 +75,22 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     });
   }
 
+  Future<DocumentSnapshot> _loadSocietyConfigDoc() async {
+    final sid = SocietyService.instance.societyId;
+    final modern = await FirebaseFirestore.instance
+        .collection('society_settings')
+        .doc(sid)
+        .get();
+    if (modern.exists) return modern;
+    if (sid == SocietyService.kDefaultSocietyId) {
+      return FirebaseFirestore.instance
+          .collection('settings')
+          .doc('society_config')
+          .get();
+    }
+    return modern;
+  }
+
   // ૧. વિઝિટરનો ફોટો પાડવો
   Future<void> _pickImage() async {
     final XFile? pickedFile =
@@ -69,8 +109,10 @@ class _WatchmanScreenState extends State<WatchmanScreen>
 
     setState(() {
       _filteredMembers = snapshot.docs
+          .where((doc) => SocietyService.instance
+              .documentBelongsToCurrentTenant(doc.data() as Map<String, dynamic>?))
           .map((doc) =>
-          UserModel.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+              UserModel.fromMap(doc.data() as Map<String, dynamic>, doc.id))
           .toList();
       _selectedMember = null;
       _isUploading = false;
@@ -90,13 +132,17 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         .where('status', isEqualTo: 'pre-approved')
         .get();
 
+    final matched = snapshot.docs
+        .where((d) => SocietyService.instance.documentBelongsToCurrentTenant(
+            d.data() as Map<String, dynamic>?))
+        .toList();
+
     setState(() {
-      _preApprovedResults = snapshot.docs;
+      _preApprovedResults = matched;
     });
 
-    // જો માત્ર એક જ રિઝલ્ટ મળે તો ઓટો-ફિલ કરી દેવું
-    if (snapshot.docs.length == 1) {
-      _selectPreApprovedGuest(snapshot.docs.first);
+    if (matched.length == 1) {
+      _selectPreApprovedGuest(matched.first);
     }
   }
 
@@ -157,9 +203,10 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         'unitNumber': _selectedMember!.unitNumber,
         'status': isPreApproved ? 'approved' : 'pending',
         'entryTime': FieldValue.serverTimestamp(),
+        'societyId': SocietyService.instance.societyId,
       });
 
-      await _notifyMemberPush(
+      final push = await _notifyMemberPush(
         memberUid: memberUid,
         title: 'નવા મુલાકાતી (Gate Alert)',
         body: '$guestName તમને મળવા આવ્યા છે.',
@@ -167,7 +214,11 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       );
 
       _clearForm();
-      _showSnackBar('એન્ટ્રી સફળ. મેમ્બરને સૂચના મોકલાઈ.', Colors.green);
+      if (!mounted) return;
+      _showSnackBar(
+        'એન્ટ્રી સફળ. ${_lineForMemberPush(push)}',
+        _colorForMemberPush(push),
+      );
       _tabController.animateTo(1); // હિસ્ટ્રી ટેબ પર લઈ જાઓ
     } catch (e) {
       _showSnackBar('ભૂલ આવી: $e', Colors.red);
@@ -182,15 +233,36 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         "SOS એલર્ટ!", "શું તમે એડમિનને મદદ માટે જાણ કરવા માંગો છો?");
     if (!confirm) return;
 
-    await FirebaseFirestore.instance.collection('notifications').add({
-      'title': "🚨 ઇમરજન્સી એલર્ટ (GATE)",
-      'body': "ગેટ પર વોચમેનને મદદની જરૂર છે!",
-      'targetUID': 'ALL', // એડમિન ટોપિકમાં જશે
-      'type': 'sos',
-      'senderId': FirebaseAuth.instance.currentUser!.uid,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-    _showSnackBar('એડમિનને જાણ કરી દેવામાં આવી છે!', Colors.red);
+    try {
+      final app = await ensureDefaultFirebaseApp();
+      final functions = FirebaseFunctions.instanceFor(
+        app: app,
+        region: _kSendMemberPushRegion,
+      );
+      final callable = functions.httpsCallable(
+        'sendTopicAlertPush',
+        options: HttpsCallableOptions(timeout: const Duration(seconds: 60)),
+      );
+      await callable.call<Map<String, dynamic>>({
+        'topicKind': 'admins',
+        'title': '🚨 ઇમરજન્સી એલર્ટ (GATE)',
+        'body': 'ગેટ પર વોચમેનને મદદની જરૂર છે!',
+        'type': 'sos',
+      });
+      if (!mounted) return;
+      _showSnackBar('એડમિનને SOS પુશ મોકલાયો.', Colors.red);
+    } on FirebaseFunctionsException catch (e) {
+      if (mounted) {
+        _showSnackBar(
+          'SOS નિષ્ફળ (${e.code}): ${e.message ?? ""}',
+          Colors.deepOrange,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('SOS ભૂલ: $e', Colors.red);
+      }
+    }
   }
 
   void _clearForm() {
@@ -209,61 +281,83 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         .showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
   }
 
-  /// સીધું FCM (callable) — `notifications` ટ્રિગર પર નિર્ભર નથી. ફેલ થાય તો `notifications` બેકઅપ.
-  Future<void> _notifyMemberPush({
+  String _lineForMemberPush(_MemberPushResult r) {
+    if (r.sentDirect) return 'મેમ્બરને પુશ મોકલાયો.';
+    if (r.noToken) {
+      return 'મેમ્બર પાસે ફોન ટોકન નથી — એક વાર એપ ખોલવા કહો.';
+    }
+    return r.failureMessage ?? 'પુશ મોકલાઈ શક્યો નહીં.';
+  }
+
+  Color _colorForMemberPush(_MemberPushResult r) {
+    if (r.failureMessage != null) return Colors.red;
+    if (r.noToken) return Colors.deepOrange;
+    return Colors.green;
+  }
+
+  /// સીધું FCM `sendMemberPush` — Firestore ટ્રિગર / પોલ પર નિર્ભર નથી.
+  Future<_MemberPushResult> _notifyMemberPush({
     required String memberUid,
     required String title,
     required String body,
     required String type,
   }) async {
-    try {
-      final callable =
-          FirebaseFunctions.instance.httpsCallable('sendMemberPush');
-      final result = await callable.call(<String, dynamic>{
-        'memberUid': memberUid,
-        'title': title,
-        'body': body,
-        'type': type,
-      });
-      final data = result.data;
-      if (data is Map) {
-        if (data['ok'] == true) return;
+    final app = await ensureDefaultFirebaseApp();
+    final functions = FirebaseFunctions.instanceFor(
+      app: app,
+      region: _kSendMemberPushRegion,
+    );
+    final callable = functions.httpsCallable(
+      'sendMemberPush',
+      options: HttpsCallableOptions(timeout: const Duration(seconds: 55)),
+    );
+
+    const delays = <Duration>[
+      Duration.zero,
+      Duration(seconds: 2),
+      Duration(seconds: 5),
+    ];
+
+    Object? lastError;
+    for (var i = 0; i < delays.length; i++) {
+      if (delays[i] > Duration.zero) {
+        await Future<void>.delayed(delays[i]);
+      }
+      try {
+        final result = await callable.call<Map<String, dynamic>>({
+          'memberUid': memberUid,
+          'title': title,
+          'body': body,
+          'type': type,
+        });
+        final data = result.data;
+        if (data['ok'] == true) return _MemberPushResult.direct;
         if (data['reason'] == 'no_token') {
-          if (mounted) {
-            _showSnackBar(
-              'મેમ્બરે એપ ખોલીને નોટિફિકેશન ચાલુ રાખવું (ફોન પર ટોકન નથી).',
-              Colors.orange,
-            );
-          }
-          return;
+          return _MemberPushResult.noTokenResult;
+        }
+        lastError = data['reason'] ?? data;
+        continue;
+      } on FirebaseFunctionsException catch (e) {
+        lastError = e;
+        if (i == delays.length - 1) {
+          return _MemberPushResult.failed(
+            kDebugMode
+                ? '${e.code}: ${e.message}'
+                : 'સર્વર ભૂલ — ઇન્ટરનેટ/ફંક્શન તપાસો (${e.code})',
+          );
+        }
+      } catch (e) {
+        lastError = e;
+        if (i == delays.length - 1) {
+          return _MemberPushResult.failed(
+            kDebugMode ? e.toString() : 'પુશ મોકલાઈ શક્યો નહીં.',
+          );
         }
       }
-      await _fallbackQueueNotification(memberUid, title, body, type);
-    } catch (e) {
-      await _fallbackQueueNotification(memberUid, title, body, type);
-      if (mounted) {
-        _showSnackBar(
-          'નોટિફિકેશન બેકઅપ મોકલ્યું. સર્વર માટે: firebase deploy --only functions\n$e',
-          Colors.amber,
-        );
-      }
     }
-  }
-
-  Future<void> _fallbackQueueNotification(
-    String memberUid,
-    String title,
-    String body,
-    String type,
-  ) async {
-    await FirebaseFirestore.instance.collection('notifications').add({
-      'title': title,
-      'body': body,
-      'targetUID': memberUid,
-      'type': type,
-      'senderId': FirebaseAuth.instance.currentUser!.uid,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
+    return _MemberPushResult.failed(
+      kDebugMode ? '$lastError' : 'પુશ મોકલાઈ શક્યો નહીં.',
+    );
   }
 
   void _openContactsAndStaffSheet() {
@@ -285,10 +379,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
             ),
             const SizedBox(height: 8),
             FutureBuilder<DocumentSnapshot>(
-              future: FirebaseFirestore.instance
-                  .collection('settings')
-                  .doc('society_config')
-                  .get(),
+              future: _loadSocietyConfigDoc(),
               builder: (context, snap) {
                 if (!snap.hasData || !snap.data!.exists) {
                   return const Text('હજી એડમિને નંબરો ઉમેર્યા નથી.');
@@ -332,13 +423,17 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               stream: FirebaseFirestore.instance
                   .collection('daily_staff')
                   .orderBy('createdAt', descending: true)
-                  .limit(80)
+                  .limit(100)
                   .snapshots(),
               builder: (context, snap) {
                 if (!snap.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                final docs = snap.data!.docs;
+                final docs = snap.data!.docs
+                    .where((d) => SocietyService.instance
+                        .documentBelongsToCurrentTenant(
+                            d.data() as Map<String, dynamic>?))
+                    .toList();
                 if (docs.isEmpty) {
                   return const Text('કોઈ સ્ટાફ નોંધાયો નથી.');
                 }
@@ -567,24 +662,21 @@ class _WatchmanScreenState extends State<WatchmanScreen>
             stream: FirebaseFirestore.instance.collection('blocks').snapshots(),
             builder: (context, snap) {
               if (!snap.hasData) return const CircularProgressIndicator();
-              // if (snap.hasData) {
-              //   for (var doc in snap.data!.docs) {
-              //     String status = doc['status'];
-              //     String id = doc.id;
-              //
-              //     // જો સ્ટેટસ બદલાયું હોય અને આપણે હજુ સુધી આ એન્ટ્રી માટે અવાજ નથી વગાડ્યો
-              //     if (status != 'pending' && !_processedIds.contains(id)) {
-              //       _playAlertSound(); // અવાજ વગાડો
-              //       _processedIds.add(id); // યાદીમાં ઉમેરી દો જેથી ફરી ફરી અવાજ ન આવે
-              //     }
-              //   }
-              // }
+              final blockDocs = snap.data!.docs
+                  .where((d) => SocietyService.instance
+                      .documentBelongsToCurrentTenant(
+                          d.data() as Map<String, dynamic>?))
+                  .toList();
+              if (blockDocs.isEmpty) {
+                return const Text('આ સોસાયટી માટે કોઈ બ્લોક નથી.');
+              }
               return DropdownButtonFormField<String>(
                 value: _selectedBlock,
                 hint: const Text("બ્લોક પસંદ કરો"),
-                items: snap.data!.docs
+                items: blockDocs
                     .map((d) => DropdownMenuItem(
-                    value: d['name'].toString(), child: Text(d['name'])))
+                        value: d.id,
+                        child: Text('${d['name'] ?? d.id}')))
                     .toList(),
                 onChanged: (v) {
                   setState(() => _selectedBlock = v);
@@ -665,19 +757,35 @@ class _WatchmanScreenState extends State<WatchmanScreen>
           child: StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('visitors')
-                .where('entryTime',
-                isGreaterThanOrEqualTo: DateTime(DateTime.now().year,
-                    DateTime.now().month, DateTime.now().day))
+                .where(
+                  'entryTime',
+                  isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime(
+                    DateTime.now().year,
+                    DateTime.now().month,
+                    DateTime.now().day,
+                  )),
+                )
                 .orderBy('entryTime', descending: true)
+                .limit(250)
                 .snapshots(),
             builder: (context, snap) {
-              if (!snap.hasData)
+              if (snap.hasError) {
+                return Center(child: Text('હિસ્ટ્રી ભૂલ: ${snap.error}'));
+              }
+              if (!snap.hasData) {
                 return const Center(child: CircularProgressIndicator());
+              }
 
-              // 🔥 અહીં સર્ચ ક્વેરી મુજબ ડેટા ફિલ્ટર થશે
-              var filteredDocs = snap.data!.docs.where((doc) {
-                String name = doc['name'].toString().toLowerCase();
-                String unit = doc['unitNumber'].toString().toLowerCase();
+              final tenantDocs = snap.data!.docs
+                  .where((doc) => SocietyService.instance
+                      .documentBelongsToCurrentTenant(
+                          doc.data() as Map<String, dynamic>?))
+                  .toList();
+
+              var filteredDocs = tenantDocs.where((doc) {
+                final m = doc.data() as Map<String, dynamic>;
+                String name = (m['name'] ?? '').toString().toLowerCase();
+                String unit = (m['unitNumber'] ?? '').toString().toLowerCase();
                 return name.contains(_searchQuery) ||
                     unit.contains(_searchQuery);
               }).toList();
@@ -687,9 +795,9 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               }
 
               return ListView.builder(
-                itemCount: snap.data!.docs.length,
+                itemCount: filteredDocs.length,
                 itemBuilder: (context, i) {
-                  var d = snap.data!.docs[i];
+                  var d = filteredDocs[i];
                   String status = d['status'] ?? 'pending';
 
                   Color statusColor;
@@ -822,15 +930,20 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     });
 
     if (memberUid != null && memberUid.isNotEmpty) {
-      await _notifyMemberPush(
+      final push = await _notifyMemberPush(
         memberUid: memberUid,
         title: 'મહેમાન બહાર ગયા 🚪',
         body: '$guestName સોસાયટીની બહાર નીકળી ગયા છે.',
         type: 'visitor_checked_out',
       );
+      if (!mounted) return;
+      _showSnackBar(
+        'મહેમાન ચેક-આઉટ થઈ ગયા છે. ${_lineForMemberPush(push)}',
+        _colorForMemberPush(push),
+      );
+    } else {
+      _showSnackBar("મહેમાન ચેક-આઉટ થઈ ગયા છે", Colors.blue);
     }
-
-    _showSnackBar("મહેમાન ચેક-આઉટ થઈ ગયા છે", Colors.blue);
   }
 
 // ૧. સ્કેનર ખોલવાનું ફંક્શન
@@ -868,6 +981,11 @@ class _WatchmanScreenState extends State<WatchmanScreen>
 
       if (doc.exists && doc.data()!['status'] == 'pre-approved') {
         var data = doc.data()!;
+        if (!SocietyService.instance.documentBelongsToCurrentTenant(
+            Map<String, dynamic>.from(data as Map))) {
+          _showSnackBar('આ QR આ સોસાયટી માટે માન્ય નથી.', Colors.orange);
+          return;
+        }
 
         var userDoc = await FirebaseFirestore.instance
             .collection('users')

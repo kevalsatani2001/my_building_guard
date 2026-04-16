@@ -1,13 +1,19 @@
 import 'dart:async';
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 import '../services/notification_service.dart';
+import '../services/society_service.dart';
+import '../services/firebase_app_guard.dart';
 import 'admin_complaints_screen.dart';
 import 'architecture_preview.dart';
+
+/// [sendBroadcastPush] / [sendMemberPush] — GCP Console માં સામાન્ય રીતે `us-central1`.
+const String _kAdminFunctionsRegion = 'us-central1';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -32,10 +38,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   void _checkSetupStatus() async {
-    var doc = await FirebaseFirestore.instance
-        .collection('settings')
-        .doc('society_config')
+    final sid = SocietyService.instance.societyId;
+    var doc = await SocietyService.instance
+        .societySettingsDoc(FirebaseFirestore.instance)
         .get();
+    if (!doc.exists && sid == SocietyService.kDefaultSocietyId) {
+      doc = await FirebaseFirestore.instance
+          .collection('settings')
+          .doc('society_config')
+          .get();
+    }
     if (mounted) {
       setState(() {
         if (doc.exists) {
@@ -53,6 +65,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return RegExp(
         r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
         .hasMatch(email);
+  }
+
+  /// એક ઘરમાં કેટલા મેમ્બર્સ (legacy `memberId` + `memberIds` લિસ્ટ)
+  int _unitMemberCount(Map<String, dynamic>? d) {
+    if (d == null) return 0;
+    final ids = <String>{};
+    final mid = d['memberId'];
+    if (mid is String && mid.isNotEmpty) ids.add(mid);
+    final arr = d['memberIds'];
+    if (arr is List) {
+      for (final x in arr) {
+        if (x is String && x.isNotEmpty) ids.add(x);
+      }
+    }
+    return ids.length;
   }
 
   @override
@@ -513,25 +540,33 @@ class _AdminDashboardState extends State<AdminDashboard> {
     setState(() => _isLoading = true);
     try {
       WriteBatch batch = FirebaseFirestore.instance.batch();
+      final sid = SocietyService.instance.societyId;
+      final cfg = {
+        'societyName': sName,
+        'architectureType': type,
+        'isSetupComplete': true,
+        'totalBlocks': tempBlocks.length,
+        'societyId': sid,
+      };
 
-      // ૧. સોસાયટી કોન્ફિગ
-      batch.set(
-          FirebaseFirestore.instance
-              .collection('settings')
-              .doc('society_config'),
-          {
-            'societyName': sName,
-            'architectureType': type,
-            'isSetupComplete': true,
-            'totalBlocks': tempBlocks.length,
-          });
+      batch.set(SocietyService.instance.societySettingsDoc(FirebaseFirestore.instance), cfg);
+      if (sid == SocietyService.kDefaultSocietyId) {
+        batch.set(
+            FirebaseFirestore.instance
+                .collection('settings')
+                .doc('society_config'),
+            cfg);
+      }
 
       // ૨. બધા ટેમ્પરરી બ્લોક્સ અને તેના યુનિટ્સ જનરેટ કરવા
       for (var b in tempBlocks) {
-        String bID = b['id'];
-        batch.set(FirebaseFirestore.instance.collection('blocks').doc(bID), {
-          'name': bID,
+        String logical = b['id'];
+        final phyBlock = SocietyService.instance.blockFirestoreId(logical);
+        batch.set(
+            FirebaseFirestore.instance.collection('blocks').doc(phyBlock), {
+          'name': logical,
           'type': type,
+          'societyId': sid,
         });
 
         // યુનિટ્સ જનરેટ લોજિક
@@ -539,26 +574,29 @@ class _AdminDashboardState extends State<AdminDashboard> {
           for (int f = 1; f <= b['v1']; f++) {
             for (int u = 1; u <= b['v2']; u++) {
               String uID = "$f${u.toString().padLeft(2, '0')}";
+              final uDoc = SocietyService.instance.unitFirestoreDocId(logical, uID);
               batch.set(
-                  FirebaseFirestore.instance
-                      .collection('units')
-                      .doc("$bID-$uID"),
+                  FirebaseFirestore.instance.collection('units').doc(uDoc),
                   {
-                    'blockName': bID,
+                    'blockName': phyBlock,
                     'unitNumber': uID,
                     'floorNo': f,
-                    'isOccupied': false
+                    'isOccupied': false,
+                    'societyId': sid,
                   });
             }
           }
         } else {
           for (int i = b['v1']; i <= b['v2']; i++) {
+            final uDoc =
+                SocietyService.instance.unitFirestoreDocId(logical, i.toString());
             batch.set(
-                FirebaseFirestore.instance.collection('units').doc("$bID-$i"), {
-              'blockName': bID,
+                FirebaseFirestore.instance.collection('units').doc(uDoc), {
+              'blockName': phyBlock,
               'unitNumber': i.toString(),
               'floorNo': 0,
-              'isOccupied': false
+              'isOccupied': false,
+              'societyId': sid,
             });
           }
         }
@@ -670,8 +708,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     try {
       // Firestore માંથી બધા બ્લોક્સ (Wings/Streets) મેળવો
-      var snapshot =
-      await FirebaseFirestore.instance.collection('blocks').get();
+      var snapshot = await FirebaseFirestore.instance
+          .collection('blocks')
+          .where('societyId', isEqualTo: SocietyService.instance.societyId)
+          .get();
 
       List<Map<String, dynamic>> blocksData = [];
 
@@ -681,6 +721,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         // દરેક બ્લોકના યુનિટ્સની સંખ્યા મેળવો (ગણતરી માટે)
         var unitsSnapshot = await FirebaseFirestore.instance
             .collection('units')
+            .where('societyId', isEqualTo: SocietyService.instance.societyId)
             .where('blockName', isEqualTo: bID)
             .get();
 
@@ -741,20 +782,29 @@ class _AdminDashboardState extends State<AdminDashboard> {
     setState(() => _isLoading = true);
     try {
       WriteBatch batch = FirebaseFirestore.instance.batch();
-      batch.set(
-          FirebaseFirestore.instance
-              .collection('settings')
-              .doc('society_config'),
-          {
-            'societyName': sName,
-            'architectureType': type,
-            'isSetupComplete': true,
-          });
+      final sid = SocietyService.instance.societyId;
+      final cfg = {
+        'societyName': sName,
+        'architectureType': type,
+        'isSetupComplete': true,
+        'societyId': sid,
+      };
+      batch.set(SocietyService.instance.societySettingsDoc(FirebaseFirestore.instance), cfg);
+      if (sid == SocietyService.kDefaultSocietyId) {
+        batch.set(
+            FirebaseFirestore.instance
+                .collection('settings')
+                .doc('society_config'),
+            cfg);
+      }
 
-      String bID = "${type.substring(0, 1)}-${bName.toUpperCase()}";
-      batch.set(FirebaseFirestore.instance.collection('blocks').doc(bID),
-          {'name': bID, 'type': type});
-      _generateUnits(batch, bID, type, int.parse(v1), int.parse(v2));
+      String logical =
+          "${type.substring(0, 1)}-${bName.toUpperCase()}";
+      final phyBlock = SocietyService.instance.blockFirestoreId(logical);
+      batch.set(
+          FirebaseFirestore.instance.collection('blocks').doc(phyBlock),
+          {'name': logical, 'type': type, 'societyId': sid});
+      _generateUnits(batch, logical, type, int.parse(v1), int.parse(v2));
 
       await batch.commit();
       _checkSetupStatus();
@@ -766,23 +816,35 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   void _generateUnits(
-      WriteBatch batch, String bID, String type, int v1, int v2) {
+      WriteBatch batch, String logicalBlockId, String type, int v1, int v2) {
+    final phy = SocietyService.instance.blockFirestoreId(logicalBlockId);
+    final sid = SocietyService.instance.societyId;
     if (type == 'Wing') {
       for (int f = 1; f <= v1; f++) {
         for (int u = 1; u <= v2; u++) {
           String uID = "$f${u.toString().padLeft(2, '0')}";
+          final docId =
+              SocietyService.instance.unitFirestoreDocId(logicalBlockId, uID);
           batch.set(
-              FirebaseFirestore.instance.collection('units').doc("$bID-$uID"),
-              {'blockName': bID, 'unitNumber': uID, 'isOccupied': false});
+              FirebaseFirestore.instance.collection('units').doc(docId),
+              {
+                'blockName': phy,
+                'unitNumber': uID,
+                'isOccupied': false,
+                'societyId': sid,
+              });
         }
       }
     } else {
       for (int i = v1; i <= v2; i++) {
+        final docId = SocietyService.instance
+            .unitFirestoreDocId(logicalBlockId, i.toString());
         batch.set(
-            FirebaseFirestore.instance.collection('units').doc("$bID-$i"), {
-          'blockName': bID,
+            FirebaseFirestore.instance.collection('units').doc(docId), {
+          'blockName': phy,
           'unitNumber': i.toString(),
-          'isOccupied': false
+          'isOccupied': false,
+          'societyId': sid,
         });
       }
     }
@@ -845,6 +907,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('blocks')
+                        .where('societyId',
+                            isEqualTo: SocietyService.instance.societyId)
                         .snapshots(),
                     builder: (context, snap) {
                       if (!snap.hasData) return const LinearProgressIndicator();
@@ -852,7 +916,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         hint: const Text("બ્લોક પસંદ કરો"),
                         items: snap.data!.docs
                             .map((d) => DropdownMenuItem(
-                            value: d.id, child: Text(d['name'])))
+                            value: d.id, child: Text('${d['name']}')))
                             .toList(),
                         onChanged: (v) => setDS(() {
                           sB = v;
@@ -866,13 +930,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('units')
+                          .where('societyId',
+                              isEqualTo: SocietyService.instance.societyId)
                           .where('blockName', isEqualTo: sB)
-                          .where('isOccupied', isEqualTo: false)
                           .snapshots(),
                       builder: (context, snap) {
                         if (!snap.hasData) return const SizedBox();
 
-                        // બધા યુનિટ્સનું લિસ્ટ બનાવો
+                        // બધા ઘર — એક ઘરમાં 2+ મેમ્બર ઉમેરી શકાય (isOccupied ફિલ્ટર નથી)
                         var unitDocs = snap.data!.docs;
 
                         // 🔥 મહત્વનું: જો લિસ્ટમાં હાલની પસંદ કરેલી વેલ્યુ (sU) ન હોય,
@@ -889,9 +954,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           hint: const Text("ઘર પસંદ કરો"),
                           items: unitDocs.map((d) {
                             String val = d.get('unitNumber').toString();
+                            final cnt = _unitMemberCount(d.data() as Map<String, dynamic>?);
+                            final label = cnt > 0 ? '$val ($cnt મેમ્બર)' : val;
                             return DropdownMenuItem<String>(
                               value: val,
-                              child: Text(val),
+                              child: Text(label),
                             );
                           }).toList(),
                           onChanged: (v) => setDS(() => sU = v),
@@ -943,8 +1010,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
       {String? phone}) async {
     try {
       // સેકન્ડરી એપ જેથી એડમિન પોતે લોગઆઉટ ન થઈ જાય
+      final defaultApp = await ensureDefaultFirebaseApp();
       FirebaseApp tempApp = await Firebase.initializeApp(
-          name: 'TempApp', options: Firebase.app().options);
+          name: 'TempApp', options: defaultApp.options);
       UserCredential res = await FirebaseAuth.instanceFor(app: tempApp)
           .createUserWithEmailAndPassword(email: email, password: pass);
 
@@ -955,6 +1023,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         'role': role,
         'createdAt': FieldValue.serverTimestamp(),
         'isActive': true,
+        'societyId': SocietyService.instance.societyId,
       };
 
       // જો મેમ્બર હોય તો જ આ વિગતો ઉમેરવી
@@ -965,11 +1034,45 @@ class _AdminDashboardState extends State<AdminDashboard> {
           userData['phone'] = phone;
         }
 
-        // યુનિટને Occupied માર્ક કરો
-        await FirebaseFirestore.instance
-            .collection('units')
-            .doc("$block-$unit")
-            .update({'isOccupied': true, 'memberId': res.user!.uid});
+        // યુનિટને અપડેટ: `block` = ફાયરસ્ટોર બ્લોક doc id (ડિફૉલ્ટ W-A અથવા soc_x_W-A)
+        final unitDocId = '$block-$unit';
+        final unitRef =
+            FirebaseFirestore.instance.collection('units').doc(unitDocId);
+        await FirebaseFirestore.instance.runTransaction((tx) async {
+          final snap = await tx.get(unitRef);
+          final memberIds = <String>{res.user!.uid};
+          String? primaryMemberId;
+          if (snap.exists) {
+            final d = snap.data()!;
+            final old = d['memberId'];
+            if (old is String && old.isNotEmpty) {
+              memberIds.add(old);
+              primaryMemberId = old;
+            }
+            final arr = d['memberIds'];
+            if (arr is List) {
+              for (final x in arr) {
+                if (x is String && x.isNotEmpty) memberIds.add(x);
+              }
+            }
+          }
+          if (primaryMemberId == null) {
+            final others =
+                memberIds.where((id) => id != res.user!.uid).toList();
+            primaryMemberId =
+                others.isNotEmpty ? others.first : res.user!.uid;
+          }
+          tx.set(
+            unitRef,
+            {
+              'isOccupied': true,
+              'memberIds': memberIds.toList(),
+              'memberId': primaryMemberId,
+              'societyId': SocietyService.instance.societyId,
+            },
+            SetOptions(merge: true),
+          );
+        });
       }
 
       await FirebaseFirestore.instance
@@ -1035,13 +1138,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   return;
                 }
 
-                String bID =
+                String logical =
                     "${_architectureType.substring(0, 1)}-${nameC.text.trim().toUpperCase()}";
+                final phyBlock =
+                    SocietyService.instance.blockFirestoreId(logical);
 
                 // ૨. ડુપ્લીકેટ બ્લોક ચેક લોજિક
                 var existingBlock = await FirebaseFirestore.instance
                     .collection('blocks')
-                    .doc(bID)
+                    .doc(phyBlock)
                     .get();
 
                 if (existingBlock.exists) {
@@ -1050,16 +1155,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                         content: Text(
-                            "ભૂલ: આ $bID નામની $_architectureType પહેલેથી જ છે!"),
+                            "ભૂલ: આ $logical નામની $_architectureType પહેલેથી જ છે!"),
                         backgroundColor: Colors.red),
                   );
                 } else {
                   // જો બ્લોક નવો હોય તો જ પ્રોસેસ કરવી
                   WriteBatch batch = FirebaseFirestore.instance.batch();
                   batch.set(
-                      FirebaseFirestore.instance.collection('blocks').doc(bID),
-                      {'name': bID, 'type': _architectureType});
-                  _generateUnits(batch, bID, _architectureType,
+                      FirebaseFirestore.instance.collection('blocks').doc(phyBlock),
+                      {
+                        'name': logical,
+                        'type': _architectureType,
+                        'societyId': SocietyService.instance.societyId,
+                      });
+                  _generateUnits(batch, logical, _architectureType,
                       int.parse(v1C.text), int.parse(v2C.text));
 
                   await batch.commit();
@@ -1078,7 +1187,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _buildStatCard(
       String title, String coll, String? f, String? v, Color c) {
-    Query q = FirebaseFirestore.instance.collection(coll);
+    Query q = FirebaseFirestore.instance
+        .collection(coll)
+        .where('societyId', isEqualTo: SocietyService.instance.societyId);
     if (f != null) q = q.where(f, isEqualTo: v);
     return StreamBuilder<QuerySnapshot>(
       stream: q.snapshots(),
@@ -1106,6 +1217,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       // માત્ર 'member' રોલ ધરાવતા યુઝર્સ જ બતાવશે
       stream: FirebaseFirestore.instance
           .collection('users')
+          .where('societyId', isEqualTo: SocietyService.instance.societyId)
           .where('role', isEqualTo: 'member')
           .snapshots(),
       builder: (context, snap) {
@@ -1242,20 +1354,84 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Future<void> _sendPushNotification(
       {required String title, required String body, String? targetUID}) async {
+    final app = await ensureDefaultFirebaseApp();
+    final functions = FirebaseFunctions.instanceFor(
+      app: app,
+      region: _kAdminFunctionsRegion,
+    );
     try {
-      await FirebaseFirestore.instance.collection('notifications').add({
+      if (targetUID == null) {
+        final callable = functions.httpsCallable(
+          'sendBroadcastPush',
+          options: HttpsCallableOptions(timeout: const Duration(seconds: 60)),
+        );
+        await callable.call<Map<String, dynamic>>({
+          'title': title,
+          'body': body,
+          'type': 'general',
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            fcmDeliverySummaryForUser({'fcmDeliveryStatus': 'sent_topic_members'}),
+          ),
+          backgroundColor: Colors.green.shade800,
+          duration: const Duration(seconds: 7),
+        ));
+        return;
+      }
+
+      final callable = functions.httpsCallable(
+        'sendMemberPush',
+        options: HttpsCallableOptions(timeout: const Duration(seconds: 60)),
+      );
+      final result = await callable.call<Map<String, dynamic>>({
+        'memberUid': targetUID,
         'title': title,
         'body': body,
-        'senderId': FirebaseAuth.instance.currentUser!.uid,
-        'targetUID': targetUID ?? 'ALL', // 'ALL' એટલે બધા માટે
-        'timestamp': FieldValue.serverTimestamp(),
+        'type': 'admin_notice',
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text("સૂચના સફળતાપૂર્વક મોકલવામાં આવી!"),
-          backgroundColor: Colors.green));
+      final data = result.data;
+      if (!mounted) return;
+      if (data['ok'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            fcmDeliverySummaryForUser({'fcmDeliveryStatus': 'sent_token'}),
+          ),
+          backgroundColor: Colors.green.shade800,
+          duration: const Duration(seconds: 7),
+        ));
+      } else if (data['reason'] == 'no_token') {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            fcmDeliverySummaryForUser({'fcmDeliveryStatus': 'skipped_no_token'}),
+          ),
+          backgroundColor: Colors.deepOrange.shade800,
+          duration: const Duration(seconds: 8),
+        ));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('પુશ નિષ્ફળ: ${data['reason'] ?? data}'),
+          backgroundColor: Colors.red.shade800,
+          duration: const Duration(seconds: 8),
+        ));
+      }
+    } on FirebaseFunctionsException catch (e) {
+      if (mounted) {
+        final detail = e.message?.trim().isNotEmpty == true
+            ? e.message!
+            : (e.details?.toString() ?? e.code);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('સર્વર (${e.code}): $detail'),
+          backgroundColor: Colors.red.shade800,
+          duration: const Duration(seconds: 10),
+        ));
+      }
     } catch (e) {
-      print("Error sending notification: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('ભૂલ: $e'), backgroundColor: Colors.red));
+      }
     }
   }
 
@@ -1301,30 +1477,70 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ElevatedButton(
               onPressed: () async {
                 if (titleC.text.trim().isEmpty) return;
-                await FirebaseFirestore.instance.collection('notices').add({
-                  'title': titleC.text.trim(),
-                  'body': bodyC.text.trim(),
-                  'createdAt': FieldValue.serverTimestamp(),
-                  'authorId': FirebaseAuth.instance.currentUser!.uid,
-                });
-                if (sendPush) {
-                  final b = bodyC.text.trim();
-                  await FirebaseFirestore.instance
-                      .collection('notifications')
-                      .add({
+                try {
+                  await FirebaseFirestore.instance.collection('notices').add({
                     'title': titleC.text.trim(),
-                    'body': b.isEmpty ? 'નવી નોટિસ' : b,
-                    'targetUID': 'ALL',
-                    'type': 'notice',
-                    'senderId': FirebaseAuth.instance.currentUser!.uid,
-                    'timestamp': FieldValue.serverTimestamp(),
+                    'body': bodyC.text.trim(),
+                    'createdAt': FieldValue.serverTimestamp(),
+                    'authorId': FirebaseAuth.instance.currentUser!.uid,
+                    'societyId': SocietyService.instance.societyId,
                   });
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('નોટિસ સેવ ન થઈ: $e'),
+                      backgroundColor: Colors.red.shade800,
+                    ));
+                  }
+                  return;
                 }
-                if (context.mounted) {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('નોટિસ પ્રકાશિત!'),
-                      backgroundColor: Colors.green));
+                Object? pushErr;
+                if (sendPush) {
+                  try {
+                    final app = await ensureDefaultFirebaseApp();
+                    final functions = FirebaseFunctions.instanceFor(
+                      app: app,
+                      region: _kAdminFunctionsRegion,
+                    );
+                    final callable = functions.httpsCallable(
+                      'sendBroadcastPush',
+                      options:
+                          HttpsCallableOptions(timeout: const Duration(seconds: 60)),
+                    );
+                    final b = bodyC.text.trim();
+                    await callable.call<Map<String, dynamic>>({
+                      'title': titleC.text.trim(),
+                      'body': b.isEmpty ? 'નવી નોટિસ' : b,
+                      'type': 'notice',
+                    });
+                  } on FirebaseFunctionsException catch (e) {
+                    pushErr = e;
+                  } catch (e) {
+                    pushErr = e;
+                  }
+                }
+                if (!context.mounted) return;
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('નોટિસ પ્રકાશિત!'),
+                    backgroundColor: Colors.green));
+                if (sendPush) {
+                  if (pushErr == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(
+                        fcmDeliverySummaryForUser(
+                            {'fcmDeliveryStatus': 'sent_topic_members'}),
+                      ),
+                      backgroundColor: Colors.teal.shade800,
+                      duration: const Duration(seconds: 6),
+                    ));
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('પુશ નિષ્ફળ: $pushErr'),
+                      backgroundColor: Colors.deepOrange.shade800,
+                      duration: const Duration(seconds: 8),
+                    ));
+                  }
                 }
               },
               child: const Text('પ્રકાશિત કરો'),
@@ -1340,16 +1556,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final snap = await FirebaseFirestore.instance
         .collection('visitors')
         .where('entryTime', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+        .limit(2000)
         .get();
 
-    int total = snap.docs.length;
-    int approved =
-        snap.docs.where((d) => d['status'] == 'approved').length;
-    int pending = snap.docs.where((d) => d['status'] == 'pending').length;
-    int rejected =
-        snap.docs.where((d) => d['status'] == 'rejected').length;
-    int out =
-        snap.docs.where((d) => d['status'] == 'checked_out').length;
+    final docs = snap.docs
+        .where((d) => SocietyService.instance.documentBelongsToCurrentTenant(
+            d.data() as Map<String, dynamic>?))
+        .toList();
+
+    int total = docs.length;
+    int approved = docs.where((d) => d['status'] == 'approved').length;
+    int pending = docs.where((d) => d['status'] == 'pending').length;
+    int rejected = docs.where((d) => d['status'] == 'rejected').length;
+    int out = docs.where((d) => d['status'] == 'checked_out').length;
 
     if (!context.mounted) return;
     await showDialog(
@@ -1379,6 +1598,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           child: StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('users')
+                .where('societyId', isEqualTo: SocietyService.instance.societyId)
                 .where('role', isEqualTo: 'watchman')
                 .snapshots(),
             builder: (context, snap) {
@@ -1422,10 +1642,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Future<void> _showEmergencyContactsDialog(BuildContext context) async {
-    final doc = await FirebaseFirestore.instance
-        .collection('settings')
-        .doc('society_config')
+    final sid = SocietyService.instance.societyId;
+    var doc = await SocietyService.instance
+        .societySettingsDoc(FirebaseFirestore.instance)
         .get();
+    if (!doc.exists && sid == SocietyService.kDefaultSocietyId) {
+      doc = await FirebaseFirestore.instance
+          .collection('settings')
+          .doc('society_config')
+          .get();
+    }
     final List<Map<String, dynamic>> contacts = [];
     if (doc.exists) {
       final raw = doc.data()?['emergencyContacts'];
@@ -1510,13 +1736,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 onPressed: () => Navigator.pop(ctx), child: const Text('રદ')),
             ElevatedButton(
               onPressed: () async {
-                await FirebaseFirestore.instance
-                    .collection('settings')
-                    .doc('society_config')
+                await SocietyService.instance
+                    .societySettingsDoc(FirebaseFirestore.instance)
                     .set(
                   {'emergencyContacts': contacts},
                   SetOptions(merge: true),
                 );
+                await SocietyService.instance.mirrorLegacySocietyConfig(
+                    {'emergencyContacts': contacts});
                 if (ctx.mounted) Navigator.pop(ctx);
               },
               child: const Text('સાચવો'),

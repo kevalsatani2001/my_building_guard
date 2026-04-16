@@ -1,0 +1,112 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "role", "order": "ASCENDING" },
+        { "fieldPath": "blockName", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "societyId", "order": "ASCENDING" },
+        { "fieldPath": "role", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "units",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "societyId", "order": "ASCENDING" },
+        { "fieldPath": "blockName", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "visitors",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "memberId", "order": "ASCENDING" },
+        { "fieldPath": "entryTime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "visitors",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "societyId", "order": "ASCENDING" },
+        { "fieldPath": "entryTime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "visitors",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "societyId", "order": "ASCENDING" },
+        { "fieldPath": "memberId", "order": "ASCENDING" },
+        { "fieldPath": "entryTime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "visitors",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "societyId", "order": "ASCENDING" },
+        { "fieldPath": "entryTime", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "pre_approvals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "guestName", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "pre_approvals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "societyId", "order": "ASCENDING" },
+        { "fieldPath": "guestName", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "daily_staff",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "societyId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "societyId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "complaints",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "societyId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "societyId", "order": "ASCENDING" },
+        { "fieldPath": "role", "order": "ASCENDING" },
+        { "fieldPath": "blockName", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
