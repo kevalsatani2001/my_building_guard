@@ -12,6 +12,7 @@ import '../models/user_model.dart';
 import '../services/firebase_app_guard.dart';
 import '../services/notification_service.dart';
 import '../services/society_service.dart';
+import '../widgets/premium_ui.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 /// Cloud Functions v2 `sendMemberPush` નું રીજન — [GCP Console] → Functions માં ચેક કરો (ઘણી વખત `us-central1`).
@@ -478,10 +479,10 @@ class _WatchmanScreenState extends State<WatchmanScreen>
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: const Text("સોસાયટી ગેટ કંટ્રોલ"),
-        backgroundColor: Colors.indigo,
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -497,25 +498,38 @@ class _WatchmanScreenState extends State<WatchmanScreen>
           ),
           IconButton(
               icon:
-              const Icon(Icons.warning_amber_rounded, color: Colors.yellow),
+              Icon(Icons.warning_amber_rounded, color: Colors.amber.shade300),
               onPressed: _sendSOS),
           IconButton(
               icon: const Icon(Icons.logout),
               onPressed: () => FirebaseAuth.instance.signOut()),
         ],
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildEntryForm(),
-          _buildVisitorHistory(),
-        ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              cs.primary.withValues(alpha: 0.06),
+              Theme.of(context).scaffoldBackgroundColor,
+            ],
+          ),
+        ),
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildEntryForm(),
+            _buildVisitorHistory(),
+          ],
+        ),
       ),
     );
   }
 
   // --- UI: વિઝિટર એન્ટ્રી ફોર્મ ---
   Widget _buildEntryForm() {
+    final cs = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -528,7 +542,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               decoration: BoxDecoration(
                   color: Colors.grey[200],
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.indigo)),
+                  border: Border.all(color: cs.primary.withValues(alpha: 0.45))),
               child: _image == null
                   ? const Icon(Icons.add_a_photo,
                   size: 50, color: Colors.indigo)
@@ -557,19 +571,18 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         labelText: "વિઝિટરનું નામ",
                         hintText: "નામ ટાઈપ કરો...",
                         prefixIcon:
-                        const Icon(Icons.person, color: Colors.indigo),
+                        Icon(Icons.person, color: cs.primary),
                         suffixIcon:
                         const Icon(Icons.search, color: Colors.grey),
                         filled: true,
                         fillColor: Colors.grey[50],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.indigo),
+                          borderSide: BorderSide(color: cs.primary),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                          const BorderSide(color: Colors.indigo, width: 2),
+                          borderSide: BorderSide(color: cs.primary, width: 2),
                         ),
                       ),
                     ),
@@ -791,7 +804,10 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               }).toList();
 
               if (filteredDocs.isEmpty) {
-                return const Center(child: Text("કોઈ મહેમાન મળ્યા નથી."));
+                return const PremiumEmptyState(
+                  message: "કોઈ મહેમાન મળ્યા નથી.",
+                  icon: Icons.person_search_rounded,
+                );
               }
 
               return ListView.builder(

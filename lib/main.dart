@@ -14,6 +14,7 @@ import 'screens/login_screen.dart';
 import 'screens/member_screen.dart';
 import 'services/notification_service.dart';
 import 'services/society_service.dart';
+import 'theme/premium_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,10 +40,7 @@ class SocietyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Society Manager',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
+      theme: PremiumTheme.light(),
       home: const AuthWrapper(),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/premium_ui.dart';
 
 class ArchitecturePreviewScreen extends StatelessWidget {
   final List<Map<String, dynamic>> tempBlocks;
@@ -13,28 +14,28 @@ class ArchitecturePreviewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text("સોસાયટી આર્કિટેક્ચર પ્રિવ્યુ"),
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
-        elevation: 0,
       ),
       body: tempBlocks.isEmpty
-          ? const Center(child: Text("કોઈ ડેટા ઉપલબ્ધ નથી."))
+          ? const PremiumEmptyState(
+              message: "કોઈ ડેટા ઉપલબ્ધ નથી.",
+              icon: Icons.grid_view_rounded,
+            )
           : ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: tempBlocks.length,
         itemBuilder: (context, index) {
           final b = tempBlocks[index];
-          return _buildBlockCard(b);
+          return _buildBlockCard(context, b);
         },
       ),
     );
   }
 
   // દરેક બ્લોક (વિંગ/શેરી) માટેનું કાર્ડ
-  Widget _buildBlockCard(Map<String, dynamic> b) {
+  Widget _buildBlockCard(BuildContext context, Map<String, dynamic> b) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -42,7 +43,7 @@ class ArchitecturePreviewScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
@@ -55,7 +56,7 @@ class ArchitecturePreviewScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Colors.blue[700]!, Colors.blueAccent]),
+              gradient: LinearGradient(colors: [cs.primary, cs.secondary]),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(15),
                 topRight: Radius.circular(15),
@@ -155,11 +156,11 @@ class ArchitecturePreviewScreen extends StatelessWidget {
       margin: const EdgeInsets.only(right: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: Colors.blueAccent.withOpacity(0.2)),
+        border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.2)),
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: Colors.blueAccent.withOpacity(0.03),
+            color: Colors.blueAccent.withValues(alpha: 0.03),
             blurRadius: 4,
             offset: const Offset(0, 2),
           )

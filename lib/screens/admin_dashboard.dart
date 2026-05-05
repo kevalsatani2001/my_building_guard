@@ -9,6 +9,7 @@ import '../models/user_model.dart';
 import '../services/notification_service.dart';
 import '../services/society_service.dart';
 import '../services/firebase_app_guard.dart';
+import '../widgets/premium_ui.dart';
 import 'admin_complaints_screen.dart';
 import 'architecture_preview.dart';
 
@@ -96,6 +97,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   List<Map<String, dynamic>> tempBlocks = [];
 
   Widget _buildSetupWizard() {
+    final cs = Theme.of(context).colorScheme;
     final sNameC = TextEditingController();
     final bNameC = TextEditingController();
     final v1C = TextEditingController();
@@ -104,31 +106,40 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     return Scaffold(
       appBar: AppBar(
-          title: const Text("સોસાયટી સેટઅપ"),
-          backgroundColor: Colors.redAccent),
+          title: const Text("સોસાયટી સેટઅપ")),
       body: StatefulBuilder(builder: (context, setWizardState) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                cs.primary.withValues(alpha: 0.05),
+                Theme.of(context).scaffoldBackgroundColor,
+              ],
+            ),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               // --- Warning Message ---
               Container(
                 padding: const EdgeInsets.all(15),
                 decoration: BoxDecoration(
-                    color: Colors.red[50],
+                    color: cs.error.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.red)),
-                child: const Row(
+                    border: Border.all(color: cs.error.withValues(alpha: 0.55))),
+                child: Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded,
-                        color: Colors.red, size: 40),
-                    SizedBox(width: 15),
+                    Icon(Icons.warning_amber_rounded, color: cs.error, size: 40),
+                    const SizedBox(width: 15),
                     Expanded(
                         child: Text(
                             "ચેતવણી: આર્કિટેક્ચર પ્રકાર કાયમી રહેશે. ઓછામાં ઓછી એક વિંગ/શેરી ઉમેરવી ફરજિયાત છે.",
                             style: TextStyle(
-                                color: Colors.red,
+                                color: cs.error,
                                 fontWeight: FontWeight.bold))),
                   ],
                 ),
@@ -237,7 +248,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 icon: const Icon(Icons.add),
                 label: const Text("લિસ્ટમાં બ્લોક ઉમેરો"),
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueGrey,
+                    backgroundColor: cs.primaryContainer,
                     foregroundColor: Colors.white),
               ),
 
@@ -318,7 +329,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 },
                 child: const Text("આર્કિટેક્ચર પ્રિવ્યુ (New Page)"),
               )
-            ],
+              ],
+            ),
           ),
         );
       }),
@@ -616,6 +628,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // ૨. MAIN DASHBOARD
   // ==========================================
   Widget _buildMainDashboard() {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: Text(_societyName),
@@ -625,11 +638,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
               onPressed: () => FirebaseAuth.instance.signOut())
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              cs.primary.withValues(alpha: 0.06),
+              Theme.of(context).scaffoldBackgroundColor,
+            ],
+          ),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Row(
               children: [
                 Expanded(
@@ -646,8 +670,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 "એડમિન લિસ્ટ", 'users', 'role', 'admin', Colors.indigo),
             const Divider(height: 40),
 
-            const Text("ક્વિક એક્શન",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const PremiumSectionHeader(
+              title: "ક્વિક એક્શન",
+              icon: Icons.bolt_rounded,
+            ),
             const SizedBox(height: 15),
 
             // એક્શન બટન્સ
@@ -674,11 +700,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 () => _showEmergencyContactsDialog(context)),
 
             const SizedBox(height: 30),
-            const Text("તાજેતરના યુઝર્સ",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const PremiumSectionHeader(
+              title: "તાજેતરના યુઝર્સ",
+              icon: Icons.groups_rounded,
+            ),
             const SizedBox(height: 10),
             SizedBox(height: 300, child: _buildMemberList()),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -688,16 +717,28 @@ class _AdminDashboardState extends State<AdminDashboard> {
       String label, IconData icon, Color color, VoidCallback onPressed) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon),
-        label: Text(label),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, 55),
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.18),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: ElevatedButton.icon(
+          onPressed: onPressed,
+          icon: Icon(icon),
+          label: Text(label),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 55),
+            shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         ),
       ),
     );
@@ -1226,7 +1267,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
         }
 
         if (!snap.hasData || snap.data!.docs.isEmpty) {
-          return const Center(child: Text("કોઈ મેમ્બર્સ મળ્યા નથી."));
+          return const PremiumEmptyState(
+            message: "કોઈ મેમ્બર્સ મળ્યા નથી.",
+            icon: Icons.group_off_rounded,
+          );
         }
 
         var docs = snap.data!.docs;

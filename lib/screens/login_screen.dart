@@ -10,7 +10,7 @@ class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
@@ -65,57 +65,95 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.apartment, size: 100, color: Colors.blue),
-            const SizedBox(height: 20),
-            const Text(
-              "સોસાયટી મેનેજમેન્ટ એપ",
-              style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue),
-            ),
-            const SizedBox(height: 40),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                  labelText: 'ઇમેઇલ', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                  labelText: 'પાસવર્ડ', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _login,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("લોગઈન",
-                    style: TextStyle(fontSize: 18, color: Colors.white)),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              cs.primary.withValues(alpha: 0.15),
+              Theme.of(context).scaffoldBackgroundColor,
+              Colors.white,
+            ],
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(22),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircleAvatar(
+                        radius: 38,
+                        backgroundColor: cs.primary.withValues(alpha: 0.12),
+                        child: Icon(
+                          Icons.apartment_rounded,
+                          size: 42,
+                          color: cs.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        "સોસાયટી મેનેજમેન્ટ એપ",
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: cs.primary,
+                              fontWeight: FontWeight.w800,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 22),
+                      TextField(
+                        controller: _emailController,
+                        decoration: const InputDecoration(labelText: 'ઇમેઇલ'),
+                      ),
+                      const SizedBox(height: 14),
+                      TextField(
+                        controller: _passwordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(labelText: 'પાસવર્ડ'),
+                      ),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _login,
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text("લોગઈન"),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text("એકાઉન્ટ નથી? નવું બનાવો"),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const RegisterScreen()));
-              },
-              child: const Text("એકાઉન્ટ નથી? નવું બનાવો"),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -126,7 +164,7 @@ class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  _RegisterScreenState createState() => _RegisterScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
@@ -194,45 +232,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
           children: [
             TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                    labelText: 'પૂરૂ નામ', border: OutlineInputBorder())),
+                decoration: const InputDecoration(labelText: 'પૂરૂ નામ')),
             const SizedBox(height: 16),
             TextField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                    labelText: 'ઇમેઇલ', border: OutlineInputBorder())),
+                decoration: const InputDecoration(labelText: 'ઇમેઇલ')),
             const SizedBox(height: 16),
             TextField(
                 controller: _passwordController,
                 obscureText: true,
-                decoration: const InputDecoration(
-                    labelText: 'પાસવર્ડ', border: OutlineInputBorder())),
+                decoration: const InputDecoration(labelText: 'પાસવર્ડ')),
             const SizedBox(height: 16),
 
             // રોલ સિલેક્શન (પ્રોફેશનલ એપમાં આ છુપાવેલું હોય છે, પણ અત્યારે તમારા માટે રાખ્યું છે)
             DropdownButtonFormField<String>(
-              value: _selectedRole,
+              initialValue: _selectedRole,
               // અહીં 'watchman' ઉમેરી દીધું છે
               items: ['admin', 'member', 'watchman']
                   .map((role) => DropdownMenuItem(
                   value: role, child: Text(role.toUpperCase())))
                   .toList(),
               onChanged: (value) => setState(() => _selectedRole = value!),
-              decoration: const InputDecoration(
-                  labelText: 'તમારો રોલ', border: OutlineInputBorder()),
+              decoration: const InputDecoration(labelText: 'તમારો રોલ'),
             ),
 
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              height: 50,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _register,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
                 child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("રજીસ્ટર કરો",
-                    style: TextStyle(fontSize: 18, color: Colors.white)),
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text("રજીસ્ટર કરો"),
               ),
             ),
           ],

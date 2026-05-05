@@ -18,6 +18,7 @@ import '../models/visitor_model.dart';
 import '../services/firebase_app_guard.dart';
 import '../services/notification_service.dart';
 import '../services/society_service.dart';
+import '../widgets/premium_ui.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 const String _kMemberFunctionsRegion = 'us-central1';
@@ -275,19 +276,16 @@ class _MemberScreenState extends State<MemberScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text("માય સોસાયટી",
             style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.indigo[900],
-        foregroundColor: Colors.white,
-        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.emergency_share),
             tooltip: 'ઇમરજન્સી મદદ',
-            color: Colors.amberAccent,
+            color: Colors.amber.shade300,
             onPressed: _showMemberEmergencyDialog,
           ),
           IconButton(
@@ -295,8 +293,19 @@ class _MemberScreenState extends State<MemberScreen> {
               onPressed: () => FirebaseAuth.instance.signOut()),
         ],
       ),
-      body: Column(
-        children: [
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              cs.primary.withValues(alpha: 0.05),
+              Theme.of(context).scaffoldBackgroundColor,
+            ],
+          ),
+        ),
+        child: Column(
+          children: [
           // --- ૧. Notice Board Section ---
           _buildNoticeBoard(),
 
@@ -309,7 +318,7 @@ class _MemberScreenState extends State<MemberScreen> {
               label: const Text("મહેમાનને અગાઉથી મંજૂરી આપો",
                   style: TextStyle(fontSize: 16, color: Colors.white)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo[700],
+                backgroundColor: cs.primary,
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
@@ -343,21 +352,25 @@ class _MemberScreenState extends State<MemberScreen> {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text("તાજેતરના મુલાકાતીઓ",
-                    style:
-                    TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+              alignment: Alignment.centerLeft,
+              child: PremiumSectionHeader(
+                title: "તાજેતરના મુલાકાતીઓ",
+                icon: Icons.history_rounded,
+              ),
+            ),
           ),
 
           // --- ૩. Visitor History List ---
           Expanded(child: _buildVisitorList()),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   // નોટિસ બોર્ડ વિજેટ
   Widget _buildNoticeBoard() {
+    final cs = Theme.of(context).colorScheme;
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('notices')
@@ -380,11 +393,11 @@ class _MemberScreenState extends State<MemberScreen> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-                colors: [Colors.orange[400]!, Colors.orange[700]!]),
+                colors: [cs.secondary.withValues(alpha: 0.9), cs.primary]),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                  color: Colors.orange.withOpacity(0.3),
+                  color: cs.secondary.withValues(alpha: 0.30),
                   blurRadius: 8,
                   offset: const Offset(0, 4))
             ],
@@ -598,7 +611,10 @@ class _MemberScreenState extends State<MemberScreen> {
               d.data() as Map<String, dynamic>?);
         }).toList();
         if (docs.isEmpty) {
-          return const Center(child: Text("કોઈ ડેટા નથી"));
+          return const PremiumEmptyState(
+            message: "કોઈ ડેટા નથી",
+            icon: Icons.history_toggle_off,
+          );
         }
 
         return ListView.builder(

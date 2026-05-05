@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../services/society_service.dart';
+import '../widgets/premium_ui.dart';
 
 /// Admin: list member complaints and mark resolved.
 class AdminComplaintsScreen extends StatelessWidget {
@@ -12,8 +13,6 @@ class AdminComplaintsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('ફરિયાદ નિવારણ'),
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -34,7 +33,10 @@ class AdminComplaintsScreen extends StatelessWidget {
                       d.data() as Map<String, dynamic>?))
               .toList();
           if (docs.isEmpty) {
-            return const Center(child: Text('હજી કોઈ ફરિયાદ નથી.'));
+            return const PremiumEmptyState(
+              message: 'હજી કોઈ ફરિયાદ નથી.',
+              icon: Icons.verified_outlined,
+            );
           }
           return ListView.builder(
             padding: const EdgeInsets.all(12),
@@ -49,6 +51,7 @@ class AdminComplaintsScreen extends StatelessWidget {
               final photoUrl = m['photoUrl'] as String? ?? '';
 
               return Card(
+                margin: const EdgeInsets.only(bottom: 10),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
