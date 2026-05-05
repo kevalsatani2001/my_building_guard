@@ -64,8 +64,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // --- વેલિડેશન હેલ્પર ---
   bool _isValidEmail(String email) {
     return RegExp(
-        r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-        .hasMatch(email);
+      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+    ).hasMatch(email);
   }
 
   /// એક ઘરમાં કેટલા મેમ્બર્સ (legacy `memberId` + `memberIds` લિસ્ટ)
@@ -93,7 +93,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // ==========================================
   // ૧. INITIAL SETUP WIZARD (With Validation)
   // ==========================================
-// સેટઅપ સ્ક્રીન માટેના વેરીએબલ્સ (વર્ગની ઉપર અથવા State માં જાહેર કરો)
+  // સેટઅપ સ્ક્રીન માટેના વેરીએબલ્સ (વર્ગની ઉપર અથવા State માં જાહેર કરો)
   List<Map<String, dynamic>> tempBlocks = [];
 
   Widget _buildSetupWizard() {
@@ -105,235 +105,287 @@ class _AdminDashboardState extends State<AdminDashboard> {
     String wizardType = 'Wing';
 
     return Scaffold(
-      appBar: AppBar(
-          title: const Text("સોસાયટી સેટઅપ")),
-      body: StatefulBuilder(builder: (context, setWizardState) {
-        return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                cs.primary.withValues(alpha: 0.05),
-                Theme.of(context).scaffoldBackgroundColor,
-              ],
+      appBar: AppBar(title: const Text("સોસાયટી સેટઅપ")),
+      body: StatefulBuilder(
+        builder: (context, setWizardState) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  cs.primary.withValues(alpha: 0.05),
+                  Theme.of(context).scaffoldBackgroundColor,
+                ],
+              ),
             ),
-          ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-              // --- Warning Message ---
-              Container(
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                    color: cs.error.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: cs.error.withValues(alpha: 0.55))),
-                child: Row(
-                  children: [
-                    Icon(Icons.warning_amber_rounded, color: cs.error, size: 40),
-                    const SizedBox(width: 15),
-                    Expanded(
-                        child: Text(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- Warning Message ---
+                  Container(
+                    padding: const EdgeInsets.all(15),
+                    decoration: BoxDecoration(
+                      color: cs.error.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: cs.error.withValues(alpha: 0.55),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          color: cs.error,
+                          size: 40,
+                        ),
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: Text(
                             "ચેતવણી: આર્કિટેક્ચર પ્રકાર કાયમી રહેશે. ઓછામાં ઓછી એક વિંગ/શેરી ઉમેરવી ફરજિયાત છે.",
                             style: TextStyle(
-                                color: cs.error,
-                                fontWeight: FontWeight.bold))),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
+                              color: cs.error,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
 
-              TextField(
-                  controller: sNameC,
-                  decoration: const InputDecoration(
+                  TextField(
+                    controller: sNameC,
+                    decoration: const InputDecoration(
                       labelText: "સોસાયટીનું નામ",
-                      border: OutlineInputBorder())),
-              const SizedBox(height: 15),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
 
-              // જો લિસ્ટમાં બ્લોક્સ ઉમેરાઈ ગયા હોય તો ટાઈપ લોક કરી દેવો જેથી ડેટા મિક્સ ન થાય
-              DropdownButtonFormField<String>(
-                value: wizardType,
-                items: const [
-                  DropdownMenuItem(
-                      value: 'Wing', child: Text("વિંગ સિસ્ટમ (A, B, C...)")),
-                  DropdownMenuItem(
-                      value: 'Street', child: Text("શેરી સિસ્ટમ (1, 2, 3...)")),
-                ],
-                onChanged: tempBlocks.isEmpty
-                    ? (v) => setWizardState(() => wizardType = v!)
-                    : null,
-                decoration: InputDecoration(
-                    labelText: "આર્કિટેક્ચર પ્રકાર",
-                    border: const OutlineInputBorder(),
-                    helperText: tempBlocks.isNotEmpty
-                        ? "બ્લોક ઉમેર્યા પછી પ્રકાર બદલી શકાશે નહીં"
-                        : null),
-              ),
+                  // જો લિસ્ટમાં બ્લોક્સ ઉમેરાઈ ગયા હોય તો ટાઈપ લોક કરી દેવો જેથી ડેટા મિક્સ ન થાય
+                  DropdownButtonFormField<String>(
+                    value: wizardType,
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'Wing',
+                        child: Text("વિંગ સિસ્ટમ (A, B, C...)"),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Street',
+                        child: Text("શેરી સિસ્ટમ (1, 2, 3...)"),
+                      ),
+                    ],
+                    onChanged: tempBlocks.isEmpty
+                        ? (v) => setWizardState(() => wizardType = v!)
+                        : null,
+                    decoration: InputDecoration(
+                      labelText: "આર્કિટેક્ચર પ્રકાર",
+                      border: const OutlineInputBorder(),
+                      helperText: tempBlocks.isNotEmpty
+                          ? "બ્લોક ઉમેર્યા પછી પ્રકાર બદલી શકાશે નહીં"
+                          : null,
+                    ),
+                  ),
 
-              const Divider(height: 40, thickness: 2),
-              const Text("બ્લોક ઉમેરો (વિંગ અથવા શેરી)",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 10),
+                  const Divider(height: 40, thickness: 2),
+                  const Text(
+                    "બ્લોક ઉમેરો (વિંગ અથવા શેરી)",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 10),
 
-              // --- બ્લોક ઇનપુટ સેક્શન ---
-              TextField(
-                  controller: bNameC,
-                  decoration: InputDecoration(
+                  // --- બ્લોક ઇનપુટ સેક્શન ---
+                  TextField(
+                    controller: bNameC,
+                    decoration: InputDecoration(
                       labelText: wizardType == 'Wing'
                           ? "વિંગ નામ (e.g. A)"
                           : "શેરી નંબર",
-                      border: const OutlineInputBorder())),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                      child: TextField(
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
                           controller: v1C,
                           decoration: InputDecoration(
-                              labelText: wizardType == 'Wing'
-                                  ? "કુલ માળ"
-                                  : "શરૂઆત નંબર",
-                              border: const OutlineInputBorder()),
-                          keyboardType: TextInputType.number)),
-                  const SizedBox(width: 10),
-                  Expanded(
-                      child: TextField(
-                          controller: v2C,
-                          decoration: InputDecoration(
-                              labelText: wizardType == 'Wing'
-                                  ? "માળ દીઠ ઘર"
-                                  : "છેલ્લો નંબર",
-                              border: const OutlineInputBorder()),
-                          keyboardType: TextInputType.number)),
-                ],
-              ),
-              const SizedBox(height: 15),
-
-              // --- બ્લોક લિસ્ટમાં ઉમેરવાનું બટન ---
-              ElevatedButton.icon(
-                onPressed: () {
-                  if (bNameC.text.isEmpty ||
-                      v1C.text.isEmpty ||
-                      v2C.text.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text("બ્લોકની બધી વિગતો ભરો!")));
-                    return;
-                  }
-
-                  String bID =
-                      "${wizardType.substring(0, 1)}-${bNameC.text.trim().toUpperCase()}";
-
-                  // ડુપ્લીકેટ ચેક (ટેમ્પરરી લિસ્ટમાં)
-                  if (tempBlocks.any((b) => b['id'] == bID)) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text("આ બ્લોક લિસ્ટમાં પહેલેથી છે!")));
-                    return;
-                  }
-
-                  setWizardState(() {
-                    tempBlocks.add({
-                      'id': bID,
-                      'name': bNameC.text.trim().toUpperCase(),
-                      'v1': int.parse(v1C.text),
-                      'v2': int.parse(v2C.text),
-                    });
-                    bNameC.clear();
-                    v1C.clear();
-                    v2C.clear();
-                  });
-                },
-                icon: const Icon(Icons.add),
-                label: const Text("લિસ્ટમાં બ્લોક ઉમેરો"),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: cs.primaryContainer,
-                    foregroundColor: Colors.white),
-              ),
-
-              const SizedBox(height: 20),
-
-              // --- ઉમેરેલા બ્લોક્સનું લિસ્ટ બતાવવું ---
-              if (tempBlocks.isNotEmpty) ...[
-                const Text("ઉમેરેલા બ્લોક્સ:",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: tempBlocks.length,
-                  itemBuilder: (context, index) {
-                    final b = tempBlocks[index];
-                    return Card(
-                      child: ListTile(
-                        leading: CircleAvatar(child: Text(b['name'][0])),
-                        title: Text("${wizardType}: ${b['name']}"),
-                        subtitle: Text(wizardType == 'Wing'
-                            ? "${b['v1']} માળ, ${b['v2']} ઘર/માળ"
-                            : "નંબર: ${b['v1']} થી ${b['v2']}"),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () =>
-                              setWizardState(() => tempBlocks.removeAt(index)),
+                            labelText: wizardType == 'Wing'
+                                ? "કુલ માળ"
+                                : "શરૂઆત નંબર",
+                            border: const OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
                         ),
                       ),
-                    );
-                  },
-                ),
-              ],
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: v2C,
+                          decoration: InputDecoration(
+                            labelText: wizardType == 'Wing'
+                                ? "માળ દીઠ ઘર"
+                                : "છેલ્લો નંબર",
+                            border: const OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
 
-              const SizedBox(height: 30),
+                  // --- બ્લોક લિસ્ટમાં ઉમેરવાનું બટન ---
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      if (bNameC.text.isEmpty ||
+                          v1C.text.isEmpty ||
+                          v2C.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("બ્લોકની બધી વિગતો ભરો!"),
+                          ),
+                        );
+                        return;
+                      }
 
-              // --- ફાઈનલ સબમિટ બટન ---
-              ElevatedButton(
-                onPressed: () {
-                  if (sNameC.text.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("સોસાયટીનું નામ લખો!")));
-                  } else if (tempBlocks.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text("ઓછામાં ઓછો એક બ્લોક ઉમેરો!")));
-                  } else {
-                    _executeFinalInitialSetup(sNameC.text, wizardType);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
-                    minimumSize: const Size(double.infinity, 60),
-                    foregroundColor: Colors.white),
-                child: const Text("ફાઈનલ સેટઅપ પૂર્ણ કરો",
-                    style:
-                    TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ),
+                      String bID =
+                          "${wizardType.substring(0, 1)}-${bNameC.text.trim().toUpperCase()}";
 
-              // --- Preview Button ---
-              ElevatedButton(
-                onPressed: () {
-                  if (tempBlocks.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text("પહેલા કોઈ બ્લોક ઉમેરો!")));
-                    return;
-                  }
-                  // નવી સ્ક્રીન પર નેવિગેટ કરવું
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ArchitecturePreviewScreen(
-                        tempBlocks: tempBlocks,
-                        architectureType:
-                        wizardType, // અહિયાં તમારો wizardType વેરીએબલ આપવો
+                      // ડુપ્લીકેટ ચેક (ટેમ્પરરી લિસ્ટમાં)
+                      if (tempBlocks.any((b) => b['id'] == bID)) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("આ બ્લોક લિસ્ટમાં પહેલેથી છે!"),
+                          ),
+                        );
+                        return;
+                      }
+
+                      setWizardState(() {
+                        tempBlocks.add({
+                          'id': bID,
+                          'name': bNameC.text.trim().toUpperCase(),
+                          'v1': int.parse(v1C.text),
+                          'v2': int.parse(v2C.text),
+                        });
+                        bNameC.clear();
+                        v1C.clear();
+                        v2C.clear();
+                      });
+                    },
+                    icon: const Icon(Icons.add),
+                    label: const Text("લિસ્ટમાં બ્લોક ઉમેરો"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: cs.primaryContainer,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // --- ઉમેરેલા બ્લોક્સનું લિસ્ટ બતાવવું ---
+                  if (tempBlocks.isNotEmpty) ...[
+                    const Text(
+                      "ઉમેરેલા બ્લોક્સ:",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: tempBlocks.length,
+                      itemBuilder: (context, index) {
+                        final b = tempBlocks[index];
+                        return Card(
+                          child: ListTile(
+                            leading: CircleAvatar(child: Text(b['name'][0])),
+                            title: Text("${wizardType}: ${b['name']}"),
+                            subtitle: Text(
+                              wizardType == 'Wing'
+                                  ? "${b['v1']} માળ, ${b['v2']} ઘર/માળ"
+                                  : "નંબર: ${b['v1']} થી ${b['v2']}",
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => setWizardState(
+                                () => tempBlocks.removeAt(index),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+
+                  const SizedBox(height: 30),
+
+                  // --- ફાઈનલ સબમિટ બટન ---
+                  ElevatedButton(
+                    onPressed: () {
+                      if (sNameC.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("સોસાયટીનું નામ લખો!")),
+                        );
+                      } else if (tempBlocks.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("ઓછામાં ઓછો એક બ્લોક ઉમેરો!"),
+                          ),
+                        );
+                      } else {
+                        _executeFinalInitialSetup(sNameC.text, wizardType);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      minimumSize: const Size(double.infinity, 60),
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text(
+                      "ફાઈનલ સેટઅપ પૂર્ણ કરો",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  );
-                },
-                child: const Text("આર્કિટેક્ચર પ્રિવ્યુ (New Page)"),
-              )
-              ],
+                  ),
+
+                  // --- Preview Button ---
+                  ElevatedButton(
+                    onPressed: () {
+                      if (tempBlocks.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("પહેલા કોઈ બ્લોક ઉમેરો!"),
+                          ),
+                        );
+                        return;
+                      }
+                      // નવી સ્ક્રીન પર નેવિગેટ કરવું
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ArchitecturePreviewScreen(
+                            tempBlocks: tempBlocks,
+                            architectureType:
+                                wizardType, // અહિયાં તમારો wizardType વેરીએબલ આપવો
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text("આર્કિટેક્ચર પ્રિવ્યુ (New Page)"),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      }),
+          );
+        },
+      ),
     );
   }
 
@@ -350,11 +402,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("સોસાયટી પ્રિવ્યુ",
-                    style:
-                    TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text(type == 'Wing' ? "બિલ્ડિંગ સ્ટ્રક્ચર" : "પ્લોટ લેઆઉટ",
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                const Text(
+                  "સોસાયટી પ્રિવ્યુ",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  type == 'Wing' ? "બિલ્ડિંગ સ્ટ્રક્ચર" : "પ્લોટ લેઆઉટ",
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
               ],
             ),
           ],
@@ -365,72 +420,82 @@ class _AdminDashboardState extends State<AdminDashboard> {
           child: tempBlocks.isEmpty
               ? const Center(child: Text("કોઈ ડેટા નથી"))
               : ListView.builder(
-            itemCount: tempBlocks.length,
-            itemBuilder: (context, index) {
-              final b = tempBlocks[index];
-              return Container(
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10)
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    // બ્લોક હેડર
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: const BoxDecoration(
-                        color: Colors.blueAccent,
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(12),
-                            topRight: Radius.circular(12)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text("${type}: ${b['name']}",
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold)),
-                          Text(
-                              type == 'Wing'
-                                  ? "${b['v1']} માળ"
-                                  : "${b['v2'] - b['v1'] + 1} ઘરો",
-                              style: const TextStyle(
-                                  color: Colors.white70, fontSize: 12)),
+                  itemCount: tempBlocks.length,
+                  itemBuilder: (context, index) {
+                    final b = tempBlocks[index];
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                          ),
                         ],
                       ),
-                    ),
-                    // વિઝ્યુઅલ લેઆઉટ
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: type == 'Wing'
-                          ? _buildWingLayout(b)
-                          : _buildStreetLayout(b),
-                    ),
-                  ],
+                      child: Column(
+                        children: [
+                          // બ્લોક હેડર
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: const BoxDecoration(
+                              color: Colors.blueAccent,
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(12),
+                                topRight: Radius.circular(12),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  "${type}: ${b['name']}",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  type == 'Wing'
+                                      ? "${b['v1']} માળ"
+                                      : "${b['v2'] - b['v1'] + 1} ઘરો",
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // વિઝ્યુઅલ લેઆઉટ
+                          Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: type == 'Wing'
+                                ? _buildWingLayout(b)
+                                : _buildStreetLayout(b),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("સમજાઈ ગયું",
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text(
+              "સમજાઈ ગયું",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
     );
   }
 
-// ૧. વિંગ માટે બિલ્ડિંગ જેવું વર્ટિકલ લેઆઉટ
+  // ૧. વિંગ માટે બિલ્ડિંગ જેવું વર્ટિકલ લેઆઉટ
   Widget _buildWingLayout(Map<String, dynamic> b) {
     return Column(
       children: List.generate(b['v1'], (fIndex) {
@@ -443,11 +508,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Container(
                 width: 30,
                 alignment: Alignment.center,
-                child: Text("${floorNo}F",
-                    style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blueGrey)),
+                child: Text(
+                  "${floorNo}F",
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueGrey,
+                  ),
+                ),
               ),
               const SizedBox(width: 8),
               // તે માળના ઘર
@@ -470,7 +538,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-// ૨. શેરી માટે પ્લોટ જેવું ગ્રીડ લેઆઉટ
+  // ૨. શેરી માટે પ્લોટ જેવું ગ્રીડ લેઆઉટ
   Widget _buildStreetLayout(Map<String, dynamic> b) {
     return Wrap(
       spacing: 8,
@@ -482,38 +550,41 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-// ૩. કોમન યુનિટ ટાઈલ (સુંદર લુક માટે)
+  // ૩. કોમન યુનિટ ટાઈલ (સુંદર લુક માટે)
   Widget _unitTile(String id) {
     return Container(
       margin: const EdgeInsets.only(right: 6),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blue.shade50, Colors.white],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade50, Colors.white],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: Colors.blueAccent.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blueAccent.withOpacity(0.05),
+            offset: const Offset(0, 2),
+            blurRadius: 4,
           ),
-          border: Border.all(color: Colors.blueAccent.withOpacity(0.2)),
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.blueAccent.withOpacity(0.05),
-                offset: const Offset(0, 2),
-                blurRadius: 4)
-          ]),
+        ],
+      ),
       child: Column(
         children: [
           const Icon(Icons.home_outlined, size: 14, color: Colors.blueAccent),
           const SizedBox(height: 2),
-          Text(id,
-              style:
-              const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+          Text(
+            id,
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );
   }
 
-// ૨. યુનિટ્સના પ્રિવ્યુ બોક્સ જનરેટ કરવા (નાના ચોરસ બોક્સ)
+  // ૨. યુનિટ્સના પ્રિવ્યુ બોક્સ જનરેટ કરવા (નાના ચોરસ બોક્સ)
   List<Widget> _generatePreviewUnits(Map<String, dynamic> block, String type) {
     List<Widget> units = [];
     if (type == 'Wing') {
@@ -533,7 +604,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return units;
   }
 
-// ૩. યુનિટનું સુંદર બોક્સ UI
+  // ૩. યુનિટનું સુંદર બોક્સ UI
   Widget _unitBox(String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -542,12 +613,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
         border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(label,
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+      ),
     );
   }
 
-// --- ફાઈનલ સેટઅપ એક્ઝિક્યુટ કરવાનું લોજિક ---
+  // --- ફાઈનલ સેટઅપ એક્ઝિક્યુટ કરવાનું લોજિક ---
   Future<void> _executeFinalInitialSetup(String sName, String type) async {
     setState(() => _isLoading = true);
     try {
@@ -561,13 +634,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
         'societyId': sid,
       };
 
-      batch.set(SocietyService.instance.societySettingsDoc(FirebaseFirestore.instance), cfg);
+      batch.set(
+        SocietyService.instance.societySettingsDoc(FirebaseFirestore.instance),
+        cfg,
+      );
       if (sid == SocietyService.kDefaultSocietyId) {
         batch.set(
-            FirebaseFirestore.instance
-                .collection('settings')
-                .doc('society_config'),
-            cfg);
+          FirebaseFirestore.instance
+              .collection('settings')
+              .doc('society_config'),
+          cfg,
+        );
       }
 
       // ૨. બધા ટેમ્પરરી બ્લોક્સ અને તેના યુનિટ્સ જનરેટ કરવા
@@ -575,41 +652,45 @@ class _AdminDashboardState extends State<AdminDashboard> {
         String logical = b['id'];
         final phyBlock = SocietyService.instance.blockFirestoreId(logical);
         batch.set(
-            FirebaseFirestore.instance.collection('blocks').doc(phyBlock), {
-          'name': logical,
-          'type': type,
-          'societyId': sid,
-        });
+          FirebaseFirestore.instance.collection('blocks').doc(phyBlock),
+          {'name': logical, 'type': type, 'societyId': sid},
+        );
 
         // યુનિટ્સ જનરેટ લોજિક
         if (type == 'Wing') {
           for (int f = 1; f <= b['v1']; f++) {
             for (int u = 1; u <= b['v2']; u++) {
               String uID = "$f${u.toString().padLeft(2, '0')}";
-              final uDoc = SocietyService.instance.unitFirestoreDocId(logical, uID);
+              final uDoc = SocietyService.instance.unitFirestoreDocId(
+                logical,
+                uID,
+              );
               batch.set(
-                  FirebaseFirestore.instance.collection('units').doc(uDoc),
-                  {
-                    'blockName': phyBlock,
-                    'unitNumber': uID,
-                    'floorNo': f,
-                    'isOccupied': false,
-                    'societyId': sid,
-                  });
+                FirebaseFirestore.instance.collection('units').doc(uDoc),
+                {
+                  'blockName': phyBlock,
+                  'unitNumber': uID,
+                  'floorNo': f,
+                  'isOccupied': false,
+                  'societyId': sid,
+                },
+              );
             }
           }
         } else {
           for (int i = b['v1']; i <= b['v2']; i++) {
-            final uDoc =
-                SocietyService.instance.unitFirestoreDocId(logical, i.toString());
-            batch.set(
-                FirebaseFirestore.instance.collection('units').doc(uDoc), {
-              'blockName': phyBlock,
-              'unitNumber': i.toString(),
-              'floorNo': 0,
-              'isOccupied': false,
-              'societyId': sid,
-            });
+            final uDoc = SocietyService.instance.unitFirestoreDocId(
+              logical,
+              i.toString(),
+            );
+            batch
+                .set(FirebaseFirestore.instance.collection('units').doc(uDoc), {
+                  'blockName': phyBlock,
+                  'unitNumber': i.toString(),
+                  'floorNo': 0,
+                  'isOccupied': false,
+                  'societyId': sid,
+                });
           }
         }
       }
@@ -619,8 +700,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
       _checkSetupStatus();
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Error: $e")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     }
   }
 
@@ -634,8 +716,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
         title: Text(_societyName),
         actions: [
           IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: () => FirebaseAuth.instance.signOut())
+            icon: const Icon(Icons.logout),
+            onPressed: () => FirebaseAuth.instance.signOut(),
+          ),
         ],
       ),
       body: Container(
@@ -654,58 +737,60 @@ class _AdminDashboardState extends State<AdminDashboard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            Row(
-              children: [
-                Expanded(
-                    child: _buildStatCard(
-                        "મેમ્બર્સ", 'users', 'role', 'member', Colors.blue)),
-                const SizedBox(width: 8),
-                Expanded(
-                    child: _buildStatCard(
-                        "વોચમેન", 'users', 'role', 'watchman', Colors.orange)),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _buildStatCard(
-                "એડમિન લિસ્ટ", 'users', 'role', 'admin', Colors.indigo),
-            const Divider(height: 40),
-
-            const PremiumSectionHeader(
-              title: "ક્વિક એક્શન",
-              icon: Icons.bolt_rounded,
-            ),
-            const SizedBox(height: 15),
-
-            // એક્શન બટન્સ
-            _actionButton("આર્કિટેક્ચર પ્રિવ્યુ", Icons.grid_view_rounded,
-                Colors.indigo, _navigateToPreview),
-            _actionButton("નવી $_architectureType ઉમેરો", Icons.add_business,
-                Colors.teal, _showAddBlockDialog),
-            _actionButton(
-                "યુઝર રજીસ્ટ્રેશન (Member/Admin/Watchman)",
-                Icons.person_add,
-                Colors.blueGrey,
-                    () => _showAddUserDialog(context)),
-            _actionButton("બધાને સૂચના મોકલો", Icons.campaign, Colors.orange,
-                    () => _showNotificationDialog(context)),
-            _actionButton("નોટિસ બોર્ડ પોસ્ટ", Icons.article, Colors.deepOrange,
-                () => _showPublishNoticeDialog(context)),
-            _actionButton("ફરિયાદ નિવારણ", Icons.report_problem, Colors.deepPurple,
-                () => _openComplaints(context)),
-            _actionButton("વિઝિટર રિપોર્ટ (મહિનો)", Icons.analytics, Colors.teal,
-                () => _showVisitorReportDialog(context)),
-            _actionButton("વોચમેન મેનેજ (બ્લૉક/ચાલુ)", Icons.security, Colors.brown,
-                () => _showWatchmanManageDialog(context)),
-            _actionButton("ઈમરજન્સી કોન્ટેક્ટ્સ", Icons.phone_in_talk, Colors.red.shade700,
-                () => _showEmergencyContactsDialog(context)),
-
-            const SizedBox(height: 30),
-            const PremiumSectionHeader(
-              title: "તાજેતરના યુઝર્સ",
-              icon: Icons.groups_rounded,
-            ),
-            const SizedBox(height: 10),
-            SizedBox(height: 300, child: _buildMemberList()),
+              _buildHeroSummaryCard(),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  _buildLiveMetricCard(
+                    title: "મેમ્બર્સ",
+                    icon: Icons.groups_rounded,
+                    color: Colors.blue,
+                    collection: 'users',
+                    field: 'role',
+                    value: 'member',
+                  ),
+                  _buildLiveMetricCard(
+                    title: "વોચમેન",
+                    icon: Icons.security_rounded,
+                    color: Colors.orange,
+                    collection: 'users',
+                    field: 'role',
+                    value: 'watchman',
+                  ),
+                  _buildLiveMetricCard(
+                    title: "એડમિન",
+                    icon: Icons.admin_panel_settings_rounded,
+                    color: Colors.indigo,
+                    collection: 'users',
+                    field: 'role',
+                    value: 'admin',
+                  ),
+                  _buildLiveMetricCard(
+                    title: "બ્લોક્સ",
+                    icon: Icons.apartment_rounded,
+                    color: Colors.teal,
+                    collection: 'blocks',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              _buildVisitorInsightsCard(),
+              const SizedBox(height: 20),
+              const PremiumSectionHeader(
+                title: "ક્વિક એક્શન",
+                icon: Icons.bolt_rounded,
+              ),
+              const SizedBox(height: 12),
+              _buildActionGrid(),
+              const SizedBox(height: 22),
+              const PremiumSectionHeader(
+                title: "તાજેતરના મેમ્બર્સ",
+                icon: Icons.groups_rounded,
+              ),
+              const SizedBox(height: 10),
+              SizedBox(height: 320, child: _buildMemberList()),
             ],
           ),
         ),
@@ -713,34 +798,398 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  Widget _actionButton(
-      String label, IconData icon, Color color, VoidCallback onPressed) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.18),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
+  Widget _buildHeroSummaryCard() {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          colors: [cs.primary, cs.primary.withValues(alpha: 0.86)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: ElevatedButton.icon(
-          onPressed: onPressed,
-          icon: Icon(icon),
-          label: Text(label),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: color,
-            foregroundColor: Colors.white,
-            minimumSize: const Size(double.infinity, 55),
-            shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        boxShadow: [
+          BoxShadow(
+            color: cs.primary.withValues(alpha: 0.28),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Security Control Center",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "$_societyName • $_architectureType મોડ",
+            style: const TextStyle(color: Colors.white70),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _buildHeroChip(Icons.grid_view_rounded, "Architecture Preview"),
+              _buildHeroChip(Icons.notifications_active_rounded, "Live Alerts"),
+              _buildHeroChip(Icons.analytics_rounded, "Monthly Insights"),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.white),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLiveMetricCard({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required String collection,
+    String? field,
+    String? value,
+  }) {
+    Query query = FirebaseFirestore.instance
+        .collection(collection)
+        .where('societyId', isEqualTo: SocietyService.instance.societyId);
+    if (field != null) {
+      query = query.where(field, isEqualTo: value);
+    }
+
+    return SizedBox(
+      width: (MediaQuery.of(context).size.width - 42) / 2,
+      child: StreamBuilder<QuerySnapshot>(
+        stream: query.snapshots(),
+        builder: (context, snap) {
+          final count = snap.hasData ? snap.data!.docs.length : 0;
+          return Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: color.withValues(alpha: 0.16)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(icon, size: 18, color: color),
+                    ),
+                    const Spacer(),
+                    Text(
+                      "$count",
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildVisitorInsightsCard() {
+    final monthStart = DateTime(DateTime.now().year, DateTime.now().month, 1);
+    final nextMonthStart = DateTime(
+      DateTime.now().year,
+      DateTime.now().month + 1,
+      1,
+    );
+    return FutureBuilder<QuerySnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('visitors')
+          .where(
+            'entryTime',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(monthStart),
+          )
+          .where('entryTime', isLessThan: Timestamp.fromDate(nextMonthStart))
+          .limit(2000)
+          .get(),
+      builder: (context, snapshot) {
+        final cs = Theme.of(context).colorScheme;
+        final docs = snapshot.hasData
+            ? snapshot.data!.docs
+                  .where(
+                    (d) =>
+                        SocietyService.instance.documentBelongsToCurrentTenant(
+                          d.data() as Map<String, dynamic>?,
+                        ),
+                  )
+                  .toList()
+            : <QueryDocumentSnapshot>[];
+        final total = docs.length;
+        final approved = docs.where((d) => d['status'] == 'approved').length;
+        final pending = docs.where((d) => d['status'] == 'pending').length;
+        final rejected = docs.where((d) => d['status'] == 'rejected').length;
+        final checkedOut = docs
+            .where((d) => d['status'] == 'checked_out')
+            .length;
+        final maxCount = [
+          approved,
+          pending,
+          rejected,
+          checkedOut,
+          1,
+        ].reduce((a, b) => a > b ? a : b);
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cs.primary.withValues(alpha: 0.12)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Visitor Analytics (Current Month)",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "કુલ એન્ટ્રી: $total",
+                style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7)),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: _buildInsightBar(
+                      label: "Approved",
+                      count: approved,
+                      maxCount: maxCount,
+                      color: Colors.green,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildInsightBar(
+                      label: "Pending",
+                      count: pending,
+                      maxCount: maxCount,
+                      color: Colors.orange,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildInsightBar(
+                      label: "Rejected",
+                      count: rejected,
+                      maxCount: maxCount,
+                      color: Colors.red,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildInsightBar(
+                      label: "Out",
+                      count: checkedOut,
+                      maxCount: maxCount,
+                      color: Colors.teal,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInsightBar({
+    required String label,
+    required int count,
+    required int maxCount,
+    required Color color,
+  }) {
+    final ratio = maxCount == 0 ? 0.0 : (count / maxCount).clamp(0.0, 1.0);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 100,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              height: 20 + (80 * ratio),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
           ),
         ),
+        const SizedBox(height: 6),
+        Text("$count", style: const TextStyle(fontWeight: FontWeight.w700)),
+        Text(label, style: const TextStyle(fontSize: 12)),
+      ],
+    );
+  }
+
+  Widget _buildActionGrid() {
+    final actions = [
+      (
+        label: "આર્કિટેક્ચર પ્રિવ્યુ",
+        icon: Icons.grid_view_rounded,
+        color: Colors.indigo,
+        onTap: _navigateToPreview,
       ),
+      (
+        label: "નવી $_architectureType ઉમેરો",
+        icon: Icons.add_business_rounded,
+        color: Colors.teal,
+        onTap: _showAddBlockDialog,
+      ),
+      (
+        label: "યુઝર રજીસ્ટ્રેશન",
+        icon: Icons.person_add_alt_1_rounded,
+        color: Colors.blueGrey,
+        onTap: () => _showAddUserDialog(context),
+      ),
+      (
+        label: "બધાને સૂચના મોકલો",
+        icon: Icons.campaign_rounded,
+        color: Colors.orange,
+        onTap: () => _showNotificationDialog(context),
+      ),
+      (
+        label: "નોટિસ બોર્ડ પોસ્ટ",
+        icon: Icons.article_rounded,
+        color: Colors.deepOrange,
+        onTap: () => _showPublishNoticeDialog(context),
+      ),
+      (
+        label: "ફરિયાદ નિવારણ",
+        icon: Icons.report_problem_rounded,
+        color: Colors.deepPurple,
+        onTap: () => _openComplaints(context),
+      ),
+      (
+        label: "વિઝિટર રિપોર્ટ",
+        icon: Icons.analytics_rounded,
+        color: Colors.teal,
+        onTap: () => _showVisitorReportDialog(context),
+      ),
+      (
+        label: "વોચમેન મેનેજ",
+        icon: Icons.security_rounded,
+        color: Colors.brown,
+        onTap: () => _showWatchmanManageDialog(context),
+      ),
+      (
+        label: "ઈમરજન્સી કોન્ટેક્ટ્સ",
+        icon: Icons.phone_in_talk_rounded,
+        color: Colors.red.shade700,
+        onTap: () => _showEmergencyContactsDialog(context),
+      ),
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: actions.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisExtent: 95,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      itemBuilder: (context, index) {
+        final action = actions[index];
+        return InkWell(
+          onTap: action.onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: action.color.withValues(alpha: 0.2)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: action.color.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(action.icon, color: action.color, size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      action.label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -807,8 +1256,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Error: $e")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -819,7 +1269,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // ==========================================
 
   Future<void> _executeInitialSetup(
-      String sName, String type, String bName, String v1, String v2) async {
+    String sName,
+    String type,
+    String bName,
+    String v1,
+    String v2,
+  ) async {
     setState(() => _isLoading = true);
     try {
       WriteBatch batch = FirebaseFirestore.instance.batch();
@@ -830,58 +1285,70 @@ class _AdminDashboardState extends State<AdminDashboard> {
         'isSetupComplete': true,
         'societyId': sid,
       };
-      batch.set(SocietyService.instance.societySettingsDoc(FirebaseFirestore.instance), cfg);
+      batch.set(
+        SocietyService.instance.societySettingsDoc(FirebaseFirestore.instance),
+        cfg,
+      );
       if (sid == SocietyService.kDefaultSocietyId) {
         batch.set(
-            FirebaseFirestore.instance
-                .collection('settings')
-                .doc('society_config'),
-            cfg);
+          FirebaseFirestore.instance
+              .collection('settings')
+              .doc('society_config'),
+          cfg,
+        );
       }
 
-      String logical =
-          "${type.substring(0, 1)}-${bName.toUpperCase()}";
+      String logical = "${type.substring(0, 1)}-${bName.toUpperCase()}";
       final phyBlock = SocietyService.instance.blockFirestoreId(logical);
-      batch.set(
-          FirebaseFirestore.instance.collection('blocks').doc(phyBlock),
-          {'name': logical, 'type': type, 'societyId': sid});
+      batch.set(FirebaseFirestore.instance.collection('blocks').doc(phyBlock), {
+        'name': logical,
+        'type': type,
+        'societyId': sid,
+      });
       _generateUnits(batch, logical, type, int.parse(v1), int.parse(v2));
 
       await batch.commit();
       _checkSetupStatus();
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("ભૂલ: $e")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("ભૂલ: $e")));
     }
   }
 
   void _generateUnits(
-      WriteBatch batch, String logicalBlockId, String type, int v1, int v2) {
+    WriteBatch batch,
+    String logicalBlockId,
+    String type,
+    int v1,
+    int v2,
+  ) {
     final phy = SocietyService.instance.blockFirestoreId(logicalBlockId);
     final sid = SocietyService.instance.societyId;
     if (type == 'Wing') {
       for (int f = 1; f <= v1; f++) {
         for (int u = 1; u <= v2; u++) {
           String uID = "$f${u.toString().padLeft(2, '0')}";
-          final docId =
-              SocietyService.instance.unitFirestoreDocId(logicalBlockId, uID);
-          batch.set(
-              FirebaseFirestore.instance.collection('units').doc(docId),
-              {
-                'blockName': phy,
-                'unitNumber': uID,
-                'isOccupied': false,
-                'societyId': sid,
-              });
+          final docId = SocietyService.instance.unitFirestoreDocId(
+            logicalBlockId,
+            uID,
+          );
+          batch.set(FirebaseFirestore.instance.collection('units').doc(docId), {
+            'blockName': phy,
+            'unitNumber': uID,
+            'isOccupied': false,
+            'societyId': sid,
+          });
         }
       }
     } else {
       for (int i = v1; i <= v2; i++) {
-        final docId = SocietyService.instance
-            .unitFirestoreDocId(logicalBlockId, i.toString());
-        batch.set(
-            FirebaseFirestore.instance.collection('units').doc(docId), {
+        final docId = SocietyService.instance.unitFirestoreDocId(
+          logicalBlockId,
+          i.toString(),
+        );
+        batch.set(FirebaseFirestore.instance.collection('units').doc(docId), {
           'blockName': phy,
           'unitNumber': i.toString(),
           'isOccupied': false,
@@ -925,22 +1392,27 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 const SizedBox(height: 10),
                 TextField(
-                    controller: nC,
-                    decoration: const InputDecoration(labelText: "નામ")),
+                  controller: nC,
+                  decoration: const InputDecoration(labelText: "નામ"),
+                ),
                 TextField(
-                    controller: eC,
-                    decoration: const InputDecoration(labelText: "ઇમેઇલ"),
-                    keyboardType: TextInputType.emailAddress),
+                  controller: eC,
+                  decoration: const InputDecoration(labelText: "ઇમેઇલ"),
+                  keyboardType: TextInputType.emailAddress,
+                ),
                 TextField(
-                    controller: pC,
-                    decoration: const InputDecoration(labelText: "પાસવર્ડ"),
-                    obscureText: true),
+                  controller: pC,
+                  decoration: const InputDecoration(labelText: "પાસવર્ડ"),
+                  obscureText: true,
+                ),
                 if (selectedRole == 'member')
                   TextField(
                     controller: phoneC,
                     decoration: const InputDecoration(
-                        labelText: "કોન્ટેક્ટ નંબર (વૈકલ્પિક)"),
-                    keyboardType: TextInputType.phone),
+                      labelText: "કોન્ટેક્ટ નંબર (વૈકલ્પિક)",
+                    ),
+                    keyboardType: TextInputType.phone,
+                  ),
 
                 // જો રોલ 'member' હોય તો જ બ્લોક અને યુનિટ બતાવવા
                 if (selectedRole == 'member') ...[
@@ -948,16 +1420,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('blocks')
-                        .where('societyId',
-                            isEqualTo: SocietyService.instance.societyId)
+                        .where(
+                          'societyId',
+                          isEqualTo: SocietyService.instance.societyId,
+                        )
                         .snapshots(),
                     builder: (context, snap) {
                       if (!snap.hasData) return const LinearProgressIndicator();
                       return DropdownButtonFormField<String>(
                         hint: const Text("બ્લોક પસંદ કરો"),
                         items: snap.data!.docs
-                            .map((d) => DropdownMenuItem(
-                            value: d.id, child: Text('${d['name']}')))
+                            .map(
+                              (d) => DropdownMenuItem(
+                                value: d.id,
+                                child: Text('${d['name']}'),
+                              ),
+                            )
                             .toList(),
                         onChanged: (v) => setDS(() {
                           sB = v;
@@ -971,8 +1449,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('units')
-                          .where('societyId',
-                              isEqualTo: SocietyService.instance.societyId)
+                          .where(
+                            'societyId',
+                            isEqualTo: SocietyService.instance.societyId,
+                          )
                           .where('blockName', isEqualTo: sB)
                           .snapshots(),
                       builder: (context, snap) {
@@ -983,8 +1463,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
                         // 🔥 મહત્વનું: જો લિસ્ટમાં હાલની પસંદ કરેલી વેલ્યુ (sU) ન હોય,
                         // તો sU ને null કરી દો જેથી એરર ન આવે.
-                        bool valueExists = unitDocs
-                            .any((d) => d.get('unitNumber').toString() == sU);
+                        bool valueExists = unitDocs.any(
+                          (d) => d.get('unitNumber').toString() == sU,
+                        );
                         if (!valueExists) {
                           sU = null;
                         }
@@ -995,7 +1476,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           hint: const Text("ઘર પસંદ કરો"),
                           items: unitDocs.map((d) {
                             String val = d.get('unitNumber').toString();
-                            final cnt = _unitMemberCount(d.data() as Map<String, dynamic>?);
+                            final cnt = _unitMemberCount(
+                              d.data() as Map<String, dynamic>?,
+                            );
                             final label = cnt > 0 ? '$val ($cnt મેમ્બર)' : val;
                             return DropdownMenuItem<String>(
                               value: val,
@@ -1012,50 +1495,63 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Cancel")),
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
             ElevatedButton(
-                onPressed: () {
-                  if (nC.text.isEmpty || eC.text.isEmpty || pC.text.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("બધી વિગતો ભરો!")));
-                    return;
-                  }
-                  if (selectedRole == 'member' && (sB == null || sU == null)) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text("બ્લોક અને ઘર પસંદ કરો!")));
-                    return;
-                  }
+              onPressed: () {
+                if (nC.text.isEmpty || eC.text.isEmpty || pC.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("બધી વિગતો ભરો!")),
+                  );
+                  return;
+                }
+                if (selectedRole == 'member' && (sB == null || sU == null)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("બ્લોક અને ઘર પસંદ કરો!")),
+                  );
+                  return;
+                }
 
-                  _createNewUser(
-                      context,
-                      eC.text.trim(),
-                      pC.text.trim(),
-                      nC.text.trim(),
-                      selectedRole,
-                      sB,
-                      sU,
-                      phone: selectedRole == 'member'
-                          ? phoneC.text.trim()
-                          : null);
-                },
-                child: const Text("Create User")),
+                _createNewUser(
+                  context,
+                  eC.text.trim(),
+                  pC.text.trim(),
+                  nC.text.trim(),
+                  selectedRole,
+                  sB,
+                  sU,
+                  phone: selectedRole == 'member' ? phoneC.text.trim() : null,
+                );
+              },
+              child: const Text("Create User"),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Future<void> _createNewUser(BuildContext context, String email, String pass,
-      String name, String role, String? block, String? unit,
-      {String? phone}) async {
+  Future<void> _createNewUser(
+    BuildContext context,
+    String email,
+    String pass,
+    String name,
+    String role,
+    String? block,
+    String? unit, {
+    String? phone,
+  }) async {
     try {
       // સેકન્ડરી એપ જેથી એડમિન પોતે લોગઆઉટ ન થઈ જાય
       final defaultApp = await ensureDefaultFirebaseApp();
       FirebaseApp tempApp = await Firebase.initializeApp(
-          name: 'TempApp', options: defaultApp.options);
-      UserCredential res = await FirebaseAuth.instanceFor(app: tempApp)
-          .createUserWithEmailAndPassword(email: email, password: pass);
+        name: 'TempApp',
+        options: defaultApp.options,
+      );
+      UserCredential res = await FirebaseAuth.instanceFor(
+        app: tempApp,
+      ).createUserWithEmailAndPassword(email: email, password: pass);
 
       Map<String, dynamic> userData = {
         'uid': res.user!.uid,
@@ -1077,8 +1573,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
         // યુનિટને અપડેટ: `block` = ફાયરસ્ટોર બ્લોક doc id (ડિફૉલ્ટ W-A અથવા soc_x_W-A)
         final unitDocId = '$block-$unit';
-        final unitRef =
-            FirebaseFirestore.instance.collection('units').doc(unitDocId);
+        final unitRef = FirebaseFirestore.instance
+            .collection('units')
+            .doc(unitDocId);
         await FirebaseFirestore.instance.runTransaction((tx) async {
           final snap = await tx.get(unitRef);
           final memberIds = <String>{res.user!.uid};
@@ -1098,21 +1595,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
             }
           }
           if (primaryMemberId == null) {
-            final others =
-                memberIds.where((id) => id != res.user!.uid).toList();
-            primaryMemberId =
-                others.isNotEmpty ? others.first : res.user!.uid;
+            final others = memberIds
+                .where((id) => id != res.user!.uid)
+                .toList();
+            primaryMemberId = others.isNotEmpty ? others.first : res.user!.uid;
           }
-          tx.set(
-            unitRef,
-            {
-              'isOccupied': true,
-              'memberIds': memberIds.toList(),
-              'memberId': primaryMemberId,
-              'societyId': SocietyService.instance.societyId,
-            },
-            SetOptions(merge: true),
-          );
+          tx.set(unitRef, {
+            'isOccupied': true,
+            'memberIds': memberIds.toList(),
+            'memberId': primaryMemberId,
+            'societyId': SocietyService.instance.societyId,
+          }, SetOptions(merge: true));
         });
       }
 
@@ -1123,12 +1616,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
       await tempApp.delete();
       if (mounted) Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
           content: Text("$role સફળતાપૂર્વક ઉમેરાયો!"),
-          backgroundColor: Colors.green));
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("ભૂલ: $e"), backgroundColor: Colors.red));
+        SnackBar(content: Text("ભૂલ: $e"), backgroundColor: Colors.red),
+      );
     }
   }
 
@@ -1148,108 +1645,101 @@ class _AdminDashboardState extends State<AdminDashboard> {
               controller: nameC,
               decoration: const InputDecoration(labelText: "નામ (e.g. B)"),
               textCapitalization:
-              TextCapitalization.characters, // હંમેશા કેપિટલ લેટર
+                  TextCapitalization.characters, // હંમેશા કેપિટલ લેટર
             ),
             TextField(
-                controller: v1C,
-                decoration: InputDecoration(
-                    labelText: _architectureType == 'Wing' ? "માળ" : "શરૂઆત"),
-                keyboardType: TextInputType.number),
+              controller: v1C,
+              decoration: InputDecoration(
+                labelText: _architectureType == 'Wing' ? "માળ" : "શરૂઆત",
+              ),
+              keyboardType: TextInputType.number,
+            ),
             TextField(
-                controller: v2C,
-                decoration: InputDecoration(
-                    labelText:
-                    _architectureType == 'Wing' ? "ઘર દીઠ માળ" : "અંત"),
-                keyboardType: TextInputType.number),
+              controller: v2C,
+              decoration: InputDecoration(
+                labelText: _architectureType == 'Wing' ? "ઘર દીઠ માળ" : "અંત",
+              ),
+              keyboardType: TextInputType.number,
+            ),
           ],
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("રદ કરો")),
+            onPressed: () => Navigator.pop(context),
+            child: const Text("રદ કરો"),
+          ),
           ElevatedButton(
-              onPressed: () async {
-                // ૧. ફિલ્ડ ખાલી છે કે નહીં તેનું વેલિડેશન
-                if (nameC.text.trim().isEmpty ||
-                    v1C.text.isEmpty ||
-                    v2C.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text("બધી વિગતો ભરો!"),
-                      backgroundColor: Colors.orange));
-                  return;
-                }
+            onPressed: () async {
+              // ૧. ફિલ્ડ ખાલી છે કે નહીં તેનું વેલિડેશન
+              if (nameC.text.trim().isEmpty ||
+                  v1C.text.isEmpty ||
+                  v2C.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("બધી વિગતો ભરો!"),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
 
-                String logical =
-                    "${_architectureType.substring(0, 1)}-${nameC.text.trim().toUpperCase()}";
-                final phyBlock =
-                    SocietyService.instance.blockFirestoreId(logical);
+              String logical =
+                  "${_architectureType.substring(0, 1)}-${nameC.text.trim().toUpperCase()}";
+              final phyBlock = SocietyService.instance.blockFirestoreId(
+                logical,
+              );
 
-                // ૨. ડુપ્લીકેટ બ્લોક ચેક લોજિક
-                var existingBlock = await FirebaseFirestore.instance
-                    .collection('blocks')
-                    .doc(phyBlock)
-                    .get();
+              // ૨. ડુપ્લીકેટ બ્લોક ચેક લોજિક
+              var existingBlock = await FirebaseFirestore.instance
+                  .collection('blocks')
+                  .doc(phyBlock)
+                  .get();
 
-                if (existingBlock.exists) {
-                  // જો બ્લોક પહેલેથી હોય તો વોર્નિંગ આપવી
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(
-                            "ભૂલ: આ $logical નામની $_architectureType પહેલેથી જ છે!"),
-                        backgroundColor: Colors.red),
-                  );
-                } else {
-                  // જો બ્લોક નવો હોય તો જ પ્રોસેસ કરવી
-                  WriteBatch batch = FirebaseFirestore.instance.batch();
-                  batch.set(
-                      FirebaseFirestore.instance.collection('blocks').doc(phyBlock),
-                      {
-                        'name': logical,
-                        'type': _architectureType,
-                        'societyId': SocietyService.instance.societyId,
-                      });
-                  _generateUnits(batch, logical, _architectureType,
-                      int.parse(v1C.text), int.parse(v2C.text));
+              if (existingBlock.exists) {
+                // જો બ્લોક પહેલેથી હોય તો વોર્નિંગ આપવી
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      "ભૂલ: આ $logical નામની $_architectureType પહેલેથી જ છે!",
+                    ),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              } else {
+                // જો બ્લોક નવો હોય તો જ પ્રોસેસ કરવી
+                WriteBatch batch = FirebaseFirestore.instance.batch();
+                batch.set(
+                  FirebaseFirestore.instance.collection('blocks').doc(phyBlock),
+                  {
+                    'name': logical,
+                    'type': _architectureType,
+                    'societyId': SocietyService.instance.societyId,
+                  },
+                );
+                _generateUnits(
+                  batch,
+                  logical,
+                  _architectureType,
+                  int.parse(v1C.text),
+                  int.parse(v2C.text),
+                );
 
-                  await batch.commit();
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text("સફળતાપૂર્વક ઉમેરાયું!"),
-                      backgroundColor: Colors.green));
-                }
-              },
-              child: const Text("ઉમેરો")),
+                await batch.commit();
+                if (!mounted) return;
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("સફળતાપૂર્વક ઉમેરાયું!"),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            child: const Text("ઉમેરો"),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStatCard(
-      String title, String coll, String? f, String? v, Color c) {
-    Query q = FirebaseFirestore.instance
-        .collection(coll)
-        .where('societyId', isEqualTo: SocietyService.instance.societyId);
-    if (f != null) q = q.where(f, isEqualTo: v);
-    return StreamBuilder<QuerySnapshot>(
-      stream: q.snapshots(),
-      builder: (context, snap) {
-        int count = snap.hasData ? snap.data!.docs.length : 0;
-        return Container(
-          padding: const EdgeInsets.all(15),
-          decoration:
-          BoxDecoration(color: c, borderRadius: BorderRadius.circular(12)),
-          child: Column(children: [
-            Text(title, style: const TextStyle(color: Colors.white)),
-            Text(count.toString(),
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold))
-          ]),
-        );
-      },
     );
   }
 
@@ -1294,17 +1784,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
               margin: const EdgeInsets.symmetric(vertical: 5),
               elevation: 2,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: ListTile(
                 leading: CircleAvatar(
                   backgroundColor: Colors.blueAccent,
-                  child: Text(mName[0].toUpperCase(),
-                      style: const TextStyle(color: Colors.white)),
+                  child: Text(
+                    mName[0].toUpperCase(),
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
-                title: Text(mName,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                title: Text(
+                  mName,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 subtitle: Text(
-                    "બ્લોક: $mBlock | ઘર: $mUnit\n$mEmail${mPhone.isNotEmpty ? '\n📱 $mPhone' : ''}"),
+                  "બ્લોક: $mBlock | ઘર: $mUnit\n$mEmail${mPhone.isNotEmpty ? '\n📱 $mPhone' : ''}",
+                ),
                 trailing: PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert),
                   onSelected: (value) {
@@ -1313,8 +1809,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       _confirmTransfer(mId, mName);
                     }
                     if (value == 'notify') {
-                      _showNotificationDialog(context,
-                          targetUID: mId, targetName: mName);
+                      _showNotificationDialog(
+                        context,
+                        targetUID: mId,
+                        targetName: mName,
+                      );
                     }
                   },
                   itemBuilder: (context) => [
@@ -1324,8 +1823,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         children: [
                           Icon(Icons.swap_horiz, color: Colors.red, size: 20),
                           SizedBox(width: 10),
-                          Text("પ્રમુખ પદ સોંપો",
-                              style: TextStyle(color: Colors.red)),
+                          Text(
+                            "પ્રમુખ પદ સોંપો",
+                            style: TextStyle(color: Colors.red),
+                          ),
                         ],
                       ),
                     ),
@@ -1340,7 +1841,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       ),
                     ),
 
-// onSelected માં:
+                    // onSelected માં:
                   ],
                 ),
               ),
@@ -1351,8 +1852,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  Future<void> _showNotificationDialog(BuildContext context,
-      {String? targetUID, String? targetName}) async {
+  Future<void> _showNotificationDialog(
+    BuildContext context, {
+    String? targetUID,
+    String? targetName,
+  }) async {
     final titleC = TextEditingController();
     final bodyC = TextEditingController();
     bool isAll = targetUID == null; // જો UID ન હોય તો બધા માટે
@@ -1365,19 +1869,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
-                controller: titleC,
-                decoration: const InputDecoration(labelText: "વિષય (Title)")),
+              controller: titleC,
+              decoration: const InputDecoration(labelText: "વિષય (Title)"),
+            ),
             const SizedBox(height: 10),
             TextField(
-                controller: bodyC,
-                decoration: const InputDecoration(labelText: "સૂચના (Message)"),
-                maxLines: 3),
+              controller: bodyC,
+              decoration: const InputDecoration(labelText: "સૂચના (Message)"),
+              maxLines: 3,
+            ),
           ],
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("રદ કરો")),
+            onPressed: () => Navigator.pop(context),
+            child: const Text("રદ કરો"),
+          ),
           ElevatedButton(
             onPressed: () {
               if (titleC.text.isNotEmpty && bodyC.text.isNotEmpty) {
@@ -1396,8 +1903,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  Future<void> _sendPushNotification(
-      {required String title, required String body, String? targetUID}) async {
+  Future<void> _sendPushNotification({
+    required String title,
+    required String body,
+    String? targetUID,
+  }) async {
     final app = await ensureDefaultFirebaseApp();
     final functions = FirebaseFunctions.instanceFor(
       app: app,
@@ -1415,13 +1925,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
           'type': 'general',
         });
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-            fcmDeliverySummaryForUser({'fcmDeliveryStatus': 'sent_topic_members'}),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              fcmDeliverySummaryForUser({
+                'fcmDeliveryStatus': 'sent_topic_members',
+              }),
+            ),
+            backgroundColor: Colors.green.shade800,
+            duration: const Duration(seconds: 7),
           ),
-          backgroundColor: Colors.green.shade800,
-          duration: const Duration(seconds: 7),
-        ));
+        );
         return;
       }
 
@@ -1438,43 +1952,54 @@ class _AdminDashboardState extends State<AdminDashboard> {
       final data = result.data;
       if (!mounted) return;
       if (data['ok'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-            fcmDeliverySummaryForUser({'fcmDeliveryStatus': 'sent_token'}),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              fcmDeliverySummaryForUser({'fcmDeliveryStatus': 'sent_token'}),
+            ),
+            backgroundColor: Colors.green.shade800,
+            duration: const Duration(seconds: 7),
           ),
-          backgroundColor: Colors.green.shade800,
-          duration: const Duration(seconds: 7),
-        ));
+        );
       } else if (data['reason'] == 'no_token') {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-            fcmDeliverySummaryForUser({'fcmDeliveryStatus': 'skipped_no_token'}),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              fcmDeliverySummaryForUser({
+                'fcmDeliveryStatus': 'skipped_no_token',
+              }),
+            ),
+            backgroundColor: Colors.deepOrange.shade800,
+            duration: const Duration(seconds: 8),
           ),
-          backgroundColor: Colors.deepOrange.shade800,
-          duration: const Duration(seconds: 8),
-        ));
+        );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('પુશ નિષ્ફળ: ${data['reason'] ?? data}'),
-          backgroundColor: Colors.red.shade800,
-          duration: const Duration(seconds: 8),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('પુશ નિષ્ફળ: ${data['reason'] ?? data}'),
+            backgroundColor: Colors.red.shade800,
+            duration: const Duration(seconds: 8),
+          ),
+        );
       }
     } on FirebaseFunctionsException catch (e) {
       if (mounted) {
         final detail = e.message?.trim().isNotEmpty == true
             ? e.message!
             : (e.details?.toString() ?? e.code);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('સર્વર (${e.code}): $detail'),
-          backgroundColor: Colors.red.shade800,
-          duration: const Duration(seconds: 10),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('સર્વર (${e.code}): $detail'),
+            backgroundColor: Colors.red.shade800,
+            duration: const Duration(seconds: 10),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('ભૂલ: $e'), backgroundColor: Colors.red));
+          SnackBar(content: Text('ભૂલ: $e'), backgroundColor: Colors.red),
+        );
       }
     }
   }
@@ -1501,12 +2026,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
-                    controller: titleC,
-                    decoration: const InputDecoration(labelText: 'શીર્ષક')),
+                  controller: titleC,
+                  decoration: const InputDecoration(labelText: 'શીર્ષક'),
+                ),
                 TextField(
-                    controller: bodyC,
-                    maxLines: 3,
-                    decoration: const InputDecoration(labelText: 'સંદેશ')),
+                  controller: bodyC,
+                  maxLines: 3,
+                  decoration: const InputDecoration(labelText: 'સંદેશ'),
+                ),
                 CheckboxListTile(
                   value: sendPush,
                   onChanged: (v) => setS(() => sendPush = v ?? true),
@@ -1517,7 +2044,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx), child: const Text('રદ')),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('રદ'),
+            ),
             ElevatedButton(
               onPressed: () async {
                 if (titleC.text.trim().isEmpty) return;
@@ -1531,10 +2060,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   });
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('નોટિસ સેવ ન થઈ: $e'),
-                      backgroundColor: Colors.red.shade800,
-                    ));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('નોટિસ સેવ ન થઈ: $e'),
+                        backgroundColor: Colors.red.shade800,
+                      ),
+                    );
                   }
                   return;
                 }
@@ -1548,8 +2079,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     );
                     final callable = functions.httpsCallable(
                       'sendBroadcastPush',
-                      options:
-                          HttpsCallableOptions(timeout: const Duration(seconds: 60)),
+                      options: HttpsCallableOptions(
+                        timeout: const Duration(seconds: 60),
+                      ),
                     );
                     final b = bodyC.text.trim();
                     await callable.call<Map<String, dynamic>>({
@@ -1565,25 +2097,33 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 }
                 if (!context.mounted) return;
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
                     content: Text('નોટિસ પ્રકાશિત!'),
-                    backgroundColor: Colors.green));
+                    backgroundColor: Colors.green,
+                  ),
+                );
                 if (sendPush) {
                   if (pushErr == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(
-                        fcmDeliverySummaryForUser(
-                            {'fcmDeliveryStatus': 'sent_topic_members'}),
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          fcmDeliverySummaryForUser({
+                            'fcmDeliveryStatus': 'sent_topic_members',
+                          }),
+                        ),
+                        backgroundColor: Colors.teal.shade800,
+                        duration: const Duration(seconds: 6),
                       ),
-                      backgroundColor: Colors.teal.shade800,
-                      duration: const Duration(seconds: 6),
-                    ));
+                    );
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('પુશ નિષ્ફળ: $pushErr'),
-                      backgroundColor: Colors.deepOrange.shade800,
-                      duration: const Duration(seconds: 8),
-                    ));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('પુશ નિષ્ફળ: $pushErr'),
+                        backgroundColor: Colors.deepOrange.shade800,
+                        duration: const Duration(seconds: 8),
+                      ),
+                    );
                   }
                 }
               },
@@ -1604,8 +2144,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
         .get();
 
     final docs = snap.docs
-        .where((d) => SocietyService.instance.documentBelongsToCurrentTenant(
-            d.data() as Map<String, dynamic>?))
+        .where(
+          (d) => SocietyService.instance.documentBelongsToCurrentTenant(
+            d.data() as Map<String, dynamic>?,
+          ),
+        )
         .toList();
 
     int total = docs.length;
@@ -1619,13 +2162,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(
-            'વિઝિટર રિપોર્ટ — ${start.year}-${start.month.toString().padLeft(2, '0')}'),
+          'વિઝિટર રિપોર્ટ — ${start.year}-${start.month.toString().padLeft(2, '0')}',
+        ),
         content: Text(
-            'કુલ એન્ટ્રી: $total\nમંજૂર: $approved\nપેન્ડિંગ: $pending\nનકાર્યું: $rejected\nચેક-આઉટ: $out'),
+          'કુલ એન્ટ્રી: $total\nમંજૂર: $approved\nપેન્ડિંગ: $pending\nનકાર્યું: $rejected\nચેક-આઉટ: $out',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('બંધ કરો')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('બંધ કરો'),
+          ),
         ],
       ),
     );
@@ -1642,7 +2188,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
           child: StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('users')
-                .where('societyId', isEqualTo: SocietyService.instance.societyId)
+                .where(
+                  'societyId',
+                  isEqualTo: SocietyService.instance.societyId,
+                )
                 .where('role', isEqualTo: 'watchman')
                 .snapshots(),
             builder: (context, snap) {
@@ -1679,7 +2228,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('બંધ')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('બંધ'),
+          ),
         ],
       ),
     );
@@ -1728,13 +2279,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextField(
-                    controller: nameC,
-                    decoration: const InputDecoration(
-                        labelText: 'નામ (દા.ત. ફાયર / લિફ્ટ)')),
+                  controller: nameC,
+                  decoration: const InputDecoration(
+                    labelText: 'નામ (દા.ત. ફાયર / લિફ્ટ)',
+                  ),
+                ),
                 TextField(
-                    controller: phoneC,
-                    decoration: const InputDecoration(labelText: 'નંબર'),
-                    keyboardType: TextInputType.phone),
+                  controller: phoneC,
+                  decoration: const InputDecoration(labelText: 'નંબર'),
+                  keyboardType: TextInputType.phone,
+                ),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
@@ -1765,8 +2319,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         subtitle: Text(c['phone'] ?? ''),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete_outline),
-                          onPressed: () =>
-                              setS(() => contacts.removeAt(i)),
+                          onPressed: () => setS(() => contacts.removeAt(i)),
                         ),
                       );
                     },
@@ -1777,17 +2330,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx), child: const Text('રદ')),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('રદ'),
+            ),
             ElevatedButton(
               onPressed: () async {
                 await SocietyService.instance
                     .societySettingsDoc(FirebaseFirestore.instance)
-                    .set(
-                  {'emergencyContacts': contacts},
-                  SetOptions(merge: true),
-                );
-                await SocietyService.instance.mirrorLegacySocietyConfig(
-                    {'emergencyContacts': contacts});
+                    .set({
+                      'emergencyContacts': contacts,
+                    }, SetOptions(merge: true));
+                await SocietyService.instance.mirrorLegacySocietyConfig({
+                  'emergencyContacts': contacts,
+                });
                 if (ctx.mounted) Navigator.pop(ctx);
               },
               child: const Text('સાચવો'),
@@ -1804,7 +2359,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
       builder: (context) => AlertDialog(
         title: const Text("ચેતવણી!"),
         content: Text(
-            "શું તમે ખરેખર $name ને સોસાયટીના નવા પ્રમુખ બનાવવા માંગો છો? આ કર્યા પછી તમારી એડમિન સત્તા જતી રહેશે."),
+          "શું તમે ખરેખર $name ને સોસાયટીના નવા પ્રમુખ બનાવવા માંગો છો? આ કર્યા પછી તમારી એડમિન સત્તા જતી રહેશે.",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -1833,13 +2389,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
       WriteBatch batch = FirebaseFirestore.instance.batch();
 
       // ૧. નવા વ્યક્તિને એડમિન બનાવો
-      DocumentReference newAdminRef =
-      FirebaseFirestore.instance.collection('users').doc(newAdminId);
+      DocumentReference newAdminRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(newAdminId);
       batch.update(newAdminRef, {'role': 'admin'});
 
       // ૨. જૂના (પોતાના) રોલને મેમ્બર બનાવી દો
-      DocumentReference oldAdminRef =
-      FirebaseFirestore.instance.collection('users').doc(currentAdminId);
+      DocumentReference oldAdminRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentAdminId);
       batch.update(oldAdminRef, {'role': 'member'});
 
       await batch.commit();
@@ -1847,20 +2405,25 @@ class _AdminDashboardState extends State<AdminDashboard> {
       if (!mounted) return;
 
       // સફળતાનો મેસેજ અને લોગઆઉટ (કારણ કે હવે તમે એડમિન નથી)
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
           content: Text("માલિકી સફળતાપૂર્વક બદલાઈ ગઈ છે!"),
-          backgroundColor: Colors.green));
+          backgroundColor: Colors.green,
+        ),
+      );
 
       // એડમિન પેનલમાંથી બહાર કાઢીને લોગિન પર મોકલી દેવા
       FirebaseAuth.instance.signOut();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("ભૂલ આવી: $e"), backgroundColor: Colors.red));
+        SnackBar(content: Text("ભૂલ આવી: $e"), backgroundColor: Colors.red),
+      );
     } finally {
       setState(() => _isLoading = false);
     }
   }
 }
+
 /*
 have aana par work start karvu che ==> ૧. એડમિન (Admin) પેનલ માટે:
 વોચમેન મેનેજમેન્ટ: એડમિન પોતે વોચમેનનું આઈડી બનાવી શકે અને તેને એક્સેસ આપી શકે કે હટાવી શકે.
@@ -1883,6 +2446,3 @@ Image Storage Cleanup: દર મહિને જૂના વિઝિટર્
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY"/>
  */
-
-
-
