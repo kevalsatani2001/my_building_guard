@@ -55,6 +55,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   final ImagePicker _picker = ImagePicker();
   String? _selectedBlock;
   String _searchQuery = "";
+  String _historyStatusFilter = 'all';
+  String _historyTimeFilter = 'today';
   UserModel? _selectedMember;
   List<UserModel> _filteredMembers = [];
   bool _isUploading = false;
@@ -94,8 +96,10 @@ class _WatchmanScreenState extends State<WatchmanScreen>
 
   // ૧. વિઝિટરનો ફોટો પાડવો
   Future<void> _pickImage() async {
-    final XFile? pickedFile =
-    await _picker.pickImage(source: ImageSource.camera, imageQuality: 40);
+    final XFile? pickedFile = await _picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 40,
+    );
     if (pickedFile != null) setState(() => _image = File(pickedFile.path));
   }
 
@@ -110,10 +114,15 @@ class _WatchmanScreenState extends State<WatchmanScreen>
 
     setState(() {
       _filteredMembers = snapshot.docs
-          .where((doc) => SocietyService.instance
-              .documentBelongsToCurrentTenant(doc.data() as Map<String, dynamic>?))
-          .map((doc) =>
-              UserModel.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+          .where(
+            (doc) => SocietyService.instance.documentBelongsToCurrentTenant(
+              doc.data() as Map<String, dynamic>?,
+            ),
+          )
+          .map(
+            (doc) =>
+                UserModel.fromMap(doc.data() as Map<String, dynamic>, doc.id),
+          )
           .toList();
       _selectedMember = null;
       _isUploading = false;
@@ -134,8 +143,11 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         .get();
 
     final matched = snapshot.docs
-        .where((d) => SocietyService.instance.documentBelongsToCurrentTenant(
-            d.data() as Map<String, dynamic>?))
+        .where(
+          (d) => SocietyService.instance.documentBelongsToCurrentTenant(
+            d.data() as Map<String, dynamic>?,
+          ),
+        )
         .toList();
 
     setState(() {
@@ -147,7 +159,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     }
   }
 
-// ગેસ્ટ સિલેક્ટ કરવાનું ફંક્શન
+  // ગેસ્ટ સિલેક્ટ કરવાનું ફંક્શન
   void _selectPreApprovedGuest(DocumentSnapshot doc) async {
     var data = doc.data() as Map<String, dynamic>;
     String memberId = data['memberId'];
@@ -156,8 +168,10 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         .collection('users')
         .doc(memberId)
         .get();
-    UserModel member =
-    UserModel.fromMap(userDoc.data() as Map<String, dynamic>, userDoc.id);
+    UserModel member = UserModel.fromMap(
+      userDoc.data() as Map<String, dynamic>,
+      userDoc.id,
+    );
 
     setState(() {
       _selectedBlock = member.blockName;
@@ -231,7 +245,9 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   // ૪. ઇમરજન્સી SOS એલર્ટ (એડમિનને જાણ કરવા)
   Future<void> _sendSOS() async {
     bool confirm = await _showConfirmDialog(
-        "SOS એલર્ટ!", "શું તમે એડમિનને મદદ માટે જાણ કરવા માંગો છો?");
+      "SOS એલર્ટ!",
+      "શું તમે એડમિનને મદદ માટે જાણ કરવા માંગો છો?",
+    );
     if (!confirm) return;
 
     try {
@@ -278,8 +294,9 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   }
 
   void _showSnackBar(String msg, Color color) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
   }
 
   String _lineForMemberPush(_MemberPushResult r) {
@@ -431,9 +448,12 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                   return const Center(child: CircularProgressIndicator());
                 }
                 final docs = snap.data!.docs
-                    .where((d) => SocietyService.instance
-                        .documentBelongsToCurrentTenant(
-                            d.data() as Map<String, dynamic>?))
+                    .where(
+                      (d) => SocietyService.instance
+                          .documentBelongsToCurrentTenant(
+                            d.data() as Map<String, dynamic>?,
+                          ),
+                    )
                     .toList();
                 if (docs.isEmpty) {
                   return const Text('કોઈ સ્ટાફ નોંધાયો નથી.');
@@ -446,7 +466,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                       leading: const Icon(Icons.badge_outlined),
                       title: Text('${m['staffName'] ?? ''}'),
                       subtitle: Text(
-                          '${m['staffRole'] ?? ''}\n📱 ${m['staffPhone'] ?? ''}'),
+                        '${m['staffRole'] ?? ''}\n📱 ${m['staffPhone'] ?? ''}',
+                      ),
                     );
                   }).toList(),
                 );
@@ -460,20 +481,22 @@ class _WatchmanScreenState extends State<WatchmanScreen>
 
   Future<bool> _showConfirmDialog(String title, String content) async {
     return await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(title),
-        content: Text(content),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text("ના")),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text("હા")),
-        ],
-      ),
-    ) ??
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(title),
+            content: Text(content),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text("ના"),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text("હા"),
+              ),
+            ],
+          ),
+        ) ??
         false;
   }
 
@@ -487,7 +510,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
           controller: _tabController,
           tabs: const [
             Tab(icon: Icon(Icons.person_add), text: "નવી એન્ટ્રી"),
-            Tab(icon: Icon(Icons.history), text: "આજની હિસ્ટ્રી")
+            Tab(icon: Icon(Icons.history), text: "આજની હિસ્ટ્રી"),
           ],
         ),
         actions: [
@@ -497,12 +520,16 @@ class _WatchmanScreenState extends State<WatchmanScreen>
             onPressed: _openContactsAndStaffSheet,
           ),
           IconButton(
-              icon:
-              Icon(Icons.warning_amber_rounded, color: Colors.amber.shade300),
-              onPressed: _sendSOS),
+            icon: Icon(
+              Icons.warning_amber_rounded,
+              color: Colors.amber.shade300,
+            ),
+            onPressed: _sendSOS,
+          ),
           IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: () => FirebaseAuth.instance.signOut()),
+            icon: const Icon(Icons.logout),
+            onPressed: () => FirebaseAuth.instance.signOut(),
+          ),
         ],
       ),
       body: Container(
@@ -519,7 +546,12 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         child: TabBarView(
           controller: _tabController,
           children: [
-            _buildEntryForm(),
+            Column(
+              children: [
+                _buildWatchmanSummaryCard(),
+                Expanded(child: _buildEntryForm()),
+              ],
+            ),
             _buildVisitorHistory(),
           ],
         ),
@@ -540,12 +572,16 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               height: 150,
               width: double.infinity,
               decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: cs.primary.withValues(alpha: 0.45))),
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: cs.primary.withValues(alpha: 0.45)),
+              ),
               child: _image == null
-                  ? const Icon(Icons.add_a_photo,
-                  size: 50, color: Colors.indigo)
+                  ? const Icon(
+                      Icons.add_a_photo,
+                      size: 50,
+                      color: Colors.indigo,
+                    )
                   : Image.file(_image!, fit: BoxFit.cover),
             ),
           ),
@@ -570,10 +606,11 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                       decoration: InputDecoration(
                         labelText: "વિઝિટરનું નામ",
                         hintText: "નામ ટાઈપ કરો...",
-                        prefixIcon:
-                        Icon(Icons.person, color: cs.primary),
-                        suffixIcon:
-                        const Icon(Icons.search, color: Colors.grey),
+                        prefixIcon: Icon(Icons.person, color: cs.primary),
+                        suffixIcon: const Icon(
+                          Icons.search,
+                          color: Colors.grey,
+                        ),
                         filled: true,
                         fillColor: Colors.grey[50],
                         border: OutlineInputBorder(
@@ -594,9 +631,10 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         child: Text(
                           "⚠️ ${_preApprovedResults.length} પ્રી-એપ્રુવ્ડ મહેમાન મળ્યા",
                           style: const TextStyle(
-                              color: Colors.blue,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold),
+                            color: Colors.blue,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                   ],
@@ -604,7 +642,6 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               ),
 
               const SizedBox(width: 10), // બે વિજેટ વચ્ચે ગેપ
-
               // ૨. QR સ્કેનર બટન - આ નાનું આઈકન બટન તરીકે વધારે સારું લાગશે
               Expanded(
                 flex: 1, // ૧ ભાગ આ રોકશે
@@ -643,7 +680,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                 itemCount: _preApprovedResults.length,
                 itemBuilder: (context, index) {
                   var data =
-                  _preApprovedResults[index].data() as Map<String, dynamic>;
+                      _preApprovedResults[index].data() as Map<String, dynamic>;
                   return ListTile(
                     tileColor: Colors.blue[50],
                     leading: const Icon(Icons.verified, color: Colors.blue),
@@ -658,16 +695,21 @@ class _WatchmanScreenState extends State<WatchmanScreen>
             ),
           const SizedBox(height: 10),
           TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                  labelText: "મોબાઈલ નંબર", border: OutlineInputBorder())),
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              labelText: "મોબાઈલ નંબર",
+              border: OutlineInputBorder(),
+            ),
+          ),
           const SizedBox(height: 10),
           TextField(
-              controller: _purposeController,
-              decoration: const InputDecoration(
-                  labelText: "કારણ (Guest, Delivery)",
-                  border: OutlineInputBorder())),
+            controller: _purposeController,
+            decoration: const InputDecoration(
+              labelText: "કારણ (Guest, Delivery)",
+              border: OutlineInputBorder(),
+            ),
+          ),
           const SizedBox(height: 20),
 
           // Block & Member Dropdowns
@@ -676,9 +718,12 @@ class _WatchmanScreenState extends State<WatchmanScreen>
             builder: (context, snap) {
               if (!snap.hasData) return const CircularProgressIndicator();
               final blockDocs = snap.data!.docs
-                  .where((d) => SocietyService.instance
-                      .documentBelongsToCurrentTenant(
-                          d.data() as Map<String, dynamic>?))
+                  .where(
+                    (d) =>
+                        SocietyService.instance.documentBelongsToCurrentTenant(
+                          d.data() as Map<String, dynamic>?,
+                        ),
+                  )
                   .toList();
               if (blockDocs.isEmpty) {
                 return const Text('આ સોસાયટી માટે કોઈ બ્લોક નથી.');
@@ -687,9 +732,12 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                 value: _selectedBlock,
                 hint: const Text("બ્લોક પસંદ કરો"),
                 items: blockDocs
-                    .map((d) => DropdownMenuItem(
+                    .map(
+                      (d) => DropdownMenuItem(
                         value: d.id,
-                        child: Text('${d['name'] ?? d.id}')))
+                        child: Text('${d['name'] ?? d.id}'),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) {
                   setState(() => _selectedBlock = v);
@@ -707,9 +755,13 @@ class _WatchmanScreenState extends State<WatchmanScreen>
             items: _filteredMembers.isEmpty
                 ? []
                 : _filteredMembers
-                .map((m) => DropdownMenuItem(
-                value: m, child: Text("${m.name} (${m.unitNumber})")))
-                .toList(),
+                      .map(
+                        (m) => DropdownMenuItem(
+                          value: m,
+                          child: Text("${m.name} (${m.unitNumber})"),
+                        ),
+                      )
+                      .toList(),
             onChanged: (v) => setState(() => _selectedMember = v),
             decoration: const InputDecoration(border: OutlineInputBorder()),
           ),
@@ -717,15 +769,215 @@ class _WatchmanScreenState extends State<WatchmanScreen>
           _isUploading
               ? const CircularProgressIndicator()
               : ElevatedButton(
-            onPressed: _submitEntry,
-            style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo,
-                minimumSize: const Size(double.infinity, 50)),
-            child: const Text("એન્ટ્રી કરો અને મેમ્બરને જાણ કરો",
-                style: TextStyle(color: Colors.white)),
-          )
+                  onPressed: _submitEntry,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.indigo,
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
+                  child: const Text(
+                    "એન્ટ્રી કરો અને મેમ્બરને જાણ કરો",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
         ],
       ),
+    );
+  }
+
+  Widget _buildWatchmanSummaryCard() {
+    final startOfDay = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('visitors')
+          .where(
+            'entryTime',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
+          )
+          .orderBy('entryTime', descending: true)
+          .limit(250)
+          .snapshots(),
+      builder: (context, snap) {
+        final docs = snap.hasData
+            ? snap.data!.docs.where((d) {
+                return SocietyService.instance.documentBelongsToCurrentTenant(
+                  d.data() as Map<String, dynamic>?,
+                );
+              }).toList()
+            : <QueryDocumentSnapshot>[];
+        final total = docs.length;
+        final pending = docs.where((d) => d['status'] == 'pending').length;
+        final approved = docs.where((d) => d['status'] == 'approved').length;
+        final checkedOut = docs
+            .where((d) => d['status'] == 'checked_out')
+            .length;
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.indigo.withValues(alpha: 0.16)),
+          ),
+          child: Row(
+            children: [
+              _summaryTile('Today', total, Colors.indigo),
+              _summaryTile('Pending', pending, Colors.orange),
+              _summaryTile('In', approved, Colors.green),
+              _summaryTile('Out', checkedOut, Colors.blueGrey),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _summaryTile(String label, int count, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            '$count',
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(label, style: const TextStyle(fontSize: 11)),
+        ],
+      ),
+    );
+  }
+
+  DateTime _watchmanCutoffDate() {
+    final now = DateTime.now();
+    if (_historyTimeFilter == 'today') {
+      return DateTime(now.year, now.month, now.day);
+    }
+    if (_historyTimeFilter == '7d') {
+      return now.subtract(const Duration(days: 7));
+    }
+    return now.subtract(const Duration(days: 30));
+  }
+
+  Widget _buildHistoryTimeFilterRow() {
+    final options = <(String, String)>[
+      ('today', 'Today'),
+      ('7d', '7 Days'),
+      ('30d', '30 Days'),
+    ];
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: options.map((item) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(item.$2),
+              selected: _historyTimeFilter == item.$1,
+              onSelected: (_) => setState(() => _historyTimeFilter = item.$1),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildWatchmanHistoryGraph() {
+    final cutoff = _watchmanCutoffDate();
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('visitors')
+          .where(
+            'entryTime',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(
+              DateTime.now().subtract(const Duration(days: 30)),
+            ),
+          )
+          .orderBy('entryTime', descending: true)
+          .limit(400)
+          .snapshots(),
+      builder: (context, snap) {
+        final docs = snap.hasData
+            ? snap.data!.docs.where((d) {
+                final m = d.data() as Map<String, dynamic>?;
+                if (!SocietyService.instance.documentBelongsToCurrentTenant(
+                  m,
+                )) {
+                  return false;
+                }
+                final ts = m?['entryTime'];
+                if (ts is! Timestamp) return false;
+                return ts.toDate().isAfter(cutoff);
+              }).toList()
+            : <QueryDocumentSnapshot>[];
+        final pending = docs.where((d) => d['status'] == 'pending').length;
+        final approved = docs.where((d) => d['status'] == 'approved').length;
+        final rejected = docs.where((d) => d['status'] == 'rejected').length;
+        final out = docs.where((d) => d['status'] == 'checked_out').length;
+        final maxVal = [
+          pending,
+          approved,
+          rejected,
+          out,
+          1,
+        ].reduce((a, b) => a > b ? a : b);
+        return Container(
+          margin: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.indigo.withValues(alpha: 0.14)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _graphBar('Pending', pending, maxVal, Colors.orange),
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: _graphBar('In', approved, maxVal, Colors.green)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _graphBar('Rejected', rejected, maxVal, Colors.red),
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: _graphBar('Out', out, maxVal, Colors.blueGrey)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _graphBar(String label, int count, int maxCount, Color color) {
+    final ratio = (count / maxCount).clamp(0.0, 1.0);
+    return Column(
+      children: [
+        SizedBox(
+          height: 66,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              height: 12 + (52 * ratio),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.88),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text('$count', style: const TextStyle(fontWeight: FontWeight.w700)),
+        Text(label, style: const TextStyle(fontSize: 10)),
+      ],
     );
   }
 
@@ -749,11 +1001,12 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               prefixIcon: const Icon(Icons.search, color: Colors.indigo),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() => _searchQuery = "");
-                  })
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = "");
+                      },
+                    )
                   : null,
               filled: true,
               fillColor: Colors.white,
@@ -764,6 +1017,22 @@ class _WatchmanScreenState extends State<WatchmanScreen>
             ),
           ),
         ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              _statusChip('all', 'All'),
+              _statusChip('pending', 'Pending'),
+              _statusChip('approved', 'In'),
+              _statusChip('rejected', 'Rejected'),
+              _statusChip('checked_out', 'Out'),
+            ],
+          ),
+        ),
+        _buildHistoryTimeFilterRow(),
+        _buildWatchmanHistoryGraph(),
+        const SizedBox(height: 6),
 
         // 📜 ફિલ્ટર કરેલું લિસ્ટ
         Expanded(
@@ -772,11 +1041,9 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                 .collection('visitors')
                 .where(
                   'entryTime',
-                  isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime(
-                    DateTime.now().year,
-                    DateTime.now().month,
-                    DateTime.now().day,
-                  )),
+                  isGreaterThanOrEqualTo: Timestamp.fromDate(
+                    DateTime.now().subtract(const Duration(days: 30)),
+                  ),
                 )
                 .orderBy('entryTime', descending: true)
                 .limit(250)
@@ -790,9 +1057,12 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               }
 
               final tenantDocs = snap.data!.docs
-                  .where((doc) => SocietyService.instance
-                      .documentBelongsToCurrentTenant(
-                          doc.data() as Map<String, dynamic>?))
+                  .where(
+                    (doc) =>
+                        SocietyService.instance.documentBelongsToCurrentTenant(
+                          doc.data() as Map<String, dynamic>?,
+                        ),
+                  )
                   .toList();
 
               var filteredDocs = tenantDocs.where((doc) {
@@ -802,6 +1072,17 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                 return name.contains(_searchQuery) ||
                     unit.contains(_searchQuery);
               }).toList();
+              final cutoff = _watchmanCutoffDate();
+              filteredDocs = filteredDocs.where((doc) {
+                final ts = (doc.data() as Map<String, dynamic>)['entryTime'];
+                if (ts is! Timestamp) return false;
+                return ts.toDate().isAfter(cutoff);
+              }).toList();
+              if (_historyStatusFilter != 'all') {
+                filteredDocs = filteredDocs
+                    .where((d) => (d['status'] ?? '') == _historyStatusFilter)
+                    .toList();
+              }
 
               if (filteredDocs.isEmpty) {
                 return const PremiumEmptyState(
@@ -840,11 +1121,14 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                   }
 
                   return Card(
-                    margin:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     elevation: 2,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: ListTile(
@@ -852,29 +1136,32 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                           radius: 25,
                           backgroundColor: Colors.grey[200],
                           backgroundImage:
-                          d['photoUrl'] != null && d['photoUrl'].isNotEmpty
+                              d['photoUrl'] != null && d['photoUrl'].isNotEmpty
                               ? NetworkImage(d['photoUrl'])
                               : null,
                           child: d['photoUrl'] == null || d['photoUrl'].isEmpty
                               ? const Icon(Icons.person)
                               : null,
                         ),
-                        title: Text(d['name'],
-                            style:
-                            const TextStyle(fontWeight: FontWeight.bold)),
+                        title: Text(
+                          d['name'],
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                                "ઘર: ${d['blockName']}-${d['unitNumber']}\nહેતુ: ${d['purpose']}"),
+                              "ઘર: ${d['blockName']}-${d['unitNumber']}\nહેતુ: ${d['purpose']}",
+                            ),
                             if (status == 'checked_out' &&
                                 d['exitTime'] != null)
                               Text(
                                 "Out: ${DateFormat('hh:mm a').format((d['exitTime'] as Timestamp).toDate())}",
                                 style: const TextStyle(
-                                    color: Colors.red,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12),
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
                               ),
                           ],
                         ),
@@ -885,34 +1172,45 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               if (status == 'approved')
-                              // જો અંદર હોય તો 'OUT' બટન બતાવો
+                                // જો અંદર હોય તો 'OUT' બટન બતાવો
                                 SizedBox(
                                   height: 35,
                                   width: 80,
                                   child: ElevatedButton(
                                     onPressed: () => _checkOutVisitor(d.id),
                                     style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.redAccent,
-                                        padding: EdgeInsets.zero,
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                            BorderRadius.circular(8))),
-                                    child: const Text("OUT",
-                                        style: TextStyle(
-                                            color: Colors.white, fontSize: 12)),
+                                      backgroundColor: Colors.redAccent,
+                                      padding: EdgeInsets.zero,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      "OUT",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                                   ),
                                 )
                               else
-                              // બાકીના સ્ટેટસ માટે માત્ર આઇકન અને ટેક્સ્ટ
+                                // બાકીના સ્ટેટસ માટે માત્ર આઇકન અને ટેક્સ્ટ
                                 Column(
                                   children: [
-                                    Icon(statusIcon,
-                                        color: statusColor, size: 20),
-                                    Text(statusText,
-                                        style: TextStyle(
-                                            color: statusColor,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold)),
+                                    Icon(
+                                      statusIcon,
+                                      color: statusColor,
+                                      size: 20,
+                                    ),
+                                    Text(
+                                      statusText,
+                                      style: TextStyle(
+                                        color: statusColor,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ],
                                 ),
                             ],
@@ -930,6 +1228,17 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     );
   }
 
+  Widget _statusChip(String value, String label) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: _historyStatusFilter == value,
+        onSelected: (_) => setState(() => _historyStatusFilter = value),
+      ),
+    );
+  }
+
   // Check-out કરવાનું ફંક્શન
   Future<void> _checkOutVisitor(String docId) async {
     final ref = FirebaseFirestore.instance.collection('visitors').doc(docId);
@@ -937,8 +1246,9 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     final m = snap.data();
     final memberUid = m?['memberId'] as String?;
     final rawName = m?['name'] as String?;
-    final guestName =
-        (rawName != null && rawName.trim().isNotEmpty) ? rawName.trim() : 'મહેમાન';
+    final guestName = (rawName != null && rawName.trim().isNotEmpty)
+        ? rawName.trim()
+        : 'મહેમાન';
 
     await ref.update({
       'status': 'checked_out',
@@ -962,7 +1272,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     }
   }
 
-// ૧. સ્કેનર ખોલવાનું ફંક્શન
+  // ૧. સ્કેનર ખોલવાનું ફંક્શન
   void _openQRScanner() {
     showModalBottomSheet(
       context: context,
@@ -985,7 +1295,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     );
   }
 
-// ૨. QR ડેટા પ્રોસેસ કરવાનું લોજિક
+  // ૨. QR ડેટા પ્રોસેસ કરવાનું લોજિક
   Future<void> _processQRCode(String preApproveId) async {
     setState(() => _isUploading = true);
 
@@ -998,7 +1308,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       if (doc.exists && doc.data()!['status'] == 'pre-approved') {
         var data = doc.data()!;
         if (!SocietyService.instance.documentBelongsToCurrentTenant(
-            Map<String, dynamic>.from(data as Map))) {
+          Map<String, dynamic>.from(data as Map),
+        )) {
           _showSnackBar('આ QR આ સોસાયટી માટે માન્ય નથી.', Colors.orange);
           return;
         }
@@ -1018,7 +1329,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
 
           _selectedBlock = member.blockName;
           _selectedMember = _filteredMembers.firstWhere(
-                (m) => m.uid == member.uid,
+            (m) => m.uid == member.uid,
             orElse: () => member,
           );
           _purposeController.text = "Pre-Approved Guest";

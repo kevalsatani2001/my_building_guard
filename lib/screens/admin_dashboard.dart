@@ -28,6 +28,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
   bool _isSetupComplete = false;
   String _societyName = "";
   String _architectureType = "Wing";
+  DateTime _analyticsMonth = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+  );
+  String _analyticsBlockType = 'All';
 
   @override
   void initState() {
@@ -66,6 +71,129 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return RegExp(
       r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
     ).hasMatch(email);
+  }
+
+  String _normalizeSocietyId(String input) {
+    final trimmed = input.trim().toLowerCase();
+    if (trimmed.isEmpty) return SocietyService.kDefaultSocietyId;
+    return trimmed.replaceAll(RegExp(r'[^a-z0-9_-]'), '_');
+  }
+
+  List<DateTime> _analyticsMonthOptions() {
+    final now = DateTime.now();
+    return List.generate(12, (i) => DateTime(now.year, now.month - i));
+  }
+
+  String _monthLabel(DateTime d) {
+    const names = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${names[d.month - 1]} ${d.year}';
+  }
+
+  Future<List<QueryDocumentSnapshot>> _loadFilteredVisitors({
+    required DateTime month,
+    required String blockType,
+  }) async {
+    final monthStart = DateTime(month.year, month.month, 1);
+    final nextMonthStart = DateTime(month.year, month.month + 1, 1);
+
+    final visitorsSnap = await FirebaseFirestore.instance
+        .collection('visitors')
+        .where(
+          'entryTime',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(monthStart),
+        )
+        .where('entryTime', isLessThan: Timestamp.fromDate(nextMonthStart))
+        .limit(3000)
+        .get();
+
+    var docs = visitorsSnap.docs
+        .where(
+          (d) =>
+              SocietyService.instance.documentBelongsToCurrentTenant(d.data()),
+        )
+        .toList();
+
+    if (blockType == 'All') return docs;
+
+    final blocksSnap = await FirebaseFirestore.instance
+        .collection('blocks')
+        .where('societyId', isEqualTo: SocietyService.instance.societyId)
+        .get();
+
+    final typeByBlockId = <String, String>{};
+    for (final b in blocksSnap.docs) {
+      final data = b.data();
+      final t = (data['type'] ?? '').toString();
+      typeByBlockId[b.id] = t;
+    }
+
+    final normalized = blockType.toLowerCase();
+    docs = docs.where((d) {
+      final m = d.data();
+      final blockId = (m['blockName'] ?? '').toString();
+      final type = (typeByBlockId[blockId] ?? '').toLowerCase();
+      return type == normalized;
+    }).toList();
+
+    return docs;
+  }
+
+  Future<void> _showRoleUsersDialog(String roleTitle, String roleKey) async {
+    final usersSnap = await FirebaseFirestore.instance
+        .collection('users')
+        .where('societyId', isEqualTo: SocietyService.instance.societyId)
+        .where('role', isEqualTo: roleKey)
+        .get();
+
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('$roleTitle લિસ્ટ (${usersSnap.docs.length})'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 320,
+          child: usersSnap.docs.isEmpty
+              ? const Center(child: Text('કોઈ ડેટા મળ્યો નથી'))
+              : ListView.builder(
+                  itemCount: usersSnap.docs.length,
+                  itemBuilder: (context, i) {
+                    final d = usersSnap.docs[i].data();
+                    final name = (d['name'] ?? '').toString();
+                    final email = (d['email'] ?? '').toString();
+                    return ListTile(
+                      leading: CircleAvatar(
+                        child: Text(
+                          name.isNotEmpty ? name[0].toUpperCase() : '?',
+                        ),
+                      ),
+                      title: Text(name.isEmpty ? 'Unnamed' : name),
+                      subtitle: Text(email),
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('બંધ'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// એક ઘરમાં કેટલા મેમ્બર્સ (legacy `memberId` + `memberIds` લિસ્ટ)
@@ -750,6 +878,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     collection: 'users',
                     field: 'role',
                     value: 'member',
+                    onTap: () => _showRoleUsersDialog('મેમ્બર', 'member'),
                   ),
                   _buildLiveMetricCard(
                     title: "વોચમેન",
@@ -758,6 +887,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     collection: 'users',
                     field: 'role',
                     value: 'watchman',
+                    onTap: () => _showWatchmanManageDialog(context),
                   ),
                   _buildLiveMetricCard(
                     title: "એડમિન",
@@ -766,12 +896,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     collection: 'users',
                     field: 'role',
                     value: 'admin',
+                    onTap: () => _showRoleUsersDialog('એડમિન', 'admin'),
                   ),
                   _buildLiveMetricCard(
                     title: "બ્લોક્સ",
                     icon: Icons.apartment_rounded,
                     color: Colors.teal,
                     collection: 'blocks',
+                    onTap: _navigateToPreview,
                   ),
                 ],
               ),
@@ -881,6 +1013,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     required String collection,
     String? field,
     String? value,
+    VoidCallback? onTap,
   }) {
     Query query = FirebaseFirestore.instance
         .collection(collection)
@@ -895,43 +1028,62 @@ class _AdminDashboardState extends State<AdminDashboard> {
         stream: query.snapshots(),
         builder: (context, snap) {
           final count = snap.hasData ? snap.data!.docs.length : 0;
-          return Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: color.withValues(alpha: 0.16)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              child: Ink(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: color.withValues(alpha: 0.16)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(icon, size: 18, color: color),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(icon, size: 18, color: color),
+                        ),
+                        const Spacer(),
+                        Text(
+                          "$count",
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
                     ),
-                    const Spacer(),
-                    Text(
-                      "$count",
-                      style: TextStyle(
-                        color: color,
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        if (onTap != null)
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 14,
+                            color: color.withValues(alpha: 0.8),
+                          ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ],
+              ),
             ),
           );
         },
@@ -940,34 +1092,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Widget _buildVisitorInsightsCard() {
-    final monthStart = DateTime(DateTime.now().year, DateTime.now().month, 1);
-    final nextMonthStart = DateTime(
-      DateTime.now().year,
-      DateTime.now().month + 1,
-      1,
-    );
-    return FutureBuilder<QuerySnapshot>(
-      future: FirebaseFirestore.instance
-          .collection('visitors')
-          .where(
-            'entryTime',
-            isGreaterThanOrEqualTo: Timestamp.fromDate(monthStart),
-          )
-          .where('entryTime', isLessThan: Timestamp.fromDate(nextMonthStart))
-          .limit(2000)
-          .get(),
+    return FutureBuilder<List<QueryDocumentSnapshot>>(
+      future: _loadFilteredVisitors(
+        month: _analyticsMonth,
+        blockType: _analyticsBlockType,
+      ),
       builder: (context, snapshot) {
         final cs = Theme.of(context).colorScheme;
-        final docs = snapshot.hasData
-            ? snapshot.data!.docs
-                  .where(
-                    (d) =>
-                        SocietyService.instance.documentBelongsToCurrentTenant(
-                          d.data() as Map<String, dynamic>?,
-                        ),
-                  )
-                  .toList()
-            : <QueryDocumentSnapshot>[];
+        final docs = snapshot.data ?? <QueryDocumentSnapshot>[];
         final total = docs.length;
         final approved = docs.where((d) => d['status'] == 'approved').length;
         final pending = docs.where((d) => d['status'] == 'pending').length;
@@ -975,6 +1107,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
         final checkedOut = docs
             .where((d) => d['status'] == 'checked_out')
             .length;
+        final byBlock = <String, int>{};
+        for (final d in docs) {
+          final data = d.data() as Map<String, dynamic>;
+          final block = (data['blockName'] ?? '-').toString();
+          byBlock[block] = (byBlock[block] ?? 0) + 1;
+        }
+        final topBlocks = byBlock.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+        final topBlockBars = topBlocks.take(5).toList();
         final maxCount = [
           approved,
           pending,
@@ -994,14 +1135,71 @@ class _AdminDashboardState extends State<AdminDashboard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Visitor Analytics (Current Month)",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              Row(
+                children: [
+                  const Text(
+                    "Visitor Analytics",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  const Spacer(),
+                  Text(
+                    "કુલ એન્ટ્રી: $total",
+                    style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                "કુલ એન્ટ્રી: $total",
-                style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7)),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  SizedBox(
+                    width: 160,
+                    child: DropdownButtonFormField<DateTime>(
+                      initialValue: _analyticsMonth,
+                      decoration: const InputDecoration(
+                        labelText: 'Month',
+                        isDense: true,
+                      ),
+                      items: _analyticsMonthOptions()
+                          .map(
+                            (m) => DropdownMenuItem<DateTime>(
+                              value: m,
+                              child: Text(_monthLabel(m)),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setState(() => _analyticsMonth = v);
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    width: 160,
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _analyticsBlockType,
+                      decoration: const InputDecoration(
+                        labelText: 'Type',
+                        isDense: true,
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'All', child: Text('All')),
+                        DropdownMenuItem(value: 'Wing', child: Text('Wing')),
+                        DropdownMenuItem(
+                          value: 'Street',
+                          child: Text('Sheri/Street'),
+                        ),
+                      ],
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setState(() => _analyticsBlockType = v);
+                      },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               Row(
@@ -1044,6 +1242,56 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                 ],
               ),
+              if (topBlockBars.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Text(
+                  "Top બ્લોક્સ / શેરી (Visitors)",
+                  style: TextStyle(
+                    color: cs.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...topBlockBars.map((e) {
+                  final topMax = topBlockBars.first.value;
+                  final ratio = topMax == 0 ? 0.0 : (e.value / topMax);
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 80,
+                          child: Text(
+                            e.key,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: LinearProgressIndicator(
+                            value: ratio,
+                            minHeight: 10,
+                            borderRadius: BorderRadius.circular(8),
+                            backgroundColor: cs.primary.withValues(alpha: 0.12),
+                            color: cs.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${e.value}',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+              if (snapshot.connectionState == ConnectionState.waiting) ...[
+                const SizedBox(height: 8),
+                const LinearProgressIndicator(minHeight: 3),
+              ],
             ],
           ),
         );
@@ -1366,7 +1614,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final eC = TextEditingController();
     final pC = TextEditingController();
     final phoneC = TextEditingController();
+    final societyCodeC = TextEditingController();
     String selectedRole = 'member'; // Default Role
+    bool createSeparateSociety = false;
     String? sB;
     String? sU;
 
@@ -1390,6 +1640,29 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ],
                   onChanged: (v) => setDS(() => selectedRole = v!),
                 ),
+                if (selectedRole == 'admin') ...[
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text("આ એડમિનને અલગ સોસાયટી આપો"),
+                    subtitle: const Text(
+                      "ON કરશો તો આ યુઝર નવી/અલગ society manage કરશે",
+                    ),
+                    value: createSeparateSociety,
+                    onChanged: (v) => setDS(() => createSeparateSociety = v),
+                  ),
+                  TextField(
+                    controller: societyCodeC,
+                    decoration: InputDecoration(
+                      labelText: createSeparateSociety
+                          ? "Society Code (required)"
+                          : "Society Code (optional)",
+                      helperText: createSeparateSociety
+                          ? "દા.ત. shiv-residency"
+                          : "ખાલી રાખશો તો current society જ રહેશે",
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 10),
                 TextField(
                   controller: nC,
@@ -1512,6 +1785,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   );
                   return;
                 }
+                if (selectedRole == 'admin' &&
+                    createSeparateSociety &&
+                    societyCodeC.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("અલગ સોસાયટી માટે code આપો!")),
+                  );
+                  return;
+                }
 
                 _createNewUser(
                   context,
@@ -1522,6 +1803,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   sB,
                   sU,
                   phone: selectedRole == 'member' ? phoneC.text.trim() : null,
+                  societyIdOverride:
+                      selectedRole == 'admin' && createSeparateSociety
+                      ? _normalizeSocietyId(societyCodeC.text)
+                      : null,
                 );
               },
               child: const Text("Create User"),
@@ -1541,6 +1826,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     String? block,
     String? unit, {
     String? phone,
+    String? societyIdOverride,
   }) async {
     try {
       // સેકન્ડરી એપ જેથી એડમિન પોતે લોગઆઉટ ન થઈ જાય
@@ -1560,7 +1846,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
         'role': role,
         'createdAt': FieldValue.serverTimestamp(),
         'isActive': true,
-        'societyId': SocietyService.instance.societyId,
+        'societyId':
+            (societyIdOverride != null && societyIdOverride.trim().isNotEmpty)
+            ? societyIdOverride.trim()
+            : SocietyService.instance.societyId,
       };
 
       // જો મેમ્બર હોય તો જ આ વિગતો ઉમેરવી

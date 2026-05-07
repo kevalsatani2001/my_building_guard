@@ -33,6 +33,8 @@ class MemberScreen extends StatefulWidget {
 class _MemberScreenState extends State<MemberScreen> {
   final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
   final GlobalKey _qrKey = GlobalKey();
+  String _visitorStatusFilter = 'all';
+  String _visitorTimeFilter = '30d';
 
   @override
   void initState() {
@@ -51,7 +53,9 @@ class _MemberScreenState extends State<MemberScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(status == 'approved' ? 'મંજૂરી મોકલી.' : 'નકાર મોકલ્યો.'),
+          content: Text(
+            status == 'approved' ? 'મંજૂરી મોકલી.' : 'નકાર મોકલ્યો.',
+          ),
         ),
       );
     }
@@ -108,8 +112,10 @@ class _MemberScreenState extends State<MemberScreen> {
       final name = d['name'] ?? 'મેમ્બર';
       final block = d['blockName'] ?? '';
       final unit = d['unitNumber'] ?? '';
-      final flat =
-          [block, unit].where((e) => e.toString().isNotEmpty).join('-');
+      final flat = [
+        block,
+        unit,
+      ].where((e) => e.toString().isNotEmpty).join('-');
       final note = noteC.text.trim();
       final bodyBase =
           '$name — ઘર: ${flat.isEmpty ? "?" : flat}. મેમ્બર ઇમરજન્સી માંગે છે.';
@@ -152,10 +158,7 @@ class _MemberScreenState extends State<MemberScreen> {
             ? '${e.code}: $detail'
             : e.code;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('ભૂલ: $line'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('ભૂલ: $line'), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
@@ -173,7 +176,7 @@ class _MemberScreenState extends State<MemberScreen> {
   void _showPreApproveDialog() {
     TextEditingController nameController = TextEditingController();
     TextEditingController phoneController =
-    TextEditingController(); // નંબર માટે કંટ્રોલર
+        TextEditingController(); // નંબર માટે કંટ્રોલર
 
     showDialog(
       context: context,
@@ -218,14 +221,14 @@ class _MemberScreenState extends State<MemberScreen> {
                   DocumentReference docRef = await FirebaseFirestore.instance
                       .collection('pre_approvals')
                       .add({
-                    'guestName': nameController.text.trim(),
-                    'guestPhone': phoneController.text.trim(),
-                    // 🔥 હવે નંબર સેવ થશે
-                    'memberId': currentUserId,
-                    'createdAt': FieldValue.serverTimestamp(),
-                    'status': 'pre-approved',
-                    'societyId': SocietyService.instance.societyId,
-                  });
+                        'guestName': nameController.text.trim(),
+                        'guestPhone': phoneController.text.trim(),
+                        // 🔥 હવે નંબર સેવ થશે
+                        'memberId': currentUserId,
+                        'createdAt': FieldValue.serverTimestamp(),
+                        'status': 'pre-approved',
+                        'societyId': SocietyService.instance.societyId,
+                      });
 
                   Navigator.pop(context); // ડાયલોગ બંધ કરો
 
@@ -238,12 +241,13 @@ class _MemberScreenState extends State<MemberScreen> {
                 // જો વિગત અધૂરી હોય તો
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                      content: Text("કૃપા કરીને નામ અને ૧૦ આંકડાનો નંબર લખો")),
+                    content: Text("કૃપા કરીને નામ અને ૧૦ આંકડાનો નંબર લખો"),
+                  ),
                 );
               }
             },
             child: const Text("મંજૂર કરો અને QR મેળવો"),
-          )
+          ),
         ],
       ),
     );
@@ -253,10 +257,11 @@ class _MemberScreenState extends State<MemberScreen> {
     try {
       // વિજેટને ઈમેજમાં કન્વર્ટ કરો
       RenderRepaintBoundary boundary =
-      _qrKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+          _qrKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
       ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      ByteData? byteData =
-      await image.toByteData(format: ui.ImageByteFormat.png);
+      ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
       Uint8List pngBytes = byteData!.buffer.asUint8List();
 
       // કામચલાઉ ફાઈલ સેવ કરો
@@ -265,10 +270,9 @@ class _MemberScreenState extends State<MemberScreen> {
       await file.writeAsBytes(pngBytes);
 
       // શેર કરો
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        text: "આ સોસાયટી એન્ટ્રી QR Code છે $guestName માટે.",
-      );
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], text: "આ સોસાયટી એન્ટ્રી QR Code છે $guestName માટે.");
     } catch (e) {
       print("શેર કરવામાં ભૂલ આવી: $e");
     }
@@ -279,8 +283,10 @@ class _MemberScreenState extends State<MemberScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text("માય સોસાયટી",
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "માય સોસાયટી",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.emergency_share),
@@ -289,8 +295,9 @@ class _MemberScreenState extends State<MemberScreen> {
             onPressed: _showMemberEmergencyDialog,
           ),
           IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: () => FirebaseAuth.instance.signOut()),
+            icon: const Icon(Icons.logout),
+            onPressed: () => FirebaseAuth.instance.signOut(),
+          ),
         ],
       ),
       body: Container(
@@ -306,65 +313,285 @@ class _MemberScreenState extends State<MemberScreen> {
         ),
         child: Column(
           children: [
-          // --- ૧. Notice Board Section ---
-          _buildNoticeBoard(),
+            _buildMemberSummaryCard(),
+            // --- ૧. Notice Board Section ---
+            _buildNoticeBoard(),
 
-          // --- ૨. Quick Actions (Pre-Approve) ---
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: ElevatedButton.icon(
-              onPressed: _showPreApproveDialog,
-              icon: const Icon(Icons.verified_user, color: Colors.white),
-              label: const Text("મહેમાનને અગાઉથી મંજૂરી આપો",
-                  style: TextStyle(fontSize: 16, color: Colors.white)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: cs.primary,
-                minimumSize: const Size(double.infinity, 48),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _showComplaintDialog,
-                    icon: const Icon(Icons.report_problem),
-                    label: const Text('ફરિયાદ'),
+            // --- ૨. Quick Actions (Pre-Approve) ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: ElevatedButton.icon(
+                onPressed: _showPreApproveDialog,
+                icon: const Icon(Icons.verified_user, color: Colors.white),
+                label: const Text(
+                  "મહેમાનને અગાઉથી મંજૂરી આપો",
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: cs.primary,
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _showAddStaffDialog,
-                    icon: const Icon(Icons.badge),
-                    label: const Text('કાયમી સ્ટાફ'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: PremiumSectionHeader(
-                title: "તાજેતરના મુલાકાતીઓ",
-                icon: Icons.history_rounded,
               ),
             ),
-          ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _showComplaintDialog,
+                      icon: const Icon(Icons.report_problem),
+                      label: const Text('ફરિયાદ'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _showAddStaffDialog,
+                      icon: const Icon(Icons.badge),
+                      label: const Text('કાયમી સ્ટાફ'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-          // --- ૩. Visitor History List ---
-          Expanded(child: _buildVisitorList()),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: PremiumSectionHeader(
+                  title: "તાજેતરના મુલાકાતીઓ",
+                  icon: Icons.history_rounded,
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            _buildVisitorFilterRow(),
+            _buildVisitorTimeFilterRow(),
+            _buildMemberVisitorGraph(),
+
+            // --- ૩. Visitor History List ---
+            Expanded(child: _buildVisitorList()),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMemberSummaryCard() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('visitors')
+          .where('memberId', isEqualTo: currentUserId)
+          .orderBy('entryTime', descending: true)
+          .limit(120)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final docs = snapshot.hasData
+            ? snapshot.data!.docs.where((d) {
+                return SocietyService.instance.documentBelongsToCurrentTenant(
+                  d.data() as Map<String, dynamic>?,
+                );
+              }).toList()
+            : <QueryDocumentSnapshot>[];
+        final pending = docs.where((d) => d['status'] == 'pending').length;
+        final approved = docs.where((d) => d['status'] == 'approved').length;
+        final checkedOut = docs
+            .where((d) => d['status'] == 'checked_out')
+            .length;
+
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.indigo.withValues(alpha: 0.16)),
+          ),
+          child: Row(
+            children: [
+              _miniStat("Pending", pending, Colors.orange),
+              _miniStat("Approved", approved, Colors.green),
+              _miniStat("Out", checkedOut, Colors.blueGrey),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _miniStat(String label, int count, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            '$count',
+            style: TextStyle(
+              color: color,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(label, style: const TextStyle(fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVisitorFilterRow() {
+    final options = <(String, String)>[
+      ('all', 'All'),
+      ('pending', 'Pending'),
+      ('approved', 'Approved'),
+      ('rejected', 'Rejected'),
+      ('checked_out', 'Out'),
+    ];
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: options.map((item) {
+          final selected = _visitorStatusFilter == item.$1;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(item.$2),
+              selected: selected,
+              onSelected: (_) {
+                setState(() => _visitorStatusFilter = item.$1);
+              },
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  DateTime _memberCutoffDate() {
+    final now = DateTime.now();
+    if (_visitorTimeFilter == 'today') {
+      return DateTime(now.year, now.month, now.day);
+    }
+    if (_visitorTimeFilter == '7d') {
+      return now.subtract(const Duration(days: 7));
+    }
+    return now.subtract(const Duration(days: 30));
+  }
+
+  Widget _buildVisitorTimeFilterRow() {
+    final options = <(String, String)>[
+      ('today', 'Today'),
+      ('7d', '7 Days'),
+      ('30d', '30 Days'),
+    ];
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: options.map((item) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(item.$2),
+              selected: _visitorTimeFilter == item.$1,
+              onSelected: (_) => setState(() => _visitorTimeFilter = item.$1),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildMemberVisitorGraph() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('visitors')
+          .where('memberId', isEqualTo: currentUserId)
+          .orderBy('entryTime', descending: true)
+          .limit(250)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final cutoff = _memberCutoffDate();
+        final docs = snapshot.hasData
+            ? snapshot.data!.docs.where((d) {
+                final data = d.data() as Map<String, dynamic>?;
+                if (!SocietyService.instance.documentBelongsToCurrentTenant(
+                  data,
+                )) {
+                  return false;
+                }
+                final ts = data?['entryTime'];
+                if (ts is! Timestamp) return false;
+                return ts.toDate().isAfter(cutoff);
+              }).toList()
+            : <QueryDocumentSnapshot>[];
+        final approved = docs.where((d) => d['status'] == 'approved').length;
+        final pending = docs.where((d) => d['status'] == 'pending').length;
+        final rejected = docs.where((d) => d['status'] == 'rejected').length;
+        final out = docs.where((d) => d['status'] == 'checked_out').length;
+        final maxVal = [
+          approved,
+          pending,
+          rejected,
+          out,
+          1,
+        ].reduce((a, b) => a > b ? a : b);
+        return Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.indigo.withValues(alpha: 0.14)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _graphCol('Appr', approved, maxVal, Colors.green),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _graphCol('Pend', pending, maxVal, Colors.orange),
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: _graphCol('Rej', rejected, maxVal, Colors.red)),
+              const SizedBox(width: 8),
+              Expanded(child: _graphCol('Out', out, maxVal, Colors.blueGrey)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _graphCol(String label, int count, int maxCount, Color color) {
+    final ratio = (count / maxCount).clamp(0.0, 1.0);
+    return Column(
+      children: [
+        SizedBox(
+          height: 70,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              height: 14 + (56 * ratio),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text('$count', style: const TextStyle(fontWeight: FontWeight.w700)),
+        Text(label, style: const TextStyle(fontSize: 11)),
+      ],
     );
   }
 
@@ -383,7 +610,8 @@ class _MemberScreenState extends State<MemberScreen> {
         }
         final tenantDocs = snapshot.data!.docs.where((d) {
           return SocietyService.instance.documentBelongsToCurrentTenant(
-              d.data() as Map<String, dynamic>?);
+            d.data() as Map<String, dynamic>?,
+          );
         }).toList();
         if (tenantDocs.isEmpty) return const SizedBox();
         var notice = tenantDocs.first;
@@ -393,31 +621,42 @@ class _MemberScreenState extends State<MemberScreen> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-                colors: [cs.secondary.withValues(alpha: 0.9), cs.primary]),
+              colors: [cs.secondary.withValues(alpha: 0.9), cs.primary],
+            ),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                  color: cs.secondary.withValues(alpha: 0.30),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4))
+                color: cs.secondary.withValues(alpha: 0.30),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
             ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(children: [
-                Icon(Icons.campaign, color: Colors.white),
-                SizedBox(width: 8),
-                Text("મહત્વની સૂચના",
+              const Row(
+                children: [
+                  Icon(Icons.campaign, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    "મહત્વની સૂચના",
                     style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold))
-              ]),
-              const SizedBox(height: 8),
-              Text(notice['title'] ?? '',
-                  style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500)),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                notice['title'] ?? '',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               if ((notice['body'] ?? '').toString().isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Text(
@@ -447,12 +686,14 @@ class _MemberScreenState extends State<MemberScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
-                    controller: titleC,
-                    decoration: const InputDecoration(labelText: 'વિષય')),
+                  controller: titleC,
+                  decoration: const InputDecoration(labelText: 'વિષય'),
+                ),
                 TextField(
-                    controller: descC,
-                    maxLines: 3,
-                    decoration: const InputDecoration(labelText: 'વિગત')),
+                  controller: descC,
+                  maxLines: 3,
+                  decoration: const InputDecoration(labelText: 'વિગત'),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -460,8 +701,9 @@ class _MemberScreenState extends State<MemberScreen> {
                       onPressed: () async {
                         final p = ImagePicker();
                         final x = await p.pickImage(
-                            source: ImageSource.camera,
-                            imageQuality: 60);
+                          source: ImageSource.camera,
+                          imageQuality: 60,
+                        );
                         if (x != null) setS(() => picked = x);
                       },
                       icon: const Icon(Icons.camera_alt),
@@ -482,7 +724,9 @@ class _MemberScreenState extends State<MemberScreen> {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx), child: const Text('રદ')),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('રદ'),
+            ),
             ElevatedButton(
               onPressed: () async {
                 if (titleC.text.trim().isEmpty) return;
@@ -516,7 +760,8 @@ class _MemberScreenState extends State<MemberScreen> {
                 if (ctx.mounted) Navigator.pop(ctx);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('ફરિયાદ મોકલાઈ.')));
+                    const SnackBar(content: Text('ફરિયાદ મોકલાઈ.')),
+                  );
                 }
               },
               child: const Text('મોકલો'),
@@ -540,20 +785,25 @@ class _MemberScreenState extends State<MemberScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
-                controller: nameC,
-                decoration: const InputDecoration(labelText: 'નામ')),
+              controller: nameC,
+              decoration: const InputDecoration(labelText: 'નામ'),
+            ),
             TextField(
-                controller: phoneC,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'મોબાઈલ')),
+              controller: phoneC,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(labelText: 'મોબાઈલ'),
+            ),
             TextField(
-                controller: roleC,
-                decoration: const InputDecoration(labelText: 'નોકરી / ભૂમિકા')),
+              controller: roleC,
+              decoration: const InputDecoration(labelText: 'નોકરી / ભૂમિકા'),
+            ),
           ],
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('રદ')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('રદ'),
+          ),
           ElevatedButton(
             onPressed: () async {
               if (nameC.text.trim().isEmpty || phoneC.text.trim().isEmpty) {
@@ -569,8 +819,9 @@ class _MemberScreenState extends State<MemberScreen> {
               });
               if (ctx.mounted) Navigator.pop(ctx);
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('સ્ટાફ ઉમેરાયો.')));
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('સ્ટાફ ઉમેરાયો.')));
               }
             },
             child: const Text('સાચવો'),
@@ -608,9 +859,21 @@ class _MemberScreenState extends State<MemberScreen> {
         }
         final docs = snapshot.data!.docs.where((d) {
           return SocietyService.instance.documentBelongsToCurrentTenant(
-              d.data() as Map<String, dynamic>?);
+            d.data() as Map<String, dynamic>?,
+          );
         }).toList();
-        if (docs.isEmpty) {
+        final cutoff = _memberCutoffDate();
+        final timeFiltered = docs.where((d) {
+          final ts = (d.data() as Map<String, dynamic>?)?['entryTime'];
+          if (ts is! Timestamp) return false;
+          return ts.toDate().isAfter(cutoff);
+        }).toList();
+        final filteredByStatus = _visitorStatusFilter == 'all'
+            ? timeFiltered
+            : timeFiltered
+                  .where((d) => d['status'] == _visitorStatusFilter)
+                  .toList();
+        if (filteredByStatus.isEmpty) {
           return const PremiumEmptyState(
             message: "કોઈ ડેટા નથી",
             icon: Icons.history_toggle_off,
@@ -618,18 +881,21 @@ class _MemberScreenState extends State<MemberScreen> {
         }
 
         return ListView.builder(
-          itemCount: docs.length,
+          itemCount: filteredByStatus.length,
           itemBuilder: (context, index) {
-            var visitor = VisitorModel.fromFirestore(docs[index]);
+            var visitor = VisitorModel.fromFirestore(filteredByStatus[index]);
             return Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black.withOpacity(0.05), blurRadius: 10)
-                  ]),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                  ),
+                ],
+              ),
               child: ListTile(
                 contentPadding: const EdgeInsets.all(12),
                 leading: ClipRRect(
@@ -648,11 +914,16 @@ class _MemberScreenState extends State<MemberScreen> {
                           child: Icon(Icons.person, size: 40),
                         ),
                 ),
-                title: Text(visitor.name,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16)),
+                title: Text(
+                  visitor.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
                 subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start, // બધું ડાબી બાજુથી શરૂ થાય તે માટે
+                  crossAxisAlignment: CrossAxisAlignment
+                      .start, // બધું ડાબી બાજુથી શરૂ થાય તે માટે
                   children: [
                     // જૂનું હેતુ અને સમયનું ટેક્સ્ટ
                     Text(
@@ -660,9 +931,12 @@ class _MemberScreenState extends State<MemberScreen> {
                     ),
 
                     // 🔥 અહીં નવું 'Checked Out' સમયનું લોજિક
-                    if (visitor.status == 'checked_out' && visitor.exitTime != null)
+                    if (visitor.status == 'checked_out' &&
+                        visitor.exitTime != null)
                       Padding(
-                        padding: const EdgeInsets.only(top: 4.0), // થોડી જગ્યા રાખવા માટે
+                        padding: const EdgeInsets.only(
+                          top: 4.0,
+                        ), // થોડી જગ્યા રાખવા માટે
                         child: Text(
                           "બહાર ગયા: ${DateFormat('hh:mm a').format(visitor.exitTime!)}",
                           style: TextStyle(
@@ -683,14 +957,15 @@ class _MemberScreenState extends State<MemberScreen> {
     );
   }
 
-// આ ફંક્શનને ડાયલોગમાં અથવા નવી સ્ક્રીન પર બતાવી શકાય
+  // આ ફંક્શનને ડાયલોગમાં અથવા નવી સ્ક્રીન પર બતાવી શકાય
   void _showQRCodeDialog(String preApproveId, String guestName) {
     showDialog(
       context: context,
       barrierDismissible: false, // યુઝર બહાર ક્લિક કરીને બંધ ન કરી શકે
       builder: (context) => AlertDialog(
         title: Text("$guestName નો QR Code"),
-        content: SingleChildScrollView( // સ્કીન નાની હોય તો સ્ક્રોલ થઈ શકે
+        content: SingleChildScrollView(
+          // સ્કીન નાની હોય તો સ્ક્રોલ થઈ શકે
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -726,7 +1001,10 @@ class _MemberScreenState extends State<MemberScreen> {
           ElevatedButton.icon(
             onPressed: () => _shareQrCode(guestName),
             icon: const Icon(Icons.share, color: Colors.white),
-            label: const Text("WhatsApp પર શેર કરો", style: TextStyle(color: Colors.white)),
+            label: const Text(
+              "WhatsApp પર શેર કરો",
+              style: TextStyle(color: Colors.white),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
               minimumSize: const Size(double.infinity, 45), // બટન આખું દેખાય
@@ -748,12 +1026,13 @@ class _MemberScreenState extends State<MemberScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
-              icon:
-              const Icon(Icons.check_circle, color: Colors.green, size: 30),
-              onPressed: () => _updateStatus(visitor.id, 'approved')),
+            icon: const Icon(Icons.check_circle, color: Colors.green, size: 30),
+            onPressed: () => _updateStatus(visitor.id, 'approved'),
+          ),
           IconButton(
-              icon: const Icon(Icons.cancel, color: Colors.red, size: 30),
-              onPressed: () => _updateStatus(visitor.id, 'rejected')),
+            icon: const Icon(Icons.cancel, color: Colors.red, size: 30),
+            onPressed: () => _updateStatus(visitor.id, 'rejected'),
+          ),
         ],
       );
     }
@@ -766,10 +1045,11 @@ class _MemberScreenState extends State<MemberScreen> {
       child: Text(
         visitor.status == 'approved' ? "મંજૂર" : "અસ્વીકાર",
         style: TextStyle(
-            color: visitor.status == 'approved'
-                ? Colors.green[700]
-                : Colors.red[700],
-            fontWeight: FontWeight.bold),
+          color: visitor.status == 'approved'
+              ? Colors.green[700]
+              : Colors.red[700],
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

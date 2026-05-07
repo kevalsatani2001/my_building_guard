@@ -21,11 +21,11 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     setState(() => _isLoading = true);
     try {
-      UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
 
       // FCM token + topic subscription: [NotificationService] via authStateChanges
 
@@ -34,8 +34,9 @@ class _LoginScreenState extends State<LoginScreen> {
           .doc(userCredential.user!.uid)
           .get();
 
-      SocietyService.instance
-          .bindFromUserMap(userDoc.data() as Map<String, dynamic>?);
+      SocietyService.instance.bindFromUserMap(
+        userDoc.data() as Map<String, dynamic>?,
+      );
 
       String role = userDoc.get('role');
 
@@ -43,18 +44,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (role == 'admin') {
         Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (_) => const AdminDashboard()));
+          context,
+          MaterialPageRoute(builder: (_) => const AdminDashboard()),
+        );
       } else if (role == 'watchman') {
         Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (_) => const WatchmanScreen()));
+          context,
+          MaterialPageRoute(builder: (_) => const WatchmanScreen()),
+        );
       } else {
         Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (_) => const MemberScreen()));
+          context,
+          MaterialPageRoute(builder: (_) => const MemberScreen()),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
       }
     } finally {
       if (mounted) {
@@ -103,9 +111,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       Text(
                         "સોસાયટી મેનેજમેન્ટ એપ",
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: cs.primary,
-                              fontWeight: FontWeight.w800,
-                            ),
+                          color: cs.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 22),
@@ -171,25 +179,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _societyCodeController = TextEditingController();
   String _selectedRole = 'member'; // Default role
+  bool _createNewSociety = false;
   bool _isLoading = false;
+
+  String _normalizeSocietyId(String input) {
+    final trimmed = input.trim().toLowerCase();
+    if (trimmed.isEmpty) return SocietyService.kDefaultSocietyId;
+    return trimmed.replaceAll(RegExp(r'[^a-z0-9_-]'), '_');
+  }
 
   Future<void> _register() async {
     if (_nameController.text.isEmpty ||
         _emailController.text.isEmpty ||
         _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('બધી વિગતો ભરો')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('બધી વિગતો ભરો')));
+      return;
+    }
+
+    if (_selectedRole == 'admin' &&
+        _createNewSociety &&
+        _societyCodeController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('નવી સોસાયટી માટે કોડ લખો')));
       return;
     }
 
     setState(() => _isLoading = true);
     try {
-      UserCredential userCredential =
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      final customSocietyId = _normalizeSocietyId(_societyCodeController.text);
+      final resolvedSocietyId = (_selectedRole == 'admin' && _createNewSociety)
+          ? customSocietyId
+          : (customSocietyId == SocietyService.kDefaultSocietyId
+                ? SocietyService.kDefaultSocietyId
+                : customSocietyId);
+
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
 
       // fcmToken: [NotificationService] saves via authStateChanges after sign-in
 
@@ -197,22 +230,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
           .collection('users')
           .doc(userCredential.user!.uid)
           .set({
-        'uid': userCredential.user!.uid,
-        'name': _nameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'role': _selectedRole,
-        'societyId': SocietyService.kDefaultSocietyId,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+            'uid': userCredential.user!.uid,
+            'name': _nameController.text.trim(),
+            'email': _emailController.text.trim(),
+            'role': _selectedRole,
+            'societyId': resolvedSocietyId,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
 
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('રજીસ્ટ્રેશન સફળ! હવે લોગિન કરો.')));
+        const SnackBar(content: Text('રજીસ્ટ્રેશન સફળ! હવે લોગિન કરો.')),
+      );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
       }
     } finally {
       // 🔥 અહીં પણ mounted ચેક ઉમેર્યું
@@ -231,17 +266,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Column(
           children: [
             TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'પૂરૂ નામ')),
+              controller: _nameController,
+              decoration: const InputDecoration(labelText: 'પૂરૂ નામ'),
+            ),
             const SizedBox(height: 16),
             TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'ઇમેઇલ')),
+              controller: _emailController,
+              decoration: const InputDecoration(labelText: 'ઇમેઇલ'),
+            ),
             const SizedBox(height: 16),
             TextField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'પાસવર્ડ')),
+              controller: _passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'પાસવર્ડ'),
+            ),
             const SizedBox(height: 16),
 
             // રોલ સિલેક્શન (પ્રોફેશનલ એપમાં આ છુપાવેલું હોય છે, પણ અત્યારે તમારા માટે રાખ્યું છે)
@@ -249,11 +287,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
               initialValue: _selectedRole,
               // અહીં 'watchman' ઉમેરી દીધું છે
               items: ['admin', 'member', 'watchman']
-                  .map((role) => DropdownMenuItem(
-                  value: role, child: Text(role.toUpperCase())))
+                  .map(
+                    (role) => DropdownMenuItem(
+                      value: role,
+                      child: Text(role.toUpperCase()),
+                    ),
+                  )
                   .toList(),
               onChanged: (value) => setState(() => _selectedRole = value!),
               decoration: const InputDecoration(labelText: 'તમારો રોલ'),
+            ),
+            const SizedBox(height: 12),
+            if (_selectedRole == 'admin')
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('નવી સોસાયટી બનાવો'),
+                subtitle: const Text(
+                  'ON કરો તો નવા society code સાથે fresh setup થશે',
+                ),
+                value: _createNewSociety,
+                onChanged: (v) => setState(() => _createNewSociety = v),
+              ),
+            TextField(
+              controller: _societyCodeController,
+              decoration: InputDecoration(
+                labelText: _selectedRole == 'admin' && _createNewSociety
+                    ? 'નવો Society Code (required)'
+                    : 'Society Code (optional)',
+                helperText:
+                    'દા.ત. shiv-residency. ખાલી રાખશો તો default society.',
+              ),
             ),
 
             const SizedBox(height: 24),
@@ -279,6 +342,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
+
 /*
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
