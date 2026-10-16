@@ -1,25 +1,23 @@
+import 'package:building_guard/core/app_firestore.dart';
 import 'dart:async';
-import 'dart:io';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import '../models/visitor_model.dart';
 import '../services/firebase_app_guard.dart';
 import '../services/notification_service.dart';
 import '../services/society_service.dart';
 import '../widgets/premium_ui.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+import '../widgets/member_maintenance_sheet.dart';
+import '../models/maintenance_model.dart';
+import 'member_complaint_register_screen.dart';
+import 'member_daily_staff_screen.dart';
+import 'member_pre_approve_screen.dart';
+import 'member_vehicles_screen.dart';
 
 const String _kMemberFunctionsRegion = 'us-central1';
 
@@ -32,7 +30,6 @@ class MemberScreen extends StatefulWidget {
 
 class _MemberScreenState extends State<MemberScreen> {
   final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
-  final GlobalKey _qrKey = GlobalKey();
   String _visitorStatusFilter = 'all';
   String _visitorTimeFilter = '30d';
 
@@ -46,7 +43,7 @@ class _MemberScreenState extends State<MemberScreen> {
 
   // ૧. સ્ટેટસ અપડેટ ફંક્શન (watchmanId ડોક પર રહે — Cloud Function થી વોચમેનને નોટિફિકેશન)
   Future<void> _updateStatus(String docId, String status) async {
-    await FirebaseFirestore.instance.collection('visitors').doc(docId).update({
+    await AppFirestore.instance.collection('visitors').doc(docId).update({
       'status': status,
       'actionTime': FieldValue.serverTimestamp(),
     });
@@ -104,7 +101,7 @@ class _MemberScreenState extends State<MemberScreen> {
       );
       if (confirmed != true || !mounted) return;
 
-      final userDoc = await FirebaseFirestore.instance
+      final userDoc = await AppFirestore.instance
           .collection('users')
           .doc(currentUserId)
           .get();
@@ -172,188 +169,232 @@ class _MemberScreenState extends State<MemberScreen> {
     }
   }
 
-  // ૨. Pre-Approve Guest માટે ડાયલોગ
+  // ૨. Pre-Approve Guest (Dedicated Screen)
   void _showPreApproveDialog() {
-    TextEditingController nameController = TextEditingController();
-    TextEditingController phoneController =
-        TextEditingController(); // નંબર માટે કંટ્રોલર
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MemberPreApproveScreen()),
+    );
+  }
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("મહેમાનની પૂર્વ-મંજૂરી"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min, // કન્ટેન્ટ જેટલી જ જગ્યા રોકશે
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        title: Row(
           children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                hintText: "મહેમાનનું નામ લખો",
-                labelText: "નામ",
-                prefixIcon: Icon(Icons.person),
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0D9488), Color(0xFF14B8A6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0D9488).withValues(alpha: 0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
+              child: const Icon(Icons.home_work_rounded, color: Colors.white, size: 20),
             ),
-            const SizedBox(height: 10), // બે ફિલ્ડ વચ્ચે જગ્યા
-            TextField(
-              controller: phoneController,
-              keyboardType: TextInputType.phone,
-              // નંબર માટેનું કીબોર્ડ ખુલશે
-              decoration: const InputDecoration(
-                hintText: "મહેમાનનો મોબાઈલ નંબર લખો",
-                labelText: "મોબાઈલ નંબર",
-                prefixIcon: Icon(Icons.phone),
-              ),
+            const SizedBox(width: 10),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "માય સોસાયટી",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                Text(
+                  "મેમ્બર પોર્ટલ • સુરક્ષિત નિવાસ",
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("રદ કરો"),
+          Container(
+            margin: const EdgeInsets.only(right: 6),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.red.shade100),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.emergency_share_rounded, size: 20, color: Colors.red),
+              tooltip: 'ઇમરજન્સી મદદ',
+              onPressed: _showMemberEmergencyDialog,
+            ),
           ),
-          ElevatedButton(
-            onPressed: () async {
-              // નામ અને નંબર બંને હોવા જોઈએ (Validation)
-              if (nameController.text.isNotEmpty &&
-                  phoneController.text.length >= 10) {
-                try {
-                  // ૧. Firestore માં ડેટા સેવ કરો
-                  DocumentReference docRef = await FirebaseFirestore.instance
-                      .collection('pre_approvals')
-                      .add({
-                        'guestName': nameController.text.trim(),
-                        'guestPhone': phoneController.text.trim(),
-                        // 🔥 હવે નંબર સેવ થશે
-                        'memberId': currentUserId,
-                        'createdAt': FieldValue.serverTimestamp(),
-                        'status': 'pre-approved',
-                        'societyId': SocietyService.instance.societyId,
-                      });
-
-                  Navigator.pop(context); // ડાયલોગ બંધ કરો
-
-                  // ૨. હવે જનરેટ થયેલી ID નો QR બતાવો
-                  _showQRCodeDialog(docRef.id, nameController.text.trim());
-                } catch (e) {
-                  print("Error saving pre-approval: $e");
-                }
-              } else {
-                // જો વિગત અધૂરી હોય તો
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("કૃપા કરીને નામ અને ૧૦ આંકડાનો નંબર લખો"),
-                  ),
-                );
-              }
-            },
-            child: const Text("મંજૂર કરો અને QR મેળવો"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _shareQrCode(String guestName) async {
-    try {
-      // વિજેટને ઈમેજમાં કન્વર્ટ કરો
-      RenderRepaintBoundary boundary =
-          _qrKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      ByteData? byteData = await image.toByteData(
-        format: ui.ImageByteFormat.png,
-      );
-      Uint8List pngBytes = byteData!.buffer.asUint8List();
-
-      // કામચલાઉ ફાઈલ સેવ કરો
-      final directory = await getTemporaryDirectory();
-      final file = await File('${directory.path}/guest_qr.png').create();
-      await file.writeAsBytes(pngBytes);
-
-      // શેર કરો
-      await Share.shareXFiles([
-        XFile(file.path),
-      ], text: "આ સોસાયટી એન્ટ્રી QR Code છે $guestName માટે.");
-    } catch (e) {
-      print("શેર કરવામાં ભૂલ આવી: $e");
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "માય સોસાયટી",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.emergency_share),
-            tooltip: 'ઇમરજન્સી મદદ',
-            color: Colors.amber.shade300,
-            onPressed: _showMemberEmergencyDialog,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => FirebaseAuth.instance.signOut(),
+          Container(
+            margin: const EdgeInsets.only(right: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.logout_rounded, size: 20, color: Color(0xFF64748B)),
+              tooltip: 'લોગઆઉટ',
+              onPressed: () => FirebaseAuth.instance.signOut(),
+            ),
           ),
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              cs.primary.withValues(alpha: 0.05),
-              Theme.of(context).scaffoldBackgroundColor,
-            ],
-          ),
-        ),
+        color: const Color(0xFFF8FAFC),
         child: Column(
           children: [
             _buildMemberSummaryCard(),
             // --- ૧. Notice Board Section ---
             _buildNoticeBoard(),
 
-            // --- ૨. Quick Actions (Pre-Approve) ---
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: ElevatedButton.icon(
-                onPressed: _showPreApproveDialog,
-                icon: const Icon(Icons.verified_user, color: Colors.white),
-                label: const Text(
-                  "મહેમાનને અગાઉથી મંજૂરી આપો",
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: cs.primary,
-                  minimumSize: const Size(double.infinity, 48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
+            // --- ૧.૫ મેન્ટેનન્સ એલર્ટ બેનર ---
+            _buildMaintenanceBanner(),
+
+            // --- ૨. Quick Actions ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _showComplaintDialog,
-                      icon: const Icon(Icons.report_problem),
-                      label: const Text('ફરિયાદ'),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _showPreApproveDialog,
+                        borderRadius: BorderRadius.circular(16),
+                        child: Ink(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF4338CA), Color(0xFF6366F1)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF4338CA).withValues(alpha: 0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.qr_code_rounded, color: Colors.white, size: 18),
+                              SizedBox(width: 8),
+                              Text(
+                                "ગેસ્ટ પાસ (QR)",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _showMaintenancePortal(),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Ink(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF0D9488), Color(0xFF14B8A6)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0D9488).withValues(alpha: 0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 18),
+                              SizedBox(width: 8),
+                              Text(
+                                "મેન્ટેનન્સ બિલ",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildSmallMemberAction(
+                      icon: Icons.report_problem_rounded,
+                      label: 'ફરિયાદ',
+                      color: const Color(0xFF8B5CF6),
+                      onTap: _showComplaintDialog,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _showAddStaffDialog,
-                      icon: const Icon(Icons.badge),
-                      label: const Text('કાયમી સ્ટાફ'),
+                    child: _buildSmallMemberAction(
+                      icon: Icons.badge_rounded,
+                      label: 'કાયમી સ્ટાફ',
+                      color: const Color(0xFFF59E0B),
+                      onTap: _showAddStaffDialog,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildSmallMemberAction(
+                      icon: Icons.directions_car_rounded,
+                      label: 'વાહનો',
+                      color: const Color(0xFF3B82F6),
+                      onTap: _showMyVehiclesDialog,
                     ),
                   ),
                 ],
@@ -383,9 +424,54 @@ class _MemberScreenState extends State<MemberScreen> {
     );
   }
 
+  Widget _buildSmallMemberAction({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: color.withValues(alpha: 0.2)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMemberSummaryCard() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
+      stream: AppFirestore.instance
           .collection('visitors')
           .where('memberId', isEqualTo: currentUserId)
           .orderBy('entryTime', descending: true)
@@ -407,18 +493,27 @@ class _MemberScreenState extends State<MemberScreen> {
 
         return Container(
           width: double.infinity,
-          margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+          margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.indigo.withValues(alpha: 0.16)),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Row(
             children: [
-              _miniStat("Pending", pending, Colors.orange),
-              _miniStat("Approved", approved, Colors.green),
-              _miniStat("Out", checkedOut, Colors.blueGrey),
+              _miniStat("બાકી મુલાકાતી", pending, const Color(0xFFF59E0B), const Color(0xFFFFFBEB)),
+              Container(width: 1, height: 32, color: const Color(0xFFF1F5F9)),
+              _miniStat("મંજૂર કરેલ", approved, const Color(0xFF10B981), const Color(0xFFECFDF5)),
+              Container(width: 1, height: 32, color: const Color(0xFFF1F5F9)),
+              _miniStat("બહાર ગયેલ", checkedOut, const Color(0xFF64748B), const Color(0xFFF8FAFC)),
             ],
           ),
         );
@@ -426,20 +521,35 @@ class _MemberScreenState extends State<MemberScreen> {
     );
   }
 
-  Widget _miniStat(String label, int count, Color color) {
+  Widget _miniStat(String label, int count, Color color, Color bg) {
     return Expanded(
       child: Column(
         children: [
-          Text(
-            '$count',
-            style: TextStyle(
-              color: color,
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '$count',
+              style: TextStyle(
+                color: color,
+                fontSize: 19,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+              ),
             ),
           ),
           const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 12)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF64748B),
+            ),
+          ),
         ],
       ),
     );
@@ -511,7 +621,7 @@ class _MemberScreenState extends State<MemberScreen> {
 
   Widget _buildMemberVisitorGraph() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
+      stream: AppFirestore.instance
           .collection('visitors')
           .where('memberId', isEqualTo: currentUserId)
           .orderBy('entryTime', descending: true)
@@ -599,7 +709,7 @@ class _MemberScreenState extends State<MemberScreen> {
   Widget _buildNoticeBoard() {
     final cs = Theme.of(context).colorScheme;
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
+      stream: AppFirestore.instance
           .collection('notices')
           .orderBy('createdAt', descending: true)
           .limit(20)
@@ -671,163 +781,40 @@ class _MemberScreenState extends State<MemberScreen> {
     );
   }
 
-  Future<void> _showComplaintDialog() async {
-    final titleC = TextEditingController();
-    final descC = TextEditingController();
-    XFile? picked;
-
-    await showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setS) => AlertDialog(
-          title: const Text('ફરિયાદ નોંધો'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: titleC,
-                  decoration: const InputDecoration(labelText: 'વિષય'),
-                ),
-                TextField(
-                  controller: descC,
-                  maxLines: 3,
-                  decoration: const InputDecoration(labelText: 'વિગત'),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    TextButton.icon(
-                      onPressed: () async {
-                        final p = ImagePicker();
-                        final x = await p.pickImage(
-                          source: ImageSource.camera,
-                          imageQuality: 60,
-                        );
-                        if (x != null) setS(() => picked = x);
-                      },
-                      icon: const Icon(Icons.camera_alt),
-                      label: const Text('ફોટો'),
-                    ),
-                    if (picked != null)
-                      Expanded(
-                        child: Text(
-                          picked!.name,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('રદ'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (titleC.text.trim().isEmpty) return;
-                String photoUrl = '';
-                if (picked != null) {
-                  final path =
-                      'complaints/$currentUserId/${DateTime.now().millisecondsSinceEpoch}.jpg';
-                  await FirebaseStorage.instance
-                      .ref(path)
-                      .putFile(File(picked!.path));
-                  photoUrl = await FirebaseStorage.instance
-                      .ref(path)
-                      .getDownloadURL();
-                }
-                final userDoc = await FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(currentUserId)
-                    .get();
-                final memberName =
-                    userDoc.data()?['name'] ?? userDoc.data()?['email'] ?? '';
-                await FirebaseFirestore.instance.collection('complaints').add({
-                  'title': titleC.text.trim(),
-                  'description': descC.text.trim(),
-                  'photoUrl': photoUrl,
-                  'memberId': currentUserId,
-                  'memberName': memberName,
-                  'status': 'pending',
-                  'createdAt': FieldValue.serverTimestamp(),
-                  'societyId': SocietyService.instance.societyId,
-                });
-                if (ctx.mounted) Navigator.pop(ctx);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('ફરિયાદ મોકલાઈ.')),
-                  );
-                }
-              },
-              child: const Text('મોકલો'),
-            ),
-          ],
-        ),
-      ),
+  Widget _buildMaintenanceBanner() {
+    return MemberMaintenanceSheet.buildMaintenanceBanner(
+      context,
+      currentUserId: currentUserId,
     );
   }
 
-  Future<void> _showAddStaffDialog() async {
-    final nameC = TextEditingController();
-    final phoneC = TextEditingController();
-    final roleC = TextEditingController(text: 'કામવાળા / ડ્રાઈવર');
+  Future<void> _showMaintenancePortal({MaintenanceBill? initialBill}) async {
+    await MemberMaintenanceSheet.showMaintenancePortal(
+      context,
+      currentUserId: currentUserId,
+      initialBill: initialBill,
+    );
+  }
 
-    await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('કાયમી સ્ટાફ ઉમેરો'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameC,
-              decoration: const InputDecoration(labelText: 'નામ'),
-            ),
-            TextField(
-              controller: phoneC,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'મોબાઈલ'),
-            ),
-            TextField(
-              controller: roleC,
-              decoration: const InputDecoration(labelText: 'નોકરી / ભૂમિકા'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('રદ'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameC.text.trim().isEmpty || phoneC.text.trim().isEmpty) {
-                return;
-              }
-              await FirebaseFirestore.instance.collection('daily_staff').add({
-                'memberId': currentUserId,
-                'staffName': nameC.text.trim(),
-                'staffPhone': phoneC.text.trim(),
-                'staffRole': roleC.text.trim(),
-                'createdAt': FieldValue.serverTimestamp(),
-                'societyId': SocietyService.instance.societyId,
-              });
-              if (ctx.mounted) Navigator.pop(ctx);
-              if (mounted) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('સ્ટાફ ઉમેરાયો.')));
-              }
-            },
-            child: const Text('સાચવો'),
-          ),
-        ],
-      ),
+  void _showComplaintDialog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MemberComplaintRegisterScreen()),
+    );
+  }
+
+  void _showAddStaffDialog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MemberDailyStaffScreen()),
+    );
+  }
+
+  // --- મારા વાહનો મેનેજમેન્ટ ---
+  void _showMyVehiclesDialog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MemberVehiclesScreen()),
     );
   }
 
@@ -835,7 +822,7 @@ class _MemberScreenState extends State<MemberScreen> {
   Widget _buildVisitorList() {
     return StreamBuilder<QuerySnapshot>(
       // societyId ફિલ્ટર ક્વેરીમાં નહીં — જૂના visitors પાસે ફીલ્ડ ન હોય તો પણ દેખાય; ક્લાયન્ટ પર ટેનન્ટ ચેક.
-      stream: FirebaseFirestore.instance
+      stream: AppFirestore.instance
           .collection('visitors')
           .where('memberId', isEqualTo: currentUserId)
           .orderBy('entryTime', descending: true)
@@ -957,68 +944,7 @@ class _MemberScreenState extends State<MemberScreen> {
     );
   }
 
-  // આ ફંક્શનને ડાયલોગમાં અથવા નવી સ્ક્રીન પર બતાવી શકાય
-  void _showQRCodeDialog(String preApproveId, String guestName) {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // યુઝર બહાર ક્લિક કરીને બંધ ન કરી શકે
-      builder: (context) => AlertDialog(
-        title: Text("$guestName નો QR Code"),
-        content: SingleChildScrollView(
-          // સ્કીન નાની હોય તો સ્ક્રોલ થઈ શકે
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "આ QR મહેમાનને WhatsApp પર શેર કરો.",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-              const SizedBox(height: 20),
 
-              // 🔥 RepaintBoundary ને ફિક્સ સાઈઝ આપવા માટે SizedBox વાપર્યું
-              RepaintBoundary(
-                key: _qrKey,
-                child: Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.all(15),
-                  child: SizedBox(
-                    width: 200, // ફિક્સ પહોળાઈ
-                    height: 200, // ફિક્સ ઉંચાઈ
-                    child: QrImageView(
-                      data: preApproveId,
-                      version: QrVersions.auto,
-                      size: 200.0,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          // 🔥 શેર બટન
-          ElevatedButton.icon(
-            onPressed: () => _shareQrCode(guestName),
-            icon: const Icon(Icons.share, color: Colors.white),
-            label: const Text(
-              "WhatsApp પર શેર કરો",
-              style: TextStyle(color: Colors.white),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              minimumSize: const Size(double.infinity, 45), // બટન આખું દેખાય
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("બંધ કરો"),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildStatusAction(VisitorModel visitor) {
     if (visitor.status == 'pending') {

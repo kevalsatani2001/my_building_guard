@@ -1,3 +1,4 @@
+import 'package:building_guard/core/app_firestore.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
@@ -6,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import '../models/user_model.dart';
@@ -13,6 +15,7 @@ import '../services/firebase_app_guard.dart';
 import '../services/notification_service.dart';
 import '../services/society_service.dart';
 import '../widgets/premium_ui.dart';
+import '../widgets/watchman_vehicle_lookup_sheet.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 /// Cloud Functions v2 `sendMemberPush` નું રીજન — [GCP Console] → Functions માં ચેક કરો (ઘણી વખત `us-central1`).
@@ -61,12 +64,88 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   List<UserModel> _filteredMembers = [];
   bool _isUploading = false;
 
+  static const List<Map<String, dynamic>> _kQuickPartners = [
+    {
+      'name': 'Zomato',
+      'icon': Icons.lunch_dining,
+      'color': Color(0xFFE23744),
+      'label': 'Zomato Delivery',
+    },
+    {
+      'name': 'Swiggy',
+      'icon': Icons.fastfood,
+      'color': Color(0xFFFC8019),
+      'label': 'Swiggy Delivery',
+    },
+    {
+      'name': 'Amazon',
+      'icon': Icons.inventory_2,
+      'color': Color(0xFFFF9900),
+      'label': 'Amazon Delivery',
+    },
+    {
+      'name': 'Flipkart',
+      'icon': Icons.local_mall,
+      'color': Color(0xFF2874F0),
+      'label': 'Flipkart Delivery',
+    },
+    {
+      'name': 'Blinkit',
+      'icon': Icons.electric_bolt,
+      'color': Color(0xFFEAB308),
+      'label': 'Blinkit Delivery',
+    },
+    {
+      'name': 'Zepto',
+      'icon': Icons.shopping_bag,
+      'color': Color(0xFF8B5CF6),
+      'label': 'Zepto Delivery',
+    },
+    {
+      'name': 'કુરિયર',
+      'icon': Icons.local_shipping,
+      'color': Color(0xFF4B5563),
+      'label': 'Courier / Parcel',
+    },
+    {
+      'name': 'કેબ',
+      'icon': Icons.local_taxi,
+      'color': Color(0xFF059669),
+      'label': 'Ola / Uber Cab',
+    },
+    {
+      'name': 'સર્વિસ',
+      'icon': Icons.build,
+      'color': Color(0xFF6366F1),
+      'label': 'Service / Repair',
+    },
+    {
+      'name': 'મહેમાન',
+      'icon': Icons.group,
+      'color': Color(0xFF0284C7),
+      'label': 'Guest Visit',
+    },
+  ];
+
   final AudioPlayer _audioPlayer = AudioPlayer();
-  List<String> _processedIds = []; // જે એન્ટ્રીનો અવાજ આવી ગયો હોય તેની યાદી
+  final List<String> _processedIds = []; // જે એન્ટ્રીનો અવાજ આવી ગયો હોય તેની યાદી
   List<QueryDocumentSnapshot> _preApprovedResults = [];
 
   void _playAlertSound() async {
-    await _audioPlayer.play(AssetSource('sounds/notification.mp3'));
+    try {
+      await _audioPlayer.play(AssetSource('sounds/notification.mp3'));
+    } catch (_) {}
+  }
+
+  void _checkAndPlaySound(List<QueryDocumentSnapshot> docs) {
+    for (var doc in docs) {
+      final m = doc.data() as Map<String, dynamic>;
+      final status = m['status'] ?? 'pending';
+      if ((status == 'approved' || status == 'rejected') && !_processedIds.contains(doc.id)) {
+        _processedIds.add(doc.id);
+        _playAlertSound();
+      }
+    }
   }
 
   @override
@@ -80,13 +159,13 @@ class _WatchmanScreenState extends State<WatchmanScreen>
 
   Future<DocumentSnapshot> _loadSocietyConfigDoc() async {
     final sid = SocietyService.instance.societyId;
-    final modern = await FirebaseFirestore.instance
+    final modern = await AppFirestore.instance
         .collection('society_settings')
         .doc(sid)
         .get();
     if (modern.exists) return modern;
     if (sid == SocietyService.kDefaultSocietyId) {
-      return FirebaseFirestore.instance
+      return AppFirestore.instance
           .collection('settings')
           .doc('society_config')
           .get();
@@ -106,7 +185,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   // ૨. બ્લોક મુજબ મેમ્બર્સ મેળવવા
   Future<void> _fetchMembersByBlock(String blockName) async {
     setState(() => _isUploading = true);
-    var snapshot = await FirebaseFirestore.instance
+    var snapshot = await AppFirestore.instance
         .collection('users')
         .where('role', isEqualTo: 'member')
         .where('blockName', isEqualTo: blockName)
@@ -116,12 +195,11 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       _filteredMembers = snapshot.docs
           .where(
             (doc) => SocietyService.instance.documentBelongsToCurrentTenant(
-              doc.data() as Map<String, dynamic>?,
+              doc.data(),
             ),
           )
           .map(
-            (doc) =>
-                UserModel.fromMap(doc.data() as Map<String, dynamic>, doc.id),
+            (doc) => UserModel.fromMap(doc.data(), doc.id),
           )
           .toList();
       _selectedMember = null;
@@ -136,7 +214,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       return;
     }
 
-    var snapshot = await FirebaseFirestore.instance
+    var snapshot = await AppFirestore.instance
         .collection('pre_approvals')
         .where('guestName', isEqualTo: name.trim())
         .where('status', isEqualTo: 'pre-approved')
@@ -164,7 +242,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     var data = doc.data() as Map<String, dynamic>;
     String memberId = data['memberId'];
 
-    var userDoc = await FirebaseFirestore.instance
+    var userDoc = await AppFirestore.instance
         .collection('users')
         .doc(memberId)
         .get();
@@ -196,17 +274,23 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     setState(() => _isUploading = true);
     try {
       // સ્ટોરેજમાં ફોટો અપલોડ
-      String fileName = 'visitors/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      // TaskSnapshot uploadTask =
-      //     await FirebaseStorage.instance.ref(fileName).putFile(_image!);
       String photoUrl = "";
-      // String photoUrl = await uploadTask.ref.getDownloadURL();
+      if (_image != null) {
+        String fileName = 'visitors/${DateTime.now().millisecondsSinceEpoch}.jpg';
+        try {
+          final uploadTask =
+              await FirebaseStorage.instance.ref(fileName).putFile(_image!);
+          photoUrl = await uploadTask.ref.getDownloadURL();
+        } catch (e) {
+          debugPrint('Storage upload error: $e');
+        }
+      }
 
       bool isPreApproved = _purposeController.text == "Pre-Approved Guest";
       final guestName = _nameController.text.trim();
       final memberUid = _selectedMember!.uid;
 
-      await FirebaseFirestore.instance.collection('visitors').add({
+      await AppFirestore.instance.collection('visitors').add({
         'name': guestName,
         'phone': _phoneController.text.trim(),
         'purpose': _purposeController.text.trim(),
@@ -418,7 +502,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                 return Column(
                   children: emergList.map<Widget>((e) {
                     if (e is! Map) return const SizedBox.shrink();
-                    final m = Map<String, dynamic>.from(e as Map);
+                    final m = Map<String, dynamic>.from(e);
                     final name = '${m['name'] ?? ''}';
                     final phone = '${m['phone'] ?? ''}';
                     return ListTile(
@@ -438,7 +522,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
             ),
             const SizedBox(height: 8),
             StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
+              stream: AppFirestore.instance
                   .collection('daily_staff')
                   .orderBy('createdAt', descending: true)
                   .limit(100)
@@ -479,6 +563,13 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     );
   }
 
+  void _openVehicleLookupDialog() {
+    WatchmanVehicleLookupSheet.show(
+      context,
+      onNotifyMemberPush: _notifyMemberPush,
+      onShowSnackBar: _showSnackBar,
+    );
+  }
   Future<bool> _showConfirmDialog(String title, String content) async {
     return await showDialog(
           context: context,
@@ -514,6 +605,11 @@ class _WatchmanScreenState extends State<WatchmanScreen>
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.directions_car_filled_rounded),
+            tooltip: 'વાહન સર્ચ (Vehicle Search)',
+            onPressed: _openVehicleLookupDialog,
+          ),
           IconButton(
             icon: const Icon(Icons.contact_phone),
             tooltip: 'ઈમરજન્સી અને કાયમી સ્ટાફ',
@@ -702,11 +798,63 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               border: OutlineInputBorder(),
             ),
           ),
+          const SizedBox(height: 14),
+
+          // ક્વિક ડિલિવરી / વિઝિટર ટેગ્સ
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              "ઝડપી ડિલિવરી / મુલાકાત પ્રકાર (1-Tap):",
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 6),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: _kQuickPartners.map((partner) {
+                final isSelected =
+                    _purposeController.text == partner['label'];
+                final color = partner['color'] as Color;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ActionChip(
+                    avatar: Icon(
+                      partner['icon'] as IconData,
+                      size: 16,
+                      color: isSelected ? Colors.white : color,
+                    ),
+                    label: Text(partner['name'] as String),
+                    backgroundColor: isSelected ? color : Colors.white,
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : Colors.black87,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontSize: 12,
+                    ),
+                    side: BorderSide(
+                      color: color.withValues(alpha: isSelected ? 1.0 : 0.4),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _purposeController.text = partner['label'] as String;
+                        if (_nameController.text.trim().isEmpty) {
+                          _nameController.text =
+                              "${partner['name']} Delivery";
+                        }
+                      });
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
           const SizedBox(height: 10),
+
           TextField(
             controller: _purposeController,
             decoration: const InputDecoration(
-              labelText: "કારણ (Guest, Delivery)",
+              labelText: "મુલાકાતનું કારણ (Purpose)",
               border: OutlineInputBorder(),
             ),
           ),
@@ -714,7 +862,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
 
           // Block & Member Dropdowns
           StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('blocks').snapshots(),
+            stream: AppFirestore.instance.collection('blocks').snapshots(),
             builder: (context, snap) {
               if (!snap.hasData) return const CircularProgressIndicator();
               final blockDocs = snap.data!.docs
@@ -791,7 +939,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       DateTime.now().day,
     );
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
+      stream: AppFirestore.instance
           .collection('visitors')
           .where(
             'entryTime',
@@ -893,7 +1041,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   Widget _buildWatchmanHistoryGraph() {
     final cutoff = _watchmanCutoffDate();
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
+      stream: AppFirestore.instance
           .collection('visitors')
           .where(
             'entryTime',
@@ -1037,7 +1185,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         // 📜 ફિલ્ટર કરેલું લિસ્ટ
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
+            stream: AppFirestore.instance
                 .collection('visitors')
                 .where(
                   'entryTime',
@@ -1064,6 +1212,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         ),
                   )
                   .toList();
+
+              _checkAndPlaySound(tenantDocs);
 
               var filteredDocs = tenantDocs.where((doc) {
                 final m = doc.data() as Map<String, dynamic>;
@@ -1241,7 +1391,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
 
   // Check-out કરવાનું ફંક્શન
   Future<void> _checkOutVisitor(String docId) async {
-    final ref = FirebaseFirestore.instance.collection('visitors').doc(docId);
+    final ref = AppFirestore.instance.collection('visitors').doc(docId);
     final snap = await ref.get();
     final m = snap.data();
     final memberUid = m?['memberId'] as String?;
@@ -1274,23 +1424,136 @@ class _WatchmanScreenState extends State<WatchmanScreen>
 
   // ૧. સ્કેનર ખોલવાનું ફંક્શન
   void _openQRScanner() {
+    final controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.noDuplicates,
+      returnImage: false,
+    );
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        child: MobileScanner(
-          onDetect: (capture) async {
-            final List<Barcode> barcodes = capture.barcodes;
-            if (barcodes.isNotEmpty) {
-              String? code = barcodes.first.rawValue;
-              if (code != null) {
-                Navigator.pop(context); // સ્કેનર બંધ કરો
-                _processQRCode(code); // ડેટા પ્રોસેસ કરો
-              }
-            }
-          },
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SizedBox(
+        height: MediaQuery.of(ctx).size.height * 0.75,
+        child: Column(
+          children: [
+            AppBar(
+              title: const Text('QR કોડ સ્કેનર', style: TextStyle(fontSize: 16)),
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(ctx),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.flash_on),
+                  onPressed: () => controller.toggleTorch(),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.cameraswitch),
+                  onPressed: () => controller.switchCamera(),
+                ),
+              ],
+            ),
+            Expanded(
+              child: MobileScanner(
+                controller: controller,
+                errorBuilder: (context, error) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.videocam_off, size: 48, color: Colors.red),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'કેમેરા અથવા QR સ્કેનર શરૂ થઈ શક્યું નથી.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            error.errorDetails?.message ??
+                                'કૃપા કરીને કેમેરા પરમિશન આપો અથવા નીચેથી કોડ મેન્યુઅલી દાખલ કરો.',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 12, color: Colors.black54),
+                          ),
+                          const SizedBox(height: 16),
+                          FilledButton.icon(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _showManualEntryDialog();
+                            },
+                            icon: const Icon(Icons.keyboard),
+                            label: const Text('મેન્યુઅલી કોડ દાખલ કરો'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                onDetect: (capture) async {
+                  final List<Barcode> barcodes = capture.barcodes;
+                  if (barcodes.isNotEmpty) {
+                    final String? code = barcodes.first.rawValue;
+                    if (code != null && code.trim().isNotEmpty) {
+                      Navigator.pop(ctx); // સ્કેનર બંધ કરો
+                      _processQRCode(code.trim()); // ડેટા પ્રોસેસ કરો
+                    }
+                  }
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: TextButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _showManualEntryDialog();
+                },
+                icon: const Icon(Icons.edit_note),
+                label: const Text('સ્કેન નથી થતું? મેન્યુઅલી કોડ લખો'),
+              ),
+            ),
+          ],
         ),
+      ),
+    ).whenComplete(() {
+      controller.dispose();
+    });
+  }
+
+  void _showManualEntryDialog() {
+    final codeController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('કોડ દાખલ કરો'),
+        content: TextField(
+          controller: codeController,
+          decoration: const InputDecoration(
+            labelText: 'પ્રી-અપ્રૂવલ ID અથવા કોડ',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('રદ'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final code = codeController.text.trim();
+              if (code.isNotEmpty) {
+                Navigator.pop(ctx);
+                _processQRCode(code);
+              }
+            },
+            child: const Text('ચકાસો'),
+          ),
+        ],
       ),
     );
   }
@@ -1300,7 +1563,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     setState(() => _isUploading = true);
 
     try {
-      var doc = await FirebaseFirestore.instance
+      var doc = await AppFirestore.instance
           .collection('pre_approvals')
           .doc(preApproveId)
           .get();
@@ -1314,7 +1577,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
           return;
         }
 
-        var userDoc = await FirebaseFirestore.instance
+        var userDoc = await AppFirestore.instance
             .collection('users')
             .doc(data['memberId'])
             .get();
@@ -1344,42 +1607,3 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     }
   }
 }
-
-/*
-without setup
-
-
-
-// ૧. સ્ટેટમાં આ વેરિયેબલ ઉમેરો
-Set<String> _notifiedVisitorIds = {};
-
-// ૨. હિસ્ટ્રી ટેબમાં StreamBuilder ની અંદર:
-builder: (context, snap) {
-  if (snap.hasData) {
-    for (var doc in snap.data!.docs) {
-      String status = doc['status'] ?? 'pending';
-      String id = doc.id;
-
-      // જો સ્ટેટસ બદલાયું હોય (pending નથી) અને આપણે હજુ આનો અવાજ નથી વગાડ્યો
-      if (status != 'pending' && !_notifiedVisitorIds.contains(id)) {
-
-        // અવાજ વગાડવા માટેનું લોજિક
-        _playStatusSound(status);
-
-        // આ આઈડીને સેટમાં ઉમેરી દો જેથી બીજી વાર અવાજ ન આવે
-        _notifiedVisitorIds.add(id);
-      }
-    }
-  }
-  // ... તમારો બાકીનો લિસ્ટ કોડ
-}
-
-// ૩. અવાજ વગાડવાનું ફંક્શન
-void _playStatusSound(String status) {
-  // તમે અહીં હમણાં માટે સિમ્પલ Vibration અથવા અવાજ મૂકી શકો
-  // જો તમે audioplayers પેકેજ વાપરો તો:
-  // AudioPlayer().play(AssetSource(status == 'approved' ? 'success.mp3' : 'error.mp3'));
-
-  print("સ્ટેટસ બદલાયું: $status - વોચમેનને એલર્ટ આપો!");
-}
- */

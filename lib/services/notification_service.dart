@@ -1,3 +1,4 @@
+import 'package:building_guard/core/app_firestore.dart';
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -22,7 +23,7 @@ class NotificationService {
   static final NotificationService instance = NotificationService._();
 
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFirestore _db = AppFirestore.instance;
   final FlutterLocalNotificationsPlugin _local = FlutterLocalNotificationsPlugin();
 
   StreamSubscription<User?>? _authSub;
@@ -153,26 +154,79 @@ class NotificationService {
     final tAdmins = SocietyService.instance.topicAdmins;
     final tWatch = SocietyService.instance.topicWatchmen;
 
-    await _withRetries(
-      () => _fcm.subscribeToTopic(tMembers),
-      label: 'FCM subscribe members topic',
-    );
-    _subscribedTopics.add(tMembers);
-
     if (role == 'admin') {
+      // એડમિન માત્ર એડમિન ટોપિક (SOS, ફરિયાદો, રિક્વેસ્ટ એલર્ટ) સાંભળશે — જનરલ બ્રોડકાસ્ટ નહીં જેથી પોતાને પુશ ન આવે.
       await _withRetries(
         () => _fcm.subscribeToTopic(tAdmins),
         label: 'FCM subscribe admins topic',
       );
       _subscribedTopics.add(tAdmins);
-    }
 
-    if (role == 'watchman') {
+      // એડમિન અગાઉ મેમ્બર્સ ટોપિક પર જોડાયેલ હોય તો એને અનસબસ્ક્રાઇબ કરો જેથી પોતાનો જ બ્રોડકાસ્ટ પોતાને ન આવે.
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(tMembers),
+        label: 'FCM unsubscribe admin from tMembers',
+      );
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(kSocietyMembersTopic),
+        label: 'FCM unsubscribe admin from legacy kSocietyMembersTopic',
+      );
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(tWatch),
+        label: 'FCM unsubscribe admin from tWatch',
+      );
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(kSocietyWatchmenTopic),
+        label: 'FCM unsubscribe admin from legacy kSocietyWatchmenTopic',
+      );
+    } else if (role == 'watchman') {
+      // વોચમેન માત્ર ગેટ/સુરક્ષા ટોપિક સાંભળશે.
       await _withRetries(
         () => _fcm.subscribeToTopic(tWatch),
         label: 'FCM subscribe watchmen topic',
       );
       _subscribedTopics.add(tWatch);
+
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(tMembers),
+        label: 'FCM unsubscribe watchman from tMembers',
+      );
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(kSocietyMembersTopic),
+        label: 'FCM unsubscribe watchman from legacy kSocietyMembersTopic',
+      );
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(tAdmins),
+        label: 'FCM unsubscribe watchman from tAdmins',
+      );
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(kSocietyAdminsTopic),
+        label: 'FCM unsubscribe watchman from legacy kSocietyAdminsTopic',
+      );
+    } else {
+      // સામાન્ય મેમ્બર્સ સોસાયટીની જનરલ નોટિસ/બ્રોડકાસ્ટ સાંભળશે.
+      await _withRetries(
+        () => _fcm.subscribeToTopic(tMembers),
+        label: 'FCM subscribe members topic',
+      );
+      _subscribedTopics.add(tMembers);
+
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(tAdmins),
+        label: 'FCM unsubscribe member from tAdmins',
+      );
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(kSocietyAdminsTopic),
+        label: 'FCM unsubscribe member from legacy kSocietyAdminsTopic',
+      );
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(tWatch),
+        label: 'FCM unsubscribe member from tWatch',
+      );
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(kSocietyWatchmenTopic),
+        label: 'FCM unsubscribe member from legacy kSocietyWatchmenTopic',
+      );
     }
 
     await _withRetries(() async {
@@ -247,6 +301,16 @@ class NotificationService {
         'FCM foreground: notif.title=${message.notification?.title} data=${message.data}',
       );
     }
+    // જો આ નોટિફિકેશન મોકલનાર પોતે જ કરન્ટ યુઝર હોય, તો પોતાને જ લોકલ પોપઅપ/સાઉન્ડ ન વગાડો
+    final currentUid = FirebaseAuth.instance.currentUser?.uid;
+    final senderUid = message.data['senderUid'] ?? message.data['authorId'];
+    if (currentUid != null && senderUid != null && senderUid.toString().trim() == currentUid) {
+      if (kDebugMode) {
+        debugPrint('FCM foreground: suppressing self-sent notification ($senderUid)');
+      }
+      return;
+    }
+
     if (!_useLocalNotificationInForeground) return;
     unawaited(_showLocalNotification(message));
   }

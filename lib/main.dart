@@ -1,3 +1,4 @@
+import 'package:building_guard/core/app_firestore.dart';
 import 'dart:async';
 
 import 'package:building_guard/screens/watchmen_screen.dart';
@@ -59,7 +60,21 @@ class AuthWrapper extends StatelessWidget {
         }
         if (snapshot.hasData) {
           return FutureBuilder<DocumentSnapshot>(
-            future: FirebaseFirestore.instance.collection('users').doc(snapshot.data!.uid).get(),
+            future: () async {
+              final newDb = AppFirestore.instance;
+              final uid = snapshot.data!.uid;
+              var doc = await newDb.collection('users').doc(uid).get();
+              if (!doc.exists) {
+                try {
+                  final oldDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+                  if (oldDoc.exists && oldDoc.data() != null) {
+                    await newDb.collection('users').doc(uid).set(oldDoc.data()!);
+                    doc = await newDb.collection('users').doc(uid).get();
+                  }
+                } catch (_) {}
+              }
+              return doc;
+            }(),
             builder: (context, userSnap) {
               if (userSnap.connectionState == ConnectionState.waiting) {
                 return const Scaffold(body: Center(child: CircularProgressIndicator()));

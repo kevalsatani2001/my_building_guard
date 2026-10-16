@@ -1,3 +1,4 @@
+import 'package:building_guard/core/app_firestore.dart';
 import 'package:building_guard/screens/watchmen_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -29,10 +30,29 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // FCM token + topic subscription: [NotificationService] via authStateChanges
 
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+      DocumentSnapshot userDoc = await AppFirestore.instance
           .collection('users')
           .doc(userCredential.user!.uid)
           .get();
+
+      if (!userDoc.exists) {
+        try {
+          final oldDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userCredential.user!.uid)
+              .get();
+          if (oldDoc.exists && oldDoc.data() != null) {
+            await AppFirestore.instance
+                .collection('users')
+                .doc(userCredential.user!.uid)
+                .set(oldDoc.data()!);
+            userDoc = await AppFirestore.instance
+                .collection('users')
+                .doc(userCredential.user!.uid)
+                .get();
+          }
+        } catch (_) {}
+      }
 
       SocietyService.instance.bindFromUserMap(
         userDoc.data() as Map<String, dynamic>?,
@@ -175,14 +195,39 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
+enum _RegMode { member, newSocietyAdmin }
+
 class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _societyCodeController = TextEditingController();
-  String _selectedRole = 'member'; // Default role
-  bool _createNewSociety = false;
+  final _societyNameController = TextEditingController();
+  final _blockController = TextEditingController();
+  final _unitController = TextEditingController();
+
+  _RegMode _mode = _RegMode.member;
   bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _phoneController.dispose();
+    _societyCodeController.dispose();
+    _societyNameController.dispose();
+    _blockController.dispose();
+    _unitController.dispose();
+    super.dispose();
+  }
+
+  bool _isValidEmail(String email) {
+    return RegExp(
+      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+    ).hasMatch(email.trim());
+  }
 
   String _normalizeSocietyId(String input) {
     final trimmed = input.trim().toLowerCase();
@@ -191,66 +236,112 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _register() async {
-    if (_nameController.text.isEmpty ||
-        _emailController.text.isEmpty ||
-        _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('બધી વિગતો ભરો')));
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final phone = _phoneController.text.trim();
+    final societyCode = _societyCodeController.text.trim();
+    final societyName = _societyNameController.text.trim();
+    final block = _blockController.text.trim();
+    final unit = _unitController.text.trim();
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('કૃપા કરીને નામ, ઇમેઇલ અને પાસવર્ડ ભરો.')),
+      );
       return;
     }
 
-    if (_selectedRole == 'admin' &&
-        _createNewSociety &&
-        _societyCodeController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('નવી સોસાયટી માટે કોડ લખો')));
+    if (!_isValidEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('કૃપા કરીને માન્ય ઇમેઇલ એડ્રેસ લખો.')),
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('પાસવર્ડ ઓછામાં ઓછો ૬ અક્ષરનો હોવો જોઈએ.')),
+      );
+      return;
+    }
+
+    if (_mode == _RegMode.newSocietyAdmin && societyCode.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('નવી સોસાયટી માટે સોસાયટી કોડ લખવો ફરજિયાત છે.')),
+      );
       return;
     }
 
     setState(() => _isLoading = true);
     try {
-      final customSocietyId = _normalizeSocietyId(_societyCodeController.text);
-      final resolvedSocietyId = (_selectedRole == 'admin' && _createNewSociety)
-          ? customSocietyId
-          : (customSocietyId == SocietyService.kDefaultSocietyId
-                ? SocietyService.kDefaultSocietyId
-                : customSocietyId);
+      final resolvedSocietyId = _mode == _RegMode.newSocietyAdmin
+          ? _normalizeSocietyId(societyCode)
+          : (societyCode.isEmpty
+              ? SocietyService.kDefaultSocietyId
+              : _normalizeSocietyId(societyCode));
+
+      final role = _mode == _RegMode.newSocietyAdmin ? 'admin' : 'member';
 
       UserCredential userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text.trim(),
-          );
+          .createUserWithEmailAndPassword(email: email, password: password);
 
-      // fcmToken: [NotificationService] saves via authStateChanges after sign-in
+      final uid = userCredential.user!.uid;
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userCredential.user!.uid)
-          .set({
-            'uid': userCredential.user!.uid,
-            'name': _nameController.text.trim(),
-            'email': _emailController.text.trim(),
-            'role': _selectedRole,
-            'societyId': resolvedSocietyId,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
+      final userData = <String, dynamic>{
+        'uid': uid,
+        'name': name,
+        'email': email,
+        'phone': phone.isEmpty ? null : phone,
+        'role': role,
+        'societyId': resolvedSocietyId,
+        'isActive': true,
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      if (_mode == _RegMode.member) {
+        if (block.isNotEmpty) userData['blockName'] = block;
+        if (unit.isNotEmpty) userData['unitNumber'] = unit;
+      }
+
+      await AppFirestore.instance.collection('users').doc(uid).set(userData);
+
+      // જો નવી સોસાયટી એડમિન તરીકે શરૂ કરી રહ્યા હોય, તો society_settings તૈયાર કરો
+      if (_mode == _RegMode.newSocietyAdmin) {
+        await AppFirestore.instance
+            .collection('society_settings')
+            .doc(resolvedSocietyId)
+            .set({
+          'societyId': resolvedSocietyId,
+          'societyName': societyName.isEmpty ? resolvedSocietyId : societyName,
+          'isSetupComplete': false,
+          'adminUid': uid,
+          'createdAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
 
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('રજીસ્ટ્રેશન સફળ! હવે લોગિન કરો.')),
+        SnackBar(
+          backgroundColor: Colors.green.shade700,
+          content: Text(
+            _mode == _RegMode.newSocietyAdmin
+                ? 'સોસાયટી અને એડમિન એકાઉન્ટ સફળતાપૂર્વક બની ગયું! હવે લૉગિન કરો.'
+                : 'રજીસ્ટ્રેશન સફળ! હવે તમારા એકાઉન્ટમાં લૉગિન કરો.',
+          ),
+        ),
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red.shade700,
+            content: Text('ભૂલ: ${e.toString()}'),
+          ),
+        );
       }
     } finally {
-      // 🔥 અહીં પણ mounted ચેક ઉમેર્યું
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -259,67 +350,171 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(title: const Text("નવું એકાઉન્ટ બનાવો")),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(22.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // રજીસ્ટ્રેશન પ્રકાર પસંદગી
+            const Text(
+              "તમારું એકાઉન્ટ પ્રકાર પસંદ કરો:",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+            const SizedBox(height: 10),
+            SegmentedButton<_RegMode>(
+              segments: const [
+                ButtonSegment<_RegMode>(
+                  value: _RegMode.member,
+                  icon: Icon(Icons.person_outline),
+                  label: Text("રહીશ / સભ્ય"),
+                ),
+                ButtonSegment<_RegMode>(
+                  value: _RegMode.newSocietyAdmin,
+                  icon: Icon(Icons.domain_add),
+                  label: Text("નવી સોસાયટી (ચેરમેન)"),
+                ),
+              ],
+              selected: {_mode},
+              onSelectionChanged: (newSet) {
+                setState(() => _mode = newSet.first);
+              },
+            ),
+            const SizedBox(height: 14),
+
+            // સુરક્ષા નોંધ (વોચમેન માત્ર એડમિન બનાવી શકે)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: cs.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: cs.primary.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: cs.primary, size: 22),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _mode == _RegMode.member
+                          ? "સોસાયટીમાં રહેતા તમામ પરિવારો અહીંથી રજીસ્ટર થઈ શકે છે."
+                          : "નવી સોસાયટી શરૂ કરવા ચેરમેન / સેક્રેટરી અહીંથી સેટઅપ કરી શકે છે.",
+                      style: TextStyle(fontSize: 13, color: cs.primary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'પૂરૂ નામ'),
+              decoration: InputDecoration(
+                labelText: _mode == _RegMode.member ? 'પૂરું નામ' : 'ચેરમેન / એડમિનનું નામ',
+                prefixIcon: const Icon(Icons.badge_outlined),
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'મોબાઇલ નંબર (કોન્ટેક્ટ)',
+                prefixIcon: Icon(Icons.phone_outlined),
+              ),
+            ),
+            const SizedBox(height: 14),
+
             TextField(
               controller: _emailController,
-              decoration: const InputDecoration(labelText: 'ઇમેઇલ'),
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'ઇમેઇલ એડ્રેસ',
+                prefixIcon: Icon(Icons.email_outlined),
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+
             TextField(
               controller: _passwordController,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'પાસવર્ડ'),
+              decoration: const InputDecoration(
+                labelText: 'પાસવર્ડ (ઓછામાં ઓછા ૬ અક્ષર)',
+                prefixIcon: Icon(Icons.lock_outline),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            if (_mode == _RegMode.newSocietyAdmin) ...[
+              TextField(
+                controller: _societyNameController,
+                decoration: const InputDecoration(
+                  labelText: 'સોસાયટીનું નામ',
+                  hintText: 'દા.ત. શિવ રેસીડેન્સી',
+                  prefixIcon: Icon(Icons.apartment),
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _societyCodeController,
+                decoration: const InputDecoration(
+                  labelText: 'નવો સોસાયટી કોડ (અંગ્રેજીમાં)',
+                  hintText: 'દા.ત. shiv-residency',
+                  helperText: 'અન્ય સભ્યો આ કોડ વાપરીને જોડાશે.',
+                  prefixIcon: Icon(Icons.tag),
+                ),
+              ),
+            ] else ...[
+              TextField(
+                controller: _societyCodeController,
+                decoration: const InputDecoration(
+                  labelText: 'સોસાયટી કોડ',
+                  hintText: 'દા.ત. shiv-residency',
+                  helperText: 'ખાલી રાખશો તો default society ગણાશે.',
+                  prefixIcon: Icon(Icons.tag),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _blockController,
+                      decoration: const InputDecoration(
+                        labelText: 'વિંગ / શેરી',
+                        hintText: 'દા.ત. A અથવા શેરી-૧',
+                        prefixIcon: Icon(Icons.holiday_village_outlined),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _unitController,
+                      decoration: const InputDecoration(
+                        labelText: 'ફ્લેટ / મકાન નં.',
+                        hintText: 'દા.ત. 101',
+                        prefixIcon: Icon(Icons.meeting_room_outlined),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
+            const SizedBox(height: 24),
+
+            // વોચમેન નોંધ
+            Text(
+              "ℹ️ નોંધ: સિક્યુરિટી ગાર્ડ / વોચમેનનું ખાતું માત્ર એડમિન ડેશબોર્ડમાંથી જ બનાવી શકાય છે.",
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
             const SizedBox(height: 16),
 
-            // રોલ સિલેક્શન (પ્રોફેશનલ એપમાં આ છુપાવેલું હોય છે, પણ અત્યારે તમારા માટે રાખ્યું છે)
-            DropdownButtonFormField<String>(
-              initialValue: _selectedRole,
-              // અહીં 'watchman' ઉમેરી દીધું છે
-              items: ['admin', 'member', 'watchman']
-                  .map(
-                    (role) => DropdownMenuItem(
-                      value: role,
-                      child: Text(role.toUpperCase()),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) => setState(() => _selectedRole = value!),
-              decoration: const InputDecoration(labelText: 'તમારો રોલ'),
-            ),
-            const SizedBox(height: 12),
-            if (_selectedRole == 'admin')
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('નવી સોસાયટી બનાવો'),
-                subtitle: const Text(
-                  'ON કરો તો નવા society code સાથે fresh setup થશે',
-                ),
-                value: _createNewSociety,
-                onChanged: (v) => setState(() => _createNewSociety = v),
-              ),
-            TextField(
-              controller: _societyCodeController,
-              decoration: InputDecoration(
-                labelText: _selectedRole == 'admin' && _createNewSociety
-                    ? 'નવો Society Code (required)'
-                    : 'Society Code (optional)',
-                helperText:
-                    'દા.ત. shiv-residency. ખાલી રાખશો તો default society.',
-              ),
-            ),
-
-            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -333,9 +528,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text("રજીસ્ટર કરો"),
+                    : Text(
+                        _mode == _RegMode.newSocietyAdmin
+                            ? "નવી સોસાયટી રજીસ્ટર કરો"
+                            : "મેમ્બર તરીકે રજીસ્ટર કરો",
+                      ),
               ),
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -343,192 +543,3 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 }
 
-/*
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
-admin.initializeApp();
-
-// exports.sendNotification = functions.firestore
-//     .document('notifications/{notifId}')
-//     .onCreate(async (snapshot, context) => {
-//         const data = snapshot.data();
-//         const title = data.title;
-//         const body = data.body;
-//         const targetUID = data.targetUID; // 'ALL' અથવા ચોક્કસ Member UID
-//
-//         const payload = {
-//             notification: {
-//                 title: title,
-//                 body: body,
-//             },
-//             data: {
-//                 click_action: "FLUTTER_NOTIFICATION_CLICK",
-//                 sound: "default",
-//                 type: data.type || "general"
-//             }
-//         };
-//
-//         try {
-//             if (targetUID === 'ALL') {
-//                 // ૧. બધા મેમ્બર્સને મોકલવા માટે (Topic Messaging)
-//                 // મેમ્બર્સ એપમાં 'society_members' ટોપિક સબસ્ક્રાઇબ કરેલા હોવા જોઈએ
-//                 await admin.messaging().sendToTopic('society_members', payload);
-//                 console.log('Broadcast notification sent successfully');
-//             } else {
-//                 // ૨. પર્ટિક્યુલર મેમ્બરને મોકલવા માટે (Single Device)
-//                 const userDoc = await admin.firestore().collection('users').doc(targetUID).get();
-//
-//                 if (!userDoc.exists) {
-//                     console.log('User not found');
-//                     return null;
-//                 }
-//
-//                 const fcmToken = userDoc.data().fcmToken;
-//
-//                 if (fcmToken) {
-//                     await admin.messaging().sendToDevice(fcmToken, payload);
-//                     console.log(`Notification sent to user: ${targetUID}`);
-//                 } else {
-//                     console.log('FCM Token not found for user');
-//                 }
-//             }
-//         } catch (error) {
-//             console.error('Error sending notification:', error);
-//         }
-//         return null;
-//     });
-
-
-
-
-exports.sendNotification = functions.firestore
-    .document('notifications/{notifId}')
-    .onCreate(async (snapshot, context) => {
-        const data = snapshot.data();
-        const title = data.title;
-        const body = data.body;
-        const targetUID = data.targetUID; // 'ALL' અથવા ચોક્કસ Member UID
-
-        try {
-            if (targetUID === 'ALL') {
-                // ૧. બધા મેમ્બર્સને મોકલવા માટે (Topic Messaging)
-                const message = {
-                    topic: 'society_members',
-                    notification: {
-                        title: title,
-                        body: body,
-                    },
-                    data: {
-                        type: data.type || "general",
-                        click_action: "FLUTTER_NOTIFICATION_CLICK",
-                    },
-                };
-
-                await admin.messaging().send(message);
-                console.log('Broadcast notification sent successfully to topic');
-            } else {
-                // ૨. પર્ટિક્યુલર મેમ્બરને મોકલવા માટે (Single Device)
-                const userDoc = await admin.firestore().collection('users').doc(targetUID).get();
-
-                if (!userDoc.exists) {
-                    console.log('User not found in Firestore');
-                    return null;
-                }
-
-                const fcmToken = userDoc.data().fcmToken;
-
-                if (fcmToken) {
-                    // 🔥 નવો રસ્તો (v1 API)
-                    const message = {
-                        token: fcmToken,
-                        notification: {
-                            title: title,
-                            body: body,
-                        },
-                        data: {
-                            type: data.type || "general",
-                            click_action: "FLUTTER_NOTIFICATION_CLICK",
-                        },
-                        // Android માટે સ્પેસિફિક સેટિંગ્સ
-                        android: {
-                            priority: "high",
-                            notification: {
-                                sound: "default",
-                            }
-                        }
-                    };
-
-                    await admin.messaging().send(message);
-                    console.log(`Notification sent successfully to user: ${targetUID}`);
-                } else {
-                    console.log('FCM Token not found for user');
-                }
-            }
-        } catch (error) {
-            console.error('Error sending notification:', error);
-        }
-        return null;
-    });
-
-
-
-
-//////////////////////////////////////////////////////
-
-
-
-    // જ્યારે 'visitors' કલેક્શનમાં status બદલાય ત્યારે
-exports.onStatusChange = functions.firestore
-    .document('visitors/{visitorId}')
-    .onUpdate(async (change, context) => {
-        const newData = change.after.data();
-        const oldData = change.before.data();
-
-        // ૧. ચેક કરો કે સ્ટેટસમાં ફેરફાર થયો છે કે નહીં
-        if (oldData.status !== newData.status) {
-
-            // --- કન્ડિશન A: જો મહેમાન બહાર જાય (Check-out) ---
-            if (newData.status === 'checked_out') {
-                const memberUID = newData.memberId; // મેમ્બરની ID
-
-                const payload = {
-                    notification: {
-                        title: "મહેમાન બહાર ગયા 🚪",
-                        body: `${newData.name} સોસાયટીની બહાર નીકળી ગયા છે.`,
-                    }
-                };
-
-                const userDoc = await admin.firestore().collection('users').doc(memberUID).get();
-                const fcmToken = userDoc.data() ? userDoc.data().fcmToken : null;
-
-                if (fcmToken) {
-                    console.log(`Sending check-out notif to member: ${memberUID}`);
-                    return admin.messaging().sendToDevice(fcmToken, payload);
-                }
-            }
-
-            // --- કન્ડિશન B: જો મેમ્બર અપ્રૂવ કે રિજેક્ટ કરે ---
-            else if (newData.status === 'approved' || newData.status === 'rejected') {
-                const watchmanUID = newData.watchmanId; // એન્ટ્રી કરનાર વોચમેન
-
-                let msgStatus = newData.status === 'approved' ? "મંજૂરી મળી ગઈ છે ✅" : "ના પાડી છે ❌";
-
-                const payload = {
-                    notification: {
-                        title: "મેમ્બરનો જવાબ આવ્યો!",
-                        body: `${newData.name} માટે: ${msgStatus}`,
-                    }
-                };
-
-                const userDoc = await admin.firestore().collection('users').doc(watchmanUID).get();
-                const fcmToken = userDoc.data() ? userDoc.data().fcmToken : null;
-
-                if (fcmToken) {
-                    console.log(`Sending response notif to watchman: ${watchmanUID}`);
-                    return admin.messaging().sendToDevice(fcmToken, payload);
-                }
-            }
-        }
-        return null;
-    });
- */

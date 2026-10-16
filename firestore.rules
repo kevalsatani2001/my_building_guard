@@ -1,0 +1,259 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Fetches the user profile document of the currently authenticated caller
+    function currentUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function currentUserExists() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function currentUserData() {
+      return currentUserDoc().data;
+    }
+
+    function currentUserRole() {
+      return currentUserExists() ? currentUserData().get('role', 'member') : 'none';
+    }
+
+    function currentUserSocietyId() {
+      return currentUserExists() ? currentUserData().get('societyId', 'default') : 'default';
+    }
+
+    function isUserActive() {
+      return currentUserExists() && currentUserData().get('isActive', true) != false;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && isUserActive() && currentUserRole() == 'admin';
+    }
+
+    function isWatchman() {
+      return isAuthenticated() && isUserActive() && currentUserRole() == 'watchman';
+    }
+
+    function isMember() {
+      return isAuthenticated() && isUserActive() && currentUserRole() == 'member';
+    }
+
+    function matchesCallerSociety(societyId) {
+      return isAuthenticated() && (
+        currentUserSocietyId() == societyId ||
+        (currentUserSocietyId() == 'default' && (societyId == null || societyId == ''))
+      );
+    }
+
+    function docBelongsToCallerSociety(data) {
+      return matchesCallerSociety(data.get('societyId', 'default'));
+    }
+
+    // ==========================================
+    // 1. Users Collection
+    // ==========================================
+    match /users/{userId} {
+      // Any authenticated user can read their own profile.
+      // Users in the same society can read fellow members/watchmen for flat directory & gate coordination.
+      allow read: if isAuthenticated() && (
+        request.auth.uid == userId ||
+        (currentUserExists() && docBelongsToCallerSociety(resource.data))
+      );
+
+      // Self registration: user can create their own doc with role 'member' or 'admin'
+      // Admin can create users for their society
+      allow create: if isAuthenticated() && (
+        (request.auth.uid == userId && 
+         request.resource.data.uid == userId &&
+         (request.resource.data.role == 'member' || request.resource.data.role == 'admin') &&
+         request.resource.data.get('isActive', true) == true) ||
+        (isAdmin() && docBelongsToCallerSociety(request.resource.data))
+      );
+
+      // Self update: Can update name, phone, fcmToken, but CANNOT change role, societyId, or isActive
+      // Admin of same society can update any field (e.g. deactivate user, assign unit)
+      allow update: if isAuthenticated() && (
+        (request.auth.uid == userId &&
+         request.resource.data.role == resource.data.role &&
+         request.resource.data.get('societyId', 'default') == resource.data.get('societyId', 'default') &&
+         request.resource.data.get('isActive', true) == resource.data.get('isActive', true)) ||
+        (isAdmin() && docBelongsToCallerSociety(resource.data))
+      );
+
+      // Only Admin can delete a user in their society
+      allow delete: if isAdmin() && docBelongsToCallerSociety(resource.data);
+    }
+
+    // ==========================================
+    // 2. Society Settings
+    // ==========================================
+    match /society_settings/{societyId} {
+      allow read: if isAuthenticated() && matchesCallerSociety(societyId);
+      allow write: if isAdmin() && matchesCallerSociety(societyId);
+    }
+
+    match /settings/{settingDoc} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // 3. Blocks & Units Architecture
+    // ==========================================
+    match /blocks/{blockId} {
+      allow read: if isAuthenticated() && docBelongsToCallerSociety(resource.data);
+      allow write: if isAdmin() && docBelongsToCallerSociety(request.resource.data);
+    }
+
+    match /units/{unitId} {
+      allow read: if isAuthenticated() && docBelongsToCallerSociety(resource.data);
+      allow write: if isAdmin() && docBelongsToCallerSociety(request.resource.data);
+    }
+
+    // ==========================================
+    // 4. Visitors Collection
+    // ==========================================
+    match /visitors/{visitorId} {
+      // Read: Admin, Watchman of the same society, or the resident (memberId)
+      allow read: if isAuthenticated() && docBelongsToCallerSociety(resource.data) && (
+        isAdmin() ||
+        isWatchman() ||
+        resource.data.memberId == request.auth.uid
+      );
+
+      // Create: Watchman or Admin at the gate
+      allow create: if isAuthenticated() && docBelongsToCallerSociety(request.resource.data) && (
+        isWatchman() || isAdmin()
+      );
+
+      // Update:
+      // - Watchman or Admin (check-out, status update)
+      // - Member can only approve/reject visits directed to them
+      allow update: if isAuthenticated() && docBelongsToCallerSociety(resource.data) && (
+        isAdmin() ||
+        isWatchman() ||
+        (resource.data.memberId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'actionTime']) &&
+         (request.resource.data.status == 'approved' || request.resource.data.status == 'rejected'))
+      );
+
+      allow delete: if isAdmin() && docBelongsToCallerSociety(resource.data);
+    }
+
+    // ==========================================
+    // 5. Pre-Approvals (Guest Passes)
+    // ==========================================
+    match /pre_approvals/{approvalId} {
+      allow read: if isAuthenticated() && docBelongsToCallerSociety(resource.data) && (
+        isAdmin() ||
+        isWatchman() ||
+        resource.data.memberId == request.auth.uid
+      );
+
+      allow create: if isAuthenticated() && docBelongsToCallerSociety(request.resource.data) && (
+        request.resource.data.memberId == request.auth.uid || isAdmin()
+      );
+
+      allow update, delete: if isAuthenticated() && docBelongsToCallerSociety(resource.data) && (
+        resource.data.memberId == request.auth.uid || isAdmin()
+      );
+    }
+
+    // ==========================================
+    // 6. Notices (Society Notice Board)
+    // ==========================================
+    match /notices/{noticeId} {
+      allow read: if isAuthenticated() && docBelongsToCallerSociety(resource.data);
+      allow write: if isAdmin() && docBelongsToCallerSociety(request.resource.data);
+    }
+
+    // ==========================================
+    // 7. Complaints (Resident Helpdesk)
+    // ==========================================
+    match /complaints/{complaintId} {
+      // Read: The resident who created it or Admin
+      allow read: if isAuthenticated() && docBelongsToCallerSociety(resource.data) && (
+        resource.data.memberId == request.auth.uid || isAdmin()
+      );
+
+      // Create: Any authenticated resident for their own flat
+      allow create: if isAuthenticated() && docBelongsToCallerSociety(request.resource.data) &&
+        request.resource.data.memberId == request.auth.uid;
+
+      // Update: Admin can resolve it; Member can edit their own complaint description
+      allow update: if isAuthenticated() && docBelongsToCallerSociety(resource.data) && (
+        isAdmin() || resource.data.memberId == request.auth.uid
+      );
+
+      allow delete: if isAdmin() && docBelongsToCallerSociety(resource.data);
+    }
+
+    // ==========================================
+    // 8. Daily Staff (Maids, Drivers, Cleaners)
+    // ==========================================
+    match /daily_staff/{staffId} {
+      allow read: if isAuthenticated() && docBelongsToCallerSociety(resource.data);
+      allow create: if isAuthenticated() && docBelongsToCallerSociety(request.resource.data);
+      allow update, delete: if isAuthenticated() && docBelongsToCallerSociety(resource.data) && (
+        resource.data.get('addedBy', '') == request.auth.uid || isAdmin()
+      );
+    }
+
+    // ==========================================
+    // 9. Notifications Collection
+    // ==========================================
+    match /notifications/{notifId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.targetUID == request.auth.uid ||
+        resource.data.targetUID == 'ALL'
+      );
+      // Notifications are created by app triggers or Cloud Functions
+      allow create: if isAuthenticated() && docBelongsToCallerSociety(request.resource.data);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================
+    // 10. Maintenance Bills & Accounting
+    // ==========================================
+    match /maintenance_bills/{billId} {
+      // Read: Admin of the society, or member who owns the bill
+      allow read: if isAuthenticated() && docBelongsToCallerSociety(resource.data) && (
+        isAdmin() ||
+        resource.data.memberId == request.auth.uid ||
+        (currentUserExists() && 
+         resource.data.unitNumber == currentUserData().get('unitNumber', '') &&
+         resource.data.blockName == currentUserData().get('blockName', ''))
+      );
+
+      // Create: Only Society Admin can generate bills
+      allow create: if isAdmin() && docBelongsToCallerSociety(request.resource.data);
+
+      // Update:
+      // - Admin can verify payments, mark offline payments, update details
+      // - Member can submit payment details (UTR number, status under_review, note)
+      allow update: if isAuthenticated() && docBelongsToCallerSociety(resource.data) && (
+        isAdmin() ||
+        (resource.data.memberId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+           'status', 'paymentMode', 'utrNumber', 'note', 'paidAt'
+         ]) &&
+         request.resource.data.status == 'under_review')
+      );
+
+      // Delete: Only Society Admin
+      allow delete: if isAdmin() && docBelongsToCallerSociety(resource.data);
+    }
+  }
+}

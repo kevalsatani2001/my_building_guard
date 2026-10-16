@@ -1,3 +1,4 @@
+import 'package:building_guard/core/app_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// એક Firebase પ્રોજેક્ટમાં ઘણી સોસાયટી — દરે ડૉક્યુમેન્ટ પર `societyId`.
@@ -38,7 +39,16 @@ class SocietyService {
   /// બીજી સોસાયટીમાં બ્લોક ID કૉલિઝન ન થાય તેમ પ્રિફિક્સ.
   String blockFirestoreId(String logicalBlockId) {
     if (_societyId == kDefaultSocietyId) return logicalBlockId;
+    if (logicalBlockId.startsWith('${_societyId}_')) return logicalBlockId;
     return '${_societyId}_$logicalBlockId';
+  }
+
+  /// UI પ્રદર્શન માટે ક્લીન લૉજિકલ બ્લોક નામ મેળવો.
+  String logicalBlockName(String blockId) {
+    if (_societyId != kDefaultSocietyId && blockId.startsWith('${_societyId}_')) {
+      return blockId.substring('${_societyId}_'.length);
+    }
+    return blockId;
   }
 
   String unitFirestoreDocId(String logicalBlockId, String unitNumber) {
@@ -79,7 +89,7 @@ class SocietyService {
       Map<String, dynamic> fields) async {
     if (_societyId != kDefaultSocietyId) return;
     final merged = {...fields, 'societyId': kDefaultSocietyId};
-    await FirebaseFirestore.instance
+    await AppFirestore.instance
         .collection('settings')
         .doc('society_config')
         .set(merged, SetOptions(merge: true));

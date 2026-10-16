@@ -61,12 +61,13 @@ function formatMessagingError(err) {
 }
 
 /** Android-first; `apns` હટાવ્યું — પ્રોજેક્ટમાં APNs સેટ ન હોય ત્યારે FCM INTERNAL ભૂલ આવતી હતી. */
-function buildFcmParts(title, body, typeStr) {
+function buildFcmParts(title, body, typeStr, senderUid = "") {
     const dataPayload = {
         type: String(typeStr),
         click_action: "FLUTTER_NOTIFICATION_CLICK",
         title: String(title),
         body: String(body),
+        senderUid: String(senderUid || ""),
     };
     const android = {
         priority: "high",
@@ -84,8 +85,9 @@ function buildFcmParts(title, body, typeStr) {
 
 /**
  * @param {"member"|"admin"|"watchman"} allowedRole
+ * @param {string} excludeUid - જો મોકલનારનો UID હોય તો એમના પોતાના ડિવાઇસને બાકાત રાખવા
  */
-async function collectTokensByRole(admin, societyId, allowedRole) {
+async function collectTokensByRole(admin, societyId, allowedRole, excludeUid = "") {
     const tokens = new Set();
     const sidNorm = (u) => (u.societyId != null && String(u.societyId).trim() ?
         String(u.societyId).trim() : "default");
@@ -96,6 +98,7 @@ async function collectTokensByRole(admin, societyId, allowedRole) {
         snap = await admin.firestore().collection("users").where("societyId", "==", societyId).get();
     }
     snap.forEach((doc) => {
+        if (excludeUid && doc.id === excludeUid) return;
         const u = doc.data();
         if (!u || u.role !== allowedRole) return;
         if (sidNorm(u) !== societyId) return;
@@ -128,10 +131,11 @@ async function sendMulticastTokens(admin, tokens, parts) {
 /**
  * પહેલા FCM ટોપિક; નિષ્ફળ થાય તો સમાન સોસાયટીના યુઝર્સના ટોકન પર multicast (ટોપિક API/સબસ્ક્રાઇબ ન ચાલે ત્યારે).
  * @param {"members"|"admins"|"watchmen"} kind
+ * @param {string} senderUid
  */
-async function sendTopicOrFanoutByRole(admin, societyId, kind, title, body, typeStr) {
+async function sendTopicOrFanoutByRole(admin, societyId, kind, title, body, typeStr, senderUid = "") {
     const topic = topicForSociety(societyId, kind);
-    const parts = buildFcmParts(title, body, typeStr);
+    const parts = buildFcmParts(title, body, typeStr, senderUid);
     const message = {
         topic,
         notification: parts.notification,
@@ -145,7 +149,7 @@ async function sendTopicOrFanoutByRole(admin, societyId, kind, title, body, type
         console.error("sendTopicOrFanoutByRole topic failed", topic, formatMessagingError(topicErr));
         const roleMap = { members: "member", admins: "admin", watchmen: "watchman" };
         const allowedRole = roleMap[kind];
-        const tokens = await collectTokensByRole(admin, societyId, allowedRole);
+        const tokens = await collectTokensByRole(admin, societyId, allowedRole, senderUid);
         if (!tokens.length) {
             throw new Error(`No device tokens for ${kind}. Topic error: ${formatMessagingError(topicErr)}`);
         }
@@ -276,9 +280,10 @@ exports.sendBroadcastPush = onCall(async (request) => {
 
     const callerSid = callerDoc.data().societyId;
     const societyId = callerSid && String(callerSid).trim() ? String(callerSid).trim() : "default";
+    const senderUid = request.auth.uid;
 
     try {
-        const r = await sendTopicOrFanoutByRole(admin, societyId, "members", title, body, type);
+        const r = await sendTopicOrFanoutByRole(admin, societyId, "members", title, body, type, senderUid);
         console.log("sendBroadcastPush ok", societyId, r);
         const out = { ok: true, mode: r.mode, topic: r.topic };
         if (typeof r.devices === "number") out.devices = r.devices;
@@ -329,9 +334,10 @@ exports.sendTopicAlertPush = onCall(async (request) => {
     const callerSid = callerDoc.data().societyId;
     const societyId = callerSid && String(callerSid).trim() ? String(callerSid).trim() : "default";
     const kind = topicKind === "admins" ? "admins" : "watchmen";
+    const senderUid = request.auth.uid;
 
     try {
-        const r = await sendTopicOrFanoutByRole(admin, societyId, kind, title, body, type);
+        const r = await sendTopicOrFanoutByRole(admin, societyId, kind, title, body, type, senderUid);
         console.log("sendTopicAlertPush ok", societyId, kind, r);
         const out = { ok: true, mode: r.mode, topic: r.topic };
         if (typeof r.devices === "number") out.devices = r.devices;
@@ -402,24 +408,29 @@ exports.sendNotification = onDocumentCreated("notifications/{notifId}", async (e
     }
 
     const typeStr = String(data.type || "general");
+    const senderUid = String(data.senderUid || data.authorId || "");
 
     try {
         if (targetUID === "ALL") {
-            const r = await sendTopicOrFanoutByRole(admin, societyId, "members", title, body, typeStr);
+            const r = await sendTopicOrFanoutByRole(admin, societyId, "members", title, body, typeStr, senderUid);
             const st = r.mode === "topic" ? "sent_topic_members" : "sent_fanout_members";
             await mark(st, {fcmDetail: JSON.stringify(r)});
             console.log("sendNotification ALL", societyId, r);
         } else if (targetUID === "ADMINS") {
-            const r = await sendTopicOrFanoutByRole(admin, societyId, "admins", title, body, typeStr);
+            const r = await sendTopicOrFanoutByRole(admin, societyId, "admins", title, body, typeStr, senderUid);
             const st = r.mode === "topic" ? "sent_topic_admins" : "sent_fanout_admins";
             await mark(st, {fcmDetail: JSON.stringify(r)});
             console.log("sendNotification ADMINS", societyId, r);
         } else if (targetUID === "WATCHMEN") {
-            const r = await sendTopicOrFanoutByRole(admin, societyId, "watchmen", title, body, typeStr);
+            const r = await sendTopicOrFanoutByRole(admin, societyId, "watchmen", title, body, typeStr, senderUid);
             const st = r.mode === "topic" ? "sent_topic_watchmen" : "sent_fanout_watchmen";
             await mark(st, {fcmDetail: JSON.stringify(r)});
             console.log("sendNotification WATCHMEN", societyId, r);
         } else {
+            if (senderUid && targetUID === senderUid) {
+                await mark("skipped_self_sender", {fcmDetail: "targetUID matches senderUid"});
+                return null;
+            }
             const userDoc = await admin.firestore().collection("users").doc(targetUID).get();
             if (!userDoc.exists) {
                 await mark("skipped_user_not_found", {fcmDetail: String(targetUID)});
