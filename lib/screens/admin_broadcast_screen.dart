@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:building_guard/core/app_firestore.dart';
+import '../services/society_service.dart';
 import '../widgets/admin_broadcast_dialogs.dart';
 
 class AdminBroadcastScreen extends StatefulWidget {
@@ -59,11 +63,31 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
     setState(() => _isSending = true);
 
     try {
+      // જો તમામ સભ્યો માટે હોય તો 'notices' કલેક્શનમાં પણ નોટિસ સેવ કરો જેથી મેમ્બર ડેશબોર્ડના નોટિસ બોર્ડ પર દેખાય
+      if (widget.targetUID == null) {
+        try {
+          await AppFirestore.instance.collection('notices').add({
+            'title': title,
+            'body': body,
+            'description': body,
+            'category': _selectedCategory,
+            'societyId': SocietyService.instance.societyId,
+            'createdAt': FieldValue.serverTimestamp(),
+            'authorId': FirebaseAuth.instance.currentUser?.uid,
+            'authorRole': 'admin',
+          });
+        } catch (e) {
+          debugPrint('Save notice error: $e');
+        }
+      }
+
+      if (!mounted) return;
       await AdminBroadcastDialogs.sendPushNotification(
         context: context,
         title: title,
         body: body,
         targetUID: widget.targetUID,
+        targetName: widget.targetName,
       );
 
       if (!mounted) return;

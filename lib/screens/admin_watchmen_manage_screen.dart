@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/society_service.dart';
+import '../widgets/premium_ui.dart';
 import 'admin_add_user_screen.dart';
 
 class AdminWatchmenManageScreen extends StatefulWidget {
@@ -27,28 +28,49 @@ class _AdminWatchmenManageScreenState extends State<AdminWatchmenManageScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+        title: PremiumDialogHeader(
+          title: 'પાસવર્ડ બદલો',
+          subtitle: '$name — વોચમેન સુરક્ષા પાસવર્ડ',
+          icon: Icons.lock_reset_rounded,
+          accentColor: const Color(0xFF4338CA),
+          onClose: () => Navigator.pop(ctx),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.lock_reset_rounded, color: Color(0xFF4338CA)),
-            const SizedBox(width: 8),
-            Text('$name નો પાસવર્ડ બદલો', style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 6),
+            TextField(
+              controller: pwdC,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'નવો પાસવર્ડ *',
+                hintText: 'ઓછામાં ઓછા 6 અક્ષર',
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
           ],
         ),
-        content: TextField(
-          controller: pwdC,
-          decoration: InputDecoration(
-            labelText: 'નવો પાસવર્ડ *',
-            hintText: 'ઓછામાં ઓછા 6 અક્ષર',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        ),
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('રદ'),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFFCBD5E1)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('રદ', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w700)),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF4338CA),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
             onPressed: () async {
               final pwd = pwdC.text.trim();
               if (pwd.length < 6) {

@@ -124,12 +124,8 @@ service cloud.firestore {
     // 4. Visitors Collection
     // ==========================================
     match /visitors/{visitorId} {
-      // Read: Admin, Watchman of the same society, or the resident (memberId)
-      allow read: if isAuthenticated() && docBelongsToCallerSociety(resource.data) && (
-        isAdmin() ||
-        isWatchman() ||
-        resource.data.memberId == request.auth.uid
-      );
+      // Read: Admin, Watchman, or Residents of the same society (to view gate activity and their flat's visitors)
+      allow read: if isAuthenticated() && docBelongsToCallerSociety(resource.data);
 
       // Create: Watchman or Admin at the gate
       allow create: if isAuthenticated() && docBelongsToCallerSociety(request.resource.data) && (
@@ -228,13 +224,16 @@ service cloud.firestore {
     // 10. Maintenance Bills & Accounting
     // ==========================================
     match /maintenance_bills/{billId} {
-      // Read: Admin of the society, or member who owns the bill
+      // Read: Admin of the society, or member who owns the bill or belongs to that unit
       allow read: if isAuthenticated() && docBelongsToCallerSociety(resource.data) && (
         isAdmin() ||
         resource.data.memberId == request.auth.uid ||
         (currentUserExists() && 
          resource.data.unitNumber == currentUserData().get('unitNumber', '') &&
-         resource.data.blockName == currentUserData().get('blockName', ''))
+         (resource.data.blockName == currentUserData().get('blockName', '') ||
+          resource.data.blockName == (currentUserSocietyId() + '_' + currentUserData().get('blockName', '')) ||
+          currentUserData().get('blockName', '') == (currentUserSocietyId() + '_' + resource.data.blockName) ||
+          currentUserData().get('blockName', '') == '' || resource.data.blockName == ''))
       );
 
       // Create: Only Society Admin can generate bills
@@ -242,9 +241,12 @@ service cloud.firestore {
 
       // Update:
       // - Admin can verify payments, mark offline payments, update details
-      // - Member can submit payment details (UTR number, status under_review, note)
+      // - Member can link themselves to their flat's bill or submit payment details (UTR number, status under_review, note)
       allow update: if isAuthenticated() && docBelongsToCallerSociety(resource.data) && (
         isAdmin() ||
+        (resource.data.unitNumber == currentUserData().get('unitNumber', '') &&
+         request.resource.data.memberId == request.auth.uid &&
+         (resource.data.memberId == null || resource.data.memberId == '' || resource.data.memberId == request.auth.uid)) ||
         (resource.data.memberId == request.auth.uid &&
          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
            'status', 'paymentMode', 'utrNumber', 'note', 'paidAt'

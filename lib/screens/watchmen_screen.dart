@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -13,10 +14,12 @@ import 'package:intl/intl.dart';
 import '../models/user_model.dart';
 import '../services/firebase_app_guard.dart';
 import '../services/notification_service.dart';
+import '../services/session_guard_service.dart';
 import '../services/society_service.dart';
-import '../widgets/premium_ui.dart';
 import '../widgets/watchman_vehicle_lookup_sheet.dart';
+import '../widgets/premium_ui.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Cloud Functions v2 `sendMemberPush` નું રીજન — [GCP Console] → Functions માં ચેક કરો (ઘણી વખત `us-central1`).
 const String _kSendMemberPushRegion = 'us-central1';
@@ -60,70 +63,94 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   String _searchQuery = "";
   String _historyStatusFilter = 'all';
   String _historyTimeFilter = 'today';
-  UserModel? _selectedMember;
+  String _quickFilterCategory = 'all';
+  bool _isAllSociety = false;
+  bool _allowMultipleFlats = false;
+  List<UserModel> _selectedMembers = [];
+  List<UserModel> _allMembers = [];
   List<UserModel> _filteredMembers = [];
+  bool _isLoadingMembers = false;
   bool _isUploading = false;
+
+  static const UserModel kAllMembersPseudo = UserModel(
+    uid: '__all_society__',
+    name: 'આખી સોસાયટી (All Society)',
+    email: '',
+    role: 'member',
+    unitNumber: 'All Flats',
+    blockName: 'All Blocks',
+  );
 
   static const List<Map<String, dynamic>> _kQuickPartners = [
     {
       'name': 'Zomato',
-      'icon': Icons.lunch_dining,
+      'icon': Icons.lunch_dining_rounded,
       'color': Color(0xFFE23744),
       'label': 'Zomato Delivery',
+      'category': 'food',
     },
     {
       'name': 'Swiggy',
-      'icon': Icons.fastfood,
+      'icon': Icons.fastfood_rounded,
       'color': Color(0xFFFC8019),
       'label': 'Swiggy Delivery',
-    },
-    {
-      'name': 'Amazon',
-      'icon': Icons.inventory_2,
-      'color': Color(0xFFFF9900),
-      'label': 'Amazon Delivery',
-    },
-    {
-      'name': 'Flipkart',
-      'icon': Icons.local_mall,
-      'color': Color(0xFF2874F0),
-      'label': 'Flipkart Delivery',
+      'category': 'food',
     },
     {
       'name': 'Blinkit',
-      'icon': Icons.electric_bolt,
+      'icon': Icons.electric_bolt_rounded,
       'color': Color(0xFFEAB308),
       'label': 'Blinkit Delivery',
+      'category': 'food',
     },
     {
       'name': 'Zepto',
-      'icon': Icons.shopping_bag,
+      'icon': Icons.shopping_bag_rounded,
       'color': Color(0xFF8B5CF6),
       'label': 'Zepto Delivery',
+      'category': 'food',
+    },
+    {
+      'name': 'Amazon',
+      'icon': Icons.inventory_2_rounded,
+      'color': Color(0xFFFF9900),
+      'label': 'Amazon Delivery',
+      'category': 'parcel',
+    },
+    {
+      'name': 'Flipkart',
+      'icon': Icons.local_mall_rounded,
+      'color': Color(0xFF2874F0),
+      'label': 'Flipkart Delivery',
+      'category': 'parcel',
     },
     {
       'name': 'કુરિયર',
-      'icon': Icons.local_shipping,
-      'color': Color(0xFF4B5563),
+      'icon': Icons.local_shipping_rounded,
+      'color': Color(0xFF475569),
       'label': 'Courier / Parcel',
+      'category': 'parcel',
     },
     {
-      'name': 'કેબ',
-      'icon': Icons.local_taxi,
+      'name': 'કેબ / ટેક્સી',
+      'icon': Icons.local_taxi_rounded,
       'color': Color(0xFF059669),
       'label': 'Ola / Uber Cab',
+      'category': 'other',
     },
     {
-      'name': 'સર્વિસ',
-      'icon': Icons.build,
+      'name': 'સર્વિસ / રિપેર',
+      'icon': Icons.handyman_rounded,
       'color': Color(0xFF6366F1),
       'label': 'Service / Repair',
+      'category': 'other',
     },
     {
-      'name': 'મહેમાન',
-      'icon': Icons.group,
+      'name': 'મહેમાન (Guest)',
+      'icon': Icons.people_alt_rounded,
       'color': Color(0xFF0284C7),
       'label': 'Guest Visit',
+      'category': 'other',
     },
   ];
 
@@ -151,9 +178,20 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   @override
   void initState() {
     super.initState();
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+    );
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(NotificationService.instance.ensureTokenRegistered());
+      _loadAllSocietyMembers();
     });
   }
 
@@ -173,38 +211,120 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     return modern;
   }
 
-  // ૧. વિઝિટરનો ફોટો પાડવો
   Future<void> _pickImage() async {
-    final XFile? pickedFile = await _picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 40,
-    );
-    if (pickedFile != null) setState(() => _image = File(pickedFile.path));
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 70,
+      );
+      if (pickedFile != null && mounted) {
+        setState(() => _image = File(pickedFile.path));
+      }
+    } catch (e) {
+      debugPrint("Camera capture error: $e");
+      if (mounted) {
+        _showSnackBar(
+          'કેમેરા શરૂ કરવામાં મુશ્કેલી આવી. કૃપા કરીને ફરી પ્રયાસ કરો.',
+          Colors.orange,
+        );
+      }
+    }
   }
 
-  // ૨. બ્લોક મુજબ મેમ્બર્સ મેળવવા
-  Future<void> _fetchMembersByBlock(String blockName) async {
-    setState(() => _isUploading = true);
-    var snapshot = await AppFirestore.instance
-        .collection('users')
-        .where('role', isEqualTo: 'member')
-        .where('blockName', isEqualTo: blockName)
-        .get();
+  // સોસાયટીના તમામ મેમ્બર્સ લોડ કરવા
+  Future<void> _loadAllSocietyMembers() async {
+    if (!mounted) return;
+    setState(() => _isLoadingMembers = true);
+    try {
+      final sid = SocietyService.instance.societyId;
+      QuerySnapshot snapshot;
+      try {
+        snapshot = await AppFirestore.instance
+            .collection('users')
+            .where('societyId', isEqualTo: sid)
+            .where('role', isEqualTo: 'member')
+            .get();
+      } catch (_) {
+        snapshot = await AppFirestore.instance
+            .collection('users')
+            .where('role', isEqualTo: 'member')
+            .get();
+      }
 
-    setState(() {
-      _filteredMembers = snapshot.docs
+      final members = snapshot.docs
           .where(
             (doc) => SocietyService.instance.documentBelongsToCurrentTenant(
-              doc.data(),
+              doc.data() as Map<String, dynamic>?,
             ),
           )
           .map(
-            (doc) => UserModel.fromMap(doc.data(), doc.id),
+            (doc) => UserModel.fromMap(
+              doc.data() as Map<String, dynamic>,
+              doc.id,
+            ),
           )
           .toList();
-      _selectedMember = null;
-      _isUploading = false;
+
+      members.sort((a, b) {
+        final bA = SocietyService.instance
+            .logicalBlockName(a.blockName ?? '')
+            .trim();
+        final bB = SocietyService.instance
+            .logicalBlockName(b.blockName ?? '')
+            .trim();
+        if (bA.toLowerCase() != bB.toLowerCase()) {
+          return bA.compareTo(bB);
+        }
+        final uA = int.tryParse((a.unitNumber ?? '').trim()) ?? 0;
+        final uB = int.tryParse((b.unitNumber ?? '').trim()) ?? 0;
+        if (uA != 0 && uB != 0) return uA.compareTo(uB);
+        return (a.unitNumber ?? '').compareTo(b.unitNumber ?? '');
+      });
+
+      if (!mounted) return;
+      setState(() {
+        _allMembers = members;
+        _isLoadingMembers = false;
+        _applyMemberFilter();
+      });
+    } catch (e) {
+      debugPrint("Error loading members: $e");
+      if (mounted) setState(() => _isLoadingMembers = false);
+    }
+  }
+
+  void _applyMemberFilter() {
+    final cleanBlock = (_selectedBlock != null &&
+            _selectedBlock!.isNotEmpty &&
+            _selectedBlock != '__all__')
+        ? SocietyService.instance
+            .logicalBlockName(_selectedBlock!)
+            .trim()
+            .toLowerCase()
+        : null;
+
+    setState(() {
+      _filteredMembers = _allMembers.where((m) {
+        if (cleanBlock != null && cleanBlock.isNotEmpty) {
+          final mBlockRaw = (m.blockName ?? '').trim().toLowerCase();
+          final mBlockClean = SocietyService.instance
+              .logicalBlockName(m.blockName ?? '')
+              .trim()
+              .toLowerCase();
+          if (mBlockRaw != cleanBlock && mBlockClean != cleanBlock) {
+            return false;
+          }
+        }
+        return true;
+      }).toList();
     });
+  }
+
+  Future<void> _fetchMembersByBlock(String blockName) async {
+    _selectedBlock = blockName;
+    _applyMemberFilter();
   }
 
   // મહેમાન પ્રી-એપ્રુવ્ડ છે કે નહીં તે ચેક કરવા માટે
@@ -251,12 +371,20 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       userDoc.id,
     );
 
+    if (!_allMembers.any((m) => m.uid == member.uid)) {
+      _allMembers.add(member);
+    }
+
     setState(() {
-      _selectedBlock = member.blockName;
-      _selectedMember = member;
+      _isAllSociety = false;
+      _selectedBlock = member.blockName != null
+          ? SocietyService.instance.logicalBlockName(member.blockName!)
+          : null;
+      _selectedMembers = [member];
       _purposeController.text = "Pre-Approved Guest";
-      _nameController.text = data['guestName']; // સાચું નામ સેટ કરો
-      _preApprovedResults = []; // લિસ્ટ ક્લિયર કરો
+      _nameController.text = data['guestName'] ?? '';
+      _preApprovedResults = [];
+      _applyMemberFilter();
     });
 
     _showSnackBar("${member.name} ના મહેમાન મળ્યા!", Colors.blue);
@@ -264,10 +392,17 @@ class _WatchmanScreenState extends State<WatchmanScreen>
 
   // ૩. એન્ટ્રી સબમિટ અને નોટિફિકેશન ટ્રિગર
   Future<void> _submitEntry() async {
+    final isAllSociety = _isAllSociety;
     if (_image == null ||
-        _selectedMember == null ||
-        _nameController.text.isEmpty) {
-      _showSnackBar('કૃપા કરીને બધી વિગત અને ફોટો ભરો', Colors.orange);
+        _nameController.text.trim().isEmpty ||
+        (!isAllSociety && _selectedMembers.isEmpty)) {
+      if (_nameController.text.trim().isEmpty) {
+        _showSnackBar('કૃપા કરીને મુલાકાતીનું નામ દાખલ કરો.', Colors.orange);
+      } else if (_image == null) {
+        _showSnackBar('કૃપા કરીને મુલાકાતીનો ફોટો લો.', Colors.orange);
+      } else {
+        _showSnackBar('કૃપા કરીને મુલાકાત માટે ફ્લેટ પસંદ કરો.', Colors.orange);
+      }
       return;
     }
 
@@ -286,39 +421,73 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         }
       }
 
+      final isAllSociety = _selectedMembers.first.uid == kAllMembersPseudo.uid;
       bool isPreApproved = _purposeController.text == "Pre-Approved Guest";
       final guestName = _nameController.text.trim();
-      final memberUid = _selectedMember!.uid;
 
-      await AppFirestore.instance.collection('visitors').add({
-        'name': guestName,
-        'phone': _phoneController.text.trim(),
-        'purpose': _purposeController.text.trim(),
-        'watchmanId': FirebaseAuth.instance.currentUser!.uid,
-        'photoUrl': photoUrl,
-        'memberId': memberUid,
-        'memberName': _selectedMember!.name,
-        'blockName': _selectedBlock,
-        'unitNumber': _selectedMember!.unitNumber,
-        'status': isPreApproved ? 'approved' : 'pending',
-        'entryTime': FieldValue.serverTimestamp(),
-        'societyId': SocietyService.instance.societyId,
-      });
+      if (isAllSociety) {
+        await AppFirestore.instance.collection('visitors').add({
+          'name': guestName,
+          'phone': _phoneController.text.trim(),
+          'purpose': _purposeController.text.trim(),
+          'watchmanId': FirebaseAuth.instance.currentUser!.uid,
+          'photoUrl': photoUrl,
+          'memberId': 'all_society',
+          'memberName': 'આખી સોસાયટી (All Society)',
+          'blockName': _selectedBlock ?? 'All',
+          'unitNumber': 'All',
+          'status': 'approved',
+          'entryTime': FieldValue.serverTimestamp(),
+          'societyId': SocietyService.instance.societyId,
+        });
 
-      final push = await _notifyMemberPush(
-        memberUid: memberUid,
-        title: 'નવા મુલાકાતી (Gate Alert)',
-        body: '$guestName તમને મળવા આવ્યા છે.',
-        type: 'visitor_alert',
-      );
+        _clearForm();
+        if (!mounted) return;
+        _showSnackBar(
+          'એન્ટ્રી સફળ. આખી સોસાયટી માટે વિઝિટર એન્ટ્રી નોંધાઈ ગઈ છે.',
+          Colors.green,
+        );
+        _tabController.animateTo(1);
+      } else {
+        // Multi-Flat or Single-Flat Visit
+        final batch = AppFirestore.instance.batch();
+        for (final m in _selectedMembers) {
+          final docRef = AppFirestore.instance.collection('visitors').doc();
+          batch.set(docRef, {
+            'name': guestName,
+            'phone': _phoneController.text.trim(),
+            'purpose': _purposeController.text.trim(),
+            'watchmanId': FirebaseAuth.instance.currentUser!.uid,
+            'photoUrl': photoUrl,
+            'memberId': m.uid,
+            'memberName': m.name,
+            'blockName': m.blockName ?? _selectedBlock ?? '',
+            'unitNumber': m.unitNumber ?? '',
+            'status': isPreApproved ? 'approved' : 'pending',
+            'entryTime': FieldValue.serverTimestamp(),
+            'societyId': SocietyService.instance.societyId,
+            'multiFlatCount': _selectedMembers.length,
+          });
+        }
+        await batch.commit();
 
-      _clearForm();
-      if (!mounted) return;
-      _showSnackBar(
-        'એન્ટ્રી સફળ. ${_lineForMemberPush(push)}',
-        _colorForMemberPush(push),
-      );
-      _tabController.animateTo(1); // હિસ્ટ્રી ટેબ પર લઈ જાઓ
+        for (final m in _selectedMembers) {
+          unawaited(_notifyMemberPush(
+            memberUid: m.uid,
+            title: 'નવા મુલાકાતી (Gate Alert)',
+            body: '$guestName તમને મળવા આવ્યા છે.',
+            type: 'visitor_alert',
+          ));
+        }
+
+        _clearForm();
+        if (!mounted) return;
+        _showSnackBar(
+          'એન્ટ્રી સફળ. ${_selectedMembers.length} ફ્લેટના સભ્યોને જાણ કરવામાં આવી છે.',
+          Colors.green,
+        );
+        _tabController.animateTo(1);
+      }
     } catch (e) {
       _showSnackBar('ભૂલ આવી: $e', Colors.red);
     } finally {
@@ -372,8 +541,11 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     _purposeController.clear();
     setState(() {
       _image = null;
-      _selectedMember = null;
       _selectedBlock = null;
+      _isAllSociety = false;
+      _allowMultipleFlats = false;
+      _selectedMembers.clear();
+      _applyMemberFilter();
     });
   }
 
@@ -466,99 +638,563 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.55,
-        minChildSize: 0.35,
-        maxChildSize: 0.92,
-        expand: false,
-        builder: (_, scrollCtrl) => ListView(
-          controller: scrollCtrl,
-          padding: const EdgeInsets.all(16),
-          children: [
-            const Text(
-              'ઈમરજન્સી કોન્ટેક્ટ્સ',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final bottomPadding = MediaQuery.of(ctx).padding.bottom;
+        return DraggableScrollableSheet(
+          initialChildSize: 0.65,
+          minChildSize: 0.40,
+          maxChildSize: 0.92,
+          expand: false,
+          builder: (_, scrollCtrl) => Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
-            const SizedBox(height: 8),
-            FutureBuilder<DocumentSnapshot>(
-              future: _loadSocietyConfigDoc(),
-              builder: (context, snap) {
-                if (!snap.hasData || !snap.data!.exists) {
-                  return const Text('હજી એડમિને નંબરો ઉમેર્યા નથી.');
-                }
-                final rawData = snap.data!.data();
-                if (rawData == null) {
-                  return const Text('હજી એડમિને નંબરો ઉમેર્યા નથી.');
-                }
-                final settingsMap = Map<String, dynamic>.from(rawData as Map);
-                final raw = settingsMap['emergencyContacts'];
-                if (raw is! List) {
-                  return const Text('હજી એડમિને નંબરો ઉમેર્યા નથી.');
-                }
-                final emergList = raw;
-                if (emergList.isEmpty) {
-                  return const Text('હજી એડમિને નંબરો ઉમેર્યા નથી.');
-                }
-                return Column(
-                  children: emergList.map<Widget>((e) {
-                    if (e is! Map) return const SizedBox.shrink();
-                    final m = Map<String, dynamic>.from(e);
-                    final name = '${m['name'] ?? ''}';
-                    final phone = '${m['phone'] ?? ''}';
-                    return ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.phone, color: Colors.red),
-                      title: Text(name),
-                      subtitle: Text(phone),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
-            const Divider(height: 32),
-            const Text(
-              'મેમ્બર્સનો કાયમી સ્ટાફ',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            const SizedBox(height: 8),
-            StreamBuilder<QuerySnapshot>(
-              stream: AppFirestore.instance
-                  .collection('daily_staff')
-                  .orderBy('createdAt', descending: true)
-                  .limit(100)
-                  .snapshots(),
-              builder: (context, snap) {
-                if (!snap.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final docs = snap.data!.docs
-                    .where(
-                      (d) => SocietyService.instance
-                          .documentBelongsToCurrentTenant(
-                            d.data() as Map<String, dynamic>?,
-                          ),
-                    )
-                    .toList();
-                if (docs.isEmpty) {
-                  return const Text('કોઈ સ્ટાફ નોંધાયો નથી.');
-                }
-                return Column(
-                  children: docs.map((d) {
-                    final m = d.data() as Map<String, dynamic>;
-                    return ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.badge_outlined),
-                      title: Text('${m['staffName'] ?? ''}'),
-                      subtitle: Text(
-                        '${m['staffRole'] ?? ''}\n📱 ${m['staffPhone'] ?? ''}',
+            child: SafeArea(
+              top: false,
+              bottom: true,
+              child: Column(
+                children: [
+                  // Drag handle
+                  const SizedBox(height: 10),
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4.5,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(3),
                       ),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
-          ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(9),
+                          decoration: BoxDecoration(
+                            color:
+                                const Color(0xFF4F46E5).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.quick_contacts_dialer_rounded,
+                            color: Color(0xFF4F46E5),
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "ડિરેક્ટરી & સોસાયટી સ્ટાફ",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                              SizedBox(height: 1),
+                              Text(
+                                "ઇમરજન્સી હેલ્પલાઇન અને દૈનિક સ્ટાફ સંપર્ક",
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: Color(0xFF64748B),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded),
+                          color: const Color(0xFF64748B),
+                          splashRadius: 20,
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+
+                  // Content List
+                  Expanded(
+                    child: ListView(
+                      controller: scrollCtrl,
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        12,
+                        16,
+                        24 + (bottomPadding > 0 ? bottomPadding : 16),
+                      ),
+                      children: [
+                        // Section 1: Emergency Contacts
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEE2E2),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Icon(
+                            Icons.emergency_rounded,
+                            size: 15,
+                            color: Color(0xFFDC2626),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'ઈમરજન્સી કોન્ટેક્ટ્સ',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14.5,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEE2E2),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            "તાત્કાલિક મદદ",
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFB91C1C),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    FutureBuilder<DocumentSnapshot>(
+                      future: _loadSocietyConfigDoc(),
+                      builder: (context, snap) {
+                        if (!snap.hasData || !snap.data!.exists) {
+                          return _buildEmptyContactNotice(
+                            icon: Icons.contact_phone_outlined,
+                            title: 'હજુ સુધી કોઈ ઈમરજન્સી નંબર ઉમેરાયા નથી',
+                            subtitle:
+                                'એડમિન દ્વારા પોલીસ, ફાયર, એમ્બ્યુલન્સ અથવા સિક્યુરિટી હેલ્પલાઇન નંબર ઉમેરવામાં આવશે.',
+                            isEmergency: true,
+                          );
+                        }
+                        final rawData = snap.data!.data();
+                        if (rawData == null) {
+                          return _buildEmptyContactNotice(
+                            icon: Icons.contact_phone_outlined,
+                            title: 'હજુ સુધી કોઈ ઈમરજન્સી નંબર ઉમેરાયા નથી',
+                            subtitle:
+                                'એડમિન દ્વારા પોલીસ, ફાયર, એમ્બ્યુલન્સ અથવા સિક્યુરિટી હેલ્પલાઇન નંબર ઉમેરવામાં આવશે.',
+                            isEmergency: true,
+                          );
+                        }
+                        final settingsMap =
+                            Map<String, dynamic>.from(rawData as Map);
+                        final raw = settingsMap['emergencyContacts'];
+                        if (raw is! List || raw.isEmpty) {
+                          return _buildEmptyContactNotice(
+                            icon: Icons.contact_phone_outlined,
+                            title: 'હજુ સુધી કોઈ ઈમરજન્સી નંબર ઉમેરાયા નથી',
+                            subtitle:
+                                'એડમિન દ્વારા પોલીસ, ફાયર, એમ્બ્યુલન્સ અથવા સિક્યુરિટી હેલ્પલાઇન નંબર ઉમેરવામાં આવશે.',
+                            isEmergency: true,
+                          );
+                        }
+                        final emergList = raw;
+
+                        return Column(
+                          children: emergList.map<Widget>((e) {
+                            if (e is! Map) return const SizedBox.shrink();
+                            final m = Map<String, dynamic>.from(e);
+                            final name = '${m['name'] ?? ''}';
+                            final phone = '${m['phone'] ?? ''}';
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF1F2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFFFECDD3),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFDC2626),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.phone_in_talk_rounded,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          name,
+                                          style: const TextStyle(
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.w800,
+                                            color: Color(0xFF0F172A),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          phone,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF991B1B),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (phone.isNotEmpty)
+                                    FilledButton.icon(
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor:
+                                            const Color(0xFF16A34A),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      onPressed: () => _callPhone(phone),
+                                      icon: const Icon(
+                                        Icons.call_rounded,
+                                        size: 14,
+                                      ),
+                                      label: const Text(
+                                        'કૉલ',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 20),
+                    const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                    const SizedBox(height: 16),
+
+                    // Section 2: Daily Staff
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEF2FF),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Icon(
+                            Icons.badge_rounded,
+                            size: 15,
+                            color: Color(0xFF4F46E5),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'મેમ્બર્સનો કાયમી સ્ટાફ',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14.5,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEF2FF),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            "દૈનિક સ્ટાફ",
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF4338CA),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    StreamBuilder<QuerySnapshot>(
+                      stream: AppFirestore.instance
+                          .collection('daily_staff')
+                          .orderBy('createdAt', descending: true)
+                          .limit(100)
+                          .snapshots(),
+                      builder: (context, snap) {
+                        if (!snap.hasData) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF4F46E5),
+                              ),
+                            ),
+                          );
+                        }
+                        final docs = snap.data!.docs
+                            .where(
+                              (d) => SocietyService.instance
+                                  .documentBelongsToCurrentTenant(
+                                    d.data() as Map<String, dynamic>?,
+                                  ),
+                            )
+                            .toList();
+                        if (docs.isEmpty) {
+                          return _buildEmptyContactNotice(
+                            icon: Icons.badge_outlined,
+                            title: 'કોઈ કાયમી સ્ટાફ નોંધાયો નથી',
+                            subtitle:
+                                'સોસાયટી મેઇડ, ડ્રાઇવર, સિક્યુરિટી કે માળીની નોંધણી સભ્યો દ્વારા ઉમેર્યા પછી અહીં જોવા મળશે.',
+                            isEmergency: false,
+                          );
+                        }
+
+                        return Column(
+                          children: docs.map((d) {
+                            final m = d.data() as Map<String, dynamic>;
+                            final staffName = '${m['staffName'] ?? ''}';
+                            final staffRole = '${m['staffRole'] ?? ''}';
+                            final staffPhone = '${m['staffPhone'] ?? ''}';
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFFE2E8F0),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.02),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF4F46E5)
+                                          .withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(
+                                      Icons.person_rounded,
+                                      color: Color(0xFF4F46E5),
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          staffName,
+                                          style: const TextStyle(
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.w800,
+                                            color: Color(0xFF0F172A),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Row(
+                                          children: [
+                                            if (staffRole.isNotEmpty)
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 6,
+                                                  vertical: 1.5,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color:
+                                                      const Color(0xFFF1F5F9),
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  staffRole,
+                                                  style: const TextStyle(
+                                                    fontSize: 10.5,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Color(0xFF475569),
+                                                  ),
+                                                ),
+                                              ),
+                                            if (staffRole.isNotEmpty &&
+                                                staffPhone.isNotEmpty)
+                                              const SizedBox(width: 6),
+                                            if (staffPhone.isNotEmpty)
+                                              Text(
+                                                staffPhone,
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  color: Color(0xFF64748B),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (staffPhone.isNotEmpty)
+                                    IconButton(
+                                      onPressed: () => _callPhone(staffPhone),
+                                      icon: const Icon(
+                                        Icons.call_rounded,
+                                        color: Color(0xFF16A34A),
+                                        size: 20,
+                                      ),
+                                      splashRadius: 18,
+                                    ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  },
+);
+}
+
+  Widget _buildEmptyContactNotice({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool isEmergency,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isEmergency ? const Color(0xFFFEF2F2) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color:
+              isEmergency ? const Color(0xFFFECACA) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isEmergency
+                  ? const Color(0xFFDC2626).withValues(alpha: 0.12)
+                  : const Color(0xFF4F46E5).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: isEmergency
+                  ? const Color(0xFFDC2626)
+                  : const Color(0xFF4F46E5),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isEmergency
+                        ? const Color(0xFF991B1B)
+                        : const Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    height: 1.35,
+                    color: isEmergency
+                        ? const Color(0xFFB91C1C)
+                        : const Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -570,22 +1206,134 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       onShowSnackBar: _showSnackBar,
     );
   }
+
   Future<bool> _showConfirmDialog(String title, String content) async {
     return await showDialog(
           context: context,
-          builder: (ctx) => AlertDialog(
-            title: Text(title),
-            content: Text(content),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text("ના"),
+          builder: (ctx) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(22),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              const Color(0xFFDC2626).withValues(alpha: 0.35),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.white,
+                      size: 34,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF991B1B),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFECACA)),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          content,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF7F1D1D),
+                            fontWeight: FontWeight.w600,
+                            height: 1.35,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          "⚠️ તમામ સોસાયટી એડમિનના ફોનમાં તાત્કાલિક સાયરન એલર્ટ વાગશે.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFFB91C1C),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text(
+                            "ના, રદ કરો",
+                            style: TextStyle(
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFFDC2626),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(ctx, true),
+                          icon: const Icon(Icons.emergency_rounded, size: 16),
+                          label: const Text(
+                            "હા, SOS મોકલો",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text("હા"),
-              ),
-            ],
+            ),
           ),
         ) ??
         false;
@@ -593,341 +1341,1934 @@ class _WatchmanScreenState extends State<WatchmanScreen>
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("સોસાયટી ગેટ કંટ્રોલ"),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.person_add), text: "નવી એન્ટ્રી"),
-            Tab(icon: Icon(Icons.history), text: "આજની હિસ્ટ્રી"),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.directions_car_filled_rounded),
-            tooltip: 'વાહન સર્ચ (Vehicle Search)',
-            onPressed: _openVehicleLookupDialog,
-          ),
-          IconButton(
-            icon: const Icon(Icons.contact_phone),
-            tooltip: 'ઈમરજન્સી અને કાયમી સ્ટાફ',
-            onPressed: _openContactsAndStaffSheet,
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.warning_amber_rounded,
-              color: Colors.amber.shade300,
-            ),
-            onPressed: _sendSOS,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => FirebaseAuth.instance.signOut(),
-          ),
-        ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              cs.primary.withValues(alpha: 0.06),
-              Theme.of(context).scaffoldBackgroundColor,
-            ],
-          ),
-        ),
-        child: TabBarView(
-          controller: _tabController,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: Column(
           children: [
-            Column(
-              children: [
-                _buildWatchmanSummaryCard(),
-                Expanded(child: _buildEntryForm()),
-              ],
+            _buildPremiumHeader(),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildEntryForm(),
+                  _buildVisitorHistory(),
+                ],
+              ),
             ),
-            _buildVisitorHistory(),
           ],
         ),
       ),
     );
   }
 
-  // --- UI: વિઝિટર એન્ટ્રી ફોર્મ ---
-  Widget _buildEntryForm() {
-    final cs = Theme.of(context).colorScheme;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: _pickImage,
-            child: Container(
-              height: 150,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: cs.primary.withValues(alpha: 0.45)),
-              ),
-              child: _image == null
-                  ? const Icon(
-                      Icons.add_a_photo,
-                      size: 50,
-                      color: Colors.indigo,
-                    )
-                  : Image.file(_image!, fit: BoxFit.cover),
-            ),
+  // --- Ultra Pro Premium Header ---
+  Widget _buildPremiumHeader() {
+    final topPadding = MediaQuery.of(context).padding.top;
+    final activeIndex = _tabController.index;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, topPadding + 6, 16, 10),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF0F172A), // Deep Slate Navy
+            Color(0xFF1E1B4B), // Rich Indigo Slate
+            Color(0xFF312E81), // Royal Indigo
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x33000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
           ),
-          const SizedBox(height: 20),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Single Compact Row: Title + Live Status Badge + Action Buttons
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            // એલાઇનમેન્ટ બરાબર રાખવા
             children: [
-              // ૧. ટેક્સ્ટ ફિલ્ડ - આ રોમાં વધુ જગ્યા રોકશે
-              Expanded(
-                flex: 3, // ૩ ભાગ આ રોકશે
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      controller: _nameController,
-                      onChanged: (value) {
-                        if (value.length >= 3) {
-                          _checkPreApproval(value);
-                        }
-                      },
-                      decoration: InputDecoration(
-                        labelText: "વિઝિટરનું નામ",
-                        hintText: "નામ ટાઈપ કરો...",
-                        prefixIcon: Icon(Icons.person, color: cs.primary),
-                        suffixIcon: const Icon(
-                          Icons.search,
-                          color: Colors.grey,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: cs.primary),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: cs.primary, width: 2),
-                        ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "ગેટ કન્ટ્રોલ",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.5),
+                        width: 0.8,
                       ),
                     ),
-
-                    // જો સર્ચ રિઝલ્ટ મળ્યા હોય તો નાનું લિસ્ટ બતાવવા માટે (Optional)
-                    if (_preApprovedResults.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Text(
-                          "⚠️ ${_preApprovedResults.length} પ્રી-એપ્રુવ્ડ મહેમાન મળ્યા",
-                          style: const TextStyle(
-                            color: Colors.blue,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.shield_rounded, size: 10, color: Color(0xFF34D399)),
+                        SizedBox(width: 3),
+                        Text(
+                          "LIVE",
+                          style: TextStyle(
+                            color: Color(0xFF34D399),
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
                           ),
                         ),
-                      ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 10), // બે વિજેટ વચ્ચે ગેપ
-              // ૨. QR સ્કેનર બટન - આ નાનું આઈકન બટન તરીકે વધારે સારું લાગશે
-              Expanded(
-                flex: 1, // ૧ ભાગ આ રોકશે
-                child: Container(
-                  height: 58, // TextField ની હાઈટ જેટલું રાખ્યું છે
-                  child: ElevatedButton(
-                    onPressed: _openQRScanner,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange[700],
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.zero,
-                      // આઈકન બરાબર સેટ કરવા
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 2,
-                    ),
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.qr_code_scanner, size: 28),
-                        Text("સ્કેન", style: TextStyle(fontSize: 10)),
                       ],
                     ),
                   ),
-                ),
+                ],
+              ),
+              const Spacer(),
+              _buildHeaderCircleAction(
+                icon: Icons.directions_car_filled_rounded,
+                tooltip: 'વાહન સર્ચ (Vehicle Search)',
+                onTap: _openVehicleLookupDialog,
+              ),
+              const SizedBox(width: 6),
+              _buildHeaderCircleAction(
+                icon: Icons.contact_phone_rounded,
+                tooltip: 'ઈમરજન્સી & સ્ટાફ',
+                onTap: _openContactsAndStaffSheet,
+              ),
+              const SizedBox(width: 6),
+              _buildHeaderCircleAction(
+                icon: Icons.warning_amber_rounded,
+                tooltip: 'ઇમરજન્સી SOS એલર્ટ',
+                color: const Color(0xFFF59E0B),
+                onTap: _sendSOS,
+              ),
+              const SizedBox(width: 6),
+              _buildHeaderCircleAction(
+                icon: Icons.logout_rounded,
+                tooltip: 'લોગઆઉટ',
+                onTap: () async {
+                  final confirm = await PremiumLogoutDialog.show(
+                    context,
+                    roleName: 'વોચમેન ગેટ સિસ્ટમ',
+                  );
+                  if (confirm) {
+                    await SessionGuardService.instance.clearSession();
+                    await FirebaseAuth.instance.signOut();
+                  }
+                },
               ),
             ],
           ),
           const SizedBox(height: 10),
-          // TextField ની નીચે આ કોડ મૂકો
-          if (_preApprovedResults.isNotEmpty)
-            Container(
-              height: 100,
-              child: ListView.builder(
-                itemCount: _preApprovedResults.length,
-                itemBuilder: (context, index) {
-                  var data =
-                      _preApprovedResults[index].data() as Map<String, dynamic>;
-                  return ListTile(
-                    tileColor: Colors.blue[50],
-                    leading: const Icon(Icons.verified, color: Colors.blue),
-                    title: Text("${data['guestName']} (Pre-Approved)"),
-                    subtitle: Text("મેમ્બર ID: ${data['memberId']}"),
-                    // તમે અહીં મેમ્બરનું નામ પણ લાવી શકો
-                    onTap: () =>
-                        _selectPreApprovedGuest(_preApprovedResults[index]),
-                  );
-                },
+          // Segmented Navigation Pill Tabs
+          Container(
+            padding: const EdgeInsets.all(3.5),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.28),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.1),
+                width: 1,
               ),
             ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(
-              labelText: "મોબાઈલ નંબર",
-              border: OutlineInputBorder(),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildSegmentedTabButton(
+                    index: 0,
+                    isActive: activeIndex == 0,
+                    icon: Icons.person_add_rounded,
+                    label: "નવી એન્ટ્રી (New Entry)",
+                  ),
+                ),
+                Expanded(
+                  child: _buildSegmentedTabButton(
+                    index: 1,
+                    isActive: activeIndex == 1,
+                    icon: Icons.history_rounded,
+                    label: "મુલાકાત હિસ્ટ્રી (Logs)",
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 14),
+        ],
+      ),
+    );
+  }
 
-          // ક્વિક ડિલિવરી / વિઝિટર ટેગ્સ
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              "ઝડપી ડિલિવરી / મુલાકાત પ્રકાર (1-Tap):",
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+  Widget _buildHeaderCircleAction({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onTap,
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.18),
+                width: 1,
+              ),
+            ),
+            child: Icon(
+              icon,
+              size: 18,
+              color: color ?? Colors.white,
             ),
           ),
-          const SizedBox(height: 6),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSegmentedTabButton({
+    required int index,
+    required bool isActive,
+    required IconData icon,
+    required String label,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        _tabController.animateTo(index);
+        setState(() {});
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        decoration: BoxDecoration(
+          gradient: isActive
+              ? const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF4F46E5).withValues(alpha: 0.45),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.65),
+            ),
+            const SizedBox(width: 7),
+            Text(
+              label,
+              style: TextStyle(
+                color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.7),
+                fontSize: 12.5,
+                fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- UI: વિઝિટર એન્ટ્રી ફોર્મ (Ultra Pro Premium & Spacious) ---
+  Widget _buildEntryForm() {
+    final isAllSocietyActive = _isAllSociety;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ══════════════════════════════════════════════════
+          // CARD 1: મુલાકાતી પ્રોફાઇલ (Visitor Profile)
+          // ══════════════════════════════════════════════════
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1E1B4B).withValues(alpha: 0.04),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Card Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.person_pin_rounded,
+                        color: Color(0xFF4F46E5),
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      "મુલાકાતીની વિગત (Visitor Details)",
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Side-by-Side: Photo Avatar + Visitor Name Field with QR Scanner
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Photo Avatar (Tap to capture / retake)
+                    InkWell(
+                      onTap: _pickImage,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            width: 58,
+                            height: 58,
+                            decoration: BoxDecoration(
+                              color: _image != null
+                                  ? Colors.transparent
+                                  : const Color(0xFFEEF2FF),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: _image != null
+                                    ? const Color(0xFF10B981)
+                                    : const Color(0xFFC7D2FE),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: _image != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: Image.file(
+                                      _image!,
+                                      fit: BoxFit.cover,
+                                      width: 58,
+                                      height: 58,
+                                    ),
+                                  )
+                                : const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.camera_alt_rounded,
+                                        size: 24,
+                                        color: Color(0xFF4F46E5),
+                                      ),
+                                      SizedBox(height: 2),
+                                      Text(
+                                        "ફોટો",
+                                        style: TextStyle(
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF4F46E5),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
+                          if (_image != null)
+                            Positioned(
+                              top: -4,
+                              right: -4,
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF10B981),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.check_rounded,
+                                  size: 13,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Visitor Name TextField with QR Scan inside suffix
+                    Expanded(
+                      child: TextField(
+                        controller: _nameController,
+                        onChanged: (value) {
+                          if (value.length >= 3) {
+                            _checkPreApproval(value);
+                          }
+                        },
+                        decoration: InputDecoration(
+                          labelText: "મુલાકાતીનું નામ *",
+                          hintText: "નામ લખો...",
+                          hintStyle: TextStyle(
+                            fontSize: 12.5,
+                            color: Colors.grey.shade400,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.person_outline_rounded,
+                            color: Color(0xFF4F46E5),
+                            size: 20,
+                          ),
+                          suffixIcon: Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (_nameController.text.isNotEmpty)
+                                  IconButton(
+                                    icon: const Icon(Icons.clear, size: 16),
+                                    onPressed: () {
+                                      _nameController.clear();
+                                      setState(() => _preApprovedResults = []);
+                                    },
+                                  ),
+                                Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(8),
+                                    onTap: _openQRScanner,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [
+                                            Color(0xFFF59E0B),
+                                            Color(0xFFD97706),
+                                          ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.qr_code_scanner_rounded,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
+                                          SizedBox(width: 3),
+                                          Text(
+                                            "QR",
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF4F46E5),
+                              width: 1.6,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Pre-Approved Guest Matches (if any)
+                if (_preApprovedResults.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF60A5FA)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.verified_user_rounded,
+                              color: Color(0xFF2563EB),
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              "${_preApprovedResults.length} પ્રી-એપ્રુવ્ડ મહેમાન મળ્યા (Tap to select)",
+                              style: const TextStyle(
+                                color: Color(0xFF1D4ED8),
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        ..._preApprovedResults.map((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          return InkWell(
+                            onTap: () => _selectPreApprovedGuest(doc),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              margin: const EdgeInsets.only(top: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFFBFDBFE)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.check_circle_outline,
+                                    color: Color(0xFF2563EB),
+                                    size: 15,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      "${data['guestName']} • Pre-Approved",
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.arrow_forward_ios_rounded,
+                                    size: 11,
+                                    color: Colors.grey,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 12),
+
+                // Mobile Number TextField
+                TextField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: "મોબાઇલ નંબર (Mobile No)",
+                    hintText: "10 અંકનો મોબાઈલ નંબર દાખલ કરો...",
+                    hintStyle: TextStyle(
+                      fontSize: 12.5,
+                      color: Colors.grey.shade400,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.phone_iphone_rounded,
+                      color: Color(0xFF4F46E5),
+                      size: 20,
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF4F46E5),
+                        width: 1.6,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // ⚡ Ultra Premium & Spacious 1-Tap Quick Fill Section
+                _buildQuickFillSection(),
+
+                const SizedBox(height: 14),
+
+                // Purpose TextField with instant clear & clean styling
+                TextField(
+                  controller: _purposeController,
+                  onChanged: (val) {
+                    setState(() {});
+                  },
+                  decoration: InputDecoration(
+                    labelText: "મુલાકાતનું કારણ (Purpose)",
+                    hintText: "દા.ત. ડિલિવરી, મહેમાન, સર્વિસ, કુરિયર...",
+                    hintStyle: TextStyle(
+                      fontSize: 12.5,
+                      color: Colors.grey.shade400,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.description_outlined,
+                      color: Color(0xFF4F46E5),
+                      size: 18,
+                    ),
+                    suffixIcon: _purposeController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear_rounded, size: 16),
+                            onPressed: () {
+                              setState(() {
+                                _purposeController.clear();
+                              });
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF4F46E5),
+                        width: 1.6,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 11,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // ══════════════════════════════════════════════════
+          // CARD 2: મુલાકાતનું સ્થળ (Destination - Flat / Society)
+          // ══════════════════════════════════════════════════
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1E1B4B).withValues(alpha: 0.04),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Card Header + Refresh button
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.apartment_rounded,
+                        color: Color(0xFF4F46E5),
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "કોના ઘરે મુલાકાત છે? (Destination)",
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF0F172A),
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          Text(
+                            "ફ્લેટ અથવા આખી સોસાયટી પસંદ કરો",
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_isLoadingMembers)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else
+                      IconButton(
+                        icon: const Icon(
+                          Icons.refresh_rounded,
+                          size: 19,
+                          color: Color(0xFF4F46E5),
+                        ),
+                        tooltip: "સભ્યો ફરી લોડ કરો",
+                        onPressed: _loadAllSocietyMembers,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Destination Mode Switcher: [ 🏢 ફ્લેટ પસંદ કરો ] vs [ 🌐 આખી સોસાયટી ]
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            setState(() {
+                              _isAllSociety = false;
+                              _selectedMembers.removeWhere(
+                                  (m) => m.uid == kAllMembersPseudo.uid);
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            padding: const EdgeInsets.symmetric(vertical: 9),
+                            decoration: BoxDecoration(
+                              color: !isAllSocietyActive
+                                  ? const Color(0xFF4F46E5)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(11),
+                              boxShadow: !isAllSocietyActive
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFF4F46E5)
+                                            .withValues(alpha: 0.35),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.door_front_door_rounded,
+                                  size: 16,
+                                  color: !isAllSocietyActive
+                                      ? Colors.white
+                                      : const Color(0xFF475569),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "ફ્લેટ પસંદ કરો",
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: !isAllSocietyActive
+                                        ? FontWeight.w800
+                                        : FontWeight.w600,
+                                    color: !isAllSocietyActive
+                                        ? Colors.white
+                                        : const Color(0xFF475569),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            setState(() {
+                              _isAllSociety = true;
+                              _selectedBlock = null;
+                              _selectedMembers = [kAllMembersPseudo];
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            padding: const EdgeInsets.symmetric(vertical: 9),
+                            decoration: BoxDecoration(
+                              color: isAllSocietyActive
+                                  ? const Color(0xFF059669)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(11),
+                              boxShadow: isAllSocietyActive
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFF059669)
+                                            .withValues(alpha: 0.35),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.public_rounded,
+                                  size: 16,
+                                  color: isAllSocietyActive
+                                      ? Colors.white
+                                      : const Color(0xFF475569),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "આખી સોસાયટી",
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: isAllSocietyActive
+                                        ? FontWeight.w800
+                                        : FontWeight.w600,
+                                    color: isAllSocietyActive
+                                        ? Colors.white
+                                        : const Color(0xFF475569),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Mode 1: All Society Active
+                if (isAllSocietyActive)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFFECFDF5),
+                          const Color(0xFFD1FAE5).withValues(alpha: 0.7),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFF10B981), width: 1.2),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF10B981),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.check_rounded,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "આખી સોસાયટી (બધા બ્લોક & ફ્લેટ)",
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF065F46),
+                                ),
+                              ),
+                              SizedBox(height: 1),
+                              Text(
+                                "સરકારી, સર્વે, સોસાયટી જનરલ મુલાકાતી માટે",
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  color: Color(0xFF047857),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else ...[
+                  // Mode 2: Individual Flat Selection (Spacious & Premium View)
+                  StreamBuilder<QuerySnapshot>(
+                    stream: AppFirestore.instance
+                        .collection('blocks')
+                        .snapshots(),
+                    builder: (context, snap) {
+                      final blockDocs = (snap.data?.docs ?? [])
+                          .where(
+                            (d) => SocietyService.instance
+                                .documentBelongsToCurrentTenant(
+                              d.data() as Map<String, dynamic>?,
+                            ),
+                          )
+                          .toList();
+
+                      final availableBlocks = <String>{};
+                      for (final d in blockDocs) {
+                        final raw = (d.data() as Map<String, dynamic>?)?['name']
+                                ?.toString() ??
+                            d.id;
+                        final clean = SocietyService.instance
+                            .logicalBlockName(raw)
+                            .trim();
+                        if (clean.isNotEmpty) availableBlocks.add(clean);
+                      }
+                      for (final m in _allMembers) {
+                        final b = m.blockName?.trim();
+                        if (b != null && b.isNotEmpty) {
+                          availableBlocks.add(
+                            SocietyService.instance.logicalBlockName(b),
+                          );
+                        }
+                      }
+                      final sortedBlocks = availableBlocks.toList()..sort();
+
+                      final cleanSelected = _selectedBlock != null
+                          ? SocietyService.instance
+                              .logicalBlockName(_selectedBlock!)
+                              .trim()
+                          : null;
+                      final isAllBlocks = (cleanSelected == null ||
+                          cleanSelected.isEmpty ||
+                          cleanSelected == '__all__');
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 1) Horizontal Block Filter Strip
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.domain_rounded,
+                                size: 14,
+                                color: Color(0xFF4F46E5),
+                              ),
+                              const SizedBox(width: 5),
+                              const Text(
+                                "બ્લોક પસંદગી:",
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF475569),
+                                ),
+                              ),
+                              const Spacer(),
+                              if (!isAllBlocks)
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedBlock = null;
+                                      _applyMemberFilter();
+                                    });
+                                  },
+                                  child: const Text(
+                                    "બધા બ્લોક જુઓ",
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF4F46E5),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 7),
+                          SizedBox(
+                            height: 34,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              children: [
+                                _buildBlockPill(
+                                  '__all__',
+                                  '🏢 બધા બ્લોક',
+                                  isAllBlocks,
+                                  () {
+                                    setState(() {
+                                      _selectedBlock = null;
+                                      _applyMemberFilter();
+                                    });
+                                  },
+                                ),
+                                ...sortedBlocks.map(
+                                  (b) => _buildBlockPill(
+                                    b,
+                                    'બ્લોક $b',
+                                    cleanSelected == b,
+                                    () {
+                                      setState(() {
+                                        _selectedBlock = b;
+                                        _applyMemberFilter();
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // 2) Flat Selection Trigger or Selected Flat Cards
+                          if (_selectedMembers.isEmpty) ...[
+                            // Trigger Card to open searchable sheet
+                            InkWell(
+                              onTap: () => _openFlatPickerSheet(sortedBlocks),
+                              borderRadius: BorderRadius.circular(14),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: const Color(0xFFCBD5E1),
+                                    width: 1.2,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(9),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF4F46E5)
+                                            .withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(
+                                        Icons.search_rounded,
+                                        color: Color(0xFF4F46E5),
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            (cleanSelected != null &&
+                                                    cleanSelected.isNotEmpty)
+                                                ? "બ્લોક $cleanSelected નો ફ્લેટ પસંદ કરો *"
+                                                : "ફ્લેટ પસંદ કરો (Search Flat) *",
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w700,
+                                              color: Color(0xFF1E293B),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            _isLoadingMembers
+                                                ? "સભ્યો લોડ થઈ રહ્યા છે..."
+                                                : (_filteredMembers.isEmpty
+                                                    ? "આ બ્લોકમાં કોઈ ફ્લેટ નથી"
+                                                    : "ટૅપ કરીને ફ્લેટ નંબર અથવા નામ શોધો..."),
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: _filteredMembers.isEmpty
+                                                  ? Colors.red.shade600
+                                                  : const Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF4F46E5),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            "શોધો",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                          SizedBox(width: 4),
+                                          Icon(
+                                            Icons.arrow_forward_ios_rounded,
+                                            color: Colors.white,
+                                            size: 10,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            // Quick 1-tap flat suggestions row
+                            if (_filteredMembers.isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  const Text(
+                                    "ઝડપી પસંદગી:",
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  InkWell(
+                                    onTap: () =>
+                                        _openFlatPickerSheet(sortedBlocks),
+                                    child: const Text(
+                                      "બધા જુઓ >",
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF4F46E5),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              SizedBox(
+                                height: 32,
+                                child: ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: _filteredMembers.length > 7
+                                      ? 7
+                                      : _filteredMembers.length,
+                                  separatorBuilder: (context, index) =>
+                                      const SizedBox(width: 6),
+                                  itemBuilder: (context, idx) {
+                                    final m = _filteredMembers[idx];
+                                    final b = (m.blockName != null &&
+                                            m.blockName!.trim().isNotEmpty)
+                                        ? SocietyService.instance
+                                            .logicalBlockName(m.blockName!)
+                                        : '';
+                                    final u = (m.unitNumber != null &&
+                                            m.unitNumber!.trim().isNotEmpty)
+                                        ? m.unitNumber!
+                                        : '';
+                                    final label = b.isNotEmpty
+                                        ? '$b-$u'
+                                        : (u.isNotEmpty ? 'ફ્લેટ $u' : m.name);
+
+                                    return InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          _selectedMembers = [m];
+                                        });
+                                      },
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 9,
+                                          vertical: 5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: const Color(0xFFCBD5E1),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.home_rounded,
+                                              size: 12,
+                                              color: Color(0xFF4F46E5),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              label,
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w700,
+                                                color: Color(0xFF334155),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ] else ...[
+                            // Executive Selected Flat Destination Cards
+                            Row(
+                              children: [
+                                Text(
+                                  _selectedMembers.length == 1
+                                      ? "પસંદ કરેલ ફ્લેટ:"
+                                      : "પસંદ કરેલ ફ્લેટ (${_selectedMembers.length}):",
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                                const Spacer(),
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _allowMultipleFlats = true;
+                                    });
+                                    _openFlatPickerSheet(sortedBlocks);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEEF2FF),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: const Color(0xFFC7D2FE),
+                                      ),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.add_rounded,
+                                          size: 13,
+                                          color: Color(0xFF4F46E5),
+                                        ),
+                                        SizedBox(width: 3),
+                                        Text(
+                                          "+ બીજો ફ્લેટ",
+                                          style: TextStyle(
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF4F46E5),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedMembers.clear();
+                                      _allowMultipleFlats = false;
+                                    });
+                                  },
+                                  child: const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 2,
+                                    ),
+                                    child: Text(
+                                      "બધા હટાવો",
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+
+                            // Destination Cards
+                            ..._selectedMembers.map((m) {
+                              final b = (m.blockName != null &&
+                                      m.blockName!.trim().isNotEmpty)
+                                  ? SocietyService.instance
+                                      .logicalBlockName(m.blockName!)
+                                  : '';
+                              final u = (m.unitNumber != null &&
+                                      m.unitNumber!.trim().isNotEmpty)
+                                  ? m.unitNumber!
+                                  : '';
+                              final badgeLabel = b.isNotEmpty
+                                  ? '$b - $u'
+                                  : (u.isNotEmpty ? 'ફ્લેટ $u' : 'ઘર');
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFFF8FAFC),
+                                      Color(0xFFEEF2FF),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(0xFFC7D2FE),
+                                    width: 1.2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF4F46E5)
+                                          .withValues(alpha: 0.05),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF4F46E5),
+                                        borderRadius:
+                                            BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        badgeLabel,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            m.name,
+                                            style: const TextStyle(
+                                              fontSize: 13.5,
+                                              fontWeight: FontWeight.w800,
+                                              color: Color(0xFF1E293B),
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            (m.phone != null &&
+                                                    m.phone!.isNotEmpty)
+                                                ? "📞 ${m.phone}"
+                                                : "🏡 સોસાયટી રહેવાસી",
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Color(0xFF64748B),
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.close_rounded,
+                                        size: 18,
+                                        color: Color(0xFF94A3B8),
+                                      ),
+                                      splashRadius: 18,
+                                      onPressed: () {
+                                        setState(() {
+                                          _selectedMembers.remove(m);
+                                          if (_selectedMembers.isEmpty) {
+                                            _allowMultipleFlats = false;
+                                          }
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+
+                            // Multi-flat alert note if multiple selected
+                            if (_selectedMembers.length > 1) ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFFBEB),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: const Color(0xFFFDE68A),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.notifications_active_rounded,
+                                      size: 14,
+                                      color: Color(0xFFB45309),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        "મલ્ટિ-ફ્લેટ વિઝિટ: તમામ ${_selectedMembers.length} સભ્યોને એકસાથે ગેટ એલર્ટ નોટિફિકેશન જશે.",
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Color(0xFFB45309),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 22),
+
+          // ══════════════════════════════════════════════════
+          // PRIMARY SUBMIT ACTION BUTTON
+          // ══════════════════════════════════════════════════
+          _isUploading
+              ? Container(
+                  height: 54,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4F46E5).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          "એન્ટ્રી સેવ અને નોટિફિકેશન મોકલાઈ રહ્યું છે...",
+                          style: TextStyle(
+                            color: Color(0xFF4F46E5),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : Container(
+                  width: double.infinity,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF4F46E5), Color(0xFF312E81)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF4F46E5).withValues(alpha: 0.38),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: _submitEntry,
+                      child: const Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.shield_outlined,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              "એન્ટ્રી કરો અને મેમ્બરને જાણ કરો",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ⚡ ULTRA PRO 1-TAP QUICK FILL SECTION & HELPER WIDGETS
+  // ════════════════════════════════════════════════════════════════
+  Widget _buildQuickFillSection() {
+    final displayedPartners = _quickFilterCategory == 'all'
+        ? _kQuickPartners
+        : _kQuickPartners
+            .where((p) => p['category'] == _quickFilterCategory)
+            .toList();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 1.2,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with Amber Lightning Icon & Clear action
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                  ),
+                  borderRadius: BorderRadius.circular(9),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.bolt_rounded,
+                  size: 15,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 9),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "ઝડપી સિલેક્શન (1-Tap Quick Fill)",
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    Text(
+                      "એક જ ટૅપમાં ડિલિવરી કે મુલાકાત પ્રકાર સેટ કરો",
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (_purposeController.text.isNotEmpty)
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _purposeController.clear();
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4.5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFFFECACA),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.close_rounded,
+                          size: 11,
+                          color: Color(0xFFDC2626),
+                        ),
+                        SizedBox(width: 3),
+                        Text(
+                          "સાફ કરો",
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFFDC2626),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Category filter pills
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: _kQuickPartners.map((partner) {
-                final isSelected =
-                    _purposeController.text == partner['label'];
-                final color = partner['color'] as Color;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ActionChip(
-                    avatar: Icon(
-                      partner['icon'] as IconData,
-                      size: 16,
-                      color: isSelected ? Colors.white : color,
-                    ),
-                    label: Text(partner['name'] as String),
-                    backgroundColor: isSelected ? color : Colors.white,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black87,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 12,
-                    ),
-                    side: BorderSide(
-                      color: color.withValues(alpha: isSelected ? 1.0 : 0.4),
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _purposeController.text = partner['label'] as String;
-                        if (_nameController.text.trim().isEmpty) {
-                          _nameController.text =
-                              "${partner['name']} Delivery";
-                        }
-                      });
-                    },
+              children: [
+                _buildQuickCategoryTab(
+                  id: 'all',
+                  label: 'બધા (${_kQuickPartners.length})',
+                  icon: Icons.grid_view_rounded,
+                ),
+                const SizedBox(width: 6),
+                _buildQuickCategoryTab(
+                  id: 'food',
+                  label: 'ફૂડ & ગ્રોસરી',
+                  icon: Icons.fastfood_rounded,
+                ),
+                const SizedBox(width: 6),
+                _buildQuickCategoryTab(
+                  id: 'parcel',
+                  label: 'પાર્સલ & કુરિયર',
+                  icon: Icons.inventory_2_rounded,
+                ),
+                const SizedBox(width: 6),
+                _buildQuickCategoryTab(
+                  id: 'other',
+                  label: 'સર્વિસ & મુલાકાત',
+                  icon: Icons.people_alt_rounded,
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Spacious & Tactile Wrap Grid of Partner Chips
+          Wrap(
+            spacing: 8,
+            runSpacing: 9,
+            children: displayedPartners
+                .map((partner) => _buildQuickPartnerChip(partner))
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickCategoryTab({
+    required String id,
+    required String label,
+    required IconData icon,
+  }) {
+    final isSelected = _quickFilterCategory == id;
+    return InkWell(
+      onTap: () => setState(() => _quickFilterCategory = id),
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF4F46E5)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF4F46E5)
+                : const Color(0xFFE2E8F0),
+            width: 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF4F46E5).withValues(alpha: 0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
                   ),
-                );
-              }).toList(),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 13,
+              color: isSelected ? Colors.white : const Color(0xFF64748B),
             ),
-          ),
-          const SizedBox(height: 10),
-
-          TextField(
-            controller: _purposeController,
-            decoration: const InputDecoration(
-              labelText: "મુલાકાતનું કારણ (Purpose)",
-              border: OutlineInputBorder(),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: isSelected ? Colors.white : const Color(0xFF334155),
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
 
-          // Block & Member Dropdowns
-          StreamBuilder<QuerySnapshot>(
-            stream: AppFirestore.instance.collection('blocks').snapshots(),
-            builder: (context, snap) {
-              if (!snap.hasData) return const CircularProgressIndicator();
-              final blockDocs = snap.data!.docs
-                  .where(
-                    (d) =>
-                        SocietyService.instance.documentBelongsToCurrentTenant(
-                          d.data() as Map<String, dynamic>?,
-                        ),
-                  )
-                  .toList();
-              if (blockDocs.isEmpty) {
-                return const Text('આ સોસાયટી માટે કોઈ બ્લોક નથી.');
+  Widget _buildQuickPartnerChip(Map<String, dynamic> partner) {
+    final label = partner['label'] as String;
+    final isSelected = _purposeController.text == label;
+    final color = partner['color'] as Color;
+    final name = partner['name'] as String;
+    final icon = partner['icon'] as IconData;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            if (isSelected) {
+              _purposeController.clear();
+            } else {
+              _purposeController.text = label;
+              if (_nameController.text.trim().isEmpty) {
+                if (partner['category'] == 'food' ||
+                    partner['category'] == 'parcel') {
+                  _nameController.text = "$name Delivery";
+                } else if (name.contains('કેબ')) {
+                  _nameController.text = "કેબ ડ્રાઇવર (Cab)";
+                } else if (name.contains('સર્વિસ')) {
+                  _nameController.text = "સર્વિસ પર્સન (Service)";
+                } else if (name.contains('મહેમાન')) {
+                  _nameController.text = "મહેમાન (Guest)";
+                }
               }
-              return DropdownButtonFormField<String>(
-                value: _selectedBlock,
-                hint: const Text("બ્લોક પસંદ કરો"),
-                items: blockDocs
-                    .map(
-                      (d) => DropdownMenuItem(
-                        value: d.id,
-                        child: Text('${d['name'] ?? d.id}'),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (v) {
-                  setState(() => _selectedBlock = v);
-                  _fetchMembersByBlock(v!);
-                },
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-              );
-            },
+            }
+          });
+        },
+        borderRadius: BorderRadius.circular(13),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7.5),
+          decoration: BoxDecoration(
+            color: isSelected ? color : Colors.white,
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(
+              color: isSelected ? color : const Color(0xFFE2E8F0),
+              width: isSelected ? 1.4 : 1.0,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1.5),
+                    ),
+                  ],
           ),
-          const SizedBox(height: 10),
-          DropdownButtonFormField<UserModel>(
-            value: _selectedMember,
-            hint: const Text("કોને મળવું છે?"),
-            // 👇 જો લિસ્ટ લોડ થઈ રહ્યું હોય તો ખાલી લિસ્ટ બતાવો
-            items: _filteredMembers.isEmpty
-                ? []
-                : _filteredMembers
-                      .map(
-                        (m) => DropdownMenuItem(
-                          value: m,
-                          child: Text("${m.name} (${m.unitNumber})"),
-                        ),
-                      )
-                      .toList(),
-            onChanged: (v) => setState(() => _selectedMember = v),
-            decoration: const InputDecoration(border: OutlineInputBorder()),
-          ),
-          const SizedBox(height: 30),
-          _isUploading
-              ? const CircularProgressIndicator()
-              : ElevatedButton(
-                  onPressed: _submitEntry,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigo,
-                    minimumSize: const Size(double.infinity, 50),
-                  ),
-                  child: const Text(
-                    "એન્ટ્રી કરો અને મેમ્બરને જાણ કરો",
-                    style: TextStyle(color: Colors.white),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Colors.white.withValues(alpha: 0.22)
+                      : color.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Icon(
+                    icon,
+                    size: 13,
+                    color: isSelected ? Colors.white : color,
                   ),
                 ),
-        ],
+              ),
+              const SizedBox(width: 7),
+              Text(
+                name,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                  color: isSelected ? Colors.white : const Color(0xFF1E293B),
+                ),
+              ),
+              if (isSelected) ...[
+                const SizedBox(width: 5),
+                const Icon(
+                  Icons.check_circle_rounded,
+                  size: 14,
+                  color: Colors.white,
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -962,21 +3303,73 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         final checkedOut = docs
             .where((d) => d['status'] == 'checked_out')
             .length;
-        return Container(
-          width: double.infinity,
-          margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.indigo.withValues(alpha: 0.16)),
-          ),
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
           child: Row(
             children: [
-              _summaryTile('Today', total, Colors.indigo),
-              _summaryTile('Pending', pending, Colors.orange),
-              _summaryTile('In', approved, Colors.green),
-              _summaryTile('Out', checkedOut, Colors.blueGrey),
+              _buildModernStatTile(
+                title: 'આજે',
+                subtitle: 'Today',
+                count: total,
+                icon: Icons.groups_rounded,
+                baseColor: const Color(0xFF4F46E5),
+                bgColor: const Color(0xFFEEF2FF),
+                isSelected: _historyStatusFilter == 'all' && _historyTimeFilter == 'today',
+                onTap: () {
+                  setState(() {
+                    _historyStatusFilter = 'all';
+                    _historyTimeFilter = 'today';
+                  });
+                },
+              ),
+              const SizedBox(width: 8),
+              _buildModernStatTile(
+                title: 'પેન્ડિંગ',
+                subtitle: 'Pending',
+                count: pending,
+                icon: Icons.hourglass_top_rounded,
+                baseColor: const Color(0xFFF59E0B),
+                bgColor: const Color(0xFFFFFBEB),
+                isSelected: _historyStatusFilter == 'pending',
+                onTap: () {
+                  setState(() {
+                    _historyStatusFilter =
+                        _historyStatusFilter == 'pending' ? 'all' : 'pending';
+                  });
+                },
+              ),
+              const SizedBox(width: 8),
+              _buildModernStatTile(
+                title: 'અંદર',
+                subtitle: 'Inside',
+                count: approved,
+                icon: Icons.login_rounded,
+                baseColor: const Color(0xFF10B981),
+                bgColor: const Color(0xFFECFDF5),
+                isSelected: _historyStatusFilter == 'approved',
+                onTap: () {
+                  setState(() {
+                    _historyStatusFilter =
+                        _historyStatusFilter == 'approved' ? 'all' : 'approved';
+                  });
+                },
+              ),
+              const SizedBox(width: 8),
+              _buildModernStatTile(
+                title: 'બહાર',
+                subtitle: 'Out',
+                count: checkedOut,
+                icon: Icons.logout_rounded,
+                baseColor: const Color(0xFF64748B),
+                bgColor: const Color(0xFFF1F5F9),
+                isSelected: _historyStatusFilter == 'checked_out',
+                onTap: () {
+                  setState(() {
+                    _historyStatusFilter =
+                        _historyStatusFilter == 'checked_out' ? 'all' : 'checked_out';
+                  });
+                },
+              ),
             ],
           ),
         );
@@ -984,21 +3377,86 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     );
   }
 
-  Widget _summaryTile(String label, int count, Color color) {
+  Widget _buildModernStatTile({
+    required String title,
+    required String subtitle,
+    required int count,
+    required IconData icon,
+    required Color baseColor,
+    required Color bgColor,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
     return Expanded(
-      child: Column(
-        children: [
-          Text(
-            '$count',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w800,
-              fontSize: 18,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          decoration: BoxDecoration(
+            color: isSelected ? bgColor : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSelected ? baseColor : baseColor.withValues(alpha: 0.18),
+              width: isSelected ? 1.8 : 1,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: baseColor.withValues(alpha: isSelected ? 0.16 : 0.05),
+                blurRadius: isSelected ? 8 : 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 11)),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: isSelected ? baseColor : bgColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  size: 13,
+                  color: isSelected ? Colors.white : baseColor,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                '$count',
+                style: TextStyle(
+                  color: baseColor,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w800,
+                  color: const Color(0xFF1E293B),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 8.5,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? baseColor : Colors.grey.shade500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1014,118 +3472,776 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     return now.subtract(const Duration(days: 30));
   }
 
-  Widget _buildHistoryTimeFilterRow() {
-    final options = <(String, String)>[
-      ('today', 'Today'),
-      ('7d', '7 Days'),
-      ('30d', '30 Days'),
-    ];
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
-        children: options.map((item) {
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(item.$2),
-              selected: _historyTimeFilter == item.$1,
-              onSelected: (_) => setState(() => _historyTimeFilter = item.$1),
+  Future<void> _callPhone(String phone) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    if (cleanPhone.isEmpty) {
+      _showSnackBar('ફોન નંબર ઉપલબ્ધ નથી', Colors.orange);
+      return;
+    }
+    final uri = Uri.parse('tel:$cleanPhone');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        _showSnackBar('કૉલ શરૂ કરી શકાયો નહીં', Colors.red);
+      }
+    } catch (e) {
+      _showSnackBar('કૉલ શરૂ કરવામાં ભૂલ: $e', Colors.red);
+    }
+  }
+
+  Widget _buildTimeFilterMenu() {
+    final Map<String, String> shortLabels = {
+      'today': 'આજે',
+      '7d': '7 Days',
+      '30d': '30 Days',
+    };
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFF4F46E5).withValues(alpha: 0.22),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4F46E5).withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: PopupMenuButton<String>(
+        initialValue: _historyTimeFilter,
+        tooltip: 'સમયગાળો પસંદ કરો',
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        onSelected: (val) {
+          setState(() => _historyTimeFilter = val);
+        },
+        itemBuilder: (context) => [
+          const PopupMenuItem(
+            value: 'today',
+            child: Row(
+              children: [
+                Icon(Icons.today_rounded, size: 18, color: Color(0xFF4F46E5)),
+                SizedBox(width: 8),
+                Text(
+                  'આજની એન્ટ્રી (Today)',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+              ],
             ),
-          );
-        }).toList(),
+          ),
+          const PopupMenuItem(
+            value: '7d',
+            child: Row(
+              children: [
+                Icon(
+                  Icons.date_range_rounded,
+                  size: 18,
+                  color: Color(0xFF4F46E5),
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'છેલ્લા ૭ દિવસ (7 Days)',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: '30d',
+            child: Row(
+              children: [
+                Icon(
+                  Icons.calendar_month_rounded,
+                  size: 18,
+                  color: Color(0xFF4F46E5),
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'છેલ્લા ૩૦ દિવસ (30 Days)',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.calendar_today_rounded,
+                size: 15,
+                color: Color(0xFF4F46E5),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                shortLabels[_historyTimeFilter] ?? 'આજે',
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF4F46E5),
+                ),
+              ),
+              const Icon(
+                Icons.arrow_drop_down_rounded,
+                size: 20,
+                color: Color(0xFF4F46E5),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildWatchmanHistoryGraph() {
-    final cutoff = _watchmanCutoffDate();
-    return StreamBuilder<QuerySnapshot>(
-      stream: AppFirestore.instance
-          .collection('visitors')
-          .where(
-            'entryTime',
-            isGreaterThanOrEqualTo: Timestamp.fromDate(
-              DateTime.now().subtract(const Duration(days: 30)),
-            ),
-          )
-          .orderBy('entryTime', descending: true)
-          .limit(400)
-          .snapshots(),
-      builder: (context, snap) {
-        final docs = snap.hasData
-            ? snap.data!.docs.where((d) {
-                final m = d.data() as Map<String, dynamic>?;
-                if (!SocietyService.instance.documentBelongsToCurrentTenant(
-                  m,
-                )) {
-                  return false;
-                }
-                final ts = m?['entryTime'];
-                if (ts is! Timestamp) return false;
-                return ts.toDate().isAfter(cutoff);
-              }).toList()
-            : <QueryDocumentSnapshot>[];
-        final pending = docs.where((d) => d['status'] == 'pending').length;
-        final approved = docs.where((d) => d['status'] == 'approved').length;
-        final rejected = docs.where((d) => d['status'] == 'rejected').length;
-        final out = docs.where((d) => d['status'] == 'checked_out').length;
-        final maxVal = [
-          pending,
-          approved,
-          rejected,
-          out,
-          1,
-        ].reduce((a, b) => a > b ? a : b);
-        return Container(
-          margin: const EdgeInsets.fromLTRB(12, 6, 12, 8),
-          padding: const EdgeInsets.all(12),
+  Widget _buildHistoryStatusPill({
+    required String value,
+    required String label,
+    required IconData icon,
+    required Color color,
+  }) {
+    final isSelected = _historyStatusFilter == value;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _historyStatusFilter = value;
+          });
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.indigo.withValues(alpha: 0.14)),
+            color: isSelected ? color : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected ? color : Colors.grey.shade300,
+              width: isSelected ? 1.5 : 1,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.28),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
           ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: _graphBar('Pending', pending, maxVal, Colors.orange),
+              Icon(
+                icon,
+                size: 14,
+                color: isSelected ? Colors.white : color,
               ),
-              const SizedBox(width: 8),
-              Expanded(child: _graphBar('In', approved, maxVal, Colors.green)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _graphBar('Rejected', rejected, maxVal, Colors.red),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.grey.shade800,
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                ),
               ),
-              const SizedBox(width: 8),
-              Expanded(child: _graphBar('Out', out, maxVal, Colors.blueGrey)),
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _graphBar(String label, int count, int maxCount, Color color) {
-    final ratio = (count / maxCount).clamp(0.0, 1.0);
-    return Column(
-      children: [
-        SizedBox(
-          height: 66,
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              height: 12 + (52 * ratio),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.88),
-                borderRadius: BorderRadius.circular(8),
+  void _showCheckOutConfirmation(String docId, String visitorName) async {
+    final confirmed = await PremiumConfirmationDialog.show(
+      context,
+      title: 'ચેક-આઉટ કન્ફર્મેશન',
+      message: '$visitorName સોસાયટીની બહાર નીકળી ગયા છે તે કન્ફર્મ કરો છો?',
+      icon: Icons.output_rounded,
+      gradientColors: const [Color(0xFF475569), Color(0xFF334155)],
+      cancelText: 'ના, રદ કરો',
+      confirmText: 'હા, બહાર ગયા (OUT)',
+      confirmColor: const Color(0xFFDC2626),
+      confirmGradient: const [Color(0xFFEF4444), Color(0xFFDC2626)],
+      confirmIcon: Icons.check_circle_rounded,
+      isDestructive: true,
+    );
+    if (confirmed == true) {
+      _checkOutVisitor(docId);
+    }
+  }
+
+  void _showVisitorDetailSheet(Map<String, dynamic> m, String docId) {
+    final status = (m['status'] ?? 'pending').toString();
+    final name = (m['name'] ?? 'મહેમાન').toString().trim();
+    final phone = (m['phone'] ?? '').toString().trim();
+    final block = (m['blockName'] ?? '').toString().trim();
+    final unit = (m['unitNumber'] ?? '').toString().trim();
+    final memberName = (m['memberName'] ?? '').toString().trim();
+    final purpose = (m['purpose'] ?? 'મુલાકાત').toString().trim();
+    final photoUrl = (m['photoUrl'] ?? '').toString().trim();
+    final vehicle = (m['vehicleNumber'] ?? m['vehicle'] ?? '').toString().trim();
+    final entryTime = m['entryTime'] is Timestamp
+        ? (m['entryTime'] as Timestamp).toDate()
+        : null;
+    final exitTime = m['exitTime'] is Timestamp
+        ? (m['exitTime'] as Timestamp).toDate()
+        : null;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final bottomPadding = MediaQuery.of(ctx).padding.bottom;
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.fromLTRB(
+            20,
+            14,
+            20,
+            MediaQuery.of(ctx).viewInsets.bottom +
+                20 +
+                (bottomPadding > 0 ? bottomPadding : 12),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: const Color(0xFFEEF2FF),
+                    backgroundImage:
+                        photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                    child: photoUrl.isEmpty
+                        ? Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : 'G',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF4F46E5),
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'હેતુ: $purpose',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (phone.isNotEmpty)
+                    IconButton.filledTonal(
+                      icon: const Icon(
+                        Icons.phone_rounded,
+                        color: Color(0xFF059669),
+                      ),
+                      onPressed: () => _callPhone(phone),
+                      tooltip: 'કૉલ કરો',
+                    ),
+                ],
+              ),
+              const Divider(height: 28),
+              _detailRow(
+                Icons.apartment_rounded,
+                'ફ્લેટ / યુનિટ',
+                '$block - $unit ${memberName.isNotEmpty ? "($memberName)" : ""}',
+              ),
+              if (phone.isNotEmpty)
+                _detailRow(Icons.phone_android_rounded, 'મોબાઈલ નંબર', phone),
+              if (vehicle.isNotEmpty)
+                _detailRow(Icons.directions_car_rounded, 'વાહન નંબર', vehicle),
+              if (entryTime != null)
+                _detailRow(
+                  Icons.login_rounded,
+                  'એન્ટ્રી સમય',
+                  DateFormat('dd MMM yyyy, hh:mm a').format(entryTime),
+                ),
+              if (exitTime != null)
+                _detailRow(
+                  Icons.logout_rounded,
+                  'એક્ઝિટ સમય',
+                  DateFormat('dd MMM yyyy, hh:mm a').format(exitTime),
+                ),
+              const SizedBox(height: 20),
+              if (status == 'approved')
+                FilledButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _showCheckOutConfirmation(docId, name);
+                  },
+                  icon: const Icon(Icons.logout_rounded),
+                  label: const Text(
+                    'મહેમાન બહાર ગયા (Mark Out)',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFDC2626),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+  }
+
+  Widget _detailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: const Color(0xFF6366F1)),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVisitorCard(QueryDocumentSnapshot doc) {
+    final d = doc.data() as Map<String, dynamic>;
+    final status = (d['status'] ?? 'pending').toString();
+    final name = (d['name'] ?? 'મહેમાન').toString().trim();
+    final block = (d['blockName'] ?? '').toString().trim();
+    final unit = (d['unitNumber'] ?? '').toString().trim();
+    final purpose = (d['purpose'] ?? 'મુલાકાત').toString().trim();
+    final phone = (d['phone'] ?? '').toString().trim();
+    final photoUrl = (d['photoUrl'] ?? '').toString().trim();
+    final vehicle = (d['vehicleNumber'] ?? d['vehicle'] ?? '').toString().trim();
+    final entryTime = d['entryTime'] is Timestamp
+        ? (d['entryTime'] as Timestamp).toDate()
+        : null;
+    final exitTime = d['exitTime'] is Timestamp
+        ? (d['exitTime'] as Timestamp).toDate()
+        : null;
+
+    Color accentColor;
+    Color lightBg;
+    String statusText;
+    IconData statusIcon;
+
+    if (status == 'approved') {
+      accentColor = const Color(0xFF10B981);
+      lightBg = const Color(0xFFECFDF5);
+      statusText = "અંદર છે";
+      statusIcon = Icons.door_front_door_rounded;
+    } else if (status == 'rejected') {
+      accentColor = const Color(0xFFEF4444);
+      lightBg = const Color(0xFFFEF2F2);
+      statusText = "ના પાડી";
+      statusIcon = Icons.cancel_rounded;
+    } else if (status == 'checked_out') {
+      accentColor = const Color(0xFF64748B);
+      lightBg = const Color(0xFFF1F5F9);
+      statusText = "બહાર ગયા";
+      statusIcon = Icons.exit_to_app_rounded;
+    } else {
+      accentColor = const Color(0xFFF59E0B);
+      lightBg = const Color(0xFFFFFBEB);
+      statusText = "રાહ જુઓ";
+      statusIcon = Icons.hourglass_top_rounded;
+    }
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: accentColor.withValues(alpha: 0.28),
+          width: 1.2,
         ),
-        const SizedBox(height: 4),
-        Text('$count', style: const TextStyle(fontWeight: FontWeight.w700)),
-        Text(label, style: const TextStyle(fontSize: 10)),
-      ],
+      ),
+      color: Colors.white,
+      child: InkWell(
+        onTap: () => _showVisitorDetailSheet(d, doc.id),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Photo Avatar with status ring
+              Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: accentColor, width: 2),
+                      color: lightBg,
+                    ),
+                    child: ClipOval(
+                      child: photoUrl.isNotEmpty
+                          ? Image.network(
+                              photoUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Center(
+                                child: Text(
+                                  name.isNotEmpty ? name[0].toUpperCase() : 'G',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    color: accentColor,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Center(
+                              child: Text(
+                                name.isNotEmpty ? name[0].toUpperCase() : 'G',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: accentColor,
+                                ),
+                              ),
+                            ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: Icon(statusIcon, size: 9, color: Colors.white),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 12),
+              // Visitor Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                        color: Color(0xFF1E293B),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        // Flat Badge
+                        if (block.isNotEmpty || unit.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEEF2FF),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.home_rounded,
+                                  size: 11,
+                                  color: Color(0xFF4F46E5),
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  '$block-$unit',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF4F46E5),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        // Purpose Badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3E8FF),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            purpose,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF7E22CE),
+                            ),
+                          ),
+                        ),
+                        // Vehicle Badge
+                        if (vehicle.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.directions_car_rounded,
+                                  size: 11,
+                                  color: Color(0xFF475569),
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  vehicle,
+                                  style: const TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF475569),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.access_time_rounded,
+                          size: 11.5,
+                          color: Colors.grey.shade500,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          entryTime != null
+                              ? DateFormat('hh:mm a').format(entryTime)
+                              : '--:--',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (status == 'checked_out' && exitTime != null) ...[
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.logout_rounded,
+                            size: 11.5,
+                            color: Colors.red.shade400,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            'બહાર: ${DateFormat('hh:mm a').format(exitTime)}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.red.shade600,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              // Right Action / Status
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (status == 'approved')
+                    ElevatedButton.icon(
+                      onPressed: () => _showCheckOutConfirmation(doc.id, name),
+                      icon: const Icon(
+                        Icons.logout_rounded,
+                        size: 13,
+                        color: Colors.white,
+                      ),
+                      label: const Text(
+                        'OUT',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11.5,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFDC2626),
+                        elevation: 1,
+                        shadowColor: const Color(
+                          0xFFDC2626,
+                        ).withValues(alpha: 0.4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        minimumSize: const Size(68, 32),
+                      ),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: lightBg,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: accentColor.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(statusIcon, size: 12, color: accentColor),
+                          const SizedBox(width: 4),
+                          Text(
+                            statusText,
+                            style: TextStyle(
+                              color: accentColor,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (phone.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    InkWell(
+                      onTap: () => _callPhone(phone),
+                      borderRadius: BorderRadius.circular(6),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(
+                              Icons.phone_rounded,
+                              size: 12,
+                              color: Color(0xFF059669),
+                            ),
+                            SizedBox(width: 2),
+                            Text(
+                              'કૉલ',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF059669),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1134,55 +4250,110 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   Widget _buildVisitorHistory() {
     return Column(
       children: [
-        // 🔍 સર્ચ બાર UI
+        _buildWatchmanSummaryCard(),
+        // 🔍 Modern Search Bar + Time Filter Dropdown
         Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: TextField(
-            controller: _searchController,
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value.toLowerCase();
-              });
-            },
-            decoration: InputDecoration(
-              hintText: "નામ અથવા ફ્લેટ નંબરથી શોધો...",
-              prefixIcon: const Icon(Icons.search, color: Colors.indigo),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() => _searchQuery = "");
-                      },
-                    )
-                  : null,
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide.none,
-              ), // જો Container માં હોવ તો
-            ),
-          ),
-        ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
           child: Row(
             children: [
-              _statusChip('all', 'All'),
-              _statusChip('pending', 'Pending'),
-              _statusChip('approved', 'In'),
-              _statusChip('rejected', 'Rejected'),
-              _statusChip('checked_out', 'Out'),
+              Expanded(
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.grey.shade300),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value.toLowerCase();
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: "નામ, ફ્લેટ કે વાહન નંબર શોધો...",
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 13,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search_rounded,
+                        color: Color(0xFF4F46E5),
+                        size: 22,
+                      ),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.close_rounded, size: 18),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = "");
+                              },
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildTimeFilterMenu(),
             ],
           ),
         ),
-        _buildHistoryTimeFilterRow(),
-        _buildWatchmanHistoryGraph(),
+        // 🏷️ Single Sleek Status Filter Pills
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+          child: Row(
+            children: [
+              _buildHistoryStatusPill(
+                value: 'all',
+                label: 'બધા (All)',
+                icon: Icons.grid_view_rounded,
+                color: const Color(0xFF4F46E5),
+              ),
+              _buildHistoryStatusPill(
+                value: 'pending',
+                label: 'પેન્ડિંગ',
+                icon: Icons.hourglass_top_rounded,
+                color: const Color(0xFFF59E0B),
+              ),
+              _buildHistoryStatusPill(
+                value: 'approved',
+                label: 'અંદર છે',
+                icon: Icons.door_front_door_rounded,
+                color: const Color(0xFF10B981),
+              ),
+              _buildHistoryStatusPill(
+                value: 'rejected',
+                label: 'ના પાડી',
+                icon: Icons.cancel_outlined,
+                color: const Color(0xFFEF4444),
+              ),
+              _buildHistoryStatusPill(
+                value: 'checked_out',
+                label: 'બહાર ગયા',
+                icon: Icons.logout_rounded,
+                color: const Color(0xFF64748B),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 6),
 
-        // 📜 ફિલ્ટર કરેલું લિસ્ટ
+        // 📜 StreamBuilder for Visitor List
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: AppFirestore.instance
@@ -1198,7 +4369,12 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                 .snapshots(),
             builder: (context, snap) {
               if (snap.hasError) {
-                return Center(child: Text('હિસ્ટ્રી ભૂલ: ${snap.error}'));
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text('હિસ્ટ્રી લોડ કરવામાં ભૂલ: ${snap.error}'),
+                  ),
+                );
               }
               if (!snap.hasData) {
                 return const Center(child: CircularProgressIndicator());
@@ -1219,15 +4395,27 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                 final m = doc.data() as Map<String, dynamic>;
                 String name = (m['name'] ?? '').toString().toLowerCase();
                 String unit = (m['unitNumber'] ?? '').toString().toLowerCase();
+                String block = (m['blockName'] ?? '').toString().toLowerCase();
+                String phone = (m['phone'] ?? '').toString().toLowerCase();
+                String purpose = (m['purpose'] ?? '').toString().toLowerCase();
+                String vehicle = (m['vehicleNumber'] ?? m['vehicle'] ?? '')
+                    .toString()
+                    .toLowerCase();
                 return name.contains(_searchQuery) ||
-                    unit.contains(_searchQuery);
+                    unit.contains(_searchQuery) ||
+                    block.contains(_searchQuery) ||
+                    phone.contains(_searchQuery) ||
+                    purpose.contains(_searchQuery) ||
+                    vehicle.contains(_searchQuery);
               }).toList();
+
               final cutoff = _watchmanCutoffDate();
               filteredDocs = filteredDocs.where((doc) {
                 final ts = (doc.data() as Map<String, dynamic>)['entryTime'];
                 if (ts is! Timestamp) return false;
                 return ts.toDate().isAfter(cutoff);
               }).toList();
+
               if (_historyStatusFilter != 'all') {
                 filteredDocs = filteredDocs
                     .where((d) => (d['status'] ?? '') == _historyStatusFilter)
@@ -1235,157 +4423,100 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               }
 
               if (filteredDocs.isEmpty) {
-                return const PremiumEmptyState(
-                  message: "કોઈ મહેમાન મળ્યા નથી.",
-                  icon: Icons.person_search_rounded,
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 32,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEF2FF),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFFC7D2FE),
+                              width: 2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.person_search_rounded,
+                            size: 40,
+                            color: Color(0xFF4F46E5),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _searchQuery.isNotEmpty
+                              ? 'સર્ચ મુજબ કોઈ મહેમાન મળ્યા નથી.'
+                              : (_historyStatusFilter != 'all'
+                                  ? 'પસંદ કરેલ ફિલ્ટરમાં કોઈ મહેમાન નથી.'
+                                  : 'હાલ કોઈ મુલાકાતીની નોંધ નથી.'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          _searchQuery.isNotEmpty
+                              ? 'સર્ચ અથવા સ્ટેટસ ફિલ્ટર બદલીને ફરી તપાસો.'
+                              : 'નવી એન્ટ્રી ટેબમાંથી મુલાકાતી નોંધી શકાય છે.',
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        if (_searchQuery.isEmpty &&
+                            _historyStatusFilter == 'all')
+                          FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color(0xFF4F46E5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 11,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            onPressed: () {
+                              _tabController.animateTo(0);
+                              setState(() {});
+                            },
+                            icon: const Icon(
+                              Icons.person_add_rounded,
+                              size: 16,
+                            ),
+                            label: const Text(
+                              'નવી એન્ટ્રી નોંધો',
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 );
               }
 
               return ListView.builder(
+                padding: const EdgeInsets.only(top: 4, bottom: 24),
                 itemCount: filteredDocs.length,
                 itemBuilder: (context, i) {
-                  var d = filteredDocs[i];
-                  String status = d['status'] ?? 'pending';
-
-                  Color statusColor;
-                  String statusText;
-                  IconData statusIcon;
-
-                  // સ્ટેટસ કલર લોજિક
-                  if (status == 'approved') {
-                    statusColor = Colors.green;
-                    statusText = "અંદર છે";
-                    statusIcon = Icons.door_front_door;
-                  } else if (status == 'rejected') {
-                    statusColor = Colors.red;
-                    statusText = "ના પાડી છે";
-                    statusIcon = Icons.cancel;
-                  } else if (status == 'checked_out') {
-                    statusColor = Colors.grey;
-                    statusText = "બહાર ગયા";
-                    statusIcon = Icons.exit_to_app;
-                  } else {
-                    statusColor = Colors.orange;
-                    statusText = "રાહ જુઓ";
-                    statusIcon = Icons.hourglass_empty;
-                  }
-
-                  return Card(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          radius: 25,
-                          backgroundColor: Colors.grey[200],
-                          backgroundImage:
-                              d['photoUrl'] != null && d['photoUrl'].isNotEmpty
-                              ? NetworkImage(d['photoUrl'])
-                              : null,
-                          child: d['photoUrl'] == null || d['photoUrl'].isEmpty
-                              ? const Icon(Icons.person)
-                              : null,
-                        ),
-                        title: Text(
-                          d['name'],
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "ઘર: ${d['blockName']}-${d['unitNumber']}\nહેતુ: ${d['purpose']}",
-                            ),
-                            if (status == 'checked_out' &&
-                                d['exitTime'] != null)
-                              Text(
-                                "Out: ${DateFormat('hh:mm a').format((d['exitTime'] as Timestamp).toDate())}",
-                                style: const TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                          ],
-                        ),
-                        // trailing માં ફેરફાર કરીને ઓવરફ્લો સોલ્વ કર્યો
-                        trailing: SizedBox(
-                          width: 100, // ફિક્સ વિડ્થ આપી જેથી ઓવરફ્લો ન થાય
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              if (status == 'approved')
-                                // જો અંદર હોય તો 'OUT' બટન બતાવો
-                                SizedBox(
-                                  height: 35,
-                                  width: 80,
-                                  child: ElevatedButton(
-                                    onPressed: () => _checkOutVisitor(d.id),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.redAccent,
-                                      padding: EdgeInsets.zero,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      "OUT",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              else
-                                // બાકીના સ્ટેટસ માટે માત્ર આઇકન અને ટેક્સ્ટ
-                                Column(
-                                  children: [
-                                    Icon(
-                                      statusIcon,
-                                      color: statusColor,
-                                      size: 20,
-                                    ),
-                                    Text(
-                                      statusText,
-                                      style: TextStyle(
-                                        color: statusColor,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
+                  return _buildVisitorCard(filteredDocs[i]);
                 },
               );
             },
           ),
         ),
       ],
-    );
-  }
-
-  Widget _statusChip(String value, String label) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: _historyStatusFilter == value,
-        onSelected: (_) => setState(() => _historyStatusFilter = value),
-      ),
     );
   }
 
@@ -1424,136 +4555,156 @@ class _WatchmanScreenState extends State<WatchmanScreen>
 
   // ૧. સ્કેનર ખોલવાનું ફંક્શન
   void _openQRScanner() {
-    final controller = MobileScannerController(
-      detectionSpeed: DetectionSpeed.noDuplicates,
-      returnImage: false,
-    );
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _QRScannerSheet(
+        onScanned: (code) => _processQRCode(code),
+        onManualEntry: _showManualEntryDialog,
       ),
-      builder: (ctx) => SizedBox(
-        height: MediaQuery.of(ctx).size.height * 0.75,
-        child: Column(
-          children: [
-            AppBar(
-              title: const Text('QR કોડ સ્કેનર', style: TextStyle(fontSize: 16)),
-              leading: IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(ctx),
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.flash_on),
-                  onPressed: () => controller.toggleTorch(),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.cameraswitch),
-                  onPressed: () => controller.switchCamera(),
-                ),
-              ],
-            ),
-            Expanded(
-              child: MobileScanner(
-                controller: controller,
-                errorBuilder: (context, error) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.videocam_off, size: 48, color: Colors.red),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'કેમેરા અથવા QR સ્કેનર શરૂ થઈ શક્યું નથી.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            error.errorDetails?.message ??
-                                'કૃપા કરીને કેમેરા પરમિશન આપો અથવા નીચેથી કોડ મેન્યુઅલી દાખલ કરો.',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 12, color: Colors.black54),
-                          ),
-                          const SizedBox(height: 16),
-                          FilledButton.icon(
-                            onPressed: () {
-                              Navigator.pop(ctx);
-                              _showManualEntryDialog();
-                            },
-                            icon: const Icon(Icons.keyboard),
-                            label: const Text('મેન્યુઅલી કોડ દાખલ કરો'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-                onDetect: (capture) async {
-                  final List<Barcode> barcodes = capture.barcodes;
-                  if (barcodes.isNotEmpty) {
-                    final String? code = barcodes.first.rawValue;
-                    if (code != null && code.trim().isNotEmpty) {
-                      Navigator.pop(ctx); // સ્કેનર બંધ કરો
-                      _processQRCode(code.trim()); // ડેટા પ્રોસેસ કરો
-                    }
-                  }
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: TextButton.icon(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _showManualEntryDialog();
-                },
-                icon: const Icon(Icons.edit_note),
-                label: const Text('સ્કેન નથી થતું? મેન્યુઅલી કોડ લખો'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ).whenComplete(() {
-      controller.dispose();
-    });
+    );
   }
 
   void _showManualEntryDialog() {
     final codeController = TextEditingController();
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('કોડ દાખલ કરો'),
-        content: TextField(
-          controller: codeController,
-          decoration: const InputDecoration(
-            labelText: 'પ્રી-અપ્રૂવલ ID અથવા કોડ',
-            border: OutlineInputBorder(),
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.dialpad_rounded,
+                  color: Color(0xFF4F46E5),
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'પાસ કોડ દાખલ કરો',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'મહેમાનના WhatsApp અથવા SMS માં આવેલો પ્રી-અપ્રૂવલ ID લખો',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: codeController,
+                autofocus: true,
+                textCapitalization: TextCapitalization.characters,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'દા.ત. PASS-1234 અથવા ID',
+                  hintStyle: const TextStyle(
+                    fontSize: 12.5,
+                    color: Color(0xFF94A3B8),
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.qr_code_rounded,
+                    color: Color(0xFF4F46E5),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF4F46E5),
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text(
+                        'રદ કરો',
+                        style: TextStyle(
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF4F46E5),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () {
+                        final code = codeController.text.trim();
+                        if (code.isNotEmpty) {
+                          Navigator.pop(ctx);
+                          _processQRCode(code);
+                        }
+                      },
+                      icon: const Icon(Icons.check_circle_rounded, size: 16),
+                      label: const Text(
+                        'ચકાસો',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('રદ'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final code = codeController.text.trim();
-              if (code.isNotEmpty) {
-                Navigator.pop(ctx);
-                _processQRCode(code);
-              }
-            },
-            child: const Text('ચકાસો'),
-          ),
-        ],
       ),
     );
   }
@@ -1586,15 +4737,18 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         await _fetchMembersByBlock(member.blockName!);
 
         setState(() {
+          _isAllSociety = false;
+          _allowMultipleFlats = false;
           _nameController.text = data['guestName'] ?? ""; // નામ ઓટો-ફિલ
           _phoneController.text =
               data['guestPhone'] ?? ""; // 🔥 આ લાઈનથી મોબાઈલ નંબર ઓટો-ફિલ થશે
 
           _selectedBlock = member.blockName;
-          _selectedMember = _filteredMembers.firstWhere(
+          final matchedMember = _filteredMembers.firstWhere(
             (m) => m.uid == member.uid,
             orElse: () => member,
           );
+          _selectedMembers = [matchedMember];
           _purposeController.text = "Pre-Approved Guest";
         });
 
@@ -1606,4 +4760,1288 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       setState(() => _isUploading = false);
     }
   }
+
+  Widget _buildBlockPill(
+    String id,
+    String label,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF4F46E5) : Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected
+                  ? const Color(0xFF4F46E5)
+                  : const Color(0xFFCBD5E1),
+              width: 1.2,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF4F46E5).withValues(alpha: 0.25),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              color: isSelected ? Colors.white : const Color(0xFF334155),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openFlatPickerSheet(List<String> sortedBlocks) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return _FlatPickerSheet(
+          allMembers: _allMembers,
+          sortedBlocks: sortedBlocks,
+          initialBlock: _selectedBlock,
+          initialSelectedMembers: List.from(_selectedMembers),
+          initialAllowMultiple: _allowMultipleFlats,
+          onFlatsSelected: (selectedList, isMultiple) {
+            setState(() {
+              _selectedMembers = selectedList;
+              _allowMultipleFlats = isMultiple;
+              if (selectedList.isNotEmpty && selectedList.first.blockName != null) {
+                _selectedBlock = SocietyService.instance
+                    .logicalBlockName(selectedList.first.blockName!);
+                _applyMemberFilter();
+              }
+            });
+          },
+        );
+      },
+    );
+  }
 }
+
+class _QRScannerSheet extends StatefulWidget {
+  final ValueChanged<String> onScanned;
+  final VoidCallback onManualEntry;
+
+  const _QRScannerSheet({
+    required this.onScanned,
+    required this.onManualEntry,
+  });
+
+  @override
+  State<_QRScannerSheet> createState() => _QRScannerSheetState();
+}
+
+class _QRScannerSheetState extends State<_QRScannerSheet>
+    with SingleTickerProviderStateMixin {
+  late final MobileScannerController _controller;
+  late final AnimationController _animController;
+  late final Animation<double> _laserAnimation;
+  bool _hasScanned = false;
+  bool _isTorchOn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.noDuplicates,
+      cameraResolution: const Size(1280, 720),
+      formats: const [BarcodeFormat.qrCode],
+      returnImage: false,
+    );
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 2200),
+      vsync: this,
+    )..repeat(reverse: true);
+    _laserAnimation = Tween<double>(begin: 0.05, end: 0.95).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const double scanSize = 250.0;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final effectiveBottomSafe = bottomPadding > 0 ? bottomPadding : 16.0;
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.84,
+      decoration: const BoxDecoration(
+        color: Color(0xFF0F172A), // Midnight obsidian
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        child: Column(
+          children: [
+            // Drag handle
+            const SizedBox(height: 10),
+            Center(
+              child: Container(
+                width: 42,
+                height: 4.5,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Top Header bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.qr_code_scanner_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'QR કોડ સ્કેનર',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          'મહેમાન પાસ અથવા પ્રી-અપ્રૂવ્ડ QR સ્કેન કરો',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF94A3B8),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Torch toggle button
+                  IconButton(
+                    style: IconButton.styleFrom(
+                      backgroundColor: _isTorchOn
+                          ? const Color(0xFFF59E0B).withValues(alpha: 0.25)
+                          : Colors.white.withValues(alpha: 0.1),
+                    ),
+                    icon: Icon(
+                      _isTorchOn
+                          ? Icons.flash_on_rounded
+                          : Icons.flash_off_rounded,
+                      color:
+                          _isTorchOn ? const Color(0xFFFBBF24) : Colors.white,
+                      size: 19,
+                    ),
+                    onPressed: () {
+                      _controller.toggleTorch();
+                      setState(() => _isTorchOn = !_isTorchOn);
+                    },
+                    tooltip: 'ટોર્ચ (Flash)',
+                  ),
+                  const SizedBox(width: 4),
+                  // Camera switch button
+                  IconButton(
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.1),
+                    ),
+                    icon: const Icon(
+                      Icons.cameraswitch_rounded,
+                      color: Colors.white,
+                      size: 19,
+                    ),
+                    onPressed: () => _controller.switchCamera(),
+                    tooltip: 'કેમેરા બદલો',
+                  ),
+                  const SizedBox(width: 4),
+                  // Close button
+                  IconButton(
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.1),
+                    ),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+
+            // Camera Area with Scanner Reticle Overlay
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  MobileScanner(
+                    controller: _controller,
+                    errorBuilder: (context, error) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withValues(alpha: 0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.videocam_off_rounded,
+                                  size: 44,
+                                  color: Color(0xFFF87171),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              const Text(
+                                'કેમેરા અથવા QR સ્કેનર શરૂ થઈ શક્યું નથી.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                error.errorDetails?.message ??
+                                    'કૃપા કરીને કેમેરા પરમિશન આપો અથવા નીચેથી કોડ મેન્યુઅલી દાખલ કરો.',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                              FilledButton.icon(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFF4F46E5),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 11,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  widget.onManualEntry();
+                                },
+                                icon:
+                                    const Icon(Icons.dialpad_rounded, size: 16),
+                                label: const Text('મેન્યુઅલી કોડ દાખલ કરો'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    onDetect: (capture) {
+                      if (_hasScanned) return;
+                      final List<Barcode> barcodes = capture.barcodes;
+                      if (barcodes.isNotEmpty) {
+                        final String? code = barcodes.first.rawValue;
+                        if (code != null && code.trim().isNotEmpty) {
+                          _hasScanned = true;
+                          _controller.stop();
+                          Navigator.pop(context);
+                          widget.onScanned(code.trim());
+                        }
+                      }
+                    },
+                  ),
+
+                  // Cyberpunk Custom Painted Scanner Overlay
+                  CustomPaint(
+                    painter: _ScannerOverlayPainter(
+                      scanWindowSize: scanSize,
+                      borderRadius: 18,
+                      cornerColor: const Color(0xFF6366F1),
+                      cornerLength: 28,
+                      cornerWidth: 4,
+                    ),
+                  ),
+
+                  // Animated laser line inside scan window
+                  Center(
+                    child: SizedBox(
+                      width: scanSize - 20,
+                      height: scanSize,
+                      child: AnimatedBuilder(
+                        animation: _laserAnimation,
+                        builder: (context, child) {
+                          return Stack(
+                            children: [
+                              Positioned(
+                                top: scanSize * _laserAnimation.value,
+                                left: 0,
+                                right: 0,
+                                child: Container(
+                                  height: 2.5,
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Colors.transparent,
+                                        Color(0xFF818CF8),
+                                        Color(0xFF38BDF8),
+                                        Color(0xFF818CF8),
+                                        Colors.transparent,
+                                      ],
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF38BDF8)
+                                            .withValues(alpha: 0.7),
+                                        blurRadius: 10,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+
+                  // Instruction badge below scan cutout
+                  Positioned(
+                    bottom: 24,
+                    left: 24,
+                    right: 24,
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.65),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.15),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.center_focus_strong_rounded,
+                              size: 14,
+                              color: Color(0xFF38BDF8),
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              'કેમેરા સામે ચોરસમાં QR કોડ રાખો',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Bottom Action Deck
+            Container(
+              padding: EdgeInsets.fromLTRB(
+                18,
+                14,
+                18,
+                16 + effectiveBottomSafe,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B), // Slate 800
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.08),
+                  ),
+                ),
+              ),
+              child: SafeArea(
+                top: false,
+                bottom: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.white.withValues(alpha: 0.06),
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        minimumSize: const Size(double.infinity, 44),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        widget.onManualEntry();
+                      },
+                      icon: const Icon(
+                        Icons.keyboard_alt_outlined,
+                        size: 18,
+                        color: Color(0xFF818CF8),
+                      ),
+                      label: const Text(
+                        'સ્કેન નથી થતું? મેન્યુઅલી કોડ લખો',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      '🔒 સભ્યો દ્વારા બનાવેલ ડિજિટલ ગેસ્ટ પાસ QR સ્કેન કરો',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ScannerOverlayPainter extends CustomPainter {
+  final double scanWindowSize;
+  final double borderRadius;
+  final Color cornerColor;
+  final double cornerLength;
+  final double cornerWidth;
+
+  _ScannerOverlayPainter({
+    required this.scanWindowSize,
+    this.borderRadius = 18,
+    this.cornerColor = const Color(0xFF6366F1),
+    this.cornerLength = 28,
+    this.cornerWidth = 4,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double left = (size.width - scanWindowSize) / 2;
+    final double top = (size.height - scanWindowSize) / 2;
+    final Rect scanRect =
+        Rect.fromLTWH(left, top, scanWindowSize, scanWindowSize);
+
+    // Darkened background outside scan cutout
+    final Path backgroundPath = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final Path cutoutPath = Path()
+      ..addRRect(
+          RRect.fromRectAndRadius(scanRect, Radius.circular(borderRadius)));
+    final Path overlayPath =
+        Path.combine(PathOperation.difference, backgroundPath, cutoutPath);
+    canvas.drawPath(
+      overlayPath,
+      Paint()..color = Colors.black.withValues(alpha: 0.55),
+    );
+
+    // Corner brackets
+    final cornerPaint = Paint()
+      ..color = cornerColor
+      ..strokeWidth = cornerWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final r = borderRadius;
+    final cl = cornerLength;
+
+    // Top-Left corner
+    canvas.drawPath(
+      Path()
+        ..moveTo(left, top + cl)
+        ..lineTo(left, top + r)
+        ..arcToPoint(Offset(left + r, top), radius: Radius.circular(r))
+        ..lineTo(left + cl, top),
+      cornerPaint,
+    );
+
+    // Top-Right corner
+    canvas.drawPath(
+      Path()
+        ..moveTo(left + scanWindowSize - cl, top)
+        ..lineTo(left + scanWindowSize - r, top)
+        ..arcToPoint(Offset(left + scanWindowSize, top + r),
+            radius: Radius.circular(r))
+        ..lineTo(left + scanWindowSize, top + cl),
+      cornerPaint,
+    );
+
+    // Bottom-Left corner
+    canvas.drawPath(
+      Path()
+        ..moveTo(left, top + scanWindowSize - cl)
+        ..lineTo(left, top + scanWindowSize - r)
+        ..arcToPoint(Offset(left + r, top + scanWindowSize),
+            radius: Radius.circular(r))
+        ..lineTo(left + cl, top + scanWindowSize),
+      cornerPaint,
+    );
+
+    // Bottom-Right corner
+    canvas.drawPath(
+      Path()
+        ..moveTo(left + scanWindowSize - cl, top + scanWindowSize)
+        ..lineTo(left + scanWindowSize - r, top + scanWindowSize)
+        ..arcToPoint(Offset(left + scanWindowSize, top + scanWindowSize - r),
+            radius: Radius.circular(r))
+        ..lineTo(left + scanWindowSize, top + scanWindowSize - cl),
+      cornerPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _FlatPickerSheet extends StatefulWidget {
+  final List<UserModel> allMembers;
+  final List<String> sortedBlocks;
+  final String? initialBlock;
+  final List<UserModel> initialSelectedMembers;
+  final bool initialAllowMultiple;
+  final void Function(List<UserModel> selected, bool isMultiple) onFlatsSelected;
+
+  const _FlatPickerSheet({
+    required this.allMembers,
+    required this.sortedBlocks,
+    required this.initialBlock,
+    required this.initialSelectedMembers,
+    required this.initialAllowMultiple,
+    required this.onFlatsSelected,
+  });
+
+  @override
+  State<_FlatPickerSheet> createState() => _FlatPickerSheetState();
+}
+
+class _FlatPickerSheetState extends State<_FlatPickerSheet> {
+  late String _activeBlock;
+  late List<UserModel> _selectedList;
+  late bool _isMultiple;
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    final init = widget.initialBlock != null
+        ? SocietyService.instance.logicalBlockName(widget.initialBlock!).trim()
+        : null;
+    _activeBlock = (init != null &&
+            init.isNotEmpty &&
+            widget.sortedBlocks.contains(init))
+        ? init
+        : '__all__';
+    _selectedList = List.from(widget.initialSelectedMembers);
+    _isMultiple = widget.initialAllowMultiple;
+    _searchCtrl.addListener(() {
+      setState(() {
+        _searchQuery = _searchCtrl.text.trim().toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  List<UserModel> get _filteredList {
+    return widget.allMembers.where((m) {
+      if (_activeBlock != '__all__') {
+        final cleanActive = SocietyService.instance
+            .logicalBlockName(_activeBlock)
+            .trim()
+            .toLowerCase();
+        final mBlock = SocietyService.instance
+            .logicalBlockName(m.blockName ?? '')
+            .trim()
+            .toLowerCase();
+        if (mBlock != cleanActive) return false;
+      }
+      if (_searchQuery.isNotEmpty) {
+        final unit = (m.unitNumber ?? '').toLowerCase();
+        final block = (m.blockName ?? '').toLowerCase();
+        final name = m.name.toLowerCase();
+        final phone = (m.phone ?? '').toLowerCase();
+        if (!unit.contains(_searchQuery) &&
+            !block.contains(_searchQuery) &&
+            !name.contains(_searchQuery) &&
+            !phone.contains(_searchQuery)) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+  }
+
+  void _onMemberTapped(UserModel member) {
+    if (!_isMultiple) {
+      widget.onFlatsSelected([member], false);
+      Navigator.pop(context);
+    } else {
+      setState(() {
+        final exists = _selectedList.any((m) => m.uid == member.uid);
+        if (exists) {
+          _selectedList.removeWhere((m) => m.uid == member.uid);
+        } else {
+          _selectedList.add(member);
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = _filteredList;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final effectiveBottomSafe = bottomPadding > 0 ? bottomPadding : 16.0;
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.88,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            const SizedBox(height: 10),
+            Center(
+              child: Container(
+                width: 40,
+                height: 4.5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Sheet Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.domain_rounded,
+                      color: Color(0xFF4F46E5),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "ફ્લેટ પસંદ કરો",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        Text(
+                          "નામ અથવા ફ્લેટ નંબરથી શોધો",
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Multi-select toggle button
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        _isMultiple = !_isMultiple;
+                        if (!_isMultiple && _selectedList.length > 1) {
+                          _selectedList = [_selectedList.first];
+                        }
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _isMultiple
+                            ? const Color(0xFF4F46E5)
+                            : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: _isMultiple
+                              ? const Color(0xFF4F46E5)
+                              : const Color(0xFFCBD5E1),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isMultiple
+                                ? Icons.check_box_rounded
+                                : Icons.check_box_outline_blank_rounded,
+                            size: 15,
+                            color: _isMultiple
+                                ? Colors.white
+                                : const Color(0xFF475569),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            "મલ્ટિ-ફ્લેટ",
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: _isMultiple
+                                  ? Colors.white
+                                  : const Color(0xFF334155),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded),
+                    color: const Color(0xFF64748B),
+                    splashRadius: 20,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _searchCtrl,
+                autofocus: false,
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  color: Color(0xFF0F172A),
+                ),
+                decoration: InputDecoration(
+                  hintText: "ફ્લેટ નં. (દા.ત. 101) અથવા સભ્યનું નામ...",
+                  hintStyle: const TextStyle(
+                    fontSize: 12.5,
+                    color: Color(0xFF94A3B8),
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: Color(0xFF4F46E5),
+                    size: 20,
+                  ),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear_rounded, size: 18),
+                          onPressed: () => _searchCtrl.clear(),
+                          color: const Color(0xFF64748B),
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF4F46E5),
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Block Filter Pills
+            SizedBox(
+              height: 36,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  _buildSheetBlockPill(
+                    id: '__all__',
+                    label: '🏢 બધા બ્લોક',
+                    isSelected: _activeBlock == '__all__',
+                    onTap: () => setState(() => _activeBlock = '__all__'),
+                  ),
+                  ...widget.sortedBlocks.map(
+                    (b) => _buildSheetBlockPill(
+                      id: b,
+                      label: 'બ્લોક $b',
+                      isSelected: _activeBlock == b,
+                      onTap: () => setState(() => _activeBlock = b),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Count summary bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                children: [
+                  Text(
+                    "${filtered.length} ફ્લેટ ઉપલબ્ધ",
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                  const Spacer(),
+                  if (_selectedList.isNotEmpty)
+                    Text(
+                      "${_selectedList.length} પસંદ કરેલ",
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF4F46E5),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: Color(0xFFF1F5F9)),
+
+            // Flat List
+            Expanded(
+              child: filtered.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          24.0,
+                          24.0,
+                          24.0,
+                          24.0 + effectiveBottomSafe,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFF1F5F9),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.search_off_rounded,
+                                size: 36,
+                                color: Color(0xFF94A3B8),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              "કોઈ ફ્લેટ મળ્યો નથી",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF334155),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _searchQuery.isNotEmpty
+                                   ? "'$_searchQuery' માટે કોઈ પરિણામ મળ્યું નથી."
+                                  : "આ બ્લોકમાં કોઈ ફ્લેટ ઉપલબ્ધ નથી.",
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF64748B),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        10,
+                        16,
+                        (_isMultiple || _selectedList.isNotEmpty)
+                            ? 14
+                            : (24 + effectiveBottomSafe),
+                      ),
+                      itemCount: filtered.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final m = filtered[index];
+                        final isSelected =
+                            _selectedList.any((s) => s.uid == m.uid);
+
+                        final blockName = (m.blockName != null &&
+                                m.blockName!.trim().isNotEmpty)
+                            ? SocietyService.instance
+                                .logicalBlockName(m.blockName!)
+                            : '';
+                        final unit = (m.unitNumber != null &&
+                                m.unitNumber!.trim().isNotEmpty)
+                            ? m.unitNumber!
+                            : '';
+                        final fullFlatLabel = blockName.isNotEmpty
+                            ? '$blockName - $unit'
+                            : (unit.isNotEmpty ? 'ફ્લેટ $unit' : 'ઘર');
+
+                        return InkWell(
+                          onTap: () => _onMemberTapped(m),
+                          borderRadius: BorderRadius.circular(12),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 140),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFFEEF2FF)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected
+                                    ? const Color(0xFF4F46E5)
+                                    : const Color(0xFFE2E8F0),
+                                width: isSelected ? 1.5 : 1.0,
+                              ),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFF4F46E5)
+                                            .withValues(alpha: 0.12),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Row(
+                              children: [
+                                // Block & Unit badge
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFF4F46E5)
+                                        : const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    fullFlatLabel,
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : const Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                // Member Name & Info
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        m.name,
+                                        style: TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: isSelected
+                                              ? FontWeight.w800
+                                              : FontWeight.w600,
+                                          color: isSelected
+                                              ? const Color(0xFF312E81)
+                                              : const Color(0xFF1E293B),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.person_rounded,
+                                            size: 12,
+                                            color: Colors.grey.shade500,
+                                          ),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            (m.phone != null &&
+                                                    m.phone!.isNotEmpty)
+                                                ? m.phone!
+                                                : "રહેવાસી",
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Selection indicator
+                                if (isSelected)
+                                  Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF10B981),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.check_rounded,
+                                      size: 14,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                else
+                                  Container(
+                                    width: 22,
+                                    height: 22,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: const Color(0xFFCBD5E1),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+
+            // Bottom Confirmation Bar
+            if (_isMultiple || _selectedList.isNotEmpty)
+              Container(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  12,
+                  16,
+                  14 + effectiveBottomSafe,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, -3),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  top: false,
+                  bottom: false,
+                  child: Row(
+                    children: [
+                      if (_selectedList.isNotEmpty)
+                        TextButton.icon(
+                          onPressed: () => setState(() => _selectedList.clear()),
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            size: 16,
+                            color: Colors.red,
+                          ),
+                          label: const Text(
+                            "સાફ કરો",
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      const Spacer(),
+                      FilledButton.icon(
+                        onPressed: () {
+                          widget.onFlatsSelected(_selectedList, _isMultiple);
+                          Navigator.pop(context);
+                        },
+                        icon: const Icon(Icons.check_rounded, size: 18),
+                        label: Text(
+                          _selectedList.isEmpty
+                              ? "બંધ કરો"
+                              : "પસંદગી સાચવો (${_selectedList.length})",
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF4F46E5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSheetBlockPill({
+    required String id,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color(0xFF4F46E5)
+                : const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected
+                  ? const Color(0xFF4F46E5)
+                  : const Color(0xFFE2E8F0),
+              width: 1.2,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              color: isSelected ? Colors.white : const Color(0xFF334155),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+

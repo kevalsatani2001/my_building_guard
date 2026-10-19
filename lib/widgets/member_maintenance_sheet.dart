@@ -1,13 +1,15 @@
+import 'dart:async';
 import 'package:building_guard/core/app_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:printing/printing.dart';
 import '../models/maintenance_model.dart';
 import '../services/maintenance_service.dart';
 import '../services/society_service.dart';
+import '../services/maintenance_receipt_pdf_service.dart';
 
 /// Modular maintenance widgets & sheets for Resident/Member Screen.
 class MemberMaintenanceSheet {
@@ -43,8 +45,8 @@ class MemberMaintenanceSheet {
         final isOverdue = bill.status == MaintenanceStatus.overdue;
 
         final bannerColor = isReview
-            ? Colors.blue.shade800
-            : (isOverdue ? Colors.red.shade700 : Colors.teal.shade800);
+            ? const Color(0xFF1E40AF)
+            : (isOverdue ? const Color(0xFFB91C1C) : const Color(0xFF0F766E));
 
         return Container(
           width: double.infinity,
@@ -131,209 +133,1356 @@ class MemberMaintenanceSheet {
     required String currentUserId,
     MaintenanceBill? initialBill,
   }) async {
-    final currencyFmt =
-        NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
-    final utrController = TextEditingController();
-
     final settings = await MaintenanceService.instance.getPaymentSettings();
-    final upiId = (settings['upiId'] ?? '').toString().trim();
-    final payeeName = (settings['upiPayeeName'] ?? 'Society Maintenance')
-        .toString()
-        .trim();
+    final societyName = await MaintenanceReceiptPdfService.getSocietyName(
+      SocietyService.instance.societyId,
+    );
+
+    // Fetch user details for unit/block matching and auto-linking
+    String userBlock = '';
+    String userUnit = '';
+    String userName = '';
+    String userPhone = '';
+    try {
+      final userDoc = await AppFirestore.instance
+          .collection('users')
+          .doc(currentUserId)
+          .get()
+          .timeout(const Duration(seconds: 2));
+      final uData = userDoc.data() ?? {};
+      userBlock = (uData['blockName'] ?? '').toString().trim();
+      userUnit = (uData['unitNumber'] ?? '').toString().trim();
+      userName = (uData['name'] ?? '').toString().trim();
+      userPhone = (uData['phone'] ?? '').toString().trim();
+    } catch (_) {}
+
+    // Link any unassigned bills for this unit in the background
+    if (userUnit.isNotEmpty) {
+      unawaited(MaintenanceService.instance.linkMemberBillsIfUnassigned(
+        currentUserId: currentUserId,
+        blockName: userBlock,
+        unitNumber: userUnit,
+        memberName: userName,
+        memberPhone: userPhone,
+      ));
+    }
 
     if (!context.mounted) return;
 
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (sheetCtx, setSheetState) => DefaultTabController(
-          length: 2,
-          child: Container(
-            height: MediaQuery.of(sheetCtx).size.height * 0.85,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 10, bottom: 6),
+      builder: (ctx) => _MemberMaintenanceSheetContent(
+        currentUserId: currentUserId,
+        initialBill: initialBill,
+        settings: settings,
+        societyName: societyName,
+        userBlock: userBlock,
+        userUnit: userUnit,
+      ),
+    );
+  }
+
+  /// Shows digital receipt dialog for paid maintenance bill with full PDF view and download actions.
+  static void showReceiptDialog(
+    BuildContext context,
+    MaintenanceBill bill, {
+    String? societyName,
+  }) {
+    final currencyFmt =
+        NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+    final paidDate = bill.paidAt != null
+        ? DateFormat('dd MMM yyyy, hh:mm a').format(bill.paidAt!)
+        : '-';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
                   width: 40,
                   height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      Icon(Icons.account_balance_wallet_rounded,
-                          color: Colors.teal),
-                      SizedBox(width: 8),
-                      Text(
-                        'મેન્ટેનન્સ & ઓનલાઇન પેમેન્ટ',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const TabBar(
-                  tabs: [
-                    Tab(
-                      icon: Icon(Icons.payment_rounded, size: 18),
-                      text: 'ચુકવણી (Pay)',
+              ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCCFBF1),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    Tab(
-                      icon: Icon(Icons.history_rounded, size: 18),
-                      text: 'ઇતિહાસ & રસીદો',
+                    child: const Icon(
+                      Icons.verified_rounded,
+                      color: Color(0xFF0F766E),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'મેન્ટેનન્સ ચુકવણી રસીદ',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          bill.receiptNumber.isNotEmpty
+                              ? 'રસીદ નં: ${bill.receiptNumber}'
+                              : 'ડિજિટલ રસીદ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Amount highlight card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0F766E), Color(0xFF0D9488)],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0F766E).withValues(alpha: 0.25),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                Expanded(
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: AppFirestore.instance
-                        .collection('maintenance_bills')
-                        .where('societyId',
-                            isEqualTo: SocietyService.instance.societyId)
-                        .where('memberId', isEqualTo: currentUserId)
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      final docs = snapshot.data?.docs ?? [];
-                      final bills = docs
-                          .map((d) => MaintenanceBill.fromFirestore(d))
-                          .toList()
-                        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-                      final unpaid = bills
-                          .where((b) => b.status != MaintenanceStatus.paid)
-                          .toList();
-                      final activeBill =
-                          initialBill ?? (unpaid.isNotEmpty ? unpaid.first : null);
-
-                      return TabBarView(
+                child: Column(
+                  children: [
+                    const Text(
+                      'ચૂકવેલ રકમ (PAID)',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                        letterSpacing: 1.1,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      currencyFmt.format(bill.totalPayable),
+                      style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          SingleChildScrollView(
-                            padding: const EdgeInsets.all(16),
-                            child: activeBill == null ||
-                                    activeBill.status == MaintenanceStatus.paid
-                                ? Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 40),
-                                      child: Column(
-                                        children: [
-                                          Icon(
-                                            Icons.verified_rounded,
-                                            size: 64,
-                                            color: Colors.green.shade600,
-                                          ),
-                                          const SizedBox(height: 12),
-                                          const Text(
-                                            '🎉 તમામ મેન્ટેનન્સ બિલ ચૂકવાઈ ગયા છે!',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          const Text(
-                                            'તમારી કોઈ બાકી રકમ નથી. જૂની રસીદો બીજા ટેબમાં ઉપલબ્ધ છે.',
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                                color: Colors.black54),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  )
-                                : _buildActiveBillPaySection(
-                                    context: context,
-                                    bill: activeBill,
-                                    upiId: upiId,
-                                    payeeName: payeeName,
-                                    currencyFmt: currencyFmt,
-                                    utrController: utrController,
-                                    parentCtx: ctx,
-                                  ),
+                          Icon(Icons.check_circle_rounded, color: Colors.white, size: 14),
+                          SizedBox(width: 4),
+                          Text(
+                            'સફળતાપૂર્વક પ્રમાણિત (VERIFIED)',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          bills.isEmpty
-                              ? const Center(
-                                  child: Text('હજુ સુધી કોઈ બિલ મળ્યા નથી.'),
-                                )
-                              : ListView.builder(
-                                  padding: const EdgeInsets.all(16),
-                                  itemCount: bills.length,
-                                  itemBuilder: (context, index) {
-                                    final b = bills[index];
-                                    return Card(
-                                      elevation: 0,
-                                      margin: const EdgeInsets.only(bottom: 10),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        side: BorderSide(
-                                            color: Colors.grey.shade200),
-                                      ),
-                                      child: ListTile(
-                                        title: Text(
-                                          b.billTitle,
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                        subtitle: Text(
-                                          'રકમ: ${currencyFmt.format(b.totalPayable)} • ${DateFormat('dd MMM yyyy').format(b.dueDate)}',
-                                        ),
-                                        trailing: b.status ==
-                                                MaintenanceStatus.paid
-                                            ? FilledButton.tonalIcon(
-                                                onPressed: () =>
-                                                    showReceiptDialog(context, b),
-                                                icon: const Icon(
-                                                    Icons.receipt_long,
-                                                    size: 16),
-                                                label: const Text('રસીદ'),
-                                              )
-                                            : Chip(
-                                                label: Text(
-                                                  b.status.labelGujarati,
-                                                  style: const TextStyle(
-                                                      fontSize: 11),
-                                                ),
-                                                backgroundColor: b.status ==
-                                                        MaintenanceStatus
-                                                            .underReview
-                                                    ? Colors.blue.shade50
-                                                    : Colors.red.shade50,
-                                              ),
-                                      ),
-                                    );
-                                  },
-                                ),
                         ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Details box
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  children: [
+                    _receiptItem('બિલિંગ મહિનો', bill.billTitle),
+                    _receiptItem('ફ્લેટ / યુનિટ', bill.flatDisplay),
+                    _receiptItem('સભ્યનું નામ', bill.memberName.isNotEmpty ? bill.memberName : '-'),
+                    _receiptItem('ચુકવણી પદ્ધતિ', bill.paymentMode.isNotEmpty ? bill.paymentMode.toUpperCase() : 'UPI'),
+                    if (bill.utrNumber.isNotEmpty)
+                      _receiptItem('UTR / ટ્રાન્ઝેક્શન નં', bill.utrNumber),
+                    if (bill.chequeNumber.isNotEmpty)
+                      _receiptItem('ચેક નંબર', bill.chequeNumber),
+                    _receiptItem('ચુકવણી તારીખ', paidDate),
+                    if (bill.verifiedBy.isNotEmpty)
+                      _receiptItem(
+                        'ચકાસણી કરનાર',
+                        (bill.verifiedBy.trim().toLowerCase() == 'admin' ||
+                                (bill.verifiedBy.trim().length >= 20 &&
+                                    !bill.verifiedBy.trim().contains(' ')))
+                            ? 'સોસાયટી એડમિન'
+                            : bill.verifiedBy.trim(),
+                      ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        MaintenanceReceiptPdfService.viewReceiptPdf(
+                          context,
+                          bill,
+                          societyName: societyName,
+                        );
+                      },
+                      icon: const Icon(Icons.picture_as_pdf_rounded),
+                      label: const Text('PDF જુઓ'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0F766E),
+                        side: const BorderSide(color: Color(0xFF0F766E), width: 1.5),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        MaintenanceReceiptPdfService.downloadReceiptPdf(
+                          context,
+                          bill,
+                          societyName: societyName,
+                        );
+                      },
+                      icon: const Icon(Icons.download_rounded),
+                      label: const Text('PDF ડાઉનલોડ'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F766E),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    try {
+                      final pdfBytes =
+                          await MaintenanceReceiptPdfService.generateReceiptPdf(
+                        bill,
+                        societyName: societyName,
                       );
-                    },
+                      final safeReceiptNo = (bill.receiptNumber.trim().isNotEmpty
+                              ? bill.receiptNumber.trim()
+                              : 'REC_${bill.id.length > 6 ? bill.id.substring(0, 6) : bill.id}')
+                          .replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+                      await Printing.sharePdf(
+                        bytes: pdfBytes,
+                        filename: 'Maintenance_Receipt_$safeReceiptNo.pdf',
+                      );
+                    } catch (_) {}
+                  },
+                  icon: const Icon(Icons.share_rounded, size: 18),
+                  label: const Text('રસીદ PDF શેર કરો (Share)'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.grey.shade700,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  static Widget _buildActiveBillPaySection({
+  static Widget _receiptItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+          Text(
+            value,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Content widget for the maintenance portal bottom sheet with TabController.
+class _MemberMaintenanceSheetContent extends StatefulWidget {
+  final String currentUserId;
+  final MaintenanceBill? initialBill;
+  final Map<String, dynamic> settings;
+  final String societyName;
+  final String userBlock;
+  final String userUnit;
+
+  const _MemberMaintenanceSheetContent({
+    required this.currentUserId,
+    this.initialBill,
+    required this.settings,
+    required this.societyName,
+    this.userBlock = '',
+    this.userUnit = '',
+  });
+
+  @override
+  State<_MemberMaintenanceSheetContent> createState() =>
+      _MemberMaintenanceSheetContentState();
+}
+
+class _MemberMaintenanceSheetContentState
+    extends State<_MemberMaintenanceSheetContent>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  late TextEditingController _utrController;
+  late final Stream<List<MaintenanceBill>> _billsStream;
+  final currencyFmt =
+      NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+
+  @override
+  void initState() {
+    super.initState();
+    final startsAtHistory = widget.initialBill != null &&
+        widget.initialBill!.status == MaintenanceStatus.paid;
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: startsAtHistory ? 1 : 0,
+    );
+    _utrController = TextEditingController();
+    _billsStream = _createBillsStream();
+  }
+
+  Stream<List<MaintenanceBill>> _createBillsStream() {
+    final societyId = SocietyService.instance.societyId;
+    final streamMember = AppFirestore.instance
+        .collection('maintenance_bills')
+        .where('societyId', isEqualTo: societyId)
+        .where('memberId', isEqualTo: widget.currentUserId)
+        .snapshots();
+
+    if (widget.userUnit.trim().isEmpty) {
+      return streamMember.map((snap) => snap.docs
+          .map((d) => MaintenanceBill.fromFirestore(d))
+          .toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+    }
+
+    final streamUnit = AppFirestore.instance
+        .collection('maintenance_bills')
+        .where('societyId', isEqualTo: societyId)
+        .where('unitNumber', isEqualTo: widget.userUnit.trim())
+        .snapshots();
+
+    final cleanUserBlock =
+        SocietyService.instance.logicalBlockName(widget.userBlock);
+    final controller = StreamController<List<MaintenanceBill>>.broadcast();
+    final Map<String, MaintenanceBill> memberBills = {};
+    final Map<String, MaintenanceBill> unitBills = {};
+
+    void emitCombined() {
+      if (controller.isClosed) return;
+      final Map<String, MaintenanceBill> all = Map.from(memberBills);
+      for (final entry in unitBills.entries) {
+        final b = entry.value;
+        final cleanB = b.cleanBlockName;
+        if (cleanUserBlock.isEmpty ||
+            cleanB == cleanUserBlock ||
+            b.blockName == widget.userBlock ||
+            cleanUserBlock == b.blockName) {
+          all[entry.key] = b;
+        }
+      }
+      final sorted = all.values.toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      controller.add(sorted);
+    }
+
+    StreamSubscription? sub1;
+    StreamSubscription? sub2;
+
+    sub1 = streamMember.listen((snap) {
+      memberBills.clear();
+      for (final d in snap.docs) {
+        memberBills[d.id] = MaintenanceBill.fromFirestore(d);
+      }
+      emitCombined();
+    }, onError: (e) {
+      if (!controller.isClosed) controller.addError(e);
+    });
+
+    sub2 = streamUnit.listen((snap) {
+      unitBills.clear();
+      for (final d in snap.docs) {
+        unitBills[d.id] = MaintenanceBill.fromFirestore(d);
+      }
+      emitCombined();
+    }, onError: (e) {
+      if (!controller.isClosed) controller.addError(e);
+    });
+
+    controller.onCancel = () {
+      sub1?.cancel();
+      sub2?.cancel();
+    };
+
+    return controller.stream;
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _utrController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final upiId = (widget.settings['upiId'] ?? '').toString().trim();
+    final payeeName = (widget.settings['upiPayeeName'] ?? 'Society Maintenance')
+        .toString()
+        .trim();
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.88,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            // Drag Handle
+            Container(
+              margin: const EdgeInsets.only(top: 10, bottom: 8),
+              width: 44,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            // Sheet Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 4, 12, 10),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCCFBF1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.account_balance_wallet_rounded,
+                      color: Color(0xFF0F766E),
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'મેન્ટેનન્સ & ઓનલાઇન પેમેન્ટ',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        Text(
+                          '${widget.societyName} • ડિજિટલ રસીદો',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 22),
+                    color: Colors.grey.shade700,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+
+            // Modern Pill TabBar
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: const Color(0xFF0F766E),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0F766E).withValues(alpha: 0.25),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                labelColor: Colors.white,
+                unselectedLabelColor: const Color(0xFF475569),
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                dividerColor: Colors.transparent,
+                tabs: const [
+                  Tab(
+                    icon: Icon(Icons.payment_rounded, size: 18),
+                    text: 'ચુકવણી (Pay)',
+                  ),
+                  Tab(
+                    icon: Icon(Icons.history_rounded, size: 18),
+                    text: 'ઇતિહાસ & રસીદો',
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Tab Views with Live Bills Stream
+            Expanded(
+              child: StreamBuilder<List<MaintenanceBill>>(
+                stream: _billsStream,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: Color(0xFF0F766E)),
+                    );
+                  }
+
+                  final bills = snapshot.data ?? [];
+
+                  final unpaid = bills
+                      .where((b) => b.status != MaintenanceStatus.paid)
+                      .toList();
+
+                  final paidBills = bills
+                      .where((b) => b.status == MaintenanceStatus.paid)
+                      .toList();
+
+                  final latestPaidBill =
+                      paidBills.isNotEmpty ? paidBills.first : null;
+
+                  final activeBill = widget.initialBill ??
+                      (unpaid.isNotEmpty ? unpaid.first : null);
+
+                  return TabBarView(
+                    controller: _tabController,
+                    children: [
+                      // TAB 1: PAY / ALL-CLEAR SCREEN
+                      SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        child: activeBill == null ||
+                                activeBill.status == MaintenanceStatus.paid
+                            ? _buildAllClearView(
+                                context,
+                                latestPaidBill: latestPaidBill,
+                                totalPaidCount: paidBills.length,
+                              )
+                            : _buildActiveBillPaySection(
+                                context: context,
+                                bill: activeBill,
+                                upiId: upiId,
+                                payeeName: payeeName,
+                                currencyFmt: currencyFmt,
+                                utrController: _utrController,
+                                parentCtx: context,
+                              ),
+                      ),
+
+                      // TAB 2: HISTORY & RECEIPTS
+                      bills.isEmpty
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(32),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.receipt_long_outlined,
+                                      size: 56,
+                                      color: Colors.grey.shade400,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    const Text(
+                                      'હજુ સુધી કોઈ બિલ કે રસીદ મળી નથી.',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    const Text(
+                                      'સોસાયટી દ્વારા બિલ જનરેટ થશે ત્યારે અહીં લિસ્ટ થશે.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.black45,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              itemCount: bills.length,
+                              itemBuilder: (context, index) {
+                                final b = bills[index];
+                                return _buildHistoryBillCard(
+                                  context: context,
+                                  bill: b,
+                                  currencyFmt: currencyFmt,
+                                );
+                              },
+                            ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Ultra-Premium All-Clear Status View with Quick Access to Latest Paid Receipt PDF
+  Widget _buildAllClearView(
+    BuildContext context, {
+    required MaintenanceBill? latestPaidBill,
+    required int totalPaidCount,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 1. HERO CELEBRATION BANNER
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFECFDF5), Color(0xFFD1FAE5)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFA7F3D0)),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0F766E).withValues(alpha: 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 68,
+                height: 68,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.verified_rounded,
+                  color: Colors.white,
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                '🎉 તમામ મેન્ટેનન્સ બિલ ચૂકવાઈ ગયા છે!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF065F46),
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'તમારું કોઈ બાકી લેણું નથી • સોસાયટી ખાતું સંપૂર્ણ ક્લિયર છે.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF047857),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF6EE7B7)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.shield_outlined,
+                        size: 14, color: Color(0xFF059669)),
+                    SizedBox(width: 5),
+                    Text(
+                      'STATUS: ZERO DUES PENDING',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF059669),
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 18),
+
+        // 2. LATEST PAID RECEIPT CARD (With View & Download PDF buttons)
+        if (latestPaidBill != null) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Card Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFCCFBF1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.receipt_long_rounded,
+                        color: Color(0xFF0F766E),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'છેલ્લી ચુકવણીની રસીદ',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          Text(
+                            latestPaidBill.receiptNumber.isNotEmpty
+                                ? 'રસીદ નં: ${latestPaidBill.receiptNumber}'
+                                : 'ડિજિટલ વેરિફાઇડ રસીદ',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD1FAE5),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle_rounded,
+                              size: 13, color: Color(0xFF059669)),
+                          SizedBox(width: 4),
+                          Text(
+                            'PAID',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF065F46),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const Divider(height: 22),
+
+                // Bill Details
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            latestPaidBill.billTitle,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'ફ્લેટ: ${latestPaidBill.flatDisplay}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            latestPaidBill.paidAt != null
+                                ? 'તારીખ: ${DateFormat('dd MMM yyyy, hh:mm a').format(latestPaidBill.paidAt!)}'
+                                : '',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          currencyFmt.format(latestPaidBill.totalPayable),
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F766E),
+                          ),
+                        ),
+                        Text(
+                          latestPaidBill.paymentMode.isNotEmpty
+                              ? latestPaidBill.paymentMode.toUpperCase()
+                              : 'ONLINE',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                if (latestPaidBill.utrNumber.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Text(
+                      'UTR: ${latestPaidBill.utrNumber}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade700,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+
+                // 2 Action Buttons: View PDF & Download PDF
+                Row(
+                  children: [
+                    // Button 1: View Receipt PDF
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          MaintenanceReceiptPdfService.viewReceiptPdf(
+                            context,
+                            latestPaidBill,
+                            societyName: widget.societyName,
+                          );
+                        },
+                        icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
+                        label: const Text('રસીદ PDF જુઓ'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF0F766E),
+                          side: const BorderSide(
+                              color: Color(0xFF0F766E), width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Button 2: Download Receipt PDF
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () {
+                          MaintenanceReceiptPdfService.downloadReceiptPdf(
+                            context,
+                            latestPaidBill,
+                            societyName: widget.societyName,
+                          );
+                        },
+                        icon: const Icon(Icons.download_rounded, size: 18),
+                        label: const Text('PDF ડાઉનલોડ'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF0F766E),
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
+
+        // 3. JUMP TO HISTORY TAB SHORTCUT
+        InkWell(
+          onTap: () => _tabController.animateTo(1),
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.history_edu_rounded,
+                    color: Colors.blue.shade700,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'બધી જૂની રસીદો & ઇતિહાસ જુઓ',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      Text(
+                        '$totalPaidCount રસીદો ઉપલબ્ધ છે • ક્લિક કરી વિગત જુઓ',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: Colors.grey.shade500,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// History Card for Tab 2
+  Widget _buildHistoryBillCard({
+    required BuildContext context,
+    required MaintenanceBill bill,
+    required NumberFormat currencyFmt,
+  }) {
+    final isPaid = bill.status == MaintenanceStatus.paid;
+    final isReview = bill.status == MaintenanceStatus.underReview;
+
+    final paidDate = bill.paidAt != null
+        ? DateFormat('dd MMM yyyy, hh:mm a').format(bill.paidAt!)
+        : DateFormat('dd MMM yyyy').format(bill.dueDate);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isPaid
+              ? const Color(0xFFE2E8F0)
+              : (isReview ? Colors.blue.shade200 : Colors.orange.shade200),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top Row
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: isPaid
+                      ? const Color(0xFFCCFBF1)
+                      : (isReview ? Colors.blue.shade50 : Colors.red.shade50),
+                  child: Icon(
+                    isPaid
+                        ? Icons.check_circle_rounded
+                        : (isReview
+                            ? Icons.hourglass_top_rounded
+                            : Icons.warning_amber_rounded),
+                    color: isPaid
+                        ? const Color(0xFF0F766E)
+                        : (isReview ? Colors.blue.shade800 : Colors.red.shade700),
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        bill.billTitle,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      Text(
+                        isPaid
+                            ? (bill.receiptNumber.isNotEmpty
+                                ? 'રસીદ નં: ${bill.receiptNumber}'
+                                : 'ચૂકવેલ: $paidDate')
+                            : 'મુદત: $paidDate',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  currencyFmt.format(bill.totalPayable),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: isPaid
+                        ? const Color(0xFF0F766E)
+                        : (isReview ? Colors.blue.shade900 : Colors.red.shade800),
+                  ),
+                ),
+              ],
+            ),
+
+            if (isPaid) ...[
+              const Divider(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          bill.paymentMode.isNotEmpty
+                              ? bill.paymentMode.toUpperCase()
+                              : 'ONLINE',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ),
+                      if (bill.utrNumber.isNotEmpty) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          'UTR: ${bill.utrNumber.length > 8 ? "${bill.utrNumber.substring(0, 8)}..." : bill.utrNumber}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey.shade600,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      // View PDF
+                      InkWell(
+                        onTap: () {
+                          MaintenanceReceiptPdfService.viewReceiptPdf(
+                            context,
+                            bill,
+                            societyName: widget.societyName,
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFA7F3D0)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.picture_as_pdf_rounded,
+                                  size: 13, color: Color(0xFF059669)),
+                              SizedBox(width: 4),
+                              Text(
+                                'જુઓ',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF059669),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      // Download PDF
+                      InkWell(
+                        onTap: () {
+                          MaintenanceReceiptPdfService.downloadReceiptPdf(
+                            context,
+                            bill,
+                            societyName: widget.societyName,
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F766E),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.download_rounded,
+                                  size: 13, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text(
+                                'ડાઉનલોડ',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ] else if (isReview) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'UTR: ${bill.utrNumber} • એડમિન ચકાસણી હેઠળ છે.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.blue.shade900,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    _tabController.animateTo(0);
+                  },
+                  icon: const Icon(Icons.payment_rounded, size: 14),
+                  label: const Text('હમણાં ચૂકવો (Pay Now)'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red.shade700,
+                    side: BorderSide(color: Colors.red.shade300),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActiveBillPaySection({
     required BuildContext context,
     required MaintenanceBill bill,
     required String upiId,
@@ -351,30 +1500,30 @@ class MemberMaintenanceSheet {
 
     if (bill.status == MaintenanceStatus.underReview) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.blue.shade50,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.blue.shade200),
         ),
         child: Column(
           children: [
             Icon(Icons.hourglass_bottom_rounded,
-                size: 48, color: Colors.blue.shade800),
-            const SizedBox(height: 10),
+                size: 52, color: Colors.blue.shade800),
+            const SizedBox(height: 12),
             const Text(
               'UPI પેમેન્ટ ચકાસણી હેઠળ છે',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
               'તમારો સબમિટ થયેલ UTR: ${bill.utrNumber}\nરકમ: ${currencyFmt.format(bill.totalPayable)}',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.black87),
+              style: const TextStyle(color: Colors.black87, fontSize: 13),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             const Text(
-              'ચેરમેન/એડમિન આ રકમ વેરિફાય કરશે એટલે તરત જ તમને ડિજિટલ રસીદ મળી જશે.',
+              'ચેરમેન/એડમિન આ રકમ વેરિફાય કરશે એટલે તરત જ તમને ડિજિટલ રસીદ મળી જશે અને PDF ડાઉનલોડ થઈ શકશે.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: Colors.black54),
             ),
@@ -386,13 +1535,14 @@ class MemberMaintenanceSheet {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Bill Summary Card
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.teal.shade50,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.teal.shade200),
+            color: const Color(0xFFF0FDFA),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF99F6E4)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -403,46 +1553,57 @@ class MemberMaintenanceSheet {
                   Text(
                     bill.billTitle,
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Color(0xFF0F172A),
+                    ),
                   ),
-                  Chip(
-                    label: Text(
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade800,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
                       bill.status.labelGujarati,
                       style: const TextStyle(fontSize: 11, color: Colors.white),
                     ),
-                    backgroundColor: Colors.orange.shade800,
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 'કુલ ચૂકવવાપાત્ર: ${currencyFmt.format(bill.totalPayable)}',
-                style: TextStyle(
-                  fontSize: 22,
+                style: const TextStyle(
+                  fontSize: 24,
                   fontWeight: FontWeight.w900,
-                  color: Colors.teal.shade900,
+                  color: Color(0xFF0F766E),
                 ),
               ),
+              const SizedBox(height: 2),
               Text(
                 'છેલ્લી તારીખ: ${DateFormat('dd MMM yyyy').format(bill.dueDate)}',
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               ),
             ],
           ),
         ),
+
         const SizedBox(height: 16),
+
         if (upiId.isEmpty) ...[
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: Colors.orange.shade50,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.orange.shade200),
             ),
             child: const Row(
               children: [
                 Icon(Icons.info_outline, color: Colors.orange),
-                SizedBox(width: 8),
+                SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     'સોસાયટી દ્વારા હજુ સુધી UPI ID સેટ કરવામાં આવ્યો નથી. કૃપા કરીને એડમિનનો સંપર્ક કરી રોકડ અથવા ચેકથી ચુકવણી કરો.',
@@ -453,6 +1614,7 @@ class MemberMaintenanceSheet {
             ),
           ),
         ] else ...[
+          // 1-Tap UPI Pay Button
           SizedBox(
             width: double.infinity,
             height: 48,
@@ -486,11 +1648,17 @@ class MemberMaintenanceSheet {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.teal.shade800,
+                backgroundColor: const Color(0xFF0F766E),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
+
           const SizedBox(height: 16),
+
+          // QR Code Container
           Center(
             child: Column(
               children: [
@@ -500,15 +1668,15 @@ class MemberMaintenanceSheet {
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: Colors.grey.shade300),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 6,
+                        blurRadius: 8,
                       ),
                     ],
                   ),
@@ -522,7 +1690,7 @@ class MemberMaintenanceSheet {
                     ),
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 SelectableText(
                   'UPI ID: $upiId',
                   style: const TextStyle(
@@ -533,7 +1701,10 @@ class MemberMaintenanceSheet {
               ],
             ),
           ),
+
           const Divider(height: 28),
+
+          // UTR Input Field
           const Text(
             'પેમેન્ટ કર્યા પછી અહીં UTR નંબર દાખલ કરો:',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
@@ -541,16 +1712,19 @@ class MemberMaintenanceSheet {
           const SizedBox(height: 8),
           TextField(
             controller: utrController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: '૧૨-આંકડાનો UTR / ટ્રાન્ઝેક્શન નંબર *',
               hintText: 'દા.ત. 4289XXXXXXXX',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.receipt_rounded),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              prefixIcon: const Icon(Icons.receipt_rounded),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
+            height: 46,
             child: OutlinedButton.icon(
               onPressed: () async {
                 final utr = utrController.text.trim();
@@ -581,119 +1755,21 @@ class MemberMaintenanceSheet {
                 }
               },
               icon: const Icon(Icons.check_circle_outline),
-              label: const Text('ચુકવણી કન્ફર્મ કરો'),
+              label: const Text(
+                'ચુકવણી કન્ફર્મ કરો',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF0F766E),
+                side: const BorderSide(color: Color(0xFF0F766E), width: 1.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             ),
           ),
         ],
       ],
-    );
-  }
-
-  /// Shows digital receipt for paid maintenance bill with sharing capability.
-  static void showReceiptDialog(BuildContext context, MaintenanceBill bill) {
-    final currencyFmt =
-        NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
-    final paidDate = bill.paidAt != null
-        ? DateFormat('dd MMM yyyy, hh:mm a').format(bill.paidAt!)
-        : '-';
-
-    final receiptText = '''
-================================
-🏛️ ${bill.billTitle} રસીદ
-================================
-રસીદ નં: ${bill.receiptNumber}
-તારીખ: $paidDate
-ફ્લેટ: ${bill.flatDisplay}
-સભ્ય: ${bill.memberName}
-રકમ: ${currencyFmt.format(bill.totalPayable)}
-ચુકવણી પદ્ધતિ: ${bill.paymentMode.toUpperCase()}
-${bill.utrNumber.isNotEmpty ? "UTR / Ref: ${bill.utrNumber}" : ""}
-${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
-સ્ટેટસ: પેઇડ (Paid & Verified)
-================================
-''';
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.verified, color: Colors.green.shade700),
-            const SizedBox(width: 8),
-            const Text('ડિજિટલ રસીદ'),
-          ],
-        ),
-        content: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.green.shade50,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.green.shade200),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Column(
-                  children: [
-                    Text(
-                      currencyFmt.format(bill.totalPayable),
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.green.shade900,
-                      ),
-                    ),
-                    Text(
-                      'રસીદ નં: ${bill.receiptNumber}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 20),
-              _receiptItem('બિલ', bill.billTitle),
-              _receiptItem('ફ્લેટ', bill.flatDisplay),
-              _receiptItem('રીત', bill.paymentMode.toUpperCase()),
-              if (bill.utrNumber.isNotEmpty)
-                _receiptItem('UTR', bill.utrNumber),
-              _receiptItem('તારીખ', paidDate),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton.icon(
-            onPressed: () {
-              SharePlus.instance.share(
-                ShareParams(
-                  text: receiptText,
-                  subject: 'મેન્ટેનન્સ રસીદ - ${bill.flatDisplay}',
-                ),
-              );
-            },
-            icon: const Icon(Icons.share_rounded),
-            label: const Text('શેર કરો'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('બંધ કરો'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static Widget _receiptItem(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.black54)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
-        ],
-      ),
     );
   }
 }

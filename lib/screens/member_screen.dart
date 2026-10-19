@@ -6,10 +6,12 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/visitor_model.dart';
 import '../models/maintenance_model.dart';
 import '../services/firebase_app_guard.dart';
 import '../services/notification_service.dart';
+import '../services/session_guard_service.dart';
 import '../services/society_service.dart';
 import '../widgets/premium_ui.dart';
 import '../widgets/member_maintenance_sheet.dart';
@@ -31,8 +33,10 @@ class _MemberScreenState extends State<MemberScreen> {
   final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
   String _visitorStatusFilter = 'all';
   String _visitorTimeFilter = '30d';
+  String _visitorScope = 'my_flat'; // 'my_flat' or 'all_society'
 
-  late final Stream<QuerySnapshot> _visitorsStream;
+  Stream<QuerySnapshot>? _cachedVisitorsStream;
+  String? _lastQuerySocietyId;
   late final Stream<DocumentSnapshot> _userStream;
 
   @override
@@ -41,16 +45,31 @@ class _MemberScreenState extends State<MemberScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(NotificationService.instance.ensureTokenRegistered());
     });
-    // Single field equality query prevents Cloud Firestore composite index requirement
-    _visitorsStream = AppFirestore.instance
-        .collection('visitors')
-        .where('memberId', isEqualTo: currentUserId)
-        .limit(100)
-        .snapshots();
     _userStream = AppFirestore.instance
         .collection('users')
         .doc(currentUserId)
         .snapshots();
+  }
+
+  Stream<QuerySnapshot> _getVisitorsStream(String societyId) {
+    if (_cachedVisitorsStream != null && _lastQuerySocietyId == societyId) {
+      return _cachedVisitorsStream!;
+    }
+    _lastQuerySocietyId = societyId;
+    if (societyId.isNotEmpty) {
+      _cachedVisitorsStream = AppFirestore.instance
+          .collection('visitors')
+          .where('societyId', isEqualTo: societyId)
+          .limit(150)
+          .snapshots();
+    } else {
+      _cachedVisitorsStream = AppFirestore.instance
+          .collection('visitors')
+          .where('memberId', isEqualTo: currentUserId)
+          .limit(100)
+          .snapshots();
+    }
+    return _cachedVisitorsStream!;
   }
 
   // ૧. સ્ટેટસ અપડેટ ફંક્શન (મંજૂરી કે અસ્વીકાર)
@@ -72,51 +91,194 @@ class _MemberScreenState extends State<MemberScreen> {
     }
   }
 
-  /// મેમ્બર ઘરે પ્રોબ્લેમ / ઇમરજન્સી — એડમિન + ગેટ વોચમેનને નોટિફિકેશન
+  /// મેમ્બર ઘરે પ્રોબ્લેમ / ઇમરજન્સી — એડમિન + ગેટ વોચમેનને નોટિફિકેશન (Ultra-Premium Luxury Dialog)
   Future<void> _showMemberEmergencyDialog() async {
     final noteC = TextEditingController();
     try {
       final confirmed = await showDialog<bool>(
         context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.emergency_share_rounded, color: Colors.red),
-              SizedBox(width: 8),
-              Text('ઇમરજન્સી SOS મદદ'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'એડમિન અને સોસાયટી ગેટ વોચમેનને તાત્કાલિક એલર્ટ નોટિફિકેશન જશે.',
-                style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: noteC,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'વિગત (વૈકલ્પિક)',
-                  hintText: 'દા.ત. તબિયત ખરાબ છે, સુરક્ષા સમસ્યા...',
+        barrierDismissible: true,
+        builder: (ctx) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          elevation: 20,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Glowing Crimson Pulse Squircle Emblem
+                Container(
+                  width: 62,
+                  height: 62,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(19),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFDC2626).withValues(alpha: 0.38),
+                        blurRadius: 18,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.crisis_alert_rounded,
+                    color: Colors.white,
+                    size: 32,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                const Text(
+                  'ઇમરજન્સી SOS મદદ',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'તાત્કાલિક સુરક્ષા સહાયતા એલર્ટ',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                // Alert Callout Strip
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFFECACA), width: 1.2),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.notifications_active_rounded, color: Color(0xFFDC2626), size: 18),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'એડમિન અને સોસાયટી ગેટ વોચમેનને સાયરન સાથે તાત્કાલિક એલર્ટ પુશ નોટિફિકેશન જશે.',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: Color(0xFF991B1B),
+                            fontWeight: FontWeight.w600,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                // TextField
+                TextField(
+                  controller: noteC,
+                  maxLines: 2,
+                  style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A)),
+                  decoration: InputDecoration(
+                    labelText: 'સમસ્યા અથવા વિગત (વૈકલ્પિક)',
+                    labelStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
+                    hintText: 'દા.ત. તબિયત ખરાબ છે, લિફ્ટ સમસ્યા, સુરક્ષા...',
+                    hintStyle: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    contentPadding: const EdgeInsets.all(12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.5),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Dual Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12.5),
+                          side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'રદ કરો',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => Navigator.pop(ctx, true),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Ink(
+                          padding: const EdgeInsets.symmetric(vertical: 12.5),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFDC2626).withValues(alpha: 0.35),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.emergency_share_rounded, color: Colors.white, size: 16),
+                              SizedBox(width: 5),
+                              Text(
+                                'હા, SOS મોકલો',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('રદ કરો'),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('હા, SOS મોકલો'),
-            ),
-          ],
         ),
       );
       if (confirmed != true || !mounted) return;
@@ -248,12 +410,16 @@ class _MemberScreenState extends State<MemberScreen> {
         final blockName = userData['blockName']?.toString() ?? '';
         final unitNumber = userData['unitNumber']?.toString() ?? '';
         final flatDisplay = [blockName, unitNumber].where((s) => s.isNotEmpty).join(' • ');
+        final userSocId = userData['societyId']?.toString().trim();
+        final effectiveSocietyId = (userSocId != null && userSocId.isNotEmpty)
+            ? userSocId
+            : SocietyService.instance.societyId;
 
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
           appBar: _buildMemberAppBar(flatDisplay),
           body: StreamBuilder<QuerySnapshot>(
-            stream: _visitorsStream,
+            stream: _getVisitorsStream(effectiveSocietyId),
             builder: (context, visitorSnap) {
               final rawDocs = visitorSnap.hasData ? visitorSnap.data!.docs : <QueryDocumentSnapshot>[];
 
@@ -276,15 +442,37 @@ class _MemberScreenState extends State<MemberScreen> {
                 return bTime.compareTo(aTime);
               });
 
-              // Calculate Status Counts
-              final pendingCount = tenantDocs.where((d) => (d.data() as Map)['status'] == 'pending').length;
-              final approvedCount = tenantDocs.where((d) => (d.data() as Map)['status'] == 'approved').length;
-              final checkedOutCount = tenantDocs.where((d) => (d.data() as Map)['status'] == 'checked_out').length;
-              final rejectedCount = tenantDocs.where((d) => (d.data() as Map)['status'] == 'rejected').length;
+              // Separate My Flat visitors vs All Society visitors
+              final myFlatDocs = tenantDocs.where((d) {
+                final data = d.data() as Map<String, dynamic>;
+                final mId = data['memberId']?.toString().trim();
+                final uNum = data['unitNumber']?.toString().trim();
+                final bName = data['blockName']?.toString().trim();
+                if (mId == currentUserId) return true;
+                if (mId == 'all_society') return true;
+                if (unitNumber.isNotEmpty &&
+                    uNum == unitNumber &&
+                    (blockName.isEmpty || bName == blockName)) {
+                  return true;
+                }
+                return false;
+              }).toList();
+
+              // Active scope selection: 'my_flat' or 'all_society'
+              final activeScopeDocs = _visitorScope == 'all_society' ? tenantDocs : myFlatDocs;
+
+              // Calculate Status Counts for the active scope
+              final pendingCount = activeScopeDocs.where((d) => (d.data() as Map)['status'] == 'pending').length;
+              final approvedCount = activeScopeDocs.where((d) => (d.data() as Map)['status'] == 'approved').length;
+              final checkedOutCount = activeScopeDocs.where((d) => (d.data() as Map)['status'] == 'checked_out').length;
+              final rejectedCount = activeScopeDocs.where((d) => (d.data() as Map)['status'] == 'rejected').length;
+
+              // Total pending for my flat alert hero
+              final myFlatPending = myFlatDocs.where((d) => (d.data() as Map)['status'] == 'pending').length;
 
               // Filter by cutoff date
               final cutoff = _memberCutoffDate();
-              final timeFiltered = tenantDocs.where((d) {
+              final timeFiltered = activeScopeDocs.where((d) {
                 final ts = (d.data() as Map<String, dynamic>?)?['entryTime'];
                 if (ts is! Timestamp) return false;
                 return ts.toDate().isAfter(cutoff);
@@ -302,10 +490,10 @@ class _MemberScreenState extends State<MemberScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 40),
                   children: [
                     // ૧. Member Profile & Flat Card
-                    _buildMemberProfileHero(memberName, flatDisplay, pendingCount),
+                    _buildMemberProfileHero(memberName, flatDisplay, myFlatPending),
                     const SizedBox(height: 14),
 
-                    // ૨. Top Executive Stat Cards
+                    // ૨. Top Executive Stat Cards (Interactive tap filters)
                     _buildExecutiveStatsRow(pendingCount, approvedCount, checkedOutCount),
                     const SizedBox(height: 14),
 
@@ -326,17 +514,21 @@ class _MemberScreenState extends State<MemberScreen> {
                         const Expanded(
                           child: PremiumSectionHeader(
                             title: "તાજેતરના મુલાકાતીઓ",
-                            icon: Icons.history_rounded,
+                            icon: Icons.shield_outlined,
                           ),
                         ),
                         _buildTimeFilterPill(),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
-                    // ૭. Status Filter Tabs (Admin style)
+                    // ૭. Scope Switcher Bar: [ 🏠 મારા ફ્લેટ (myCount) ] | [ 🏢 આખી સોસાયટી ગેટ (allCount) ]
+                    _buildScopeSwitcher(myFlatDocs.length, tenantDocs.length),
+                    const SizedBox(height: 6),
+
+                    // ૮. Status Filter Tabs
                     _buildStatusFilterTabs(
-                      tenantDocs.length,
+                      activeScopeDocs.length,
                       pendingCount,
                       approvedCount,
                       rejectedCount,
@@ -344,46 +536,20 @@ class _MemberScreenState extends State<MemberScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // ૮. Visitor List Items
+                    // ૯. Visitor List Items or Premium Empty State
                     if (visitorSnap.connectionState == ConnectionState.waiting && rawDocs.isEmpty)
-                      const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
+                      const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator(color: Color(0xFF0F766E))))
                     else if (filteredVisitors.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: Column(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFF1F5F9),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.person_off_rounded, size: 36, color: Color(0xFF94A3B8)),
-                            ),
-                            const SizedBox(height: 12),
-                            const Text(
-                              "કોઈ મુલાકાતી મળ્યા નથી",
-                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF0F172A)),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _visitorStatusFilter == 'all'
-                                  ? "તમારા ફ્લેટ પર હાલમાં કોઈ મુલાકાતી આવ્યા નથી."
-                                  : "આ ફિલ્ટરમાં કોઈ મુલાકાતી મળ્યા નથી.",
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                            ),
-                          ],
-                        ),
-                      )
+                      _buildEmptyState(allSocietyCount: tenantDocs.length)
                     else
                       ...filteredVisitors.map((doc) {
                         final v = VisitorModel.fromFirestore(doc);
-                        return _buildVisitorCard(v);
+                        final isForMyFlat = v.memberId == currentUserId ||
+                            (unitNumber.isNotEmpty &&
+                                v.unitNumber == unitNumber &&
+                                (blockName.isEmpty || v.blockName == blockName)) ||
+                            v.memberId == 'all_society';
+                        return _buildVisitorCard(v, isMyFlat: isForMyFlat);
                       }),
                   ],
                 ),
@@ -407,24 +573,24 @@ class _MemberScreenState extends State<MemberScreen> {
       title: Row(
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF0D9488), Color(0xFF14B8A6)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(11),
+              borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
                   color: const Color(0xFF0D9488).withValues(alpha: 0.25),
                   blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
-            child: const Icon(Icons.home_work_rounded, color: Colors.white, size: 21),
+            child: const Icon(Icons.apartment_rounded, color: Colors.white, size: 22),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -441,7 +607,7 @@ class _MemberScreenState extends State<MemberScreen> {
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                         style: TextStyle(
-                          fontSize: 15.5,
+                          fontSize: 16,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.3,
                           color: Color(0xFF0F172A),
@@ -451,18 +617,19 @@ class _MemberScreenState extends State<MemberScreen> {
                     if (flatDisplay.isNotEmpty) ...[
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                         decoration: BoxDecoration(
                           color: const Color(0xFFEEF2FF),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFFE0E7FF)),
+                          borderRadius: BorderRadius.circular(7),
+                          border: Border.all(color: const Color(0xFFC7D2FE)),
                         ),
                         child: Text(
                           flatDisplay,
                           style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
                             color: Color(0xFF4338CA),
+                            letterSpacing: 0.2,
                           ),
                         ),
                       ),
@@ -509,45 +676,79 @@ class _MemberScreenState extends State<MemberScreen> {
       ),
       actions: [
         Padding(
-          padding: const EdgeInsets.only(right: 12),
+          padding: const EdgeInsets.only(right: 14),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Emergency SOS Button
+              // Emergency SOS Glowing Button
               Tooltip(
                 message: 'ઇમરજન્સી SOS મદદ',
                 child: InkWell(
                   onTap: _showMemberEmergencyDialog,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(11),
                   child: Container(
-                    width: 36,
-                    height: 36,
+                    height: 38,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEF2F2),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFFEE2E8F0 != 0 ? 0xFFFEE2E2 : 0xFFFFFFFF)),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFDC2626), Color(0xFFEF4444)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(11),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFDC2626).withValues(alpha: 0.35),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    child: const Icon(
-                      Icons.emergency_share_rounded,
-                      size: 19,
-                      color: Color(0xFFDC2626),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.emergency_share_rounded,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          "SOS",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 7),
+              const SizedBox(width: 8),
               // Logout Button
               Tooltip(
                 message: 'લોગઆઉટ',
                 child: InkWell(
-                  onTap: () => FirebaseAuth.instance.signOut(),
-                  borderRadius: BorderRadius.circular(10),
+                  onTap: () async {
+                    final confirm = await PremiumLogoutDialog.show(
+                      context,
+                      roleName: 'મેમ્બર પોર્ટલ',
+                    );
+                    if (confirm) {
+                      await SessionGuardService.instance.clearSession();
+                      await FirebaseAuth.instance.signOut();
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(11),
                   child: Container(
-                    width: 36,
-                    height: 36,
+                    width: 38,
+                    height: 38,
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(11),
                       border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
                     ),
                     child: const Icon(
@@ -568,121 +769,205 @@ class _MemberScreenState extends State<MemberScreen> {
   Widget _buildMemberProfileHero(String name, String flat, int pending) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0F172A)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.18),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.22),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Stack(
+          children: [
+            // Decorative background glowing circular orbs
+            Positioned(
+              right: -25,
+              top: -25,
+              child: Container(
+                width: 130,
+                height: 130,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF0D9488), Color(0xFF14B8A6)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(13),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF0D9488).withValues(alpha: 0.35),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    name.isNotEmpty ? name[0].toUpperCase() : 'M',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFF0D9488).withValues(alpha: 0.22),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            "નમસ્તે, $name",
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.2,
+            ),
+            Positioned(
+              left: -35,
+              bottom: -35,
+              child: Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFF6366F1).withValues(alpha: 0.18),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Hero Content
+            Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      // Monogram Avatar with luxury gradient ring
+                      Container(
+                        width: 50,
+                        height: 50,
+                        padding: const EdgeInsets.all(2.5),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF2DD4BF), Color(0xFF38BDF8), Color(0xFF818CF8)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF2DD4BF).withValues(alpha: 0.35),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F172A),
+                            borderRadius: BorderRadius.circular(13.5),
+                          ),
+                          child: Center(
+                            child: Text(
+                              name.isNotEmpty ? name[0].toUpperCase() : 'M',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 21,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.verified_rounded, size: 15, color: Color(0xFF38BDF8)),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      flat.isNotEmpty ? "રહેવાસી • ફ્લેટ: $flat" : "સોસાયટી માન્ય સભ્ય",
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.75),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    "નમસ્તે, $name",
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.3,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                const Icon(Icons.verified_rounded, size: 16, color: Color(0xFF38BDF8)),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              flat.isNotEmpty ? "રહેવાસી • ફ્લેટ: $flat" : "સોસાયટી માન્ય સભ્ય",
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.78),
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Live Gate Connection status pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.shield_rounded, size: 12, color: Color(0xFF34D399)),
+                            SizedBox(width: 4),
+                            Text(
+                              "લાઈવ ગેટ",
+                              style: TextStyle(
+                                color: Color(0xFF34D399),
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (pending > 0) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444).withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.notifications_active_rounded, color: Color(0xFFF87171), size: 15),
+                          ),
+                          const SizedBox(width: 9),
+                          Expanded(
+                            child: Text(
+                              "$pending મુલાકાતી ગેટ પર તમારી મંજૂરીની રાહ જુએ છે!",
+                              style: const TextStyle(
+                                color: Color(0xFFFCA5A5),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
-              ),
-            ],
-          ),
-          if (pending > 0) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.35)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.notifications_active_rounded, color: Color(0xFFF87171), size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      "$pending મુલાકાતી ગેટ પર તમારી મંજૂરીની રાહ જુએ છે!",
-                      style: const TextStyle(
-                        color: Color(0xFFFCA5A5),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -694,10 +979,16 @@ class _MemberScreenState extends State<MemberScreen> {
           child: _statCard(
             title: "પેન્ડિંગ",
             count: pending,
-            icon: Icons.pending_actions_rounded,
+            icon: Icons.hourglass_top_rounded,
             color: const Color(0xFFD97706),
-            bgColor: const Color(0xFFFFFBEB),
+            tintColor: const Color(0xFFFFFBEB),
             borderColor: const Color(0xFFFDE68A),
+            isSelected: _visitorStatusFilter == 'pending',
+            onTap: () {
+              setState(() {
+                _visitorStatusFilter = _visitorStatusFilter == 'pending' ? 'all' : 'pending';
+              });
+            },
           ),
         ),
         const SizedBox(width: 10),
@@ -705,10 +996,16 @@ class _MemberScreenState extends State<MemberScreen> {
           child: _statCard(
             title: "મંજૂર કરેલ",
             count: approved,
-            icon: Icons.check_circle_outline_rounded,
+            icon: Icons.check_circle_rounded,
             color: const Color(0xFF059669),
-            bgColor: const Color(0xFFECFDF5),
+            tintColor: const Color(0xFFECFDF5),
             borderColor: const Color(0xFFA7F3D0),
+            isSelected: _visitorStatusFilter == 'approved',
+            onTap: () {
+              setState(() {
+                _visitorStatusFilter = _visitorStatusFilter == 'approved' ? 'all' : 'approved';
+              });
+            },
           ),
         ),
         const SizedBox(width: 10),
@@ -718,8 +1015,14 @@ class _MemberScreenState extends State<MemberScreen> {
             count: out,
             icon: Icons.output_rounded,
             color: const Color(0xFF475569),
-            bgColor: const Color(0xFFF8FAFC),
+            tintColor: const Color(0xFFF8FAFC),
             borderColor: const Color(0xFFE2E8F0),
+            isSelected: _visitorStatusFilter == 'checked_out',
+            onTap: () {
+              setState(() {
+                _visitorStatusFilter = _visitorStatusFilter == 'checked_out' ? 'all' : 'checked_out';
+              });
+            },
           ),
         ),
       ],
@@ -731,55 +1034,75 @@ class _MemberScreenState extends State<MemberScreen> {
     required int count,
     required IconData icon,
     required Color color,
-    required Color bgColor,
+    required Color tintColor,
     required Color borderColor,
+    required bool isSelected,
+    required VoidCallback onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-      decoration: BoxDecoration(
-        color: bgColor,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? tintColor : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? color : borderColor,
+              width: isSelected ? 1.8 : 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: isSelected ? 0.15 : 0.05),
+                blurRadius: isSelected ? 12 : 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Column(
             children: [
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                decoration: BoxDecoration(
+                  color: tintColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, size: 12, color: color),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          color: color,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: color,
+                  letterSpacing: -0.5,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            '$count',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: color,
-              letterSpacing: -0.5,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -794,7 +1117,7 @@ class _MemberScreenState extends State<MemberScreen> {
               child: _primaryActionCard(
                 title: "ગેસ્ટ પાસ (QR)",
                 subtitle: "પ્રી-એપ્રુવલ પાસ",
-                icon: Icons.qr_code_scanner_rounded,
+                icon: Icons.qr_code_2_rounded,
                 gradient: const [Color(0xFF4338CA), Color(0xFF6366F1)],
                 onTap: _showPreApproveDialog,
               ),
@@ -803,24 +1126,25 @@ class _MemberScreenState extends State<MemberScreen> {
             Expanded(
               child: _primaryActionCard(
                 title: "મેન્ટેનન્સ બિલ",
-                subtitle: "બિલિંગ & QR પે",
-                icon: Icons.account_balance_wallet_rounded,
-                gradient: const [Color(0xFF0D9488), Color(0xFF14B8A6)],
+                subtitle: "બિલિંગ & રસીદ",
+                icon: Icons.receipt_long_rounded,
+                gradient: const [Color(0xFF0F766E), Color(0xFF14B8A6)],
                 onTap: () => _showMaintenancePortal(),
               ),
             ),
           ],
         ),
         const SizedBox(height: 10),
-        // Secondary 3 Actions
+        // Secondary 3 Service Actions
         Row(
           children: [
             Expanded(
               child: _secondaryActionCard(
                 title: "ફરિયાદ",
-                icon: Icons.report_problem_rounded,
+                icon: Icons.campaign_rounded,
                 color: const Color(0xFF7C3AED),
                 bgColor: const Color(0xFFF5F3FF),
+                borderColor: const Color(0xFFDDD6FE),
                 onTap: _showComplaintDialog,
               ),
             ),
@@ -831,6 +1155,7 @@ class _MemberScreenState extends State<MemberScreen> {
                 icon: Icons.badge_rounded,
                 color: const Color(0xFFD97706),
                 bgColor: const Color(0xFFFFFBEB),
+                borderColor: const Color(0xFFFDE68A),
                 onTap: _showAddStaffDialog,
               ),
             ),
@@ -841,6 +1166,7 @@ class _MemberScreenState extends State<MemberScreen> {
                 icon: Icons.directions_car_rounded,
                 color: const Color(0xFF2563EB),
                 bgColor: const Color(0xFFEFF6FF),
+                borderColor: const Color(0xFFBFDBFE),
                 onTap: _showMyVehiclesDialog,
               ),
             ),
@@ -873,8 +1199,8 @@ class _MemberScreenState extends State<MemberScreen> {
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: gradient.first.withValues(alpha: 0.28),
-                blurRadius: 10,
+                color: gradient.first.withValues(alpha: 0.32),
+                blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -882,12 +1208,13 @@ class _MemberScreenState extends State<MemberScreen> {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(9),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                 ),
-                child: Icon(icon, color: Colors.white, size: 20),
+                child: Icon(icon, color: Colors.white, size: 21),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -901,7 +1228,7 @@ class _MemberScreenState extends State<MemberScreen> {
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
-                        fontSize: 13,
+                        fontSize: 13.5,
                         letterSpacing: -0.2,
                       ),
                     ),
@@ -911,9 +1238,9 @@ class _MemberScreenState extends State<MemberScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -931,49 +1258,50 @@ class _MemberScreenState extends State<MemberScreen> {
     required IconData icon,
     required Color color,
     required Color bgColor,
+    required Color borderColor,
     required VoidCallback onTap,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Ink(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor.withValues(alpha: 0.8), width: 1.2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 6,
+                color: color.withValues(alpha: 0.05),
+                blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
             ],
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(5),
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
                   color: bgColor,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, size: 14, color: color),
+                child: Icon(icon, size: 17, color: color),
               ),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF334155),
-                  ),
+              const SizedBox(height: 6),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF334155),
+                  letterSpacing: -0.1,
                 ),
               ),
             ],
@@ -1090,121 +1418,764 @@ class _MemberScreenState extends State<MemberScreen> {
     );
   }
 
-  Widget _buildVisitorCard(VisitorModel visitor) {
+  Widget _buildScopeSwitcher(int myCount, int allCount) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Row(
         children: [
-          // Visitor Photo or Squircle Initial
-          ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: visitor.photoUrl.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: visitor.photoUrl,
-                    width: 50,
-                    height: 50,
-                    fit: BoxFit.cover,
-                    errorWidget: (_, _, _) => _fallbackVisitorAvatar(visitor.name),
-                  )
-                : _fallbackVisitorAvatar(visitor.name),
-          ),
-          const SizedBox(width: 12),
-          // Visitor Details
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  visitor.name.isNotEmpty ? visitor.name : "અનામી મુલાકાતી",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14.5,
-                    color: Color(0xFF0F172A),
-                    letterSpacing: -0.2,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    if (visitor.purpose.isNotEmpty) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          visitor.purpose,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF475569),
+            child: GestureDetector(
+              onTap: () => setState(() => _visitorScope = 'my_flat'),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: _visitorScope == 'my_flat' ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: _visitorScope == 'my_flat'
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
                           ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.home_rounded,
+                      size: 16,
+                      color: _visitorScope == 'my_flat' ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'મારા ફ્લેટ',
+                      style: TextStyle(
+                        fontWeight: _visitorScope == 'my_flat' ? FontWeight.w800 : FontWeight.w600,
+                        fontSize: 12.5,
+                        color: _visitorScope == 'my_flat' ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                      decoration: BoxDecoration(
+                        color: _visitorScope == 'my_flat' ? const Color(0xFF0F172A) : const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '$myCount',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: _visitorScope == 'my_flat' ? Colors.white : const Color(0xFF475569),
                         ),
                       ),
-                      const SizedBox(width: 6),
-                    ],
-                    Icon(Icons.access_time_rounded, size: 12, color: Colors.grey.shade500),
-                    const SizedBox(width: 3),
-                    Text(
-                      DateFormat('hh:mm a').format(visitor.entryTime),
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
-                if (visitor.status == 'checked_out' && visitor.exitTime != null) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    "બહાર ગયા: ${DateFormat('hh:mm a').format(visitor.exitTime!)}",
-                    style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
-          const SizedBox(width: 8),
-          // Status / Approval Actions
-          _buildStatusAction(visitor),
+          const SizedBox(width: 4),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _visitorScope = 'all_society'),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: _visitorScope == 'all_society' ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: _visitorScope == 'all_society'
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.apartment_rounded,
+                      size: 16,
+                      color: _visitorScope == 'all_society' ? const Color(0xFF4338CA) : const Color(0xFF64748B),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'આખી સોસાયટી ગેટ',
+                      style: TextStyle(
+                        fontWeight: _visitorScope == 'all_society' ? FontWeight.w800 : FontWeight.w600,
+                        fontSize: 12.5,
+                        color: _visitorScope == 'all_society' ? const Color(0xFF4338CA) : const Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                      decoration: BoxDecoration(
+                        color: _visitorScope == 'all_society' ? const Color(0xFF4338CA) : const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '$allCount',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: _visitorScope == 'all_society' ? Colors.white : const Color(0xFF475569),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
+  Widget _buildEmptyState({required int allSocietyCount}) {
+    final isMyFlat = _visitorScope == 'my_flat';
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: const Color(0xFFCCFBF1),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F766E).withValues(alpha: 0.15),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.verified_user_rounded,
+              size: 34,
+              color: Color(0xFF0F766E),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            isMyFlat ? "કોઈ મુલાકાતી બાકી નથી" : "સોસાયટી ગેટ પર કોઈ એન્ટ્રી નથી",
+            style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 16,
+              color: Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            isMyFlat
+                ? (allSocietyCount > 0
+                    ? "તમારા ફ્લેટ માટે કોઈ મુલાકાતી નથી. સોસાયટી ગેટ પર કુલ $allSocietyCount મુલાકાતીઓ નોંધાયેલ છે."
+                    : "તમારા ફ્લેટ માટે તમામ એન્ટ્રી સુરક્ષિત અને અપ-ટૂ-ડેટ છે.")
+                : "પસંદ કરેલ સમયગાળામાં સોસાયટી ગેટ પર કોઈ મુલાકાતી મળ્યા નથી.",
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 12.5,
+              color: Color(0xFF64748B),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          if (isMyFlat && allSocietyCount > 0) ...[
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () => setState(() => _visitorScope = 'all_society'),
+              icon: const Icon(Icons.apartment_rounded, size: 16),
+              label: Text('સોસાયટી ગેટ લાઈવ જુઓ ($allSocietyCount)'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF4338CA),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: _showPreApproveDialog,
+              icon: const Icon(Icons.qr_code_2_rounded, size: 16),
+              label: const Text('મહેમાન માટે ગેસ્ટ પાસ બનાવો'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF0F766E),
+                side: const BorderSide(color: Color(0xFF0F766E)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  (IconData, Color, Color) _getVisitorTypeMeta(String purpose) {
+    final p = purpose.toLowerCase();
+    if (p.contains('delivery') ||
+        p.contains('courier') ||
+        p.contains('amazon') ||
+        p.contains('flipkart') ||
+        p.contains('zomato') ||
+        p.contains('swiggy') ||
+        p.contains('parcel') ||
+        p.contains('પાર્સલ') ||
+        p.contains('ડિલિવરી')) {
+      return (Icons.local_shipping_rounded, const Color(0xFFD97706), const Color(0xFFFEF3C7));
+    }
+    if (p.contains('cab') ||
+        p.contains('taxi') ||
+        p.contains('uber') ||
+        p.contains('ola') ||
+        p.contains('auto') ||
+        p.contains('ટેક્સી') ||
+        p.contains('રીક્ષા')) {
+      return (Icons.local_taxi_rounded, const Color(0xFF2563EB), const Color(0xFFEFF6FF));
+    }
+    if (p.contains('service') ||
+        p.contains('repair') ||
+        p.contains('plumber') ||
+        p.contains('electric') ||
+        p.contains('maid') ||
+        p.contains('કામવાળા') ||
+        p.contains('રીપેરિંગ')) {
+      return (Icons.handyman_rounded, const Color(0xFF7C3AED), const Color(0xFFF5F3FF));
+    }
+    return (Icons.people_alt_rounded, const Color(0xFF0D9488), const Color(0xFFCCFBF1));
+  }
+
+  Future<void> _callVisitor(String phone) async {
+    final clean = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (clean.isEmpty) return;
+    final uri = Uri.parse('tel:$clean');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      }
+    } catch (_) {}
+  }
+
+  Widget _buildVisitorCard(VisitorModel visitor, {required bool isMyFlat}) {
+    final isPending = visitor.status == 'pending';
+    final (typeIcon, typeColor, typeBg) = _getVisitorTypeMeta(visitor.purpose);
+    final canAction = isPending && isMyFlat;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isPending ? const Color(0xFFFDE68A) : const Color(0xFFE2E8F0),
+          width: isPending ? 1.5 : 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isPending
+                ? const Color(0xFFF59E0B).withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showVisitorDetailModal(visitor, isMyFlat: isMyFlat),
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (canAction) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(19),
+                      topRight: Radius.circular(19),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFD97706),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+                      const Expanded(
+                        child: Text(
+                          'ગેટ પર મંજૂરીની રાહ જુએ છે (Action Required)',
+                          style: TextStyle(
+                            color: Color(0xFF92400E),
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Color(0xFF92400E)),
+                    ],
+                  ),
+                ),
+              ],
+              Padding(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: visitor.photoUrl.isNotEmpty
+                              ? CachedNetworkImage(
+                                  imageUrl: visitor.photoUrl,
+                                  width: 54,
+                                  height: 54,
+                                  fit: BoxFit.cover,
+                                  errorWidget: (_, _, _) => _fallbackVisitorAvatar(visitor.name),
+                                )
+                              : _fallbackVisitorAvatar(visitor.name),
+                        ),
+                        Positioned(
+                          right: -3,
+                          bottom: -3,
+                          child: Container(
+                            padding: const EdgeInsets.all(3.5),
+                            decoration: BoxDecoration(
+                              color: typeBg,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 1.5),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 4,
+                                ),
+                              ],
+                            ),
+                            child: Icon(typeIcon, size: 11, color: typeColor),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  visitor.name.isNotEmpty ? visitor.name : "અનામી મુલાકાતી",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 15,
+                                    color: Color(0xFF0F172A),
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
+                              ),
+                              if (visitor.phone.isNotEmpty) ...[
+                                const SizedBox(width: 6),
+                                InkWell(
+                                  onTap: () => _callVisitor(visitor.phone),
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFECFDF5),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: const Color(0xFFA7F3D0)),
+                                    ),
+                                    child: const Icon(Icons.phone_rounded, size: 14, color: Color(0xFF059669)),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 5),
+                          Row(
+                            children: [
+                              if (visitor.purpose.isNotEmpty) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                  decoration: BoxDecoration(
+                                    color: typeBg,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(typeIcon, size: 11, color: typeColor),
+                                      const SizedBox(width: 3.5),
+                                      Text(
+                                        visitor.purpose,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: typeColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                              ],
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.apartment_rounded, size: 11, color: Color(0xFF64748B)),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      visitor.flatDisplay,
+                                      style: const TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF475569),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 5),
+                          Row(
+                            children: [
+                              Icon(Icons.schedule_rounded, size: 12, color: Colors.grey.shade500),
+                              const SizedBox(width: 3.5),
+                              Text(
+                                DateFormat('hh:mm a').format(visitor.entryTime),
+                                style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+                              ),
+                              if (visitor.status == 'checked_out' && visitor.exitTime != null) ...[
+                                const SizedBox(width: 8),
+                                const Text('•', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                                const SizedBox(width: 8),
+                                Icon(Icons.logout_rounded, size: 12, color: Colors.grey.shade600),
+                                const SizedBox(width: 3),
+                                Text(
+                                  "બહાર: ${DateFormat('hh:mm a').format(visitor.exitTime!)}",
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    if (!canAction) _buildStatusAction(visitor),
+                  ],
+                ),
+              ),
+              if (canAction) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 42,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF059669), Color(0xFF10B981)],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF059669).withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton.icon(
+                              onPressed: () => _updateStatus(visitor.id, 'approved'),
+                              icon: const Icon(Icons.check_rounded, color: Colors.white, size: 17),
+                              label: const Text(
+                                'પ્રવેશ મંજૂર',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: SizedBox(
+                          height: 42,
+                          child: OutlinedButton.icon(
+                            onPressed: () => _updateStatus(visitor.id, 'rejected'),
+                            icon: const Icon(Icons.close_rounded, color: Color(0xFFDC2626), size: 17),
+                            label: const Text(
+                              'નકારો',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFDC2626)),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFEF2F2),
+                              side: const BorderSide(color: Color(0xFFFECACA), width: 1.2),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showVisitorDetailModal(VisitorModel visitor, {required bool isMyFlat}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(ctx).padding.bottom + 20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: visitor.photoUrl.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: visitor.photoUrl,
+                          width: 64,
+                          height: 64,
+                          fit: BoxFit.cover,
+                          errorWidget: (_, _, _) => _fallbackVisitorAvatar(visitor.name),
+                        )
+                      : _fallbackVisitorAvatar(visitor.name),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        visitor.name.isNotEmpty ? visitor.name : "અનામી મુલાકાતી",
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "ગંતવ્ય: ${visitor.flatDisplay}",
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF4338CA),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _buildStatusAction(visitor),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                children: [
+                  _detailRow('હેતુ (Purpose):', visitor.purpose.isNotEmpty ? visitor.purpose : 'મહેમાન મુલાકાત'),
+                  const Divider(height: 20, color: Color(0xFFE2E8F0)),
+                  _detailRow('પ્રવેશ સમય (Entry):', DateFormat('dd MMM yyyy, hh:mm a').format(visitor.entryTime)),
+                  if (visitor.exitTime != null) ...[
+                    const Divider(height: 20, color: Color(0xFFE2E8F0)),
+                    _detailRow('ગેટ બહાર ગયા (Exit):', DateFormat('dd MMM yyyy, hh:mm a').format(visitor.exitTime!)),
+                  ],
+                  if (visitor.phone.isNotEmpty) ...[
+                    const Divider(height: 20, color: Color(0xFFE2E8F0)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('મોબાઇલ નંબર:', style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B))),
+                        Row(
+                          children: [
+                            Text(visitor.phone, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              onTap: () => _callVisitor(visitor.phone),
+                              child: Container(
+                                padding: const EdgeInsets.all(5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFECFDF5),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(Icons.phone_rounded, size: 14, color: Color(0xFF059669)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (visitor.status == 'pending' && isMyFlat) ...[
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: FilledButton.icon(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _updateStatus(visitor.id, 'approved');
+                        },
+                        icon: const Icon(Icons.check_rounded, size: 18),
+                        label: const Text('પ્રવેશ મંજૂર કરો'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF059669),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _updateStatus(visitor.id, 'rejected');
+                        },
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                        label: const Text('નકારો'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFFDC2626),
+                          side: const BorderSide(color: Color(0xFFFECACA), width: 1.5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B))),
+        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+      ],
+    );
+  }
+
   Widget _fallbackVisitorAvatar(String name) {
     return Container(
-      width: 50,
-      height: 50,
+      width: 54,
+      height: 54,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Center(
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : 'V',
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -1213,63 +2184,6 @@ class _MemberScreenState extends State<MemberScreen> {
   }
 
   Widget _buildStatusAction(VisitorModel visitor) {
-    if (visitor.status == 'pending') {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Accept Button
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => _updateStatus(visitor.id, 'approved'),
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF5),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFA7F3D0)),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.check_rounded, color: Color(0xFF059669), size: 15),
-                    SizedBox(width: 4),
-                    Text(
-                      "મંજૂર",
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF059669),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          // Reject Button
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => _updateStatus(visitor.id, 'rejected'),
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF2F2),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFFECACA)),
-                ),
-                child: const Icon(Icons.close_rounded, color: Color(0xFFDC2626), size: 15),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
     final (color, bgColor, text, icon) = switch (visitor.status) {
       'approved' => (const Color(0xFF059669), const Color(0xFFECFDF5), 'મંજૂર કરેલ', Icons.check_circle_rounded),
       'rejected' => (const Color(0xFFDC2626), const Color(0xFFFEF2F2), 'અસ્વીકાર', Icons.cancel_rounded),
@@ -1301,7 +2215,7 @@ class _MemberScreenState extends State<MemberScreen> {
     );
   }
 
-  // નોટિસ બોર્ડ વિજેટ (Executive Gradient Card)
+  // નોટિસ બોર્ડ વિજેટ (Executive Warm Gold Frosted Card)
   Widget _buildNoticeBoard() {
     return StreamBuilder<QuerySnapshot>(
       stream: AppFirestore.instance
@@ -1322,23 +2236,24 @@ class _MemberScreenState extends State<MemberScreen> {
         var notice = tenantDocs.first;
         final data = notice.data() as Map<String, dynamic>;
         final title = (data['title'] ?? '').toString();
-        final body = (data['body'] ?? '').toString();
+        final body = (data['body'] ?? data['description'] ?? data['message'] ?? '').toString();
 
         return Container(
           width: double.infinity,
           margin: const EdgeInsets.only(bottom: 14),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF1E1B4B), Color(0xFF312E81)],
+              colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFFDE68A), width: 1.2),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF1E1B4B).withValues(alpha: 0.22),
-                blurRadius: 12,
+                color: const Color(0xFFD97706).withValues(alpha: 0.1),
+                blurRadius: 14,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -1351,29 +2266,54 @@ class _MemberScreenState extends State<MemberScreen> {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
+                      color: const Color(0xFFF59E0B),
+                      borderRadius: BorderRadius.circular(9),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFF59E0B).withValues(alpha: 0.35),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    child: const Icon(Icons.campaign_rounded, color: Color(0xFFFCD34D), size: 16),
+                    child: const Icon(Icons.campaign_rounded, color: Colors.white, size: 16),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    "સોસાયટી મહત્વની સૂચના",
-                    style: TextStyle(
-                      color: Color(0xFFFCD34D),
-                      fontWeight: FontWeight.w800,
-                      fontSize: 11.5,
-                      letterSpacing: 0.2,
+                  const Expanded(
+                    child: Text(
+                      "સોસાયટી મહત્વની સૂચના",
+                      style: TextStyle(
+                        color: Color(0xFF92400E),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFFDE68A)),
+                    ),
+                    child: const Text(
+                      "તાજી અપડેટ",
+                      style: TextStyle(
+                        color: Color(0xFFB45309),
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Text(
                 title,
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
+                  color: Color(0xFF78350F),
+                  fontSize: 14.5,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.2,
                 ),
@@ -1384,10 +2324,11 @@ class _MemberScreenState extends State<MemberScreen> {
                   body,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.75),
-                    fontSize: 12.5,
-                    height: 1.35,
+                  style: const TextStyle(
+                    color: Color(0xFF92400E),
+                    fontSize: 12,
+                    height: 1.4,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],

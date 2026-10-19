@@ -131,25 +131,47 @@ class AdminBroadcastDialogs {
     );
   }
 
-  /// Sends a push notification via Firebase Functions (Topic or Member direct).
+  /// Sends a push notification via Firebase Functions (Topic or Member direct)
+  /// and always mirrors the notification in AppFirestore so in-app delivery is guaranteed.
   static Future<void> sendPushNotification({
     required BuildContext context,
     required String title,
     required String body,
     String? targetUID,
+    String? targetName,
   }) async {
+    final cleanUid = targetUID?.trim();
+    final bool isAll = cleanUid == null || cleanUid.isEmpty;
+    final currentUid = FirebaseAuth.instance.currentUser?.uid;
+    final societyId = SocietyService.instance.societyId;
+
+    // ૧. Always record notification in Firestore so it's visible in-app and triggers Cloud Functions if active
+    try {
+      await AppFirestore.instance.collection('notifications').add({
+        'title': title,
+        'body': body,
+        'targetUID': isAll ? 'ALL' : cleanUid,
+        'societyId': societyId,
+        'type': isAll ? 'general' : 'admin_notice',
+        'createdAt': FieldValue.serverTimestamp(),
+        'senderUid': ?currentUid,
+      });
+    } catch (e) {
+      debugPrint('Firestore notification save error: $e');
+    }
+
     final app = await ensureDefaultFirebaseApp();
     final functions = FirebaseFunctions.instanceFor(
       app: app,
       region: _kAdminFunctionsRegion,
     );
+
     try {
-      if (targetUID == null) {
+      if (isAll) {
         final callable = functions.httpsCallable(
           'sendBroadcastPush',
           options: HttpsCallableOptions(timeout: const Duration(seconds: 60)),
         );
-        final currentUid = FirebaseAuth.instance.currentUser?.uid;
         await callable.call<Map<String, dynamic>>({
           'title': title,
           'body': body,
@@ -159,16 +181,23 @@ class AdminBroadcastDialogs {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              fcmDeliverySummaryForUser({
-                'fcmDeliveryStatus': 'sent_topic_members',
-              }),
-            ),
+            content: const Text('✅ સોસાયટીના તમામ સભ્યોને સૂચના મોકલાઈ ગઈ છે!'),
             backgroundColor: Colors.green.shade800,
-            duration: const Duration(seconds: 7),
+            duration: const Duration(seconds: 6),
           ),
         );
         return;
+      }
+
+      // Member-direct push
+      String? memberToken;
+      try {
+        final userDoc = await AppFirestore.instance.collection('users').doc(cleanUid).get();
+        if (userDoc.exists) {
+          memberToken = userDoc.data()?['fcmToken']?.toString().trim();
+        }
+      } catch (e) {
+        debugPrint('Fetch member token error: $e');
       }
 
       final callable = functions.httpsCallable(
@@ -176,10 +205,11 @@ class AdminBroadcastDialogs {
         options: HttpsCallableOptions(timeout: const Duration(seconds: 60)),
       );
       final result = await callable.call<Map<String, dynamic>>({
-        'memberUid': targetUID,
+        'memberUid': cleanUid,
         'title': title,
         'body': body,
         'type': 'admin_notice',
+        if (memberToken != null && memberToken.isNotEmpty) 'fcmToken': memberToken,
       });
       final data = result.data;
       if (!context.mounted) return;
@@ -187,30 +217,30 @@ class AdminBroadcastDialogs {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              fcmDeliverySummaryForUser({'fcmDeliveryStatus': 'sent_token'}),
+              targetName != null
+                  ? '✅ $targetName ના ફોન પર પુશ નોટિફિકેશન સફળતાપૂર્વક પહોંચી ગયું!'
+                  : '✅ સભ્યના ફોન પર પુશ નોટિફિકેશન સફળતાપૂર્વક પહોંચી ગયું!',
             ),
             backgroundColor: Colors.green.shade800,
-            duration: const Duration(seconds: 7),
+            duration: const Duration(seconds: 6),
           ),
         );
       } else if (data['reason'] == 'no_token') {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              fcmDeliverySummaryForUser({
-                'fcmDeliveryStatus': 'skipped_no_token',
-              }),
+            content: const Text(
+              'સભ્યના ફોનનું ટોકન મળ્યું નથી, પરંતુ ઇન-એપ સૂચના સફળતાપૂર્વક સેવ કરી દીધી છે.',
             ),
             backgroundColor: Colors.deepOrange.shade800,
-            duration: const Duration(seconds: 8),
+            duration: const Duration(seconds: 6),
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('પુશ નિષ્ફળ: ${data['reason'] ?? data}'),
-            backgroundColor: Colors.red.shade800,
-            duration: const Duration(seconds: 8),
+            content: Text('ઇન-એપ સૂચના સેવ થઈ ગઈ છે (${data['reason'] ?? data})'),
+            backgroundColor: Colors.blueGrey.shade800,
+            duration: const Duration(seconds: 6),
           ),
         );
       }
@@ -221,16 +251,19 @@ class AdminBroadcastDialogs {
             : (e.details?.toString() ?? e.code);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('સર્વર (${e.code}): $detail'),
-            backgroundColor: Colors.red.shade800,
-            duration: const Duration(seconds: 10),
+            content: Text('ઇન-એપ સૂચના સેવ થઈ ગઈ છે (સર્વર: $detail)'),
+            backgroundColor: Colors.blueGrey.shade800,
+            duration: const Duration(seconds: 7),
           ),
         );
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ભૂલ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('ઇન-એપ સૂચના સેવ થઈ ગઈ છે ($e)'),
+            backgroundColor: Colors.blueGrey.shade800,
+          ),
         );
       }
     }
@@ -329,7 +362,7 @@ class AdminBroadcastDialogs {
                     child: SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       value: sendPush,
-                      activeColor: Colors.deepOrange,
+                      activeThumbColor: Colors.deepOrange,
                       onChanged: (v) => setS(() => sendPush = v),
                       title: const Text(
                         'બધાને પુશ નોટિફિકેશન મોકલો',

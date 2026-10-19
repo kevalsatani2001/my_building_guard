@@ -3,11 +3,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/notification_service.dart';
+import '../services/session_guard_service.dart';
 import '../services/society_service.dart';
 import '../widgets/premium_ui.dart';
 import 'admin_add_block_screen.dart';
@@ -42,6 +44,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   );
   String _analyticsBlockType = 'All';
   String _selectedActionCategory = 'all'; // 'all', 'security', 'comm', 'admin'
+  String _gateFeedFilter = 'all'; // 'all', 'pending', 'approved', 'checked_out', 'rejected'
   late Future<List<QueryDocumentSnapshot>> _visitorInsightsFuture;
 
   @override
@@ -466,35 +469,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  void _showLogoutConfirmation() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.logout_rounded, color: Colors.red),
-            SizedBox(width: 10),
-            Text('લોગઆઉટ'),
-          ],
-        ),
-        content: const Text('શું તમે ખરેખર એડમિન પેનલમાંથી લોગઆઉટ કરવા માંગો છો?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('રદ'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              Navigator.pop(ctx);
-              FirebaseAuth.instance.signOut();
-            },
-            child: const Text('હા, લોગઆઉટ'),
-          ),
-        ],
-      ),
+  void _showLogoutConfirmation() async {
+    final confirmed = await PremiumLogoutDialog.show(
+      context,
+      roleName: 'એડમિન પેનલ',
     );
+    if (confirmed) {
+      await SessionGuardService.instance.clearSession();
+      FirebaseAuth.instance.signOut();
+    }
   }
 
   Widget _buildHeroSummaryCard() {
@@ -1289,274 +1272,1012 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  /// Real-time live gate visitor feed for immediate operational awareness
+  /// Real-time live gate visitor feed with luxury cards, status chips, and admin control
   Widget _buildLiveGateFeed() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: AppFirestore.instance
+          .collection('visitors')
+          .orderBy('entryTime', descending: true)
+          .limit(30)
+          .snapshots(),
+      builder: (context, snap) {
+        final allDocs = snap.hasData
+            ? snap.data!.docs
+                .where((d) => SocietyService.instance
+                    .documentBelongsToCurrentTenant(d.data() as Map<String, dynamic>?))
+                .toList()
+            : <QueryDocumentSnapshot>[];
+
+        final pendingCount =
+            allDocs.where((d) => (d.data() as Map)['status'] == 'pending').length;
+        final approvedCount =
+            allDocs.where((d) => (d.data() as Map)['status'] == 'approved').length;
+        final checkedOutCount =
+            allDocs.where((d) => (d.data() as Map)['status'] == 'checked_out').length;
+        final rejectedCount =
+            allDocs.where((d) => (d.data() as Map)['status'] == 'rejected').length;
+
+        final filteredDocs = allDocs.where((d) {
+          final s = ((d.data() as Map)['status'] ?? 'pending').toString();
+          if (_gateFeedFilter == 'all') return true;
+          if (_gateFeedFilter == 'pending') return s == 'pending';
+          if (_gateFeedFilter == 'approved') return s == 'approved';
+          if (_gateFeedFilter == 'checked_out') return s == 'checked_out';
+          if (_gateFeedFilter == 'rejected') return s == 'rejected';
+          return true;
+        }).toList();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Integrated Header matching sequence
+            Row(
+              children: [
+                const Expanded(
+                  child: PremiumSectionHeader(
+                    title: "લાઈવ ગેટ એક્ટિવિટી",
+                    icon: Icons.radar_rounded,
+                  ),
+                ),
+                // Pulsing Live Indicator
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF059669),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      const Text(
+                        "૨૪x૭ લાઈવ",
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF065F46),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Full Report Action Button
+                InkWell(
+                  onTap: () => _showVisitorReportDialog(context),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEF2FF),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFC7D2FE)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "રિપોર્ટ જુઓ",
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF4338CA),
+                          ),
+                        ),
+                        SizedBox(width: 3),
+                        Icon(Icons.arrow_forward_ios_rounded,
+                            size: 9, color: Color(0xFF4338CA)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // 2. Filter Category Chips
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildGateFilterChip(
+                      'all', 'બધા (${allDocs.length})', Icons.apps_rounded),
+                  const SizedBox(width: 8),
+                  _buildGateFilterChip('pending', '⏳ ગેટ પર ($pendingCount)',
+                      Icons.hourglass_top_rounded),
+                  const SizedBox(width: 8),
+                  _buildGateFilterChip('approved', '🟢 અંદર છે ($approvedCount)',
+                      Icons.door_front_door_rounded),
+                  const SizedBox(width: 8),
+                  _buildGateFilterChip('checked_out', '🚪 બહાર ($checkedOutCount)',
+                      Icons.exit_to_app_rounded),
+                  const SizedBox(width: 8),
+                  _buildGateFilterChip(
+                      'rejected', '🔴 નકારેલ ($rejectedCount)', Icons.cancel_rounded),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // 3. Visitor Feed Content (Loading / Empty / List)
+            if (snap.connectionState == ConnectionState.waiting && allDocs.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(28),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.2,
+                    color: Color(0xFF4F46E5),
+                  ),
+                ),
+              )
+            else if (filteredDocs.isEmpty)
+              _buildUltraPremiumGateEmptyState(allDocs.length)
+            else ...[
+              ...filteredDocs.take(4).map((doc) => _buildAdminVisitorCard(doc)),
+              if (filteredDocs.length > 3)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, bottom: 4),
+                  child: Center(
+                    child: TextButton.icon(
+                      onPressed: () => _showVisitorReportDialog(context),
+                      icon: const Icon(Icons.history_rounded,
+                          size: 16, color: Color(0xFF4F46E5)),
+                      label: Text(
+                        "તમામ ${allDocs.length} મુલાકાતીઓ જુઓ (View All)",
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF4F46E5),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  /// Segmented Gate Filter Chip with vibrant selection styling
+  Widget _buildGateFilterChip(String key, String label, IconData icon) {
+    final isSelected = _gateFeedFilter == key;
+    return InkWell(
+      onTap: () => setState(() => _gateFeedFilter = key),
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6.5),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF4F46E5) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF4338CA) : const Color(0xFFE2E8F0),
+            width: 1.1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF4F46E5).withValues(alpha: 0.28),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 13,
+              color: isSelected ? Colors.white : const Color(0xFF64748B),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: isSelected ? Colors.white : const Color(0xFF334155),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Ultra-luxury Empty State for Gate Security matching the app theme
+  Widget _buildUltraPremiumGateEmptyState(int totalCount) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: const LinearGradient(
+          colors: [Colors.white, Color(0xFFF8FAFC)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withValues(alpha: 0.025),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
+          // Concentric glowing radar rings
+          Container(
+            width: 66,
+            height: 66,
+            decoration: BoxDecoration(
+              color: const Color(0xFF4F46E5).withValues(alpha: 0.07),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Container(
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEEF2FF),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.radar_rounded, size: 20, color: Color(0xFF4F46E5)),
-              ),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "🚨 લાઈવ ગેટ એક્ટિવિટી",
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                    SizedBox(height: 1),
-                    Text(
-                      "ગેટ પર તાજેતરના મુલાકાતીઓ (Realtime Feed)",
-                      style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                  color: const Color(0xFF4F46E5).withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4F46E5).withValues(alpha: 0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(10),
+                child: const Icon(
+                  Icons.shield_rounded,
+                  size: 26,
+                  color: Color(0xFF4338CA),
                 ),
-                child: InkWell(
-                  onTap: () => _showVisitorReportDialog(context),
-                  borderRadius: BorderRadius.circular(10),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    child: Text(
-                      "રિપોર્ટ જુઓ",
-                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF4338CA)),
-                    ),
-                  ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            "ગેટ સુરક્ષા સક્રિય & સામાન્ય છે",
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF0F172A),
+              letterSpacing: -0.2,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _gateFeedFilter == 'all'
+                ? "આજના દિવસમાં સોસાયટી ગેટ પર તમામ સુરક્ષા સામાન્ય છે. કોઈ પેન્ડિંગ કે શંકાસ્પદ મુલાકાતી નથી."
+                : "પસંદ કરેલ ફિલ્ટર મુજબ કોઈ મુલાકાતીની એન્ટ્રી મળી નથી.",
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 11.5,
+              color: Color(0xFF64748B),
+              fontWeight: FontWeight.w500,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Action shortcuts
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => _showVisitorReportDialog(context),
+                icon: const Icon(Icons.receipt_long_rounded, size: 14),
+                label: const Text(
+                  "મુલાકાતી રજીસ્ટર",
+                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF4338CA),
+                  side: const BorderSide(color: Color(0xFFC7D2FE)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(11)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                ),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: () => _showWatchmanManageDialog(context),
+                icon: const Icon(Icons.security_rounded, size: 14),
+                label: const Text(
+                  "વોચમેન મેનેજ",
+                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF4F46E5),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(11)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          StreamBuilder<QuerySnapshot>(
-            stream: AppFirestore.instance
-                .collection('visitors')
-                .orderBy('entryTime', descending: true)
-                .limit(10)
-                .snapshots(),
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                );
-              }
+        ],
+      ),
+    );
+  }
 
-              final docs = snap.hasData
-                  ? snap.data!.docs
-                      .where((d) => SocietyService.instance
-                          .documentBelongsToCurrentTenant(d.data() as Map<String, dynamic>?))
-                      .take(3)
-                      .toList()
-                  : <QueryDocumentSnapshot>[];
+  /// Ultra-luxury visitor card matching MemberScreen design language
+  Widget _buildAdminVisitorCard(QueryDocumentSnapshot doc) {
+    final d = doc.data() as Map<String, dynamic>;
+    final name = (d['name'] ?? 'મુલાકાતી').toString();
+    final phone = (d['phone'] ?? '').toString();
+    final purpose = (d['purpose'] ?? 'મુલાકાત').toString();
+    final photoUrl = (d['photoUrl'] ?? '').toString();
+    final rawBlock = (d['blockName'] ?? '').toString();
+    final cleanBlock =
+        rawBlock.contains('_') ? rawBlock.split('_').last : rawBlock;
+    final unit = (d['unitNumber'] ?? '').toString();
+    final flatDisplay = cleanBlock.isNotEmpty && unit.isNotEmpty
+        ? '$cleanBlock - $unit'
+        : (unit.isNotEmpty ? unit : 'સોસાયટી');
+    final status = (d['status'] ?? 'pending').toString();
+    final entryTs = d['entryTime'] as Timestamp?;
+    final exitTs = d['exitTime'] as Timestamp?;
+    final timeStr = entryTs != null
+        ? DateFormat('hh:mm a').format(entryTs.toDate())
+        : 'હમણાં';
+    final (typeIcon, typeColor, typeBg) = _getVisitorTypeMeta(purpose);
 
-              if (docs.isEmpty) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
+    final (statusLabel, statusColor, statusBg) = switch (status) {
+      'approved' => ('અંદર છે', const Color(0xFF047857), const Color(0xFFECFDF5)),
+      'rejected' => ('નકારેલ', const Color(0xFFB91C1C), const Color(0xFFFEF2F2)),
+      'checked_out' =>
+        ('બહાર ગયા', const Color(0xFF0F766E), const Color(0xFFF0FDFA)),
+      _ => ('ગેટ પર', const Color(0xFFB45309), const Color(0xFFFFFBEB)),
+    };
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: status == 'pending'
+              ? const Color(0xFFFDE68A)
+              : const Color(0xFFE2E8F0),
+          width: status == 'pending' ? 1.4 : 1.1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: status == 'pending'
+                ? const Color(0xFFF59E0B).withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.025),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showAdminVisitorDetailSheet(context, d, doc.id),
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.all(13),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Avatar Squircle with corner type badge
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: photoUrl.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: photoUrl,
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                              errorWidget: (_, _, _) => _fallbackAdminAvatar(name),
+                            )
+                          : _fallbackAdminAvatar(name),
+                    ),
+                    Positioned(
+                      right: -3,
+                      bottom: -3,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF4F46E5).withValues(alpha: 0.08),
+                          color: typeBg,
                           shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                            ),
+                          ],
                         ),
-                        child: const Icon(Icons.shield_outlined, size: 28, color: Color(0xFF4F46E5)),
+                        child: Icon(typeIcon, size: 10.5, color: typeColor),
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        "ગેટ સુરક્ષા સામાન્ય છે",
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
-                        ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 12),
+
+                // Name, Badges & Time
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF0F172A),
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                          ),
+                          if (phone.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            InkWell(
+                              onTap: () => _makePhoneCall(phone),
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.all(5.5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFECFDF5),
+                                  shape: BoxShape.circle,
+                                  border:
+                                      Border.all(color: const Color(0xFFA7F3D0)),
+                                ),
+                                child: const Icon(Icons.phone_rounded,
+                                    size: 13, color: Color(0xFF059669)),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        "આજે હજુ સુધી કોઈ મુલાકાતીની નોંધણી નથી થઈ.",
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w500),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6.5, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: typeBg,
+                              borderRadius: BorderRadius.circular(5.5),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(typeIcon, size: 10, color: typeColor),
+                                const SizedBox(width: 3),
+                                Text(
+                                  purpose,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: typeColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6.5, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(5.5),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.apartment_rounded,
+                                    size: 10, color: Color(0xFF64748B)),
+                                const SizedBox(width: 3),
+                                Text(
+                                  flatDisplay,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF475569),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.schedule_rounded,
+                              size: 11, color: Colors.grey.shade500),
+                          const SizedBox(width: 3),
+                          Text(
+                            timeStr,
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (status == 'checked_out' && exitTs != null) ...[
+                            const SizedBox(width: 6),
+                            const Text('•',
+                                style:
+                                    TextStyle(color: Colors.grey, fontSize: 10)),
+                            const SizedBox(width: 6),
+                            Icon(Icons.logout_rounded,
+                                size: 11, color: Colors.grey.shade600),
+                            const SizedBox(width: 3),
+                            Text(
+                              DateFormat('hh:mm a').format(exitTs.toDate()),
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                color: Color(0xFF64748B),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
-                );
-              }
+                ),
+                const SizedBox(width: 8),
 
-              return Column(
-                children: docs.map((doc) {
-                  final m = doc.data() as Map<String, dynamic>;
-                  final name = m['name'] ?? 'મુલાકાતી';
-                  final rawBlock = (m['blockName'] ?? '').toString();
-                  final cleanBlock = rawBlock.contains('_') ? rawBlock.split('_').last : rawBlock;
-                  final unit = m['unitNumber'] ?? '';
-                  final purpose = m['purpose'] ?? 'મુલાકાત';
-                  final status = m['status'] ?? 'pending';
-                  final ts = m['entryTime'] as Timestamp?;
-                  final timeStr = ts != null ? DateFormat('hh:mm a').format(ts.toDate()) : 'હમણાં';
-
-                  final (statusLabel, statusColor, statusBg) = switch (status) {
-                    'approved' => ('મંજૂર', const Color(0xFF047857), const Color(0xFFECFDF5)),
-                    'rejected' => ('નકારેલ', const Color(0xFFB91C1C), const Color(0xFFFEF2F2)),
-                    'checked_out' => ('બહાર ગયા', const Color(0xFF0F766E), const Color(0xFFF0FDFA)),
-                    _ => ('ગેટ પર', const Color(0xFFB45309), const Color(0xFFFFFBEB)),
-                  };
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                // Status Pill
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                  decoration: BoxDecoration(
+                    color: statusBg,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: statusColor.withValues(alpha: 0.25)),
+                  ),
+                  child: Text(
+                    statusLabel,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(11),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF4F46E5).withValues(alpha: 0.25),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            name.isNotEmpty ? name[0].toUpperCase() : 'V',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              fontSize: 15,
-                            ),
-                          ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Initial letter squircle avatar when photo is unavailable
+  Widget _fallbackAdminAvatar(String name) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        name.isNotEmpty ? name[0].toUpperCase() : 'V',
+        style: const TextStyle(
+          fontWeight: FontWeight.w900,
+          color: Colors.white,
+          fontSize: 18,
+        ),
+      ),
+    );
+  }
+
+  /// Purpose metadata resolver (Icon, Color, Light Background)
+  (IconData, Color, Color) _getVisitorTypeMeta(String purpose) {
+    final p = purpose.toLowerCase();
+    if (p.contains('delivery') ||
+        p.contains('courier') ||
+        p.contains('amazon') ||
+        p.contains('flipkart') ||
+        p.contains('zomato') ||
+        p.contains('swiggy') ||
+        p.contains('parcel') ||
+        p.contains('પાર્સલ') ||
+        p.contains('ડિલિવરી')) {
+      return (
+        Icons.local_shipping_rounded,
+        const Color(0xFFD97706),
+        const Color(0xFFFEF3C7)
+      );
+    }
+    if (p.contains('cab') ||
+        p.contains('taxi') ||
+        p.contains('uber') ||
+        p.contains('ola') ||
+        p.contains('auto') ||
+        p.contains('ટેક્સી') ||
+        p.contains('રીક્ષા')) {
+      return (
+        Icons.local_taxi_rounded,
+        const Color(0xFF2563EB),
+        const Color(0xFFEFF6FF)
+      );
+    }
+    if (p.contains('service') ||
+        p.contains('repair') ||
+        p.contains('plumber') ||
+        p.contains('electric') ||
+        p.contains('maid') ||
+        p.contains('કામવાળા') ||
+        p.contains('રીપેરિંગ')) {
+      return (
+        Icons.handyman_rounded,
+        const Color(0xFF7C3AED),
+        const Color(0xFFF5F3FF)
+      );
+    }
+    return (
+      Icons.people_alt_rounded,
+      const Color(0xFF0D9488),
+      const Color(0xFFCCFBF1)
+    );
+  }
+
+  /// Full visitor detail bottom sheet with admin quick controls
+  void _showAdminVisitorDetailSheet(
+      BuildContext context, Map<String, dynamic> d, String docId) {
+    final name = (d['name'] ?? 'મુલાકાતી').toString();
+    final phone = (d['phone'] ?? '').toString();
+    final purpose = (d['purpose'] ?? 'મુલાકાત').toString();
+    final photoUrl = (d['photoUrl'] ?? '').toString();
+    final vehicle = (d['vehicleNumber'] ?? d['vehicle'] ?? '').toString();
+    final rawBlock = (d['blockName'] ?? '').toString();
+    final cleanBlock =
+        rawBlock.contains('_') ? rawBlock.split('_').last : rawBlock;
+    final unit = (d['unitNumber'] ?? '').toString();
+    final flatDisplay = cleanBlock.isNotEmpty && unit.isNotEmpty
+        ? '$cleanBlock - $unit'
+        : (unit.isNotEmpty ? unit : 'સોસાયટી');
+    final status = (d['status'] ?? 'pending').toString();
+    final entryTs = d['entryTime'] as Timestamp?;
+    final exitTs = d['exitTime'] as Timestamp?;
+
+    final (statusLabel, statusColor, statusBg) = switch (status) {
+      'approved' => ('અંદર છે (Approved)', const Color(0xFF047857), const Color(0xFFECFDF5)),
+      'rejected' => ('નકારેલ (Rejected)', const Color(0xFFB91C1C), const Color(0xFFFEF2F2)),
+      'checked_out' =>
+        ('બહાર ગયા (Checked Out)', const Color(0xFF0F766E), const Color(0xFFF0FDFA)),
+      _ => ('ગેટ પર (Pending)', const Color(0xFFB45309), const Color(0xFFFFFBEB)),
+    };
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.fromLTRB(
+            20, 16, 20, MediaQuery.of(ctx).padding.bottom + 20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: photoUrl.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: photoUrl,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorWidget: (_, _, _) => _fallbackAdminAvatar(name),
+                        )
+                      : _fallbackAdminAvatar(name),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0F172A),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        "ગંતવ્ય: $flatDisplay",
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF4338CA),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusBg,
+                    borderRadius: BorderRadius.circular(8),
+                    border:
+                        Border.all(color: statusColor.withValues(alpha: 0.25)),
+                  ),
+                  child: Text(
+                    statusLabel,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+
+            // Key info card
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                children: [
+                  _adminVisitorDetailRow('મુલાકાત હેતુ:', purpose),
+                  if (phone.isNotEmpty) ...[
+                    const Divider(height: 18, color: Color(0xFFE2E8F0)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'મોબાઇલ નંબર:',
+                          style: TextStyle(
+                              fontSize: 12.5,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w600),
+                        ),
+                        InkWell(
+                          onTap: () => _makePhoneCall(phone),
+                          child: Row(
                             children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 13,
-                                        color: Color(0xFF0F172A),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade200,
-                                      borderRadius: BorderRadius.circular(5),
-                                    ),
-                                    child: Text(
-                                      timeStr,
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey.shade700,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 2),
                               Text(
-                                "લક્ષ્ય: $cleanBlock-$unit • હેતુ: $purpose",
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                phone,
                                 style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF64748B),
-                                  fontWeight: FontWeight.w500,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF059669),
                                 ),
                               ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.phone_rounded,
+                                  size: 14, color: Color(0xFF059669)),
                             ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
-                          decoration: BoxDecoration(
-                            color: statusBg,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: statusColor.withValues(alpha: 0.25)),
-                          ),
-                          child: Text(
-                            statusLabel,
-                            style: TextStyle(
-                              color: statusColor,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                            ),
                           ),
                         ),
                       ],
                     ),
-                  );
-                }).toList(),
-              );
-            },
-          ),
-        ],
+                  ],
+                  if (vehicle.isNotEmpty) ...[
+                    const Divider(height: 18, color: Color(0xFFE2E8F0)),
+                    _adminVisitorDetailRow('વાહન નંબર:', vehicle),
+                  ],
+                  if (entryTs != null) ...[
+                    const Divider(height: 18, color: Color(0xFFE2E8F0)),
+                    _adminVisitorDetailRow(
+                      'પ્રવેશ સમય:',
+                      DateFormat('dd MMM yyyy, hh:mm a').format(entryTs.toDate()),
+                    ),
+                  ],
+                  if (exitTs != null) ...[
+                    const Divider(height: 18, color: Color(0xFFE2E8F0)),
+                    _adminVisitorDetailRow(
+                      'બહાર નીકળ્યા:',
+                      DateFormat('dd MMM yyyy, hh:mm a').format(exitTs.toDate()),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // Admin Action Buttons
+            Row(
+              children: [
+                if (status != 'checked_out') ...[
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _checkOutVisitor(docId, name);
+                      },
+                      icon: const Icon(Icons.logout_rounded, size: 16),
+                      label: const Text(
+                        'બહાર ગયા માર્ક કરો',
+                        style: TextStyle(
+                            fontSize: 12.5, fontWeight: FontWeight.bold),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0F766E),
+                        side: const BorderSide(color: Color(0xFF0F766E)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _deleteVisitor(docId, name);
+                    },
+                    icon: const Icon(Icons.delete_outline_rounded, size: 16),
+                    label: const Text(
+                      'એન્ટ્રી ડિલીટ',
+                      style: TextStyle(
+                          fontSize: 12.5, fontWeight: FontWeight.bold),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFDC2626),
+                      side: const BorderSide(color: Color(0xFFFCA5A5)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Widget _adminVisitorDetailRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12.5,
+            color: Color(0xFF64748B),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Admin manual visitor check-out
+  Future<void> _checkOutVisitor(String docId, String name) async {
+    try {
+      await AppFirestore.instance.collection('visitors').doc(docId).update({
+        'status': 'checked_out',
+        'exitTime': FieldValue.serverTimestamp(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF0F766E),
+            content: Text('$name સોસાયટી બહાર ગયા તરીકે માર્ક થયા.'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ભૂલ આવી: $e')),
+        );
+      }
+    }
+  }
+
+  /// Admin visitor record deletion with confirmation
+  Future<void> _deleteVisitor(String docId, String name) async {
+    final confirmed = await PremiumConfirmationDialog.show(
+      context,
+      title: "મુલાકાતી એન્ટ્રી ડિલીટ",
+      message: "શું તમે ખરેખર $name ની એન્ટ્રી ડિલીટ કરવા માંગો છો?",
+      icon: Icons.delete_outline_rounded,
+      confirmText: "હા, ડિલીટ કરો",
+      confirmColor: const Color(0xFFDC2626),
+      isDestructive: true,
+    );
+
+    if (confirmed == true) {
+      try {
+        await AppFirestore.instance.collection('visitors').doc(docId).delete();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              backgroundColor: Color(0xFFDC2626),
+              content: Text('એન્ટ્રી સફળતાપૂર્વક ડિલીટ થઈ.'),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('ડિલીટ કરવામાં ભૂલ આવી: $e')),
+          );
+        }
+      }
+    }
   }
 
   /// Categorized action management hub with segmented chips
@@ -2363,7 +3084,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
           separatorBuilder: (context, index) => const SizedBox(height: 8),
           itemBuilder: (context, i) {
             var d = docs[i].data() as Map<String, dynamic>;
-            String mId = d['uid'] ?? "";
+            final rawUid = d['uid']?.toString().trim();
+            String mId = (rawUid != null && rawUid.isNotEmpty) ? rawUid : docs[i].id;
             String mName = d['name'] ?? "No Name";
             String rawBlock = (d['blockName'] ?? "").toString();
             String mBlock = rawBlock.contains('_') ? rawBlock.split('_').last : rawBlock;
@@ -2593,30 +3315,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  void _confirmTransfer(String newAdminId, String name) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("ચેતવણી!"),
-        content: Text(
-          "શું તમે ખરેખર $name ને સોસાયટીના નવા પ્રમુખ બનાવવા માંગો છો? આ કર્યા પછી તમારી એડમિન સત્તા જતી રહેશે.",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("ના"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              Navigator.pop(context);
-              _transferOwnership(newAdminId);
-            },
-            child: const Text("હા, સોંપો"),
-          ),
-        ],
-      ),
+  void _confirmTransfer(String newAdminId, String name) async {
+    final confirmed = await PremiumConfirmationDialog.show(
+      context,
+      title: "એડમિન સત્તા સોંપણી",
+      message:
+          "શું તમે ખરેખર $name ને સોસાયટીના નવા પ્રમુખ બનાવવા માંગો છો? આ કર્યા પછી તમારી એડમિન સત્તા જતી રહેશે અને તમારો રોલ મેમ્બર થઈ જશે.",
+      icon: Icons.admin_panel_settings_rounded,
+      gradientColors: const [Color(0xFFD97706), Color(0xFFB45309)],
+      cancelText: "ના, રદ કરો",
+      confirmText: "હા, સત્તા સોંપો",
+      confirmGradient: const [Color(0xFFDC2626), Color(0xFFB91C1C)],
+      confirmColor: const Color(0xFFDC2626),
+      isDestructive: true,
     );
+    if (confirmed == true) {
+      _transferOwnership(newAdminId);
+    }
   }
 
   Future<void> _transferOwnership(String newAdminId) async {
@@ -2653,8 +3368,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
       );
 
       // એડમિન પેનલમાંથી બહાર કાઢીને લોગિન પર મોકલી દેવા
+      await SessionGuardService.instance.clearSession();
       FirebaseAuth.instance.signOut();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("ભૂલ આવી: $e"), backgroundColor: Colors.red),
       );

@@ -55,6 +55,7 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
   Future<void> _deleteUser(String docId, String userName) async {
     final confirm = await showModalBottomSheet<bool>(
       context: context,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(24),
@@ -62,8 +63,10 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 44,
@@ -129,7 +132,8 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
 
     if (confirm != true) return;
 
@@ -734,6 +738,7 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         decoration: const BoxDecoration(
@@ -741,9 +746,11 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: Container(
@@ -935,8 +942,9 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _detailRow({
     required IconData icon,

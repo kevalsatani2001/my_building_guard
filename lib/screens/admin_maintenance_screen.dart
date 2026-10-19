@@ -12,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/maintenance_model.dart';
 import '../services/maintenance_service.dart';
 import '../services/society_service.dart';
+import '../widgets/premium_ui.dart';
 import 'admin_society_bank_settings_screen.dart';
 
 class AdminMaintenanceScreen extends StatefulWidget {
@@ -258,39 +259,43 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
 
   // --- ડાયલોગ ૩: પેન્ડિંગ રીમાઇન્ડર મોકલવું ---
   Future<void> _sendReminders() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('રીમાઇન્ડર એલર્ટ મોકલો'),
-        content: Text(
+    final confirmed = await PremiumConfirmationDialog.show(
+      context,
+      title: 'રીમાઇન્ડર એલર્ટ મોકલો',
+      message:
           'શું તમે ${_formatMonthDisplay(_selectedMonth)} ના બાકી રહેલા તમામ સભ્યોને મોબાઈલ પર પુશ નોટિફિકેશન રીમાઇન્ડર મોકલવા માંગો છો?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('ના'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.orange.shade800),
-            child: const Text('હા, મોકલો'),
-          ),
-        ],
-      ),
+      icon: Icons.notifications_active_rounded,
+      gradientColors: const [Color(0xFFD97706), Color(0xFFF59E0B)],
+      cancelText: 'ના, રદ કરો',
+      confirmText: 'હા, મોકલો',
+      confirmGradient: const [Color(0xFFD97706), Color(0xFFB45309)],
+      confirmColor: const Color(0xFFD97706),
+      confirmIcon: Icons.send_rounded,
     );
 
     if (confirmed != true) return;
 
     setState(() => _isLoading = true);
     try {
-      final sentCount = await _service.sendDueReminders(
+      final res = await _service.sendDueReminders(
         billingMonth: _selectedMonth,
         billTitle: '${_formatMonthDisplay(_selectedMonth)} મેન્ટેનન્સ',
       );
-      _showSnackBar(
-        '$sentCount સભ્યોને રીમાઇન્ડર એલર્ટ સફળતાપૂર્વક મોકલાઈ ગયું!',
-        Colors.green,
-      );
+      final total = res['totalPending'] ?? 0;
+      final notif = res['notifCount'] ?? 0;
+      final push = res['pushCount'] ?? 0;
+
+      if (total == 0) {
+        _showSnackBar(
+          'આ મહિના માટે કોઈ બાકી મેન્ટેનન્સ બિલ નથી.',
+          Colors.blueGrey,
+        );
+      } else {
+        _showSnackBar(
+          '✅ $notif સભ્યોને રીમાઇન્ડર એલર્ટ મોકલાઈ ગયું! ($push ના મોબાઈલ પર પુશ મળ્યો)',
+          Colors.green.shade800,
+        );
+      }
     } catch (e) {
       _showSnackBar('રીમાઇન્ડર મોકલવામાં ભૂલ: $e', Colors.red);
     } finally {
@@ -1019,6 +1024,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Row(
           children: [
             Icon(Icons.receipt_rounded, color: Colors.green.shade700),

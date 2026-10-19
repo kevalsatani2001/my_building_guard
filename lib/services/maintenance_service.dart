@@ -1,7 +1,10 @@
 import 'package:building_guard/core/app_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import '../models/maintenance_model.dart';
+import 'firebase_app_guard.dart';
 import 'society_service.dart';
 
 class MaintenanceService {
@@ -35,12 +38,18 @@ class MaintenanceService {
         final u = doc.data();
         final block = (u['blockName'] ?? '').toString();
         final unit = (u['unitNumber'] ?? '').toString();
+        final cleanBlock = SocietyService.instance.logicalBlockName(block);
+        final prefixedBlock = SocietyService.instance.blockFirestoreId(cleanBlock);
         if (block.isNotEmpty || unit.isNotEmpty) {
-          memberMap['$block-$unit'] = {
+          final info = {
             'uid': doc.id,
             'name': (u['name'] ?? '').toString(),
             'phone': (u['phone'] ?? '').toString(),
           };
+          memberMap['$block-$unit'] = info;
+          memberMap['$cleanBlock-$unit'] = info;
+          memberMap['$prefixedBlock-$unit'] = info;
+          memberMap['${societyId}_$block-$unit'] = info;
         }
       }
     } catch (_) {
@@ -58,8 +67,13 @@ class MaintenanceService {
         final d = doc.data();
         final block = (d['blockName'] ?? '').toString();
         final unit = (d['unitNumber'] ?? '').toString();
+        final rawMem = (d['memberId'] ?? '').toString();
         if (block.isNotEmpty || unit.isNotEmpty) {
-          flatsToBill.add({'block': block, 'unit': unit});
+          flatsToBill.add({
+            'block': block,
+            'unit': unit,
+            if (rawMem.isNotEmpty) 'unitMemberId': rawMem,
+          });
         }
       }
     } catch (_) {}
@@ -107,8 +121,12 @@ class MaintenanceService {
         continue;
       }
 
-      final memberInfo = memberMap[key];
-      final memberUid = memberInfo?['uid'];
+      final cleanB = SocietyService.instance.logicalBlockName(block);
+      final prefB = SocietyService.instance.blockFirestoreId(cleanB);
+      final memberInfo = memberMap[key] ??
+          memberMap['$cleanB-$unit'] ??
+          memberMap['$prefB-$unit'];
+      final memberUid = memberInfo?['uid'] ?? flat['unitMemberId'];
       final memberName = memberInfo?['name'] ?? '';
       final memberPhone = memberInfo?['phone'] ?? '';
 
@@ -181,6 +199,18 @@ class MaintenanceService {
     } catch (_) {}
   }
 
+  /// એડમિનનું નામ મેળવવા માટે હેલ્પર
+  Future<String> _getAdminDisplayName() async {
+    try {
+      if (_currentUserId == null) return 'સોસાયટી એડમિન';
+      final doc = await _firestore.collection('users').doc(_currentUserId).get();
+      final name = (doc.data()?['name'] ?? '').toString().trim();
+      return name.isNotEmpty ? '$name (એડમિન)' : 'સોસાયટી એડમિન';
+    } catch (_) {
+      return 'સોસાયટી એડમિન';
+    }
+  }
+
   /// એડમિન દ્વારા પેમેન્ટ વેરિફિકેશન અને ડિજિટલ રસીદ જનરેશન
   Future<void> approvePayment({
     required String billId,
@@ -188,11 +218,12 @@ class MaintenanceService {
   }) async {
     final receiptNo =
         'REC-${bill.billingMonth.replaceAll('-', '')}-${bill.blockName}${bill.unitNumber}';
+    final adminName = await _getAdminDisplayName();
 
     await _firestore.collection('maintenance_bills').doc(billId).update({
       'status': MaintenanceStatus.paid.toDbString(),
       'receiptNumber': receiptNo,
-      'verifiedBy': _currentUserId ?? 'admin',
+      'verifiedBy': adminName,
       if (bill.paidAt == null) 'paidAt': FieldValue.serverTimestamp(),
     });
 
@@ -225,6 +256,7 @@ class MaintenanceService {
   }) async {
     final receiptNo =
         'REC-${bill.billingMonth.replaceAll('-', '')}-${bill.blockName}${bill.unitNumber}';
+    final adminName = await _getAdminDisplayName();
 
     await _firestore.collection('maintenance_bills').doc(billId).update({
       'status': MaintenanceStatus.paid.toDbString(),
@@ -233,7 +265,7 @@ class MaintenanceService {
       if (utrNumber.trim().isNotEmpty) 'utrNumber': utrNumber.trim(),
       'receiptNumber': receiptNo,
       'note': note.trim(),
-      'verifiedBy': _currentUserId ?? 'admin',
+      'verifiedBy': adminName,
       'paidAt': FieldValue.serverTimestamp(),
     });
 
@@ -258,7 +290,7 @@ class MaintenanceService {
   }
 
   /// ૧-ક્લિક ડ્યુ રીમાઇન્ડર એલર્ટ (પેન્ડિંગ રહેલા તમામ સભ્યોને એક સાથે મોકલવું)
-  Future<int> sendDueReminders({
+  Future<Map<String, int>> sendDueReminders({
     required String billingMonth,
     required String billTitle,
   }) async {
@@ -269,14 +301,64 @@ class MaintenanceService {
         .where('status', isEqualTo: MaintenanceStatus.pending.toDbString())
         .get();
 
-    int sentCount = 0;
+    int sentNotifCount = 0;
+    int sentPushCount = 0;
+
+    // Cache user tokens and member lookup
+    final Map<String, String?> tokenCache = {};
+
+    HttpsCallable? sendMemberPushCallable;
+    try {
+      final app = await ensureDefaultFirebaseApp();
+      final functions = FirebaseFunctions.instanceFor(
+        app: app,
+        region: 'us-central1',
+      );
+      sendMemberPushCallable = functions.httpsCallable(
+        'sendMemberPush',
+        options: HttpsCallableOptions(timeout: const Duration(seconds: 15)),
+      );
+    } catch (e) {
+      debugPrint('Cloud Functions init error: $e');
+    }
+
     for (final doc in snap.docs) {
       final data = doc.data();
-      final memberUid = data['memberId']?.toString();
+      var memberUid = data['memberId']?.toString();
       final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
-      final flat = '${data['blockName'] ?? ''}-${data['unitNumber'] ?? ''}';
+      final block = (data['blockName'] ?? '').toString();
+      final unit = (data['unitNumber'] ?? '').toString();
+      final flat = '$block-$unit';
+
+      // ૧. જો બિલમાં memberId ન હોય, તો units અથવા users કલેક્શનમાંથી શોધો
+      if (memberUid == null || memberUid.isEmpty) {
+        try {
+          final cleanBlock = SocietyService.instance.logicalBlockName(block);
+          final userSnap = await _firestore
+              .collection('users')
+              .where('societyId', isEqualTo: _currentSocietyId)
+              .where('unitNumber', isEqualTo: unit)
+              .limit(5)
+              .get();
+          for (final uDoc in userSnap.docs) {
+            final uData = uDoc.data();
+            final uBlock = (uData['blockName'] ?? '').toString();
+            if (uBlock == block || SocietyService.instance.logicalBlockName(uBlock) == cleanBlock) {
+              memberUid = uDoc.id;
+              // બિલમાં memberId કાયમી અપડેટ કરી દો
+              await doc.reference.update({
+                'memberId': memberUid,
+                'memberName': (uData['name'] ?? '').toString(),
+                'memberPhone': (uData['phone'] ?? '').toString(),
+              });
+              break;
+            }
+          }
+        } catch (_) {}
+      }
 
       if (memberUid != null && memberUid.isNotEmpty) {
+        // ૨. ઇન-એપ નોટિફિકેશન સેવ કરો
         try {
           await _firestore.collection('notifications').add({
             'title': '⚠️ મેન્ટેનન્સ બિલ બાકી છે',
@@ -288,12 +370,62 @@ class MaintenanceService {
             'billId': doc.id,
             'createdAt': FieldValue.serverTimestamp(),
           });
-          sentCount++;
+          sentNotifCount++;
         } catch (_) {}
+
+        // ૩. સીધું FCM પુશ નોટિફિકેશન મોકલો
+        if (sendMemberPushCallable != null) {
+          try {
+            if (!tokenCache.containsKey(memberUid)) {
+              final uDoc = await _firestore.collection('users').doc(memberUid).get();
+              tokenCache[memberUid] = uDoc.data()?['fcmToken']?.toString().trim();
+            }
+            final fcmToken = tokenCache[memberUid];
+            final res = await sendMemberPushCallable.call<Map<String, dynamic>>({
+              'memberUid': memberUid,
+              'title': '⚠️ મેન્ટેનન્સ બિલ બાકી છે',
+              'body':
+                  'ફ્લેટ $flat નું $billTitle (₹${amount.toStringAsFixed(0)}) બાકી છે. કૃપા કરીને તાત્કાલિક UPI થી ચૂકવણી કરો.',
+              'type': 'maintenance_due_reminder',
+              if (fcmToken != null && fcmToken.isNotEmpty) 'fcmToken': fcmToken,
+            });
+            if (res.data['ok'] == true) {
+              sentPushCount++;
+            }
+          } catch (e) {
+            debugPrint('Error sending member push for $memberUid: $e');
+          }
+        }
       }
     }
 
-    return sentCount;
+    // ૪. સોસાયટીના તમામ સભ્યોને જનરલ બ્રોડકાસ્ટ પુશ પણ મોકલો જો બાકી બિલો હોય
+    if (snap.docs.isNotEmpty) {
+      try {
+        final app = await ensureDefaultFirebaseApp();
+        final functions = FirebaseFunctions.instanceFor(
+          app: app,
+          region: 'us-central1',
+        );
+        final broadcastCallable = functions.httpsCallable(
+          'sendBroadcastPush',
+          options: HttpsCallableOptions(timeout: const Duration(seconds: 30)),
+        );
+        await broadcastCallable.call<Map<String, dynamic>>({
+          'title': '📢 $billTitle રિમાઇન્ડર',
+          'body': 'સોસાયટીના તમામ સભ્યોને નમ્ર વિનંતી: જેઓનું $billTitle બાકી હોય તેઓ તાત્કાલિક UPI થી ચૂકવણી પૂર્ણ કરે.',
+          'type': 'maintenance_due_reminder',
+        });
+      } catch (e) {
+        debugPrint('Broadcast reminder error: $e');
+      }
+    }
+
+    return {
+      'notifCount': sentNotifCount,
+      'pushCount': sentPushCount,
+      'totalPending': snap.docs.length,
+    };
   }
 
   Map<String, dynamic>? _cachedPaymentSettings;
@@ -332,21 +464,38 @@ class MaintenanceService {
     required String upiPayeeName,
     required double defaultAmount,
     int dueDay = 10,
+    String? signatureBase64,
+    String? signatoryName,
+    String? signatoryTitle,
   }) async {
     final societyId = _currentSocietyId;
-    final data = {
+    final data = <String, dynamic>{
       'upiId': upiId.trim(),
       'upiPayeeName': upiPayeeName.trim(),
       'defaultAmount': defaultAmount,
       'dueDay': dueDay,
       'updatedAt': FieldValue.serverTimestamp(),
     };
+    if (signatureBase64 != null) data['signatureBase64'] = signatureBase64;
+    if (signatoryName != null) data['signatoryName'] = signatoryName.trim();
+    if (signatoryTitle != null) data['signatoryTitle'] = signatoryTitle.trim();
+
     _cachedPaymentSettings = {
+      ...?_cachedPaymentSettings,
       'upiId': upiId.trim(),
       'upiPayeeName': upiPayeeName.trim(),
       'defaultAmount': defaultAmount,
       'dueDay': dueDay,
     };
+    if (signatureBase64 != null) {
+      _cachedPaymentSettings!['signatureBase64'] = signatureBase64;
+    }
+    if (signatoryName != null) {
+      _cachedPaymentSettings!['signatoryName'] = signatoryName.trim();
+    }
+    if (signatoryTitle != null) {
+      _cachedPaymentSettings!['signatoryTitle'] = signatoryTitle.trim();
+    }
     try {
       await _firestore
           .collection('society_settings')
@@ -372,4 +521,48 @@ class MaintenanceService {
         'upi://pay?pa=$upiId&pn=$cleanName&am=$amtString&cu=INR&tn=$cleanNote';
     return Uri.parse(upiString);
   }
+
+  /// સોસાયટીના ફ્લેટના જે બિલ્સમાં memberId મિસિંગ હોય તેને વર્તમાન લૉગિન મેમ્બર સાથે લિંક કરવું
+  Future<void> linkMemberBillsIfUnassigned({
+    required String currentUserId,
+    required String blockName,
+    required String unitNumber,
+    String memberName = '',
+    String memberPhone = '',
+  }) async {
+    if (unitNumber.trim().isEmpty) return;
+    final societyId = _currentSocietyId;
+    final cleanBlock = SocietyService.instance.logicalBlockName(blockName);
+    final prefixedBlock = SocietyService.instance.blockFirestoreId(cleanBlock);
+
+    try {
+      final snap = await _firestore
+          .collection('maintenance_bills')
+          .where('societyId', isEqualTo: societyId)
+          .where('unitNumber', isEqualTo: unitNumber.trim())
+          .get();
+
+      for (final doc in snap.docs) {
+        final data = doc.data();
+        final bBlock = (data['blockName'] ?? '').toString().trim();
+        final bClean = SocietyService.instance.logicalBlockName(bBlock);
+        final isMatch = bBlock == blockName.trim() ||
+            bClean == cleanBlock ||
+            bBlock == prefixedBlock ||
+            cleanBlock.isEmpty;
+
+        if (isMatch) {
+          final existingMemberId = data['memberId']?.toString().trim();
+          if (existingMemberId == null || existingMemberId.isEmpty) {
+            await doc.reference.update({
+              'memberId': currentUserId,
+              if (memberName.isNotEmpty) 'memberName': memberName,
+              if (memberPhone.isNotEmpty) 'memberPhone': memberPhone,
+            });
+          }
+        }
+      }
+    } catch (_) {}
+  }
 }
+

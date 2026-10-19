@@ -12,13 +12,55 @@ function getAdmin() {
         admin.initializeApp();
         return admin;
     }
-    // Rarely only a named app exists; force default app availability.
     try {
         admin.app();
     } catch (e) {
         admin.initializeApp();
     }
     return admin;
+}
+
+/**
+ * Cloud Firestore instance મેળવો.
+ * Flutter એપ 'building-guard' ડેટાબેઝ વાપરે છે (AppFirestore.databaseId = 'building-guard').
+ * લેગસી સપોર્ટ માટે '(default)' પણ સપોર્ટેડ છે.
+ */
+function getFirestoreDb(databaseId = "building-guard") {
+    const admin = getAdmin();
+    try {
+        const { getFirestore } = require("firebase-admin/firestore");
+        if (databaseId) {
+            return getFirestore(admin.app(), databaseId);
+        }
+        return getFirestore(admin.app());
+    } catch (e) {
+        return admin.firestore();
+    }
+}
+
+/**
+ * યુઝર ડોક્યુમેન્ટ શોધો — પહેલા 'building-guard' માં, ન મળે તો '(default)' માં.
+ */
+async function getUserDoc(uid) {
+    if (!uid) return null;
+    const targetUid = String(uid).trim();
+    // 1. Primary app database: building-guard
+    try {
+        const bgDb = getFirestoreDb("building-guard");
+        const doc = await bgDb.collection("users").doc(targetUid).get();
+        if (doc.exists) return { doc, db: bgDb };
+    } catch (e) {
+        console.warn("getUserDoc 'building-guard' error:", e);
+    }
+    // 2. Fallback to default database
+    try {
+        const defDb = getFirestoreDb("(default)");
+        const doc = await defDb.collection("users").doc(targetUid).get();
+        if (doc.exists) return { doc, db: defDb };
+    } catch (e) {
+        console.warn("getUserDoc '(default)' error:", e);
+    }
+    return null;
 }
 
 /** FCM ટોપિક: ડિફૉલ્ટ સોસાયટી = લેગસી નામ, બાકી `soc_{slug}_{kind}`. */
@@ -91,20 +133,29 @@ async function collectTokensByRole(admin, societyId, allowedRole, excludeUid = "
     const tokens = new Set();
     const sidNorm = (u) => (u.societyId != null && String(u.societyId).trim() ?
         String(u.societyId).trim() : "default");
-    let snap;
-    if (societyId === "default") {
-        snap = await admin.firestore().collection("users").get();
-    } else {
-        snap = await admin.firestore().collection("users").where("societyId", "==", societyId).get();
+
+    const databasesToScan = ["building-guard", "(default)"];
+    for (const dbName of databasesToScan) {
+        try {
+            const db = getFirestoreDb(dbName);
+            let snap;
+            if (societyId === "default") {
+                snap = await db.collection("users").get();
+            } else {
+                snap = await db.collection("users").where("societyId", "==", societyId).get();
+            }
+            snap.forEach((doc) => {
+                if (excludeUid && doc.id === excludeUid) return;
+                const u = doc.data();
+                if (!u || u.role !== allowedRole) return;
+                if (sidNorm(u) !== societyId) return;
+                const t = u.fcmToken;
+                if (t && typeof t === "string" && t.trim()) tokens.add(t.trim());
+            });
+        } catch (e) {
+            console.warn(`collectTokensByRole error on ${dbName}:`, e);
+        }
     }
-    snap.forEach((doc) => {
-        if (excludeUid && doc.id === excludeUid) return;
-        const u = doc.data();
-        if (!u || u.role !== allowedRole) return;
-        if (sidNorm(u) !== societyId) return;
-        const t = u.fcmToken;
-        if (t && typeof t === "string" && t.trim()) tokens.add(t.trim());
-    });
     return Array.from(tokens);
 }
 
@@ -129,7 +180,7 @@ async function sendMulticastTokens(admin, tokens, parts) {
 }
 
 /**
- * પહેલા FCM ટોપિક; નિષ્ફળ થાય તો સમાન સોસાયટીના યુઝર્સના ટોકન પર multicast (ટોપિક API/સબસ્ક્રાઇબ ન ચાલે ત્યારે).
+ * પહેલા FCM ટોપિક; નિષ્ફળ થાય તો સમાન સોસાયટીના યુઝર્સના ટોકન પર multicast.
  * @param {"members"|"admins"|"watchmen"} kind
  * @param {string} senderUid
  */
@@ -170,8 +221,8 @@ async function sendTopicOrFanoutByRole(admin, societyId, kind, title, body, type
 }
 
 /**
- * વોચમેન એપમાંથી સીધું FCM — Firestore `notifications` ટ્રિગર પર નિર્ભર નથી.
- * Flutter: httpsCallable('sendMemberPush') — સાચો [region] એપ સાથે મેળ ખાવો જોઈએ.
+ * વોચમેન અથવા એડમિન તરફથી સભ્યને સીધું FCM.
+ * Flutter: httpsCallable('sendMemberPush')
  */
 exports.sendMemberPush = onCall(async (request) => {
     try {
@@ -182,8 +233,9 @@ exports.sendMemberPush = onCall(async (request) => {
 
         const payload = request.data && typeof request.data === "object" ? request.data : {};
 
-        const callerDoc = await admin.firestore().collection("users").doc(request.auth.uid).get();
-        const role = callerDoc.exists ? callerDoc.data().role : "";
+        const callerRes = await getUserDoc(request.auth.uid);
+        const callerDoc = callerRes ? callerRes.doc : null;
+        const role = callerDoc && callerDoc.exists ? callerDoc.data().role : "";
         if (role !== "watchman" && role !== "admin") {
             throw new HttpsError("permission-denied", "માત્ર વોચમેન અથવા એડમિન");
         }
@@ -192,32 +244,35 @@ exports.sendMemberPush = onCall(async (request) => {
         const title = String(payload.title != null ? payload.title : "").trim();
         const body = String(payload.body != null ? payload.body : "").trim();
         const type = payload.type != null ? String(payload.type) : "visitor_alert";
+        const passedToken = payload.fcmToken != null ? String(payload.fcmToken).trim() : "";
 
         if (!memberUid || !title || !body) {
             throw new HttpsError("invalid-argument", "memberUid, title, body જરૂરી છે");
         }
 
-        const callerSid = callerDoc.exists ? callerDoc.data().societyId : null;
+        const callerSid = callerDoc && callerDoc.exists ? callerDoc.data().societyId : null;
         const callerSociety = callerSid && String(callerSid).trim() ? String(callerSid).trim() : "default";
 
-        const userDoc = await admin.firestore().collection("users").doc(memberUid).get();
-        if (!userDoc.exists) {
+        const userRes = await getUserDoc(memberUid);
+        const userDoc = userRes ? userRes.doc : null;
+        if ((!userDoc || !userDoc.exists) && !passedToken) {
             throw new HttpsError("not-found", "મેમ્બર મળ્યો નથી");
         }
 
-        const memData = userDoc.data();
-        const memSid = memData ? memData.societyId : null;
-        const memSociety = memSid && String(memSid).trim() ? String(memSid).trim() : "default";
-        if (memSociety !== callerSociety) {
-            throw new HttpsError("permission-denied", "અલગ સોસાયટીનો મેમ્બર");
+        const memData = userDoc && userDoc.exists ? userDoc.data() : null;
+        if (memData) {
+            const memSid = memData.societyId;
+            const memSociety = memSid && String(memSid).trim() ? String(memSid).trim() : "default";
+            if (memSociety !== callerSociety) {
+                throw new HttpsError("permission-denied", "અલગ સોસાયટીનો મેમ્બર");
+            }
         }
 
-        const rawToken = memData ? memData.fcmToken : null;
-        if (!rawToken || typeof rawToken !== "string" || !rawToken.trim()) {
+        let fcmToken = (memData && memData.fcmToken) ? String(memData.fcmToken).trim() : passedToken;
+        if (!fcmToken) {
             console.warn("sendMemberPush: no fcmToken", memberUid);
             return { ok: false, reason: "no_token" };
         }
-        const fcmToken = rawToken.trim();
 
         const dataPayload = {
             type: String(type),
@@ -255,8 +310,7 @@ exports.sendMemberPush = onCall(async (request) => {
 });
 
 /**
- * એડમિન એપથી બધા મેમ્બર્સને સીધું FCM ટોપિક — Firestore `onCreate` ટ્રિગર પર નિર્ભર નથી.
- * (કન્સોલથી ટોકન ટેસ્ટ ચાલે પણ ટ્રિગર ન ચાલતો હોય ત્યારે એપથી મોકલાતું નહોતું.)
+ * એડમિન એપથી બધા મેમ્બર્સને સીધું FCM ટોપિક / fan-out.
  */
 exports.sendBroadcastPush = onCall(async (request) => {
     const admin = getAdmin();
@@ -264,8 +318,9 @@ exports.sendBroadcastPush = onCall(async (request) => {
         throw new HttpsError("unauthenticated", "લોગિન જરૂરી છે");
     }
 
-    const callerDoc = await admin.firestore().collection("users").doc(request.auth.uid).get();
-    if (!callerDoc.exists || callerDoc.data().role !== "admin") {
+    const callerRes = await getUserDoc(request.auth.uid);
+    const callerDoc = callerRes ? callerRes.doc : null;
+    if (!callerDoc || !callerDoc.exists || callerDoc.data().role !== "admin") {
         throw new HttpsError("permission-denied", "માત્ર એડમિન");
     }
 
@@ -298,8 +353,8 @@ exports.sendBroadcastPush = onCall(async (request) => {
 });
 
 /**
- * એડમિન / વોચમેન / મેમ્બર — `society_admins` અથવા `society_watchmen` ટોપિક (અથવા fan-out).
- * Firestore ટ્રિગર વગર SOS / ઇમરજન્સી.
+ * એડમિન / વોચમેન / મેમ્બર — `society_admins` અથવા `society_watchmen` ટોપિક.
+ * SOS / ઇમરજન્સી એલર્ટ.
  */
 exports.sendTopicAlertPush = onCall(async (request) => {
     const admin = getAdmin();
@@ -307,8 +362,9 @@ exports.sendTopicAlertPush = onCall(async (request) => {
         throw new HttpsError("unauthenticated", "લોગિન જરૂરી છે");
     }
 
-    const callerDoc = await admin.firestore().collection("users").doc(request.auth.uid).get();
-    if (!callerDoc.exists) {
+    const callerRes = await getUserDoc(request.auth.uid);
+    const callerDoc = callerRes ? callerRes.doc : null;
+    if (!callerDoc || !callerDoc.exists) {
         throw new HttpsError("not-found", "યુઝર મળ્યો નથી");
     }
 
@@ -351,31 +407,25 @@ exports.sendTopicAlertPush = onCall(async (request) => {
     }
 });
 
-// ૧. મેન્યુઅલ નોટિફિકેશન મોકલવા માટે (v2) — ડોક પર fcmDeliveryStatus લખીએ એપ/કન્સોલ માટે.
-exports.sendNotification = onDocumentCreated("notifications/{notifId}", async (event) => {
+// ૧. મેન્યુઅલ નોટિફિકેશન મોકલવા માટે (v2) — 'building-guard' ડેટાબેઝ પર લિસન કરે છે.
+exports.sendNotification = onDocumentCreated({
+    document: "notifications/{notifId}",
+    database: "building-guard",
+}, async (event) => {
     const admin = getAdmin();
     const notifId = event.params.notifId;
-    const db = admin.firestore();
+    const db = getFirestoreDb("building-guard");
     const notifRef = db.collection("notifications").doc(notifId);
 
     let snap = event.data;
     if (!snap || typeof snap.data !== "function") {
-        console.warn("sendNotification: missing snapshot, fetching doc", notifId);
         snap = await notifRef.get();
     }
     if (!snap || !snap.exists) {
-        console.error("sendNotification: no document", notifId);
         return null;
     }
     const data = snap.data();
-    if (!data) {
-        await notifRef.set({
-            fcmDeliveryStatus: "error",
-            fcmProcessedAt: admin.firestore.FieldValue.serverTimestamp(),
-            fcmError: "empty_document_data",
-        }, {merge: true});
-        return null;
-    }
+    if (!data) return null;
 
     const mark = async (status, extra = {}) => {
         try {
@@ -397,12 +447,10 @@ exports.sendNotification = onDocumentCreated("notifications/{notifId}", async (e
     const societyId = societyRaw && String(societyRaw).trim() ? String(societyRaw).trim() : "default";
 
     if (!title || !body) {
-        console.warn("sendNotification: missing title or body", event.params.notifId);
         await mark("skipped_invalid", {fcmDetail: "missing_title_or_body"});
         return null;
     }
     if (!targetUID) {
-        console.warn("sendNotification: missing targetUID", event.params.notifId);
         await mark("skipped_invalid", {fcmDetail: "missing_targetUID"});
         return null;
     }
@@ -415,33 +463,29 @@ exports.sendNotification = onDocumentCreated("notifications/{notifId}", async (e
             const r = await sendTopicOrFanoutByRole(admin, societyId, "members", title, body, typeStr, senderUid);
             const st = r.mode === "topic" ? "sent_topic_members" : "sent_fanout_members";
             await mark(st, {fcmDetail: JSON.stringify(r)});
-            console.log("sendNotification ALL", societyId, r);
         } else if (targetUID === "ADMINS") {
             const r = await sendTopicOrFanoutByRole(admin, societyId, "admins", title, body, typeStr, senderUid);
             const st = r.mode === "topic" ? "sent_topic_admins" : "sent_fanout_admins";
             await mark(st, {fcmDetail: JSON.stringify(r)});
-            console.log("sendNotification ADMINS", societyId, r);
         } else if (targetUID === "WATCHMEN") {
             const r = await sendTopicOrFanoutByRole(admin, societyId, "watchmen", title, body, typeStr, senderUid);
             const st = r.mode === "topic" ? "sent_topic_watchmen" : "sent_fanout_watchmen";
             await mark(st, {fcmDetail: JSON.stringify(r)});
-            console.log("sendNotification WATCHMEN", societyId, r);
         } else {
             if (senderUid && targetUID === senderUid) {
                 await mark("skipped_self_sender", {fcmDetail: "targetUID matches senderUid"});
                 return null;
             }
-            const userDoc = await admin.firestore().collection("users").doc(targetUID).get();
-            if (!userDoc.exists) {
+            const userRes = await getUserDoc(targetUID);
+            if (!userRes || !userRes.doc.exists) {
                 await mark("skipped_user_not_found", {fcmDetail: String(targetUID)});
                 return null;
             }
 
-            const ud = userDoc.data();
+            const ud = userRes.doc.data();
             const rawTok = ud && ud.fcmToken;
             const fcmToken = rawTok && typeof rawTok === "string" ? rawTok.trim() : "";
             if (!fcmToken) {
-                console.warn("sendNotification: no fcmToken for user", targetUID);
                 await mark("skipped_no_token", {fcmDetail: String(targetUID)});
                 return null;
             }
@@ -462,7 +506,10 @@ exports.sendNotification = onDocumentCreated("notifications/{notifId}", async (e
 });
 
 // ૨. વિઝિટર સ્ટેટસ બદલાય ત્યારે
-exports.onStatusChange = onDocumentUpdated("visitors/{visitorId}", async (event) => {
+exports.onStatusChange = onDocumentUpdated({
+    document: "visitors/{visitorId}",
+    database: "building-guard",
+}, async (event) => {
     const admin = getAdmin();
     const newData = event.data.after.data();
     const oldData = event.data.before.data();
@@ -471,7 +518,7 @@ exports.onStatusChange = onDocumentUpdated("visitors/{visitorId}", async (event)
         return null;
     }
 
-    const db = admin.firestore();
+    const db = getFirestoreDb("building-guard");
     const visitorName = newData.name || "મહેમાન";
     const visitorDocId = event.params.visitorId;
 
@@ -480,7 +527,7 @@ exports.onStatusChange = onDocumentUpdated("visitors/{visitorId}", async (event)
             const widRaw = newData.watchmanId;
             const watchmanId = widRaw != null ? String(widRaw).trim() : "";
             if (!watchmanId) {
-                console.error("onStatusChange approve/reject: missing watchmanId on visitor doc", visitorDocId, JSON.stringify(newData));
+                console.error("onStatusChange: missing watchmanId on visitor doc", visitorDocId);
                 return null;
             }
             const msgStatus = newData.status === "approved" ? "મંજૂરી મળી ગઈ છે ✅" : "ના પાડી છે ❌";

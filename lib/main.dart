@@ -14,6 +14,7 @@ import 'screens/admin_dashboard.dart';
 import 'screens/login_screen.dart';
 import 'screens/member_screen.dart';
 import 'services/notification_service.dart';
+import 'services/session_guard_service.dart';
 import 'services/society_service.dart';
 import 'theme/premium_theme.dart';
 
@@ -39,6 +40,7 @@ class SocietyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: rootNavigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'Society Manager',
       theme: PremiumTheme.light(),
@@ -59,10 +61,11 @@ class AuthWrapper extends StatelessWidget {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
         if (snapshot.hasData) {
+          final currentUser = snapshot.data!;
           return FutureBuilder<DocumentSnapshot>(
             future: () async {
               final newDb = AppFirestore.instance;
-              final uid = snapshot.data!.uid;
+              final uid = currentUser.uid;
               var doc = await newDb.collection('users').doc(uid).get();
               if (!doc.exists) {
                 try {
@@ -81,6 +84,7 @@ class AuthWrapper extends StatelessWidget {
               }
               if (!userSnap.hasData || !userSnap.data!.exists) {
                 SocietyService.instance.clear();
+                SessionGuardService.instance.stopListening();
                 return const LoginScreen();
               }
               final userData = userSnap.data!.data() as Map<String, dynamic>?;
@@ -88,6 +92,10 @@ class AuthWrapper extends StatelessWidget {
               if (userData != null && userData['isActive'] == false) {
                 return const _AccountBlockedMessage();
               }
+
+              // Bind single-device session guard listener
+              SessionGuardService.instance.validateAndAttachSession(context, currentUser.uid, userData);
+
               String role = userSnap.data!.get('role');
               if (role == 'admin') return const AdminDashboard();
               if (role == 'watchman') return const WatchmanScreen();
@@ -96,6 +104,7 @@ class AuthWrapper extends StatelessWidget {
           );
         }
         SocietyService.instance.clear();
+        SessionGuardService.instance.stopListening();
         return const LoginScreen();
       },
     );

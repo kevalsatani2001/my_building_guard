@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firebase_app_guard.dart';
 import '../services/society_service.dart';
+import '../widgets/premium_ui.dart';
 
 class AdminAddUserScreen extends StatefulWidget {
   final String initialRole;
@@ -201,31 +202,18 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
             final count = _unitMemberCount(uDoc.data());
             if (count > 0) {
               if (!mounted) return;
-              final proceed = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  title: const Row(
-                    children: [
-                      Icon(Icons.info_outline_rounded, color: Colors.amber),
-                      SizedBox(width: 8),
-                      Text('ફ્લેટમાં પહેલેથી સભ્ય છે'),
-                    ],
-                  ),
-                  content: Text(
+              final proceed = await PremiumConfirmationDialog.show(
+                context,
+                title: 'ફ્લેટમાં પહેલેથી સભ્ય છે',
+                message:
                     'આ ફ્લેટ ($cleanBlock-$effectiveUnit) પર પહેલેથી $count મેમ્બર નોંધાયેલ છે. વધારાના પરિવાર સભ્ય તરીકે ઉમેરવા માંગો છો?',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text('રદ'),
-                    ),
-                    FilledButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text('હા, ઉમેરો'),
-                    ),
-                  ],
-                ),
+                icon: Icons.info_outline_rounded,
+                gradientColors: const [Color(0xFFD97706), Color(0xFFF59E0B)],
+                cancelText: 'ના, રદ કરો',
+                confirmText: 'હા, ઉમેરો',
+                confirmGradient: const [Color(0xFF4338CA), Color(0xFF6366F1)],
+                confirmColor: const Color(0xFF4338CA),
+                confirmIcon: Icons.person_add_rounded,
               );
               if (proceed != true) {
                 setState(() => _isSubmitting = false);

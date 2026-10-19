@@ -3,6 +3,7 @@ import 'package:building_guard/screens/watchmen_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/session_guard_service.dart';
 import '../services/society_service.dart';
 import 'admin_dashboard.dart';
 import 'member_screen.dart';
@@ -27,6 +28,9 @@ class _LoginScreenState extends State<LoginScreen> {
             email: _emailController.text.trim(),
             password: _passwordController.text.trim(),
           );
+
+      // Register new active session ID to enforce 1-device policy
+      await SessionGuardService.instance.registerNewLoginSession(userCredential.user!.uid);
 
       // FCM token + topic subscription: [NotificationService] via authStateChanges
 
