@@ -1,0 +1,19 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Authenticated users can upload and view visitor photos
+    match /visitors/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Authenticated users can upload and view complaint attachments
+    match /complaints/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Default: Authenticated users can read/write their society files
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

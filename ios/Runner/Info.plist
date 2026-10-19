@@ -50,5 +50,15 @@
 		<string>fetch</string>
 		<string>remote-notification</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>મુલાકાતીઓના ફોટો લેવા અને QR કોડ સ્કેન કરવા માટે કેમેરાની પરવાનગી જરૂરી છે.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ફરિયાદ અથવા ડોક્યુમેન્ટ અપલોડ કરવા માટે ફોટો ગેલેરીની પરવાનગી જરૂરી છે.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+		<string>https</string>
+		<string>upi</string>
+	</array>
 </dict>
 </plist>
