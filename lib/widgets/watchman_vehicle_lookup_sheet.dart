@@ -197,6 +197,8 @@ class _WatchmanVehicleLookupSheetState
         'societyId': sid,
         'type': 'parking_alert',
         'createdAt': FieldValue.serverTimestamp(),
+        'skipTriggerPush': true,
+        'deliveryMode': 'direct_callable',
       });
 
       widget.onShowSnackBar(

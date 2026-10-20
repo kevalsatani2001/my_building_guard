@@ -145,7 +145,7 @@ class AdminBroadcastDialogs {
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
     final societyId = SocietyService.instance.societyId;
 
-    // ૧. Always record notification in Firestore so it's visible in-app and triggers Cloud Functions if active
+    // ૧. Always record notification in Firestore for history (skipTriggerPush: true prevents duplicate FCM from sendNotification trigger)
     try {
       await AppFirestore.instance.collection('notifications').add({
         'title': title,
@@ -154,7 +154,9 @@ class AdminBroadcastDialogs {
         'societyId': societyId,
         'type': isAll ? 'general' : 'admin_notice',
         'createdAt': FieldValue.serverTimestamp(),
-        'senderUid': ?currentUid,
+        'senderUid': currentUid,
+        'skipTriggerPush': true,
+        'deliveryMode': 'direct_callable',
       });
     } catch (e) {
       debugPrint('Firestore notification save error: $e');
@@ -176,7 +178,7 @@ class AdminBroadcastDialogs {
           'title': title,
           'body': body,
           'type': 'general',
-          'senderUid': ?currentUid,
+          'senderUid': currentUid,
         });
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -209,6 +211,7 @@ class AdminBroadcastDialogs {
         'title': title,
         'body': body,
         'type': 'admin_notice',
+        'senderUid': currentUid,
         if (memberToken != null && memberToken.isNotEmpty) 'fcmToken': memberToken,
       });
       final data = result.data;

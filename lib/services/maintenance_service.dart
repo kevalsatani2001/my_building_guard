@@ -190,7 +190,7 @@ class MaintenanceService {
       await _firestore.collection('notifications').add({
         'title': '💳 નવું UPI મેન્ટેનન્સ પેમેન્ટ',
         'body': 'સભ્યે UPI પેમેન્ટ કર્યું (UTR: $utrNumber). કૃપા કરીને વેરિફાય કરો.',
-        'targetUID': 'ALL',
+        'targetUID': 'ADMINS',
         'societyId': _currentSocietyId,
         'type': 'maintenance_payment',
         'billId': billId,
@@ -358,7 +358,7 @@ class MaintenanceService {
       }
 
       if (memberUid != null && memberUid.isNotEmpty) {
-        // ૨. ઇન-એપ નોટિફિકેશન સેવ કરો
+        // ૨. ઇન-એપ નોટિફિકેશન સેવ કરો (skipTriggerPush: true prevents duplicate FCM from sendNotification trigger)
         try {
           await _firestore.collection('notifications').add({
             'title': '⚠️ મેન્ટેનન્સ બિલ બાકી છે',
@@ -369,11 +369,13 @@ class MaintenanceService {
             'type': 'maintenance_due_reminder',
             'billId': doc.id,
             'createdAt': FieldValue.serverTimestamp(),
+            'skipTriggerPush': true,
+            'deliveryMode': 'direct_callable',
           });
           sentNotifCount++;
         } catch (_) {}
 
-        // ૩. સીધું FCM પુશ નોટિફિકેશન મોકલો
+        // ૩. સીધું FCM પુશ નોટિફિકેશન મોકલો (માત્ર પેન્ડિંગ સભ્યને જ સીધું ૧ પુશ)
         if (sendMemberPushCallable != null) {
           try {
             if (!tokenCache.containsKey(memberUid)) {
@@ -387,6 +389,7 @@ class MaintenanceService {
               'body':
                   'ફ્લેટ $flat નું $billTitle (₹${amount.toStringAsFixed(0)}) બાકી છે. કૃપા કરીને તાત્કાલિક UPI થી ચૂકવણી કરો.',
               'type': 'maintenance_due_reminder',
+              'senderUid': _currentUserId,
               if (fcmToken != null && fcmToken.isNotEmpty) 'fcmToken': fcmToken,
             });
             if (res.data['ok'] == true) {
@@ -396,28 +399,6 @@ class MaintenanceService {
             debugPrint('Error sending member push for $memberUid: $e');
           }
         }
-      }
-    }
-
-    // ૪. સોસાયટીના તમામ સભ્યોને જનરલ બ્રોડકાસ્ટ પુશ પણ મોકલો જો બાકી બિલો હોય
-    if (snap.docs.isNotEmpty) {
-      try {
-        final app = await ensureDefaultFirebaseApp();
-        final functions = FirebaseFunctions.instanceFor(
-          app: app,
-          region: 'us-central1',
-        );
-        final broadcastCallable = functions.httpsCallable(
-          'sendBroadcastPush',
-          options: HttpsCallableOptions(timeout: const Duration(seconds: 30)),
-        );
-        await broadcastCallable.call<Map<String, dynamic>>({
-          'title': '📢 $billTitle રિમાઇન્ડર',
-          'body': 'સોસાયટીના તમામ સભ્યોને નમ્ર વિનંતી: જેઓનું $billTitle બાકી હોય તેઓ તાત્કાલિક UPI થી ચૂકવણી પૂર્ણ કરે.',
-          'type': 'maintenance_due_reminder',
-        });
-      } catch (e) {
-        debugPrint('Broadcast reminder error: $e');
       }
     }
 

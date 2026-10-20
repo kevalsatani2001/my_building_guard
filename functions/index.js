@@ -279,6 +279,7 @@ exports.sendMemberPush = onCall(async (request) => {
             click_action: "FLUTTER_NOTIFICATION_CLICK",
             title: String(title),
             body: String(body),
+            senderUid: String(request.auth.uid || ""),
         };
 
         try {
@@ -426,6 +427,16 @@ exports.sendNotification = onDocumentCreated({
     }
     const data = snap.data();
     if (!data) return null;
+
+    // 🛑 DEDUPLICATION GUARD:
+    // જો નોટિફિકેશન ક્લાયન્ટ દ્વારા સીધા Callable Function (sendMemberPush / sendBroadcastPush) થી મોકલાઈ ગયું હોય,
+    // અથવા skipTriggerPush: true હોય, તો ટ્રિગરમાંથી ફરી FCM પુશ ન મોકલો જેથી ડુપ્લિકેટ (2 વખત) નોટિફિકેશન ન આવે.
+    if (data.skipTriggerPush === true ||
+        data.deliveryMode === "direct_callable" ||
+        (data.fcmDeliveryStatus && String(data.fcmDeliveryStatus).startsWith("sent_"))) {
+        console.log(`sendNotification: skipping trigger FCM push for ${notifId} (skipTriggerPush: ${data.skipTriggerPush}, deliveryMode: ${data.deliveryMode}, status: ${data.fcmDeliveryStatus})`);
+        return null;
+    }
 
     const mark = async (status, extra = {}) => {
         try {

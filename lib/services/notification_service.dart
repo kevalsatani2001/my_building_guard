@@ -33,6 +33,9 @@ class NotificationService {
   /// લોગઆઉટ / સોસાયટી બદલાવ પર અનસબસ્ક્રાઇબ માટે.
   final List<String> _subscribedTopics = [];
 
+  /// ડુપ્લિકેટ નોટિફિકેશન રોકવા માટે તાજેતરની નોટિફિકેશન કેશ
+  final Map<String, DateTime> _recentlyHandledMessages = {};
+
   static const AndroidNotificationChannel _androidChannel = AndroidNotificationChannel(
     kAndroidNotificationChannelId,
     'Society notifications',
@@ -310,6 +313,20 @@ class NotificationService {
       }
       return;
     }
+
+    // Deduplication check: ignore repeat notifications received within a 5-second window
+    final parsed = _fcmTitleBody(message);
+    final msgId = message.messageId;
+    final dedupeKey = msgId ?? '${parsed?.title}_${parsed?.body}_${message.data['type']}';
+    final now = DateTime.now();
+    _recentlyHandledMessages.removeWhere((_, time) => now.difference(time).inSeconds > 10);
+    if (_recentlyHandledMessages.containsKey(dedupeKey)) {
+      if (kDebugMode) {
+        debugPrint('FCM foreground: duplicate notification suppressed for key: $dedupeKey');
+      }
+      return;
+    }
+    _recentlyHandledMessages[dedupeKey] = now;
 
     if (!_useLocalNotificationInForeground) return;
     unawaited(_showLocalNotification(message));
