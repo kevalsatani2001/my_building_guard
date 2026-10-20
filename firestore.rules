@@ -212,7 +212,9 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (
         isAdmin() ||
         resource.data.targetUID == request.auth.uid ||
-        resource.data.targetUID == 'ALL'
+        resource.data.targetUID == 'ALL' ||
+        resource.data.targetUID == 'MEMBERS' ||
+        docBelongsToCallerSociety(resource.data)
       );
       // Notifications are created by app triggers or Cloud Functions
       allow create: if isAuthenticated() && docBelongsToCallerSociety(request.resource.data);

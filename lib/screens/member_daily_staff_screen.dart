@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/society_service.dart';
+import '../widgets/premium_app_bar.dart';
 
 class MemberDailyStaffScreen extends StatefulWidget {
   const MemberDailyStaffScreen({super.key});
@@ -114,68 +115,18 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: const Text(
-          'કાયમી સ્ટાફ & હેલ્પર્સ',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF0F172A),
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
+      appBar: const PremiumAppBar(
+        title: 'કાયમી સ્ટાફ & હેલ્પર્સ',
+        subtitle: 'કામવાળા, ડ્રાઈવર & રસોઈયા ગેટ પાસ',
+        icon: Icons.badge_rounded,
+        accentColor: Color(0xFF0D9488),
       ),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            // Top Modern Header
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0D9488), Color(0xFF0F766E)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF0D9488).withValues(alpha: 0.3),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.badge_rounded, color: Colors.white, size: 28),
-                  ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'ડેઇલી હેલ્પર્સ મેનેજમેન્ટ',
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'કામવાળા, ડ્રાઈવર કે રસોઈયા ગેટ પર સરળતાથી પ્રવેશી શકે.',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // 1. Ultra-Premium 3D Hero Banner (Text strictly on left, 3D characters on right)
+            _buildHeroBanner(),
 
             // Toggle Add Staff Card
             Container(
@@ -188,21 +139,33 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
               ),
               child: Column(
                 children: [
-                  Row(
-                    children: [
-                      const Text(
-                        'નવા સ્ટાફ / હેલ્પર ઉમેરો',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A)),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: Icon(
-                          _showAddForm ? Icons.remove_circle_outline_rounded : Icons.add_circle_outline_rounded,
-                          color: const Color(0xFF0D9488),
+                  InkWell(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      setState(() => _showAddForm = !_showAddForm);
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Row(
+                      children: [
+                        const Text(
+                          'નવા સ્ટાફ / હેલ્પર ઉમેરો',
+                          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15.5, color: Color(0xFF0F172A)),
                         ),
-                        onPressed: () => setState(() => _showAddForm = !_showAddForm),
-                      ),
-                    ],
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: _showAddForm ? const Color(0xFFFEE2E2) : const Color(0xFFCCFBF1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            _showAddForm ? Icons.remove_rounded : Icons.add_rounded,
+                            color: _showAddForm ? const Color(0xFFDC2626) : const Color(0xFF0F766E),
+                            size: 20,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   if (_showAddForm) ...[
                     const Divider(height: 20),
@@ -322,32 +285,46 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                 final docs = snapshot.data?.docs ?? [];
 
                 if (docs.isEmpty) {
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: Center(
-                      child: Column(
-                        children: [
-                          Icon(Icons.badge_outlined, size: 48, color: Colors.grey.shade400),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'હજુ કોઈ સ્ટાફ નોંધાયેલ નથી',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'ઉપરના બટન પર ક્લિક કરીને કામવાળા કે ડ્રાઈવર ઉમેરો.',
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
                           ),
                         ],
                       ),
-                    ),
-                  );
+                      child: Column(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(18),
+                            child: Image.asset(
+                              'assets/images/staff_empty.jpg',
+                              height: 120,
+                              width: 120,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          const Text(
+                            'હજુ કોઈ સ્ટાફ નોંધાયેલ નથી!',
+                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F172A)),
+                          ),
+                          const SizedBox(height: 5),
+                          const Text(
+                            'ઉપરના બટન પર ક્લિક કરીને કામવાળા કે ડ્રાઈવર ઉમેરો, જેથી તેઓને ગેટ પર ડિજિટલ સિક્યોરિટી પાસ મળે.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
+                          ),
+                        ],
+                      ),
+                    );
                 }
 
                 return Padding(
@@ -366,7 +343,7 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: docs.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        separatorBuilder: (_, index) => const SizedBox(height: 10),
                         itemBuilder: (context, index) {
                           final doc = docs[index];
                           final d = doc.data() as Map<String, dynamic>;
@@ -378,27 +355,36 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(color: Colors.grey.shade200),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.02),
-                                  blurRadius: 8,
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 10,
                                   offset: const Offset(0, 3),
                                 ),
                               ],
                             ),
                             child: Row(
                               children: [
-                                CircleAvatar(
-                                  radius: 22,
-                                  backgroundColor: const Color(0xFF0D9488).withValues(alpha: 0.12),
-                                  child: Text(
-                                    name.isNotEmpty ? name[0].toUpperCase() : '?',
-                                    style: const TextStyle(
-                                      color: Color(0xFF0D9488),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0D9488).withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: const Color(0xFF0D9488).withValues(alpha: 0.25),
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                      style: const TextStyle(
+                                        color: Color(0xFF0D9488),
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 17,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -410,25 +396,25 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                                       Text(
                                         name,
                                         style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 15,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 15.5,
                                           color: Color(0xFF0F172A),
                                         ),
                                       ),
-                                      const SizedBox(height: 3),
+                                      const SizedBox(height: 4),
                                       Row(
                                         children: [
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                                             decoration: BoxDecoration(
                                               color: const Color(0xFF0D9488).withValues(alpha: 0.1),
-                                              borderRadius: BorderRadius.circular(6),
+                                              borderRadius: BorderRadius.circular(8),
                                             ),
                                             child: Text(
                                               role,
                                               style: const TextStyle(
                                                 color: Color(0xFF0D9488),
-                                                fontWeight: FontWeight.bold,
+                                                fontWeight: FontWeight.w700,
                                                 fontSize: 11,
                                               ),
                                             ),
@@ -437,7 +423,11 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                                             const SizedBox(width: 8),
                                             Text(
                                               phone,
-                                              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                              style: const TextStyle(
+                                                color: Color(0xFF64748B),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                             ),
                                           ],
                                         ],
@@ -447,14 +437,34 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                                 ),
                                 if (phone.isNotEmpty)
                                   IconButton(
-                                    icon: const Icon(Icons.phone_rounded, color: Colors.green, size: 22),
+                                    icon: Container(
+                                      padding: const EdgeInsets.all(7),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFDCFCE7),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(Icons.phone_rounded, color: Color(0xFF16A34A), size: 18),
+                                    ),
                                     tooltip: 'કોલ કરો',
-                                    onPressed: () => _makeCall(phone),
+                                    onPressed: () {
+                                      HapticFeedback.lightImpact();
+                                      _makeCall(phone);
+                                    },
                                   ),
                                 IconButton(
-                                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 22),
+                                  icon: Container(
+                                    padding: const EdgeInsets.all(7),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFEE2E2),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                                  ),
                                   tooltip: 'સ્ટાફ કાઢી નાખો',
-                                  onPressed: () => _deleteStaff(doc.id, name),
+                                  onPressed: () {
+                                    HapticFeedback.lightImpact();
+                                    _deleteStaff(doc.id, name);
+                                  },
                                 ),
                               ],
                             ),
@@ -467,6 +477,99 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
               },
             ),
             const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroBanner() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F766E).withValues(alpha: 0.22),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            // 3D Hero Image (domestic maid & driver characters on right, smooth teal gradient on left)
+            Image.asset(
+              'assets/images/staff_hero.jpg',
+              height: 165,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+            // Text strictly constrained to left portion (flex 12) so it NEVER covers the 3D artwork (flex 9)
+            Container(
+              height: 165,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 12,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.22),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.badge_rounded, size: 13, color: Colors.white),
+                              SizedBox(width: 5),
+                              Text(
+                                'ડેઇલી સ્ટાફ & હેલ્પર્સ',
+                                style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'કાયમી સ્ટાફ મેનેજમેન્ટ',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 17.5,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'કામવાળા, ડ્રાઈવર કે રસોઈયા ગેટ પર સરળતાથી પ્રવેશી શકે અને ડિજિટલ સિક્યોરિટી પાસ વેરિફાય થાય.',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.90),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Expanded(
+                    flex: 9,
+                    child: SizedBox(), // Area reserved for 3D art on right
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

@@ -21,35 +21,11 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "ફરિયાદ નિવારણ ડેસ્ક",
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 18,
-                color: Color(0xFF0F172A),
-              ),
-            ),
-            Text(
-              "સભ્યોની સમસ્યાઓ અને રિઝોલ્યુશન સ્ટેટસ",
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF64748B),
-              ),
-            ),
-          ],
-        ),
+      appBar: const PremiumAppBar(
+        title: "ફરિયાદ નિવારણ ડેસ્ક",
+        subtitle: "સભ્યોની સમસ્યાઓ અને રિઝોલ્યુશન સ્ટેટસ",
+        icon: Icons.support_agent_rounded,
+        accentColor: Color(0xFF6D28D9),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: AppFirestore.instance
@@ -84,6 +60,9 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
 
           return Column(
             children: [
+              // 3D Hero Banner for Admin Complaints
+              _buildAdminHeroBanner(pendingDocs.length, resolvedDocs.length),
+
               // Filter Chips Bar (ALWAYS visible)
               Container(
                 color: Colors.white,
@@ -105,12 +84,47 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
                 child: !snap.hasData
                     ? const Center(child: CircularProgressIndicator())
                     : filteredDocs.isEmpty
-                        ? PremiumEmptyState(
-                            message: _selectedFilter == 'pending'
-                                ? 'કોઈ બાકી ફરિયાદ નથી! બધું સરસ ચાલે છે.'
-                                : 'હજી સુધી કોઈ ફરિયાદ નોંધાયેલ નથી.',
-                            icon: _selectedFilter == 'pending' ? Icons.task_alt_rounded : Icons.verified_outlined,
-                      )
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(18),
+                                    child: Image.asset(
+                                      'assets/images/complaint_empty.jpg',
+                                      width: 110,
+                                      height: 110,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Text(
+                                    _selectedFilter == 'pending'
+                                        ? 'કોઈ બાકી ફરિયાદ નથી!'
+                                        : 'હજી સુધી કોઈ ફરિયાદ નોંધાયેલ નથી.',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 16,
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _selectedFilter == 'pending'
+                                        ? 'બધા પ્રશ્નો ઉકેલાઈ ગયા છે. બધું સરસ ચાલે છે!'
+                                        : 'જ્યારે કોઈ સભ્ય ફરિયાદ નોંધાવશે ત્યારે અહીં દેખાશે.',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Color(0xFF64748B),
+                                      fontSize: 12.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
                     : ListView.builder(
                         padding: const EdgeInsets.all(14),
                         itemCount: filteredDocs.length,
@@ -379,6 +393,113 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
                 child: Icon(Icons.close, color: Colors.white, size: 20),
               ),
               onPressed: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdminHeroBanner(int pending, int resolved) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6D28D9).withValues(alpha: 0.18),
+            blurRadius: 16,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Stack(
+          children: [
+            Image.asset(
+              'assets/images/complaint_hero.jpg',
+              height: 145,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+            Container(
+              height: 145,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 12,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.22),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.shield_outlined, size: 12, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text(
+                                'એડમિન કંટ્રોલ પેનલ',
+                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'ફરિયાદ નિવારણ સેન્ટર',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: pending > 0 ? const Color(0xFFF59E0B) : Colors.white.withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '$pending બાકી',
+                                style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '$resolved ઉકેલાયેલ',
+                                style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Expanded(
+                    flex: 9,
+                    child: SizedBox(),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

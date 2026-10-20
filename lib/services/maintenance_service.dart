@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'package:building_guard/core/app_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/maintenance_model.dart';
 import 'firebase_app_guard.dart';
 import 'society_service.dart';
@@ -227,22 +229,14 @@ class MaintenanceService {
       if (bill.paidAt == null) 'paidAt': FieldValue.serverTimestamp(),
     });
 
-    // સભ્યને પેમેન્ટ કન્ફર્મેશન એલર્ટ
-    if (bill.memberId != null && bill.memberId!.isNotEmpty) {
-      try {
-        await _firestore.collection('notifications').add({
-          'title': '✅ મેન્ટેનન્સ પેમેન્ટ મંજૂર',
-          'body':
-              'તમારું ${bill.billTitle} નું પેમેન્ટ મંજૂર કરવામાં આવ્યું છે. રસીદ નં: $receiptNo',
-          'targetUID': bill.memberId,
-          'societyId': _currentSocietyId,
-          'type': 'maintenance_receipt',
-          'billId': billId,
-          'receiptNumber': receiptNo,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-      } catch (_) {}
-    }
+    // સભ્યને પેમેન્ટ કન્ફર્મેશન એલર્ટ & સીધું FCM પુશ નોટિફિકેશન
+    await _sendPaymentSuccessNotification(
+      billId: billId,
+      bill: bill,
+      receiptNo: receiptNo,
+      title: '✅ મેન્ટેનન્સ પેમેન્ટ મંજૂર',
+      body: 'તમારું ${bill.billTitle} નું પેમેન્ટ મંજૂર કરવામાં આવ્યું છે. રસીદ નં: $receiptNo (ટેપ કરી રસીદ જુઓ)',
+    );
   }
 
   /// રોકડા (Cash), ચેક (Cheque) કે રૂબરૂ UPI QR સ્કેન થી પેમેન્ટ એડમિન દ્વારા માર્ક કરવું
@@ -269,23 +263,96 @@ class MaintenanceService {
       'paidAt': FieldValue.serverTimestamp(),
     });
 
-    if (bill.memberId != null && bill.memberId!.isNotEmpty) {
-      final modeDisplay = paymentMode == 'cash'
-          ? 'રોકડ'
-          : (paymentMode == 'upi' ? 'UPI (QR સ્કેન)' : 'ચેક');
+    final modeDisplay = paymentMode == 'cash'
+        ? 'રોકડ'
+        : (paymentMode == 'upi' ? 'UPI (QR સ્કેન)' : 'ચેક');
+
+    // સભ્યને પેમેન્ટ સફળતાનું સીધું નોટિફિકેશન
+    await _sendPaymentSuccessNotification(
+      billId: billId,
+      bill: bill,
+      receiptNo: receiptNo,
+      title: '🧾 મેન્ટેનન્સ રસીદ જનરેટ થઈ',
+      body: '$modeDisplay દ્વારા ${bill.billTitle} નું પેમેન્ટ સ્વીકારાઈ ગયું છે. રસીદ નં: $receiptNo (ટેપ કરી રસીદ જુઓ)',
+    );
+  }
+
+  /// સભ્યને પેમેન્ટ સફળતાનું ડિજિટલ રસીદ પુશ નોટિફિકેશન મોકલવા માટેનું હેલ્પર
+  Future<void> _sendPaymentSuccessNotification({
+    required String billId,
+    required MaintenanceBill bill,
+    required String receiptNo,
+    required String title,
+    required String body,
+  }) async {
+    var memberUid = bill.memberId?.trim();
+
+    // જો બિલમાં memberId ન હોય, તો યુનિટ નંબર દ્વારા સભ્ય શોધો
+    if (memberUid == null || memberUid.isEmpty) {
+      try {
+        final cleanBlock = SocietyService.instance.logicalBlockName(bill.blockName);
+        final userSnap = await _firestore
+            .collection('users')
+            .where('societyId', isEqualTo: _currentSocietyId)
+            .where('unitNumber', isEqualTo: bill.unitNumber)
+            .limit(5)
+            .get();
+        for (final uDoc in userSnap.docs) {
+          final uData = uDoc.data();
+          final uBlock = (uData['blockName'] ?? '').toString();
+          if (uBlock == bill.blockName || SocietyService.instance.logicalBlockName(uBlock) == cleanBlock) {
+            memberUid = uDoc.id;
+            await _firestore.collection('maintenance_bills').doc(billId).update({
+              'memberId': memberUid,
+              'memberName': (uData['name'] ?? '').toString(),
+              'memberPhone': (uData['phone'] ?? '').toString(),
+            });
+            break;
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (memberUid != null && memberUid.isNotEmpty) {
+      // ૧. Firestore માં નોટિફિકેશન હિસ્ટ્રી સેવ કરો
       try {
         await _firestore.collection('notifications').add({
-          'title': '🧾 મેન્ટેનન્સ રસીદ જનરેટ થઈ',
-          'body':
-              '$modeDisplay દ્વારા ${bill.billTitle} સ્વીકારવામાં આવ્યું. રસીદ નં: $receiptNo',
-          'targetUID': bill.memberId,
+          'title': title,
+          'body': body,
+          'targetUID': memberUid,
           'societyId': _currentSocietyId,
           'type': 'maintenance_receipt',
           'billId': billId,
           'receiptNumber': receiptNo,
           'createdAt': FieldValue.serverTimestamp(),
+          'skipTriggerPush': true,
+          'deliveryMode': 'direct_callable',
         });
       } catch (_) {}
+
+      // ૨. સભ્યના ફોન પર સીધું FCM પુશ નોટિફિકેશન મોકલો
+      try {
+        final uDoc = await _firestore.collection('users').doc(memberUid).get();
+        final fcmToken = uDoc.data()?['fcmToken']?.toString().trim();
+        final app = await ensureDefaultFirebaseApp();
+        final functions = FirebaseFunctions.instanceFor(
+          app: app,
+          region: 'us-central1',
+        );
+        final callable = functions.httpsCallable('sendMemberPush');
+        await callable.call<Map<String, dynamic>>({
+          'memberUid': memberUid,
+          'title': title,
+          'body': body,
+          'type': 'maintenance_receipt',
+          'billId': billId,
+          'receiptNumber': receiptNo,
+          'senderUid': _currentUserId,
+          if (fcmToken != null && fcmToken.isNotEmpty) 'fcmToken': fcmToken,
+        });
+      } catch (e) {
+        debugPrint('Direct push send error on payment success: $e');
+      }
     }
   }
 
@@ -420,21 +487,46 @@ class MaintenanceService {
 
   /// સોસાયટીના પેમેન્ટ સેટિંગ્સ લાવો (UPI ID, નામ, ડિફૉલ્ટ રકમ)
   Future<Map<String, dynamic>> getPaymentSettings({bool forceRefresh = false}) async {
-    if (!forceRefresh && _cachedPaymentSettings != null) {
+    final societyId = _currentSocietyId.isNotEmpty ? _currentSocietyId : SocietyService.kDefaultSocietyId;
+
+    // ૧. જો ઇન-મેમરી કેશમાં પહેલેથી UPI ID હાજર હોય
+    if (!forceRefresh && _cachedPaymentSettings != null && (_cachedPaymentSettings!['upiId']?.toString().isNotEmpty ?? false)) {
       return _cachedPaymentSettings!;
     }
-    final societyId = _currentSocietyId;
+
+    // ૨. જો ઇન-મેમરી કેશ ખાલી હોય તો SharedPreferences માંથી તરત લાવો (૦ms લેગ)
+    if (_cachedPaymentSettings == null || (_cachedPaymentSettings!['upiId']?.toString().isEmpty ?? true)) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final raw = prefs.getString('society_payment_settings_$societyId') ??
+            prefs.getString('society_payment_settings_${SocietyService.kDefaultSocietyId}');
+        if (raw != null && raw.isNotEmpty) {
+          final decoded = jsonDecode(raw);
+          if (decoded is Map<String, dynamic>) {
+            _cachedPaymentSettings = decoded;
+          }
+        }
+      } catch (_) {}
+    }
+
+    // ૩. ક્લાઉડ ફાયરસ્ટોરમાંથી લેટેસ્ટ સેટિંગ્સ લાવો
     try {
       final doc = await _firestore
           .collection('society_settings')
           .doc(societyId)
           .get()
-          .timeout(const Duration(seconds: 2));
+          .timeout(const Duration(seconds: 6));
       if (doc.exists && doc.data() != null) {
         _cachedPaymentSettings = doc.data()!;
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('society_payment_settings_$societyId', jsonEncode(_cachedPaymentSettings));
+        } catch (_) {}
         return _cachedPaymentSettings!;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('getPaymentSettings error: $e');
+    }
 
     return cachedOrFallbackSettings;
   }
@@ -449,7 +541,7 @@ class MaintenanceService {
     String? signatoryName,
     String? signatoryTitle,
   }) async {
-    final societyId = _currentSocietyId;
+    final societyId = _currentSocietyId.isNotEmpty ? _currentSocietyId : SocietyService.kDefaultSocietyId;
     final data = <String, dynamic>{
       'upiId': upiId.trim(),
       'upiPayeeName': upiPayeeName.trim(),
@@ -477,13 +569,34 @@ class MaintenanceService {
     if (signatoryTitle != null) {
       _cachedPaymentSettings!['signatoryTitle'] = signatoryTitle.trim();
     }
+
+    // સ્થાનિક સ્ટોરેજમાં સેવ કરો જેથી દર વખતે UPI ID સેટ ન કરવો પડે
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final localData = <String, dynamic>{
+        'upiId': upiId.trim(),
+        'upiPayeeName': upiPayeeName.trim(),
+        'defaultAmount': defaultAmount,
+        'dueDay': dueDay,
+      };
+      if (signatureBase64 != null) localData['signatureBase64'] = signatureBase64;
+      if (signatoryName != null) localData['signatoryName'] = signatoryName.trim();
+      if (signatoryTitle != null) localData['signatoryTitle'] = signatoryTitle.trim();
+      await prefs.setString(
+        'society_payment_settings_$societyId',
+        jsonEncode(localData),
+      );
+    } catch (_) {}
+
     try {
       await _firestore
           .collection('society_settings')
           .doc(societyId)
           .set(data, SetOptions(merge: true))
-          .timeout(const Duration(seconds: 3));
-    } catch (_) {}
+          .timeout(const Duration(seconds: 8));
+    } catch (e) {
+      debugPrint('savePaymentSettings error: $e');
+    }
   }
 
   /// ડાયરેક્ટ UPI URI જનરેટ કરવી (Google Pay, PhonePe, Paytm, BHIM માટે)

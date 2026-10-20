@@ -13,6 +13,8 @@ import '../models/maintenance_model.dart';
 import '../services/maintenance_service.dart';
 import '../services/society_service.dart';
 import '../widgets/premium_ui.dart';
+import '../services/maintenance_receipt_pdf_service.dart';
+import 'admin_broadcast_screen.dart';
 import 'admin_society_bank_settings_screen.dart';
 
 class AdminMaintenanceScreen extends StatefulWidget {
@@ -36,6 +38,8 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
     super.initState();
     final now = DateTime.now();
     _selectedMonth = DateFormat('yyyy-MM').format(now);
+    // સોસાયટીના બેંક & UPI સેટિંગ્સ પૂર્વ-લોડ કરો જેથી QR ડાયલોગમાં દર વખતે UPI ID સેટ ન કરવો પડે
+    unawaited(_service.getPaymentSettings());
   }
 
   List<String> _getAvailableMonths() {
@@ -304,28 +308,31 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
   }
 
   // --- ડાયલોગ ૪.૧: ફ્લેટ માટે ડાયનેમિક UPI QR કોડ બતાવો (તત્કાલ પોપ-અપ) ---
-  void _showBillQrDialog(MaintenanceBill bill) {
+  Future<void> _showBillQrDialog(MaintenanceBill bill) async {
     try {
-      final cached = _service.cachedOrFallbackSettings;
-      String currentUpiId = (cached['upiId'] ?? '').toString().trim();
-      String currentPayeeName = (cached['upiPayeeName'] ?? 'Society Maintenance').toString().trim();
+      final settings = await _service.getPaymentSettings();
+      String currentUpiId = (settings['upiId'] ?? '').toString().trim();
+      String currentPayeeName = (settings['upiPayeeName'] ?? 'Society Maintenance').toString().trim();
       if (currentPayeeName.isEmpty) currentPayeeName = 'Society Maintenance';
 
       final upiInputController = TextEditingController(text: currentUpiId);
       bool isEditingUpi = currentUpiId.isEmpty;
 
+      if (!mounted) return;
       showDialog(
         context: context,
         builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) {
-          final effectiveUpiId = currentUpiId.isEmpty ? 'society@upi' : currentUpiId;
+          final hasValidUpi = currentUpiId.isNotEmpty;
           final note = 'Maint ${bill.flatDisplay} ${bill.billingMonth}';
-          final uri = _service.buildUpiUri(
-            upiId: effectiveUpiId,
-            payeeName: currentPayeeName,
-            amount: bill.totalPayable,
-            note: note,
-          );
+          final uri = hasValidUpi
+              ? _service.buildUpiUri(
+                  upiId: currentUpiId,
+                  payeeName: currentPayeeName,
+                  amount: bill.totalPayable,
+                  note: note,
+                )
+              : null;
 
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -379,25 +386,51 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                       ),
                       child: Column(
                         children: [
-                          SizedBox(
-                            width: 200,
-                            height: 200,
-                            child: QrImageView(
-                              data: uri.toString(),
-                              version: QrVersions.auto,
-                              size: 200,
-                              backgroundColor: Colors.white,
-                              errorStateBuilder: (cxt, err) {
-                                return const Padding(
-                                  padding: EdgeInsets.all(16.0),
-                                  child: Text(
-                                    'QR કોડ લોડ કરવામાં ભૂલ આવી',
-                                    style: TextStyle(color: Colors.red, fontSize: 12),
+                          if (hasValidUpi && uri != null)
+                            SizedBox(
+                              width: 200,
+                              height: 200,
+                              child: QrImageView(
+                                data: uri.toString(),
+                                version: QrVersions.auto,
+                                size: 200,
+                                backgroundColor: Colors.white,
+                                errorStateBuilder: (cxt, err) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16.0),
+                                    child: Text(
+                                      'QR કોડ લોડ કરવામાં ભૂલ આવી',
+                                      style: TextStyle(color: Colors.red, fontSize: 12),
+                                    ),
+                                  );
+                                },
+                              ),
+                            )
+                          else
+                            Container(
+                              width: 200,
+                              height: 180,
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.qr_code_2_rounded, size: 54, color: Colors.grey.shade400),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'સોસાયટી UPI ID સેટ કરેલ નથી',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.black87),
                                   ),
-                                );
-                              },
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'QR જોવા માટે નીચે UPI ID લખી સેવ કરો',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
                           const SizedBox(height: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -490,7 +523,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                           TextField(
                             controller: upiInputController,
                             decoration: const InputDecoration(
-                              hintText: 'દા.ત. 98250xxxxx@upi / gpay',
+                              hintText: 'દા.ત. yourname@bank (જેમ કે @okhdfcbank, @sbi)',
                               isDense: true,
                               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                               border: OutlineInputBorder(),
@@ -501,19 +534,23 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: FilledButton.tonal(
-                              onPressed: () {
+                              onPressed: () async {
                                 final entered = upiInputController.text.trim();
                                 if (entered.isNotEmpty) {
+                                  if (!entered.contains('@') || entered.contains(' ') || entered.startsWith('@') || entered.endsWith('@')) {
+                                    _showSnackBar('સાચો UPI ID દાખલ કરો (દા.ત. yourname@bank)', Colors.orange);
+                                    return;
+                                  }
                                   setDialogState(() {
                                     currentUpiId = entered;
                                     isEditingUpi = false;
                                   });
-                                  unawaited(_service.savePaymentSettings(
+                                  await _service.savePaymentSettings(
                                     upiId: entered,
                                     upiPayeeName: currentPayeeName,
                                     defaultAmount: bill.amount,
-                                  ));
-                                  _showSnackBar('UPI ID સેવ થઈ ગયો!', Colors.green);
+                                  );
+                                  _showSnackBar('સોસાયટી UPI ID કાયમી સેવ થઈ ગયો!', Colors.green);
                                 }
                               },
                               style: FilledButton.styleFrom(
@@ -538,7 +575,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                           'તમારું ફ્લેટ ${bill.cleanFlatDisplay} નું ${bill.billTitle} નું મેન્ટેનન્સ બિલ ${_currencyFormat.format(bill.totalPayable)} બાકી છે.\n\n'
                           'ઓનલાઇન UPI થી ચૂકવવા નીચેની લિંક પર ક્લિક કરો:\n'
                           '${uri.toString()}\n\n'
-                          'અથવા UPI ID પર પે કરો: $effectiveUpiId\n'
+                          'અથવા UPI ID પર પે કરો: $currentUpiId\n'
                           '- સોસાયટી મેનેજમેન્ટ',
                       subject: 'મેન્ટેનન્સ બિલ UPI પેમેન્ટ - ${bill.cleanFlatDisplay}',
                     ),
@@ -574,27 +611,30 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
   }
 
   // --- ડાયલોગ ૪.૨: સોસાયટી સામાન્ય QR કોડ (તત્કાલ પોપ-અપ) ---
-  void _showGeneralSocietyQrDialog() {
+  Future<void> _showGeneralSocietyQrDialog() async {
     try {
-      final cached = _service.cachedOrFallbackSettings;
-      String currentUpiId = (cached['upiId'] ?? '').toString().trim();
-      String currentPayeeName = (cached['upiPayeeName'] ?? 'Society Maintenance').toString().trim();
-      final defaultAmt = (cached['defaultAmount'] as num?)?.toDouble() ?? 1500.0;
+      final settings = await _service.getPaymentSettings();
+      String currentUpiId = (settings['upiId'] ?? '').toString().trim();
+      String currentPayeeName = (settings['upiPayeeName'] ?? 'Society Maintenance').toString().trim();
+      final defaultAmt = (settings['defaultAmount'] as num?)?.toDouble() ?? 1500.0;
 
       final upiInputController = TextEditingController(text: currentUpiId);
       bool isEditingUpi = currentUpiId.isEmpty;
 
+      if (!mounted) return;
       showDialog(
         context: context,
         builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) {
-          final effectiveUpiId = currentUpiId.isEmpty ? 'society@upi' : currentUpiId;
-          final uri = _service.buildUpiUri(
-            upiId: effectiveUpiId,
-            payeeName: currentPayeeName,
-            amount: defaultAmt,
-            note: 'Society Maintenance',
-          );
+          final hasValidUpi = currentUpiId.isNotEmpty;
+          final uri = hasValidUpi
+              ? _service.buildUpiUri(
+                  upiId: currentUpiId,
+                  payeeName: currentPayeeName,
+                  amount: defaultAmt,
+                  note: 'Society Maintenance',
+                )
+              : null;
 
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -623,25 +663,50 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: Colors.teal.shade200, width: 2),
                       ),
-                      child: SizedBox(
-                        width: 200,
-                        height: 200,
-                        child: QrImageView(
-                          data: uri.toString(),
-                          version: QrVersions.auto,
-                          size: 200,
-                          backgroundColor: Colors.white,
-                          errorStateBuilder: (cxt, err) {
-                            return const Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: Text(
-                                'QR કોડ લોડ કરવામાં ભૂલ આવી',
-                                style: TextStyle(color: Colors.red, fontSize: 12),
+                      child: hasValidUpi && uri != null
+                          ? SizedBox(
+                              width: 200,
+                              height: 200,
+                              child: QrImageView(
+                                data: uri.toString(),
+                                version: QrVersions.auto,
+                                size: 200,
+                                backgroundColor: Colors.white,
+                                errorStateBuilder: (cxt, err) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16.0),
+                                    child: Text(
+                                      'QR કોડ લોડ કરવામાં ભૂલ આવી',
+                                      style: TextStyle(color: Colors.red, fontSize: 12),
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
-                      ),
+                            )
+                          : Container(
+                              width: 200,
+                              height: 180,
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.qr_code_2_rounded, size: 54, color: Colors.grey.shade400),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'સોસાયટી UPI ID સેટ કરેલ નથી',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.black87),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'QR જોવા માટે નીચે UPI ID લખી સેવ કરો',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                  ),
+                                ],
+                              ),
+                            ),
                     ),
                     const SizedBox(height: 10),
                   Text(
@@ -712,7 +777,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                           TextField(
                             controller: upiInputController,
                             decoration: const InputDecoration(
-                              hintText: 'દા.ત. 98250xxxxx@upi',
+                              hintText: 'દા.ત. yourname@bank (જેમ કે @okhdfcbank, @sbi)',
                               isDense: true,
                               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                               border: OutlineInputBorder(),
@@ -723,19 +788,23 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: FilledButton.tonal(
-                              onPressed: () {
+                              onPressed: () async {
                                 final entered = upiInputController.text.trim();
                                 if (entered.isNotEmpty) {
+                                  if (!entered.contains('@') || entered.contains(' ') || entered.startsWith('@') || entered.endsWith('@')) {
+                                    _showSnackBar('સાચો UPI ID દાખલ કરો (દા.ત. yourname@bank)', Colors.orange);
+                                    return;
+                                  }
                                   setDialogState(() {
                                     currentUpiId = entered;
                                     isEditingUpi = false;
                                   });
-                                  unawaited(_service.savePaymentSettings(
+                                  await _service.savePaymentSettings(
                                     upiId: entered,
                                     upiPayeeName: currentPayeeName,
                                     defaultAmount: defaultAmt,
-                                  ));
-                                  _showSnackBar('UPI ID સેવ થઈ ગયો!', Colors.green);
+                                  );
+                                  _showSnackBar('સોસાયટી UPI ID કાયમી સેવ થઈ ગયો!', Colors.green);
                                 }
                               },
                               style: FilledButton.styleFrom(
@@ -1080,6 +1149,22 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
         actions: [
           TextButton.icon(
             onPressed: () {
+              MaintenanceReceiptPdfService.viewReceiptPdf(context, bill);
+            },
+            icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF0F766E), size: 18),
+            label: const Text('PDF જુઓ', style: TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.bold)),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              MaintenanceReceiptPdfService.downloadReceiptPdf(context, bill);
+            },
+            icon: const Icon(Icons.download_rounded, size: 18),
+            label: const Text('PDF ડાઉનલોડ'),
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0F766E)),
+          ),
+          IconButton(
+            tooltip: 'શેર કરો',
+            onPressed: () {
               SharePlus.instance.share(
                 ShareParams(
                   text: receiptText,
@@ -1087,15 +1172,924 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                 ),
               );
             },
-            icon: const Icon(Icons.share_rounded),
-            label: const Text('શેર કરો (Share)'),
+            icon: const Icon(Icons.share_rounded, size: 18),
           ),
-          FilledButton(
+          TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('બંધ કરો'),
           ),
         ],
       ),
+    );
+  }
+
+  /// સભ્યની સંપૂર્ણ પ્રોફાઇલ & સંપર્ક વિગતો બતાવતી એક્ઝિક્યુટિવ બોટમ શીટ
+  Future<void> _showMemberDetailsSheet(MaintenanceBill bill) async {
+    final societyId = SocietyService.instance.societyId;
+    String name = bill.memberName.trim();
+    String phone = bill.memberPhone.trim();
+    String email = '';
+    String photoUrl = '';
+    String occupantType = 'માલિક (Owner)';
+
+    try {
+      if (bill.memberId != null && bill.memberId!.isNotEmpty) {
+        final uDoc = await AppFirestore.instance.collection('users').doc(bill.memberId).get();
+        final uData = uDoc.data();
+        if (uData != null) {
+          if (name.isEmpty) name = (uData['name'] ?? '').toString().trim();
+          if (phone.isEmpty) phone = (uData['phone'] ?? '').toString().trim();
+          email = (uData['email'] ?? '').toString().trim();
+          photoUrl = (uData['photoUrl'] ?? '').toString().trim();
+          occupantType = uData['occupantType'] == 'tenant' ? 'ભાડુઆત (Tenant)' : 'ફ્લેટ માલિક (Owner)';
+        }
+      }
+      if (name.isEmpty || phone.isEmpty) {
+        final unitDoc = await AppFirestore.instance
+            .collection('units')
+            .where('societyId', isEqualTo: societyId)
+            .where('unitNumber', isEqualTo: bill.unitNumber)
+            .limit(1)
+            .get();
+        if (unitDoc.docs.isNotEmpty) {
+          final uData = unitDoc.docs.first.data();
+          if (name.isEmpty) name = (uData['memberName'] ?? uData['ownerName'] ?? '').toString().trim();
+          if (phone.isEmpty) phone = (uData['memberPhone'] ?? uData['ownerPhone'] ?? '').toString().trim();
+        }
+      }
+    } catch (_) {}
+
+    if (name.isEmpty) name = 'ફ્લેટ ${bill.cleanFlatDisplay} ના સભ્ય';
+    final isOwner = !occupantType.contains('Tenant');
+
+    // સુરક્ષિત Initials નિર્માણ
+    String initials = 'U';
+    final cleanName = name.replaceAll(RegExp(r'^ફ્લેટ\s+'), '').trim();
+    final nameParts = cleanName.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (nameParts.length >= 2) {
+      initials = '${nameParts[0].characters.first}${nameParts[1].characters.first}'.toUpperCase();
+    } else if (nameParts.isNotEmpty) {
+      initials = nameParts[0].characters.take(2).toString().toUpperCase();
+    }
+
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(ctx).size.height * 0.90,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x2E000000),
+              blurRadius: 28,
+              offset: Offset(0, -6),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // સ્લીક ડ્રેગ હેન્ડલ
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4.5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // ટોપ બાર: સભ્ય વિગતો ટાઈટલ અને ક્લોઝ બટન
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F766E).withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFF0F766E).withValues(alpha: 0.18)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.badge_outlined, size: 13, color: Color(0xFF0F766E)),
+                          SizedBox(width: 5),
+                          Text(
+                            'સભ્ય પ્રોફાઇલ & વિગતો',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F766E),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () => Navigator.pop(ctx),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF1F5F9),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF64748B)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // સભ્ય પ્રોફાઇલ હેડર (અવતાર + નામ + બેજિસ)
+                Row(
+                  children: [
+                    Stack(
+                      children: [
+                        Container(
+                          width: 58,
+                          height: 58,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(18),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0F766E).withValues(alpha: 0.25),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(18),
+                            child: photoUrl.isNotEmpty
+                                ? Image.network(
+                                    photoUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Center(
+                                      child: Text(
+                                        initials,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Center(
+                                    child: Text(
+                                      initials,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 20,
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: -2,
+                          right: -2,
+                          child: Container(
+                            padding: const EdgeInsets.all(2.5),
+                            decoration: BoxDecoration(
+                              color: isOwner ? const Color(0xFF059669) : const Color(0xFF4F46E5),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: Icon(
+                              isOwner ? Icons.verified_user_rounded : Icons.person_rounded,
+                              size: 11,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 18.5,
+                              color: Color(0xFF0F172A),
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              // ફ્લેટ નંબર બેજ
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(7),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF0F172A).withValues(alpha: 0.15),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.domain_rounded, size: 11, color: Color(0xFF94A3B8)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      bill.cleanFlatDisplay,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 11,
+                                        color: Colors.white,
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // ઓક્યુપન્ટ બેજ
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                                decoration: BoxDecoration(
+                                  color: isOwner ? const Color(0xFFEEF2FF) : const Color(0xFFFFF7ED),
+                                  borderRadius: BorderRadius.circular(7),
+                                  border: Border.all(
+                                    color: isOwner ? const Color(0xFFC7D2FE) : const Color(0xFFFFEDD5),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      isOwner ? Icons.home_rounded : Icons.person_pin_circle_rounded,
+                                      size: 11,
+                                      color: isOwner ? const Color(0xFF4338CA) : const Color(0xFFC2410C),
+                                    ),
+                                    const SizedBox(width: 3.5),
+                                    Text(
+                                      occupantType,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 11,
+                                        color: isOwner ? const Color(0xFF4338CA) : const Color(0xFFC2410C),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+
+                // મેન્ટેનન્સ અને ચુકવણી હીરો કાર્ડ (સત્તાવાર રસીદ એક્સેસ સાથે)
+                _buildMemberMaintenanceHeroCard(ctx, bill),
+                const SizedBox(height: 14),
+
+                // સંપર્ક વિગત કાર્ડ (મોબાઇલ અને ઇમેઇલ - 1 ટેપ કૉપિ સાથે)
+                _buildMemberContactCard(ctx, phone, email),
+                const SizedBox(height: 18),
+
+                // ક્વિક એક્શન ડોક (સંપૂર્ણ અનક્રોવડેડ - નો ટેક્સ્ટ રેપિંગ)
+                _buildMemberActionButtons(ctx, bill, name, phone),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// મેન્ટેનન્સ ફાઇનાન્સિયલ સ્ટેટસ હીરો કાર્ડ
+  Widget _buildMemberMaintenanceHeroCard(BuildContext ctx, MaintenanceBill bill) {
+    if (bill.status == MaintenanceStatus.paid) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFECFDF5), Color(0xFFF0FDF4)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFA7F3D0), width: 1.2),
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD1FAE5),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFF6EE7B7)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF047857)),
+                          SizedBox(width: 4),
+                          Text(
+                            'ચૂકવેલ (Paid)',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF047857),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      'રીત: ${bill.paymentMode.toUpperCase()}${bill.paidAt != null ? ' • ${DateFormat('dd/MM/yyyy').format(bill.paidAt!)}' : ''}',
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF065F46),
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text(
+                      'ચૂકવેલ રકમ',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF059669),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _currencyFormat.format(bill.totalPayable),
+                      style: const TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF065F46),
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // 1-ટેપ સત્તાવાર રસીદ વ્યુઅર
+            InkWell(
+              onTap: () {
+                Navigator.pop(ctx);
+                MaintenanceReceiptPdfService.viewReceiptPdf(context, bill);
+              },
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8.5),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFA7F3D0)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF059669).withValues(alpha: 0.08),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.picture_as_pdf_rounded, size: 16, color: Color(0xFF0F766E)),
+                    SizedBox(width: 6),
+                    Text(
+                      'સત્તાવાર PDF રસીદ જુઓ / ડાઉનલોડ',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F766E),
+                      ),
+                    ),
+                    SizedBox(width: 5),
+                    Icon(Icons.arrow_forward_ios_rounded, size: 11, color: Color(0xFF0F766E)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (bill.status == MaintenanceStatus.underReview) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFEFF6FF), Color(0xFFF0F9FF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFBFDBFE), width: 1.2),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDBEAFE),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFF93C5FD)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.hourglass_top_rounded, size: 12, color: Color(0xFF1D4ED8)),
+                      SizedBox(width: 4),
+                      Text(
+                        'ચકાસણી હેઠળ (Review)',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF1D4ED8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  bill.utrNumber.isNotEmpty ? 'UTR: ${bill.utrNumber}' : 'ઓનલાઇન ચુકવણી મંજૂરી બાકી',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E40AF),
+                  ),
+                ),
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const Text(
+                  'કુલ રકમ',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF2563EB),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _currencyFormat.format(bill.totalPayable),
+                  style: const TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF1E40AF),
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    // પેન્ડિંગ અથવા ઓવરડ્યુ સ્ટેટસ
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFF1F2), Color(0xFFFEF2F2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFECDD3), width: 1.2),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFE4E6),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFFDA4AF)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.schedule_rounded, size: 12, color: Color(0xFFBE123C)),
+                    SizedBox(width: 4),
+                    Text(
+                      'ચુકવણી બાકી (Pending)',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFFBE123C),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                'ડ્યુ: ${DateFormat('dd/MM/yyyy').format(bill.dueDate)}',
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF9F1239),
+                ),
+              ),
+            ],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              const Text(
+                'બાકી રકમ',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFFE11D48),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                _currencyFormat.format(bill.totalPayable),
+                style: const TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF9F1239),
+                  letterSpacing: -0.3,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// સંપર્ક વિગત કાર્ડ (મોબાઇલ અને ઇમેઇલ - 1 ટેપ કૉપિ સપોર્ટ)
+  Widget _buildMemberContactCard(BuildContext ctx, String phone, String email) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        children: [
+          // મોબાઇલ નંબર રો
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                  ),
+                  child: const Icon(Icons.phone_rounded, size: 17, color: Color(0xFF059669)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'મોબાઇલ નંબર',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        phone.isNotEmpty ? phone : 'નોંધાયેલ નથી',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A),
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (phone.isNotEmpty)
+                  IconButton(
+                    tooltip: 'નંબર કૉપિ કરો',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: phone));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('મોબાઇલ નંબર ક્લિપબોર્ડમાં કૉપિ થયો'),
+                          duration: Duration(seconds: 1),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.copy_rounded, size: 16, color: Color(0xFF64748B)),
+                  ),
+              ],
+            ),
+          ),
+          if (email.isNotEmpty) ...[
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            // ઇમેઇલ રો
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEF2FF),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFC7D2FE)),
+                    ),
+                    child: const Icon(Icons.alternate_email_rounded, size: 17, color: Color(0xFF4338CA)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'ઇમેઇલ એડ્રેસ',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          email,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'ઇમેઇલ કૉપિ કરો',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: email));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('ઇમેઇલ એડ્રેસ ક્લિપબોર્ડમાં કૉપિ થયું'),
+                          duration: Duration(seconds: 1),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.copy_rounded, size: 16, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// સંપૂર્ણ બેલેન્સ્ડ ક્વિક એક્શન બટન બાર (કૉલ, વોટ્સએપ, મેસેજ, રસીદ)
+  Widget _buildMemberActionButtons(
+    BuildContext ctx,
+    MaintenanceBill bill,
+    String name,
+    String phone,
+  ) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // રો 1: મુખ્ય કૉલ અને વોટ્સએપ (બંને માટે પૂરતી જગ્યા હોવાથી ટેક્સ્ટ ક્યારેય રેપ થશે નહીં)
+        if (phone.isNotEmpty) ...[
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    final clean = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+                    launchUrl(Uri.parse('tel:$clean'));
+                  },
+                  icon: const Icon(Icons.call_rounded, size: 17, color: Colors.white),
+                  label: const Text(
+                    'કૉલ કરો',
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF059669),
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    shadowColor: const Color(0xFF059669).withValues(alpha: 0.35),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    final clean = phone.replaceAll(RegExp(r'[^0-9]'), '');
+                    launchUrl(Uri.parse('https://wa.me/$clean'), mode: LaunchMode.externalApplication);
+                  },
+                  icon: const Icon(Icons.chat_bubble_rounded, size: 17, color: Colors.white),
+                  label: const Text(
+                    'વોટ્સએપ',
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13.5),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF25D366),
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    shadowColor: const Color(0xFF25D366).withValues(alpha: 0.35),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+        ],
+
+        // રો 2: ઇન-એપ મેસેજ અને સ્ટેટસ-આધારિત એક્શન (રસીદ / પે / વેરિફાય)
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AdminBroadcastScreen(
+                        targetUID: bill.memberId,
+                        targetName: name,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.send_rounded, size: 16, color: Color(0xFF4338CA)),
+                label: const Text(
+                  'મેસેજ મોકલો',
+                  maxLines: 1,
+                  softWrap: false,
+                  style: TextStyle(color: Color(0xFF4338CA), fontWeight: FontWeight.w800, fontSize: 13),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFFC7D2FE), width: 1.3),
+                  padding: const EdgeInsets.symmetric(vertical: 11),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            if (bill.status == MaintenanceStatus.paid)
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _showReceiptDialog(bill);
+                  },
+                  icon: const Icon(Icons.receipt_long_rounded, size: 16, color: Color(0xFF0F766E)),
+                  label: const Text(
+                    'રસીદ વિગત',
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.w800, fontSize: 13),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF99F6E4), width: 1.3),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              )
+            else if (bill.status == MaintenanceStatus.underReview)
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _showVerifyUpiDialog(bill);
+                  },
+                  icon: const Icon(Icons.verified_rounded, size: 16, color: Color(0xFF2563EB)),
+                  label: const Text(
+                    'વેરિફાય કરો',
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w800, fontSize: 13),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFBFDBFE), width: 1.3),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              )
+            else
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _showOfflinePaymentDialog(bill);
+                  },
+                  icon: const Icon(Icons.price_check_rounded, size: 16, color: Color(0xFF059669)),
+                  label: const Text(
+                    'રોકડ સ્વીકારો',
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.w800, fontSize: 13),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFA7F3D0), width: 1.3),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -1701,71 +2695,87 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                     children: [
                       Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF0F172A).withValues(alpha: 0.18),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
+                          InkWell(
+                            onTap: () => _showMemberDetailsSheet(bill),
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                 ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.domain_rounded, size: 12, color: Color(0xFF94A3B8)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  bill.cleanFlatDisplay,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 12,
-                                    color: Colors.white,
-                                    letterSpacing: 0.3,
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF0F172A).withValues(alpha: 0.18),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.domain_rounded, size: 12, color: Color(0xFF94A3B8)),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    bill.cleanFlatDisplay,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 12,
+                                      color: Colors.white,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  displayName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 14.5,
-                                    color: Color(0xFF0F172A),
-                                  ),
-                                ),
-                                if (bill.memberPhone.isNotEmpty)
+                            child: InkWell(
+                              onTap: () => _showMemberDetailsSheet(bill),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                   Row(
                                     children: [
-                                      const Icon(Icons.phone_outlined, size: 11, color: Color(0xFF94A3B8)),
-                                      const SizedBox(width: 3),
-                                      Text(
-                                        bill.memberPhone,
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFF64748B),
+                                      Flexible(
+                                        child: Text(
+                                          displayName,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 14.5,
+                                            color: Color(0xFF0F172A),
+                                          ),
                                         ),
                                       ),
+                                      const SizedBox(width: 4),
+                                      const Icon(Icons.info_outline_rounded, size: 13, color: Color(0xFF0F766E)),
                                     ],
                                   ),
-                              ],
+                                  if (bill.memberPhone.isNotEmpty)
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.phone_outlined, size: 11, color: Color(0xFF94A3B8)),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          bill.memberPhone,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
                           Column(

@@ -13,6 +13,7 @@ class AdminVisitorReportScreen extends StatefulWidget {
 
 class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
   String _selectedFilter = 'all';
+  String _selectedPurpose = 'all';
   String _searchQuery = '';
   final _searchController = TextEditingController();
 
@@ -77,6 +78,22 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
             final data = d.data() as Map<String, dynamic>;
             final status = (data['status'] ?? 'pending').toString();
             if (_selectedFilter != 'all' && status != _selectedFilter) return false;
+
+            if (_selectedPurpose != 'all') {
+              final p = (data['purpose'] ?? '').toString().toLowerCase();
+              final n = (data['name'] ?? '').toString().toLowerCase();
+              if (_selectedPurpose == 'food') {
+                if (!p.contains('zomato') && !p.contains('swiggy') && !p.contains('blinkit') && !p.contains('zepto') && !p.contains('food') && !p.contains('ગ્રોસરી') && !n.contains('zomato') && !n.contains('swiggy')) return false;
+              } else if (_selectedPurpose == 'parcel') {
+                if (!p.contains('amazon') && !p.contains('flipkart') && !p.contains('parcel') && !p.contains('courier') && !p.contains('કુરિયર') && !p.contains('પાર્સલ')) return false;
+              } else if (_selectedPurpose == 'cab') {
+                if (!p.contains('cab') && !p.contains('taxi') && !p.contains('uber') && !p.contains('ola') && !p.contains('કેબ')) return false;
+              } else if (_selectedPurpose == 'service') {
+                if (!p.contains('service') && !p.contains('repair') && !p.contains('સર્વિસ') && !p.contains('રિપેર') && !p.contains('ટેકનિશિયન')) return false;
+              } else if (_selectedPurpose == 'guest') {
+                if (!p.contains('guest') && !p.contains('મહેમાન') && !p.contains('મુલાકાત')) return false;
+              }
+            }
 
             if (_searchQuery.isNotEmpty) {
               final q = _searchQuery.toLowerCase();
@@ -191,7 +208,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
               // Filter Chips
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: Row(
                   children: [
                     _filterChip('all', 'બધા ($total)'),
@@ -206,6 +223,28 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                   ],
                 ),
               ),
+
+              // Purpose / Category Filter Chips
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+                child: Row(
+                  children: [
+                    _purposeChip('all', 'બધા હેતુ'),
+                    const SizedBox(width: 6),
+                    _purposeChip('food', '🍔 ફૂડ & ગ્રોસરી'),
+                    const SizedBox(width: 6),
+                    _purposeChip('parcel', '📦 પાર્સલ & કુરિયર'),
+                    const SizedBox(width: 6),
+                    _purposeChip('cab', '🚕 કેબ / ટેક્સી'),
+                    const SizedBox(width: 6),
+                    _purposeChip('service', '🔧 સર્વિસ / રિપેર'),
+                    const SizedBox(width: 6),
+                    _purposeChip('guest', '👥 મહેમાન (Guest)'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 4),
 
               // Visitors List
               Expanded(
@@ -290,6 +329,28 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
       ),
       onSelected: (val) {
         if (val) setState(() => _selectedFilter = key);
+      },
+    );
+  }
+
+  Widget _purposeChip(String key, String label) {
+    final isSelected = _selectedPurpose == key;
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: const Color(0xFF4338CA).withValues(alpha: 0.15),
+      checkmarkColor: const Color(0xFF4338CA),
+      backgroundColor: Colors.white,
+      side: BorderSide(
+        color: isSelected ? const Color(0xFF4338CA) : const Color(0xFFE2E8F0),
+      ),
+      labelStyle: TextStyle(
+        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+        fontSize: 11,
+        color: isSelected ? const Color(0xFF4338CA) : const Color(0xFF475569),
+      ),
+      onSelected: (_) {
+        setState(() => _selectedPurpose = key);
       },
     );
   }

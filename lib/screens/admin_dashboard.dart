@@ -24,6 +24,7 @@ import 'admin_society_bank_settings_screen.dart';
 import 'admin_users_directory_screen.dart';
 import 'admin_visitor_report_screen.dart';
 import 'admin_watchmen_manage_screen.dart';
+import 'admin_parking_management_screen.dart';
 import 'architecture_preview.dart';
 
 class AdminDashboard extends StatefulWidget {
@@ -2451,6 +2452,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
         icon: Icons.map_rounded,
         gradient: [const Color(0xFF6366F1), const Color(0xFF4338CA)],
         onTap: _navigateToPreview,
+      ),
+      (
+        category: 'admin',
+        title: "પાર્કિંગ સ્લોટ મેનેજર",
+        subtitle: "સ્લોટ્સ જનરેટ & કંટ્રોલ",
+        icon: Icons.local_parking_rounded,
+        gradient: [const Color(0xFF0284C7), const Color(0xFF0369A1)],
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminParkingManagementScreen()),
+        ),
       ),
     ];
 

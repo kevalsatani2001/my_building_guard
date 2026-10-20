@@ -98,35 +98,11 @@ class _AdminWatchmenManageScreenState extends State<AdminWatchmenManageScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "વોચમેન સિક્યોરિટી મેનેજમેન્ટ",
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 18,
-                color: Color(0xFF0F172A),
-              ),
-            ),
-            Text(
-              "ગેટ ગાર્ડ્સ, ઓન-ડ્યુટી સ્ટેટસ & પિન કંટ્રોલ",
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF64748B),
-              ),
-            ),
-          ],
-        ),
+      appBar: const PremiumAppBar(
+        title: "વોચમેન સિક્યોરિટી મેનેજમેન્ટ",
+        subtitle: "ગેટ ગાર્ડ્સ, ઓન-ડ્યુટી સ્ટેટસ & પિન કંટ્રોલ",
+        icon: Icons.security_rounded,
+        accentColor: Color(0xFF059669),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(

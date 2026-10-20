@@ -1,0 +1,324 @@
+import 'dart:async';
+import 'package:building_guard/core/app_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+import '../models/maintenance_model.dart';
+import '../screens/admin_complaints_screen.dart';
+import '../screens/admin_maintenance_screen.dart';
+import '../screens/member_complaint_register_screen.dart';
+import '../screens/watchmen_screen.dart';
+import '../widgets/member_maintenance_sheet.dart';
+import 'session_guard_service.dart';
+
+/// સેન્ટ્રલ નોટિફિકેશન નેવિગેશન રાઉટર
+/// FCM પુશ, લોકલ નોટિફિકેશન અથવા ઇન-એપ નોટિફિકેશન પર ટેપ કરતા જ યોગ્ય સેક્શન/સ્ક્રીન પર રીડાયરેક્ટ કરે છે.
+class NotificationNavigationService {
+  NotificationNavigationService._();
+  static final NotificationNavigationService instance =
+      NotificationNavigationService._();
+
+  static Map<String, dynamic>? pendingColdStartData;
+
+  /// નોટિફિકેશન ડેટા આધારિત ડીપ-લિંક નેવિગેશન એક્ઝિક્યુટ કરો
+  static Future<void> handleNotificationData(
+    Map<String, dynamic> rawData, {
+    BuildContext? fallbackContext,
+  }) async {
+    final type = (rawData['type'] ?? '').toString().trim();
+    final billId = (rawData['billId'] ?? '').toString().trim();
+    final receiptNumber = (rawData['receiptNumber'] ?? '').toString().trim();
+    final complaintId = (rawData['complaintId'] ?? '').toString().trim();
+    final visitorId = (rawData['visitorId'] ?? '').toString().trim();
+    final title = (rawData['title'] ?? '').toString().trim();
+    final body = (rawData['body'] ?? '').toString().trim();
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      pendingColdStartData = rawData;
+      return;
+    }
+
+    String role = 'member';
+    try {
+      final uDoc = await AppFirestore.instance.collection('users').doc(user.uid).get();
+      role = (uDoc.data()?['role'] ?? 'member').toString().trim();
+    } catch (_) {}
+
+    if (kDebugMode) {
+      debugPrint('NotificationNavigation: Handling type=$type, billId=$billId, role=$role');
+    }
+
+    switch (type) {
+      // ૧. મેન્ટેનન્સ રસીદ / પેમેન્ટ સફળતાપૂર્વક ચૂકવાયું
+      case 'maintenance_receipt':
+      case 'maintenance_payment':
+      case 'maintenance_paid':
+        await _handleMaintenanceReceipt(user.uid, role, billId, receiptNumber);
+        break;
+
+      // ૨. મેન્ટેનન્સ બાકી રકમ યાદી / નવું બિલ
+      case 'maintenance_due_reminder':
+      case 'maintenance_reminder':
+      case 'maintenance_bill':
+        await _handleMaintenanceReminder(user.uid, role, billId);
+        break;
+
+      // ૩. ફરિયાદ / ગ્રીવન્સ
+      case 'complaint':
+      case 'complaint_status':
+      case 'complaint_reply':
+        _handleComplaint(role, complaintId);
+        break;
+
+      // ૪. વિઝિટર એન્ટ્રી / અપ્રુવલ
+      case 'visitor_alert':
+      case 'visitor_entry':
+      case 'visitor_approval':
+      case 'visitor_status':
+        _handleVisitor(role, visitorId);
+        break;
+
+      // ૫. પાર્કિંગ સ્લોટ એલર્ટ (રોંગ પાર્કિંગ)
+      case 'parking_alert':
+      case 'parking_wrong_slot':
+        _handleParkingAlert(title, body);
+        break;
+
+      // ૬. સોસાયટી નોટિસ / સામાન્ય બ્રોડકાસ્ટ
+      case 'admin_notice':
+      case 'general':
+      case 'notice':
+      case 'broadcast':
+      default:
+        _handleGeneralNotice(title, body);
+        break;
+    }
+  }
+
+  /// એપ કોલ્ડ સ્ટાર્ટ પર બાકી રહેલ નોટિફિકેશન ચેક કરી નેવિગેટ કરે છે
+  static void checkAndHandlePendingColdStart(BuildContext context) {
+    if (pendingColdStartData != null) {
+      final data = pendingColdStartData!;
+      pendingColdStartData = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        handleNotificationData(data, fallbackContext: context);
+      });
+    }
+  }
+
+  // --- હેન્ડલર્સ ---
+
+  /// ૧. મેન્ટેનન્સ રસીદ વિભાગ પર રીડાયરેક્ટ
+  static Future<void> _handleMaintenanceReceipt(
+    String userId,
+    String role,
+    String billId,
+    String receiptNumber,
+  ) async {
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+
+    if (role == 'admin') {
+      Navigator.of(ctx).push(
+        MaterialPageRoute(builder: (_) => const AdminMaintenanceScreen()),
+      );
+      return;
+    }
+
+    // મેમ્બર માટે સીધી ડિજિટલ રસીદ અથવા પોર્ટલનો હિસ્ટ્રી/રસીદ વિભાગ ખોલો
+    MaintenanceBill? bill;
+    if (billId.isNotEmpty) {
+      try {
+        final bDoc = await AppFirestore.instance
+            .collection('maintenance_bills')
+            .doc(billId)
+            .get();
+        if (bDoc.exists) {
+          bill = MaintenanceBill.fromFirestore(bDoc);
+        }
+      } catch (e) {
+        debugPrint('Fetch bill error: $e');
+      }
+    }
+
+    final currentCtx = rootNavigatorKey.currentContext;
+    if (currentCtx == null || !currentCtx.mounted) return;
+
+    if (bill != null && bill.status == MaintenanceStatus.paid) {
+      // ૧-ટેપ સીધી ડિજિટલ રસીદ મોડલ શીટ ખોલો
+      MemberMaintenanceSheet.showReceiptDialog(currentCtx, bill);
+    } else {
+      // મેન્ટેનન્સ પોર્ટલ ખોલો (જે સીધા રસીદ હિસ્ટ્રી ટેબ પર ખુલશે)
+      await MemberMaintenanceSheet.showMaintenancePortal(
+        currentCtx,
+        currentUserId: userId,
+        initialBill: bill,
+      );
+    }
+  }
+
+  /// ૨. મેન્ટેનન્સ પેમેન્ટ પોર્ટલ (Pay Tab) પર રીડાયરેક્ટ
+  static Future<void> _handleMaintenanceReminder(
+    String userId,
+    String role,
+    String billId,
+  ) async {
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+
+    if (role == 'admin') {
+      Navigator.of(ctx).push(
+        MaterialPageRoute(builder: (_) => const AdminMaintenanceScreen()),
+      );
+      return;
+    }
+
+    MaintenanceBill? bill;
+    if (billId.isNotEmpty) {
+      try {
+        final bDoc = await AppFirestore.instance
+            .collection('maintenance_bills')
+            .doc(billId)
+            .get();
+        if (bDoc.exists) {
+          bill = MaintenanceBill.fromFirestore(bDoc);
+        }
+      } catch (_) {}
+    }
+
+    final currentCtx = rootNavigatorKey.currentContext;
+    if (currentCtx == null || !currentCtx.mounted) return;
+
+    await MemberMaintenanceSheet.showMaintenancePortal(
+      currentCtx,
+      currentUserId: userId,
+      initialBill: bill,
+    );
+  }
+
+  /// ૩. ફરિયાદ સ્ક્રીન પર રીડાયરેક્ટ
+  static void _handleComplaint(String role, String complaintId) {
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+
+    if (role == 'admin') {
+      Navigator.of(ctx).push(
+        MaterialPageRoute(builder: (_) => const AdminComplaintsScreen()),
+      );
+    } else {
+      Navigator.of(ctx).push(
+        MaterialPageRoute(builder: (_) => const MemberComplaintRegisterScreen()),
+      );
+    }
+  }
+
+  /// ૪. વિઝિટર સેક્શન પર રીડાયરેક્ટ
+  static void _handleVisitor(String role, String visitorId) {
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+
+    if (role == 'watchman') {
+      Navigator.of(ctx).push(
+        MaterialPageRoute(builder: (_) => const WatchmanScreen()),
+      );
+    }
+  }
+
+  /// ૫. જનરલ નોટિસ ડાયલોગ
+  static void _handleGeneralNotice(String title, String body) {
+    if (title.isEmpty && body.isEmpty) return;
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+
+    showDialog(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4338CA).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.campaign_rounded, color: Color(0xFF4338CA), size: 22),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title.isNotEmpty ? title : 'સોસાયટી સૂચના',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          body,
+          style: const TextStyle(fontSize: 13.5, height: 1.45, color: Color(0xFF334155)),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF4338CA),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('સમજાઈ ગયું'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ૫. પાર્કિંગ સ્લોટ એલર્ટ ડાયલોગ (મેમ્બર-ટુ-મેમ્બર)
+  static void _handleParkingAlert(String title, String body) {
+    if (title.isEmpty && body.isEmpty) return;
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+
+    showDialog(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.car_crash_rounded, color: Color(0xFFDC2626), size: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title.isNotEmpty ? title : 'પાર્કિંગ સ્લોટ એલર્ટ',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF0F172A)),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          body,
+          style: const TextStyle(fontSize: 13.5, height: 1.5, color: Color(0xFF334155)),
+        ),
+        actions: [
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(dialogCtx),
+            icon: const Icon(Icons.check_circle_rounded, size: 16),
+            label: const Text('હું ગાડી હટાવી લઉં છું'),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

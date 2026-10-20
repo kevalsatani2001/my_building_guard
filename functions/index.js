@@ -103,7 +103,7 @@ function formatMessagingError(err) {
 }
 
 /** Android-first; `apns` હટાવ્યું — પ્રોજેક્ટમાં APNs સેટ ન હોય ત્યારે FCM INTERNAL ભૂલ આવતી હતી. */
-function buildFcmParts(title, body, typeStr, senderUid = "") {
+function buildFcmParts(title, body, typeStr, senderUid = "", extraData = {}) {
     const dataPayload = {
         type: String(typeStr),
         click_action: "FLUTTER_NOTIFICATION_CLICK",
@@ -111,6 +111,13 @@ function buildFcmParts(title, body, typeStr, senderUid = "") {
         body: String(body),
         senderUid: String(senderUid || ""),
     };
+    if (extraData && typeof extraData === "object") {
+        for (const [k, v] of Object.entries(extraData)) {
+            if (v != null && !dataPayload.hasOwnProperty(k) && typeof v !== "object") {
+                dataPayload[k] = String(v);
+            }
+        }
+    }
     const android = {
         priority: "high",
         notification: {
@@ -281,6 +288,11 @@ exports.sendMemberPush = onCall(async (request) => {
             body: String(body),
             senderUid: String(request.auth.uid || ""),
         };
+        for (const [k, v] of Object.entries(payload)) {
+            if (v != null && !dataPayload.hasOwnProperty(k) && k !== "fcmToken" && typeof v !== "object") {
+                dataPayload[k] = String(v);
+            }
+        }
 
         try {
             await admin.messaging().send({
@@ -500,7 +512,14 @@ exports.sendNotification = onDocumentCreated({
                 await mark("skipped_no_token", {fcmDetail: String(targetUID)});
                 return null;
             }
-            const parts = buildFcmParts(title, body, typeStr);
+            const extraData = {};
+            if (data.billId) extraData.billId = String(data.billId);
+            if (data.receiptNumber) extraData.receiptNumber = String(data.receiptNumber);
+            if (data.complaintId) extraData.complaintId = String(data.complaintId);
+            if (data.visitorId) extraData.visitorId = String(data.visitorId);
+            if (data.noticeId) extraData.noticeId = String(data.noticeId);
+
+            const parts = buildFcmParts(title, body, typeStr, senderUid, extraData);
             await admin.messaging().send({
                 token: fcmToken,
                 notification: parts.notification,

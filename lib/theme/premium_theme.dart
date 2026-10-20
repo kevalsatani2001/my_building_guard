@@ -26,16 +26,49 @@ class PremiumTheme {
       fontFamily: null, // Uses default clean modern system font
       appBarTheme: const AppBarTheme(
         elevation: 0,
-        scrolledUnderElevation: 2,
+        scrolledUnderElevation: 1,
         centerTitle: false,
-        backgroundColor: brandPrimary,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: Color(0xFF0F172A),
+        shape: Border(
+          bottom: BorderSide(
+            color: Color(0xFFE2E8F0),
+            width: 1.0,
+          ),
+        ),
         titleTextStyle: TextStyle(
-          fontSize: 19,
-          fontWeight: FontWeight.w800,
-          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+          color: Color(0xFF0F172A),
           letterSpacing: -0.3,
         ),
+      ),
+      actionIconTheme: ActionIconThemeData(
+        backButtonIconBuilder: (BuildContext context) {
+          final isDark = Theme.of(context).appBarTheme.backgroundColor == brandPrimary ||
+              Theme.of(context).brightness == Brightness.dark;
+          final fg = IconTheme.of(context).color ?? (isDark ? Colors.white : const Color(0xFF0F172A));
+          final bg = isDark ? Colors.white.withValues(alpha: 0.12) : const Color(0xFFF1F5F9);
+          final border = isDark ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFE2E8F0);
+
+          return Container(
+            width: 36,
+            height: 36,
+            margin: const EdgeInsets.only(left: 4),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: border, width: 1.2),
+            ),
+            child: Center(
+              child: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 15,
+                color: fg,
+              ),
+            ),
+          );
+        },
       ),
       cardTheme: CardThemeData(
         color: brandSurface,
@@ -103,7 +136,7 @@ class PremiumTheme {
           elevation: 0,
           backgroundColor: brandIndigo,
           foregroundColor: Colors.white,
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size(64, 48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),

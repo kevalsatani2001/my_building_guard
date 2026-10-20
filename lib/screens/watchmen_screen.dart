@@ -154,6 +154,183 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     },
   ];
 
+  final List<Map<String, dynamic>> _customPartners = [];
+
+  List<Map<String, dynamic>> get _allPartners => [..._kQuickPartners, ..._customPartners];
+
+  Future<void> _loadCustomPartners() async {
+    try {
+      final sid = SocietyService.instance.societyId;
+      final doc = await AppFirestore.instance.collection('society_settings').doc(sid).get();
+      if (doc.exists && doc.data() != null) {
+        final list = doc.data()!['customVisitorCategories'];
+        if (list is List) {
+          _customPartners.clear();
+          for (final item in list) {
+            if (item is Map) {
+              final name = (item['name'] ?? '').toString().trim();
+              final label = (item['label'] ?? name).toString().trim();
+              final cat = (item['category'] ?? 'other').toString().trim();
+              final colorVal = item['color'];
+              final color = colorVal is int ? Color(colorVal) : const Color(0xFF6366F1);
+              if (name.isNotEmpty && !_kQuickPartners.any((p) => p['name'] == name)) {
+                _customPartners.add({
+                  'name': name,
+                  'label': label.isNotEmpty ? label : name,
+                  'category': cat,
+                  'color': color,
+                  'icon': Icons.label_important_rounded,
+                  'isCustom': true,
+                });
+              }
+            }
+          }
+          if (mounted) setState(() {});
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _showAddPartnerDialog() async {
+    final nameCtrl = TextEditingController();
+    final labelCtrl = TextEditingController();
+    String selectedCategory = _quickFilterCategory == 'all' ? 'other' : _quickFilterCategory;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.add_business_rounded, color: Color(0xFF4F46E5)),
+                SizedBox(width: 8),
+                Text('નવો વિઝિટર પ્રકાર / પાર્ટનર', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'પાર્ટનર અથવા વિઝિટરનું નામ *',
+                    hintText: 'દા.ત. JioMart, દૂધવાળા, ગેસ સર્વિસ',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: labelCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'લેબલ / હેતુ (Purpose)',
+                    hintText: 'દા.ત. JioMart Delivery',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'કેટેગરી પસંદ કરો:',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('ફૂડ / ગ્રોસરી'),
+                      selected: selectedCategory == 'food',
+                      onSelected: (val) {
+                        if (val) setDialogState(() => selectedCategory = 'food');
+                      },
+                    ),
+                    ChoiceChip(
+                      label: const Text('પાર્સલ'),
+                      selected: selectedCategory == 'parcel',
+                      onSelected: (val) {
+                        if (val) setDialogState(() => selectedCategory = 'parcel');
+                      },
+                    ),
+                    ChoiceChip(
+                      label: const Text('સર્વિસ / અન્ય'),
+                      selected: selectedCategory == 'other',
+                      onSelected: (val) {
+                        if (val) setDialogState(() => selectedCategory = 'other');
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('રદ કરો'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  if (nameCtrl.text.trim().isNotEmpty) {
+                    Navigator.pop(ctx, true);
+                  }
+                },
+                style: FilledButton.styleFrom(backgroundColor: const Color(0xFF4F46E5)),
+                child: const Text('ઉમેરો'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (result == true && nameCtrl.text.trim().isNotEmpty) {
+      final name = nameCtrl.text.trim();
+      final label = labelCtrl.text.trim().isNotEmpty
+          ? labelCtrl.text.trim()
+          : (selectedCategory == 'food' || selectedCategory == 'parcel')
+              ? "$name Delivery"
+              : "$name Visit";
+
+      final Color partnerColor = selectedCategory == 'food'
+          ? const Color(0xFFEA580C)
+          : (selectedCategory == 'parcel' ? const Color(0xFF2563EB) : const Color(0xFF0D9488));
+
+      final newPartner = {
+        'name': name,
+        'label': label,
+        'category': selectedCategory,
+        'color': partnerColor,
+        'icon': Icons.label_important_rounded,
+        'isCustom': true,
+      };
+
+      setState(() {
+        _customPartners.removeWhere((p) => p['name'] == name);
+        _customPartners.add(newPartner);
+        _purposeController.text = label;
+        if (_nameController.text.trim().isEmpty) {
+          _nameController.text = name;
+        }
+      });
+
+      try {
+        final sid = SocietyService.instance.societyId;
+        await AppFirestore.instance.collection('society_settings').doc(sid).set({
+          'customVisitorCategories': FieldValue.arrayUnion([
+            {
+              'name': name,
+              'label': label,
+              'category': selectedCategory,
+              'color': partnerColor.toARGB32(),
+            }
+          ])
+        }, SetOptions(merge: true));
+      } catch (_) {}
+    }
+  }
+
   final AudioPlayer _audioPlayer = AudioPlayer();
   final List<String> _processedIds = []; // જે એન્ટ્રીનો અવાજ આવી ગયો હોય તેની યાદી
   List<QueryDocumentSnapshot> _preApprovedResults = [];
@@ -192,6 +369,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(NotificationService.instance.ensureTokenRegistered());
       _loadAllSocietyMembers();
+      _loadCustomPartners();
     });
   }
 
@@ -2953,8 +3131,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   // ════════════════════════════════════════════════════════════════
   Widget _buildQuickFillSection() {
     final displayedPartners = _quickFilterCategory == 'all'
-        ? _kQuickPartners
-        : _kQuickPartners
+        ? _allPartners
+        : _allPartners
             .where((p) => p['category'] == _quickFilterCategory)
             .toList();
 
@@ -3075,7 +3253,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               children: [
                 _buildQuickCategoryTab(
                   id: 'all',
-                  label: 'બધા (${_kQuickPartners.length})',
+                  label: 'બધા (${_allPartners.length})',
                   icon: Icons.grid_view_rounded,
                 ),
                 const SizedBox(width: 6),
@@ -3106,11 +3284,53 @@ class _WatchmanScreenState extends State<WatchmanScreen>
           Wrap(
             spacing: 8,
             runSpacing: 9,
-            children: displayedPartners
-                .map((partner) => _buildQuickPartnerChip(partner))
-                .toList(),
+            children: [
+              ...displayedPartners
+                  .map((partner) => _buildQuickPartnerChip(partner)),
+              _buildAddPartnerChip(),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAddPartnerChip() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _showAddPartnerDialog,
+        borderRadius: BorderRadius.circular(13),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7.5),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEEF2FF),
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(
+              color: const Color(0xFFC7D2FE),
+              width: 1.1,
+            ),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.add_circle_outline_rounded,
+                size: 13,
+                color: Color(0xFF4F46E5),
+              ),
+              SizedBox(width: 4),
+              Text(
+                "+ નવો પ્રકાર",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF4F46E5),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

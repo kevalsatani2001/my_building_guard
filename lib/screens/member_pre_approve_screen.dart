@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/society_service.dart';
+import '../widgets/premium_app_bar.dart';
 
 class MemberPreApproveScreen extends StatefulWidget {
   final String memberFlat;
@@ -131,15 +132,11 @@ class _MemberPreApproveScreenState extends State<MemberPreApproveScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: const Text(
-          'મહેમાન પૂર્વ-મંજૂરી & પાસ',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF0F172A),
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
+      appBar: const PremiumAppBar(
+        title: 'મહેમાન પૂર્વ-મંજૂરી & પાસ',
+        subtitle: 'QR ડિજિટલ એન્ટ્રી અને ગેસ્ટ ઇન્વિટેશન',
+        icon: Icons.qr_code_scanner_rounded,
+        accentColor: Color(0xFF0D9488),
       ),
       body: SingleChildScrollView(
         child: Column(

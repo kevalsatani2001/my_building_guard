@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/maintenance_service.dart';
 
 class AdminSocietyBankSettingsScreen extends StatefulWidget {
@@ -113,6 +114,256 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
+    }
+  }
+
+  /// ૧. કડક UPI ID ફોર્મેટ વેલિડેશન (૧૦૦% ફ્રી)
+  String? _validateUpiId(String? v) {
+    if (v == null || v.trim().isEmpty) {
+      return 'સોસાયટી UPI ID દાખલ કરવો ફરજિયાત છે';
+    }
+    final trimmed = v.trim();
+    if (trimmed.contains(' ')) {
+      return 'UPI ID માં સ્પેસ (ખાલી જગ્યા) ન હોવી જોઈએ';
+    }
+    if (!trimmed.contains('@')) {
+      return 'સાચો UPI ID દાખલ કરો (દા.ત. yourname@bank જેમ કે @okhdfcbank, @sbi, @paytm)';
+    }
+    final parts = trimmed.split('@');
+    if (parts.length != 2) {
+      return 'અમાન્ય UPI ID (માત્ર ૧ વાર @ હોવું જોઈએ)';
+    }
+    final prefix = parts[0];
+    final handle = parts[1].toLowerCase();
+
+    if (prefix.length < 2) {
+      return 'UPI ID નું નામ બહુ નાનું છે (ઓછામાં ઓછા ૨ અક્ષર)';
+    }
+    if (handle.isEmpty) {
+      return '@ પછી બેંક હેન્ડલ લખો (દા.ત. @sbi, @paytm, @okhdfcbank)';
+    }
+    if (handle == 'gmail.com' ||
+        handle == 'yahoo.com' ||
+        handle == 'outlook.com' ||
+        handle == 'hotmail.com' ||
+        handle == 'icloud.com') {
+      return '⚠️ આ ઈમેલ ID છે! બેંક UPI ID લખો (દા.ત. @okhdfcbank, @sbi, @paytm)';
+    }
+    final upiRegex = RegExp(r'^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z0-9.\-_]{2,64}$');
+    if (!upiRegex.hasMatch(trimmed)) {
+      return 'અમાન્ય UPI ID ફોર્મેટ. અયોગ્ય ચિહ્નો હટાવો.';
+    }
+    return null;
+  }
+
+  /// જાણીતા UPI બેંક/PSP હેન્ડલની ઓળખ (Google Pay, PhonePe, Paytm, SBI, etc.)
+  ({String name, IconData icon, Color color})? _detectUpiBank(String upi) {
+    final trimmed = upi.trim().toLowerCase();
+    if (!trimmed.contains('@')) return null;
+    final parts = trimmed.split('@');
+    if (parts.length != 2 || parts[1].isEmpty) return null;
+    final handle = parts[1];
+
+    if (handle.startsWith('okhdfc')) {
+      return (name: 'HDFC Bank (Google Pay)', icon: Icons.account_balance_rounded, color: const Color(0xFF004C8F));
+    } else if (handle.startsWith('okaxis')) {
+      return (name: 'Axis Bank (Google Pay)', icon: Icons.account_balance_rounded, color: const Color(0xFF97144D));
+    } else if (handle.startsWith('oksbi')) {
+      return (name: 'SBI (Google Pay)', icon: Icons.account_balance_rounded, color: const Color(0xFF280071));
+    } else if (handle.startsWith('okicici')) {
+      return (name: 'ICICI Bank (Google Pay)', icon: Icons.account_balance_rounded, color: const Color(0xFFF37021));
+    } else if (handle == 'paytm' || handle.startsWith('pt')) {
+      return (name: 'Paytm Payments Bank', icon: Icons.payment_rounded, color: const Color(0xFF00B9F5));
+    } else if (handle == 'ybl' || handle == 'ibl' || handle == 'axl') {
+      return (name: 'PhonePe (${handle.toUpperCase()})', icon: Icons.phone_android_rounded, color: const Color(0xFF5F259F));
+    } else if (handle == 'upi' || handle == 'bhimsbi') {
+      return (name: 'BHIM UPI', icon: Icons.verified_user_rounded, color: const Color(0xFF00796B));
+    } else if (handle == 'kotak') {
+      return (name: 'Kotak Mahindra Bank', icon: Icons.account_balance_rounded, color: const Color(0xFFED1C24));
+    } else if (handle == 'icici') {
+      return (name: 'ICICI Bank', icon: Icons.account_balance_rounded, color: const Color(0xFFF37021));
+    } else if (handle == 'sbi') {
+      return (name: 'State Bank of India', icon: Icons.account_balance_rounded, color: const Color(0xFF280071));
+    } else if (handle == 'barodampay' || handle == 'bob') {
+      return (name: 'Bank of Baroda', icon: Icons.account_balance_rounded, color: const Color(0xFFF26522));
+    } else if (handle == 'pnb') {
+      return (name: 'Punjab National Bank', icon: Icons.account_balance_rounded, color: const Color(0xFFA21D21));
+    } else if (handle == 'postbank' || handle == 'ippb') {
+      return (name: 'India Post Payments Bank', icon: Icons.account_balance_rounded, color: const Color(0xFFB71C1C));
+    }
+
+    if (RegExp(r'^[a-zA-Z0-9.\-_]{2,64}$').hasMatch(handle)) {
+      return (name: 'માન્ય UPI હેન્ડલ (@$handle)', icon: Icons.verified_rounded, color: const Color(0xFF0D9488));
+    }
+    return null;
+  }
+
+  /// ૨. વિકલ્પ ૨: "UPI એપમાં ચકાસો (Test VPA)" — ૧૦૦% ફ્રી લાઈવ બેંક નેમ ચેક
+  Future<void> _testUpiInApp() async {
+    final upi = _upiIdController.text.trim();
+    final payee = _payeeController.text.trim();
+
+    final validationError = _validateUpiId(upi);
+    if (validationError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(child: Text(validationError)),
+            ],
+          ),
+          backgroundColor: Colors.deepOrange.shade800,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    // UPI ID આપોઆપ ક્લિપબોર્ડમાં કૉપી કરી લેવો જેથી ગૂગલ પે / ફોનપે માં સીધું પેસ્ટ કરી શકાય
+    await Clipboard.setData(ClipboardData(text: upi));
+    if (!mounted) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: const Row(
+          children: [
+            Icon(Icons.verified_rounded, color: Color(0xFF0D9488), size: 24),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'UPI એપમાં બેંક નામ ચકાસો',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDFA),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFF99F6E4)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.account_balance_rounded, color: Color(0xFF0F766E), size: 22),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          upi,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Color(0xFF0F766E),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Row(
+                          children: [
+                            Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 12),
+                            SizedBox(width: 4),
+                            Text(
+                              'UPI ID ક્લિપબોર્ડમાં કૉપી થઈ ગયો છે',
+                              style: TextStyle(color: Color(0xFF0D9488), fontSize: 11, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy_rounded, color: Color(0xFF0F766E), size: 18),
+                    tooltip: 'કૉપી કરો',
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: upi));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('UPI ID કૉપી થઈ ગયો!'),
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              '💡 બેંકમાં રજીસ્ટર્ડ સાચું નામ કેવી રીતે જોવું? (૧૦૦% ફ્રી)',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              '૧. નીચે "UPI એપ ખોલો" દબાવતા Google Pay / PhonePe ખુલશે.\n'
+              '૨. એપમાં "Pay UPI ID" અથવા Search બારમાં આ કૉપી કરેલ ID Paste કરો.\n'
+              '૩. NPCI બેંક સર્વર સીધું જ રજીસ્ટર્ડ બેંક ખાતાધારકનું સાચું નામ (Verified Name) બતાવશે.\n'
+              '૪. નામ ચકાસ્યા પછી પેમેન્ટ કરવાની જરૂર નથી — સીધા પાછા આવી અહીં સેવ કરી લો.',
+              style: TextStyle(fontSize: 12.5, color: Color(0xFF475569), height: 1.45),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('રદ કરો', style: TextStyle(color: Color(0xFF64748B))),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(Icons.open_in_new_rounded, size: 16),
+            label: const Text('UPI એપ ખોલો'),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF0D9488),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    final effectivePayee = payee.isNotEmpty ? payee : 'Society Maintenance';
+    final uri = Uri.parse(
+      'upi://pay?pa=$upi&pn=${Uri.encodeComponent(effectivePayee)}&cu=INR&tn=Account%20Verification',
+    );
+
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'તમારા ફોનમાં કોઈ UPI એપ (GPay/PhonePe/Paytm) ખૂલી શકી નહીં. નીચે રહેલા QR કોડને બીજા ફોનથી સ્કેન કરીને પણ ચકાસી શકો છો.',
+            ),
+            backgroundColor: Colors.orange.shade800,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('UPI એપ ખોલવામાં ભૂલ: $e'),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
     }
   }
 
@@ -240,21 +491,23 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      payeeText.isNotEmpty ? payeeText : 'સોસાયટી મેન્ટેનન્સ એકાઉન્ટ',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      payeeText.isNotEmpty ? payeeText : 'સોસાયટી ખાતાધારકનું નામ',
+                      style: TextStyle(
+                        color: payeeText.isNotEmpty ? Colors.white : Colors.white70,
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.4,
+                        fontStyle: payeeText.isNotEmpty ? FontStyle.normal : FontStyle.italic,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      upiText.isNotEmpty ? upiText : 'example@upi',
-                      style: const TextStyle(
-                        color: Color(0xFF5EEAD4),
+                      upiText.isNotEmpty ? upiText : 'yourname@bank',
+                      style: TextStyle(
+                        color: upiText.isNotEmpty ? const Color(0xFF5EEAD4) : Colors.white60,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
+                        fontStyle: upiText.isNotEmpty ? FontStyle.normal : FontStyle.italic,
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -355,14 +608,113 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                       onChanged: (_) => setState(() {}),
                       decoration: _inputDeco(
                         labelText: 'સોસાયટી UPI ID (VPA) *',
-                        hintText: 'દા.ત. shantivan@sbi અથવા 9876543210@paytm',
+                        hintText: 'દા.ત. yourname@bank (જેમ કે @okhdfcbank, @sbi, @paytm)',
                         prefixIcon: const Icon(Icons.qr_code_2_rounded, color: Color(0xFF4338CA), size: 20),
                       ),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'UPI ID દાખલ કરવો ફરજિયાત છે';
-                        if (!v.contains('@')) return 'સાચો UPI ID દાખલ કરો (દા.ત. name@bank)';
-                        return null;
+                      validator: _validateUpiId,
+                    ),
+
+                    // ૧. લાઈવ ફોર્મેટ & બેંક ડિટેક્શન સ્ટેટસ બેજ
+                    Builder(
+                      builder: (context) {
+                        if (upiText.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8, bottom: 4),
+                            child: Row(
+                              children: [
+                                Icon(Icons.info_outline_rounded, size: 14, color: Colors.blueGrey.shade400),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    'ઉદાહરણ ફોર્મેટ: societyname@bank, secretary@paytm, name@okhdfcbank',
+                                    style: TextStyle(fontSize: 11.5, color: Colors.blueGrey.shade600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        final validationErr = _validateUpiId(upiText);
+                        if (validationErr != null) {
+                          return Container(
+                            margin: const EdgeInsets.only(top: 8, bottom: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red.shade200),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.cancel_outlined, size: 15, color: Colors.red.shade700),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    validationErr,
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      color: Colors.red.shade800,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        final bankInfo = _detectUpiBank(upiText);
+                        return Container(
+                          margin: const EdgeInsets.only(top: 8, bottom: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFBBF7D0)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.check_circle_rounded, size: 15, color: Color(0xFF16A34A)),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  '✓ માન્ય UPI ફોર્મેટ • ${bankInfo?.name ?? "માન્ય બેંક VPA"}',
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    color: Color(0xFF15803D),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
                       },
+                    ),
+                    const SizedBox(height: 8),
+
+                    // ૨. "UPI એપમાં ખાતું ચકાસો (Test VPA)" Action Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _testUpiInApp,
+                        icon: const Icon(Icons.verified_outlined, size: 17, color: Color(0xFF0F766E)),
+                        label: const Text(
+                          'UPI એપમાં ખાતું ચકાસો (Test VPA — ૧૦૦% ફ્રી)',
+                          style: TextStyle(
+                            color: Color(0xFF0F766E),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12.5,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 14),
+                          side: const BorderSide(color: Color(0xFF14B8A6), width: 1.2),
+                          backgroundColor: const Color(0xFFF0FDFA),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 14),
 
@@ -372,7 +724,7 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                       textCapitalization: TextCapitalization.words,
                       decoration: _inputDeco(
                         labelText: 'ખાતાધારકનું નામ (Payee Name)',
-                        hintText: 'દા.ત. શાંતિવન સોસાયટી મેન્ટેનન્સ',
+                        hintText: 'દા.ત. સોસાયટીનું નામ / ખાતાધારકનું નામ',
                         prefixIcon: const Icon(Icons.badge_outlined, color: Color(0xFF4338CA), size: 20),
                       ),
                     ),

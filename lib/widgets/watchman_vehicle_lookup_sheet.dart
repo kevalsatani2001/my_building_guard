@@ -1,6 +1,7 @@
 import 'package:building_guard/core/app_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/society_service.dart';
@@ -480,54 +481,83 @@ class _WatchmanVehicleLookupSheetState
                             children: [
                               Row(
                                 children: [
-                                  // Number plate styled badge
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF8FAFC),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: const Color(0xFF0F172A),
-                                        width: 1.5,
+                                  // Number plate styled badge with 1-tap copy
+                                  InkWell(
+                                    onTap: () {
+                                      Clipboard.setData(ClipboardData(text: num));
+                                      HapticFeedback.lightImpact();
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Row(
+                                            children: [
+                                              const Icon(Icons.check_circle_rounded, color: Color(0xFF4ADE80), size: 18),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text('વાહન નંબર કોપી થયો: $num'),
+                                              ),
+                                            ],
+                                          ),
+                                          duration: const Duration(seconds: 2),
+                                          behavior: SnackBarBehavior.floating,
+                                          backgroundColor: const Color(0xFF0F172A),
+                                        ),
+                                      );
+                                    },
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 5,
                                       ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 4,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF1E3A8A),
-                                            borderRadius:
-                                                BorderRadius.circular(3),
-                                          ),
-                                          child: const Text(
-                                            "IND",
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 8,
-                                              fontWeight: FontWeight.w900,
-                                              letterSpacing: 0.5,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF8FAFC),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: const Color(0xFF0F172A),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF1E3A8A),
+                                              borderRadius:
+                                                  BorderRadius.circular(3),
+                                            ),
+                                            child: const Text(
+                                              "IND",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 8,
+                                                fontWeight: FontWeight.w900,
+                                                letterSpacing: 0.5,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          num,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w900,
-                                            fontSize: 14,
-                                            color: Color(0xFF0F172A),
-                                            letterSpacing: 0.8,
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            num,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 14,
+                                              color: Color(0xFF0F172A),
+                                              letterSpacing: 0.8,
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                          const SizedBox(width: 6),
+                                          const Icon(
+                                            Icons.copy_rounded,
+                                            size: 13,
+                                            color: Color(0xFF64748B),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                   const Spacer(),

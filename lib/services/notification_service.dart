@@ -1,6 +1,7 @@
-import 'package:building_guard/core/app_firestore.dart';
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:building_guard/core/app_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import 'notification_navigation_service.dart';
 import 'society_service.dart';
 
 /// ડિફૉલ્ટ સોસાયટી ટોપિક (અન્ય સોસાયટી માટે [SocietyService.topicMembers] વાપરો).
@@ -407,7 +409,7 @@ class NotificationService {
         title: parsed.title,
         body: parsed.body,
         notificationDetails: details,
-        payload: message.data.isNotEmpty ? message.data.toString() : null,
+        payload: message.data.isNotEmpty ? jsonEncode(message.data) : null,
       );
     } catch (e) {
       if (kDebugMode) debugPrint('Local notification show: $e');
@@ -418,19 +420,37 @@ class NotificationService {
     if (kDebugMode && response.payload != null) {
       debugPrint('Local notification tap payload: ${response.payload}');
     }
+    final payload = response.payload;
+    if (payload != null && payload.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(payload);
+        if (decoded is Map<String, dynamic>) {
+          NotificationNavigationService.handleNotificationData(decoded);
+        }
+      } catch (e) {
+        debugPrint('Failed to decode local notification payload: $e');
+      }
+    }
   }
 
   void _onMessageOpenedApp(RemoteMessage message) {
     if (kDebugMode) {
-      debugPrint('FCM opened from background: ${message.notification?.title}');
+      debugPrint('FCM opened from background: ${message.notification?.title} data: ${message.data}');
     }
+    NotificationNavigationService.handleNotificationData(message.data);
   }
 
   void _onInitialMessage(RemoteMessage? message) {
     if (message == null) return;
     if (kDebugMode) {
-      debugPrint('FCM opened from terminated: ${message.notification?.title}');
+      debugPrint('FCM opened from terminated: ${message.notification?.title} data: ${message.data}');
     }
+    NotificationNavigationService.pendingColdStartData = message.data;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        NotificationNavigationService.handleNotificationData(message.data);
+      });
+    });
   }
 }
 

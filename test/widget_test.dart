@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:building_guard/models/maintenance_model.dart';
 import 'package:building_guard/services/maintenance_service.dart';
+import 'package:building_guard/services/parking_slot_service.dart';
 
 void main() {
   test('Basic project smoke test', () {
@@ -151,5 +152,68 @@ void main() {
       expect(find.byType(QrImageView), findsOneWidget);
     });
   });
+
+  group('VehiclePlateValidator Tests', () {
+    test('Valid standard Gujarat plate with spaces', () {
+      final res = VehiclePlateValidator.validate('GJ 01 AB 1234');
+      expect(res.isValid, isTrue);
+      expect(res.formattedPlate, 'GJ 01 AB 1234');
+      expect(res.cleanPlate, 'GJ01AB1234');
+    });
+
+    test('Valid standard plate without spaces or hyphens', () {
+      final res = VehiclePlateValidator.validate('gj05cd5678');
+      expect(res.isValid, isTrue);
+      expect(res.formattedPlate, 'GJ 05 CD 5678');
+      expect(res.cleanPlate, 'GJ05CD5678');
+    });
+
+    test('Valid Bharat (BH) series plate', () {
+      final res = VehiclePlateValidator.validate('22 BH 1234 AA');
+      expect(res.isValid, isTrue);
+      expect(res.formattedPlate, '22 BH 1234 AA');
+      expect(res.cleanPlate, '22BH1234AA');
+    });
+
+    test('Valid Delhi style with subcategory', () {
+      final res = VehiclePlateValidator.validate('DL 1C AA 1111');
+      expect(res.isValid, isTrue);
+      expect(res.formattedPlate, 'DL 1C AA 1111');
+    });
+
+    test('Valid plate with single digit RTO or number', () {
+      final res = VehiclePlateValidator.validate('GJ 5 1234');
+      expect(res.isValid, isTrue);
+      expect(res.formattedPlate, 'GJ 5 1234');
+
+      final vip = VehiclePlateValidator.validate('GJ 01 A 7');
+      expect(vip.isValid, isTrue);
+      expect(vip.formattedPlate, 'GJ 01 A 7');
+    });
+
+    test('Reject empty or whitespace', () {
+      final res = VehiclePlateValidator.validate('   ');
+      expect(res.isValid, isFalse);
+      expect(res.errorMessage, contains('દાખલ કરો'));
+    });
+
+    test('Reject too short', () {
+      final res = VehiclePlateValidator.validate('GJ 1');
+      expect(res.isValid, isFalse);
+      expect(res.errorMessage, contains('ટૂંકી'));
+    });
+
+    test('Reject invalid state code', () {
+      final res = VehiclePlateValidator.validate('ZZ 01 AB 1234');
+      expect(res.isValid, isFalse);
+      expect(res.errorMessage, contains('રાજ્ય કોડ'));
+    });
+
+    test('Reject invalid random characters', () {
+      final res = VehiclePlateValidator.validate('ABCDEF123456');
+      expect(res.isValid, isFalse);
+    });
+  });
 }
+
 

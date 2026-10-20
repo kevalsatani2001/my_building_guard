@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/society_service.dart';
 import 'admin_add_user_screen.dart';
+import '../widgets/premium_app_bar.dart';
 
 class AdminUsersDirectoryScreen extends StatefulWidget {
   final String initialRole; // 'all', 'member', 'watchman', 'admin'
@@ -163,47 +164,18 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "સોસાયટી સભ્યો & સ્ટાફ",
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 18,
-                color: Color(0xFF0F172A),
-              ),
-            ),
-            Text(
-              "મેમ્બર, વોચમેન અને એડમિન ડિરેક્ટરી",
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF64748B),
-              ),
-            ),
-          ],
-        ),
+      appBar: PremiumAppBar(
+        title: "સોસાયટી સભ્યો & સ્ટાફ",
+        subtitle: "મેમ્બર, વોચમેન અને એડમિન ડિરેક્ટરી",
+        icon: Icons.people_alt_rounded,
+        accentColor: const Color(0xFF4338CA),
         actions: [
-          IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEEF2FF),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.person_add_rounded, color: Color(0xFF4338CA), size: 20),
-            ),
+          PremiumAppBarAction(
+            icon: Icons.person_add_rounded,
+            color: const Color(0xFF4338CA),
+            backgroundColor: const Color(0xFFEEF2FF),
             tooltip: 'નવો યુઝર ઉમેરો',
-            onPressed: () {
+            onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -214,7 +186,7 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
               );
             },
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
         ],
       ),
       body: StreamBuilder<QuerySnapshot>(

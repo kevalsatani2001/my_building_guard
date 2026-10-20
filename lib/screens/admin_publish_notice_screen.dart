@@ -31,6 +31,128 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _loadCustomCategories();
+  }
+
+  Future<void> _loadCustomCategories() async {
+    try {
+      final sid = SocietyService.instance.societyId;
+      final doc = await AppFirestore.instance.collection('society_settings').doc(sid).get();
+      if (doc.exists && doc.data() != null) {
+        final list = doc.data()!['customNoticeCategories'];
+        if (list is List) {
+          for (final item in list) {
+            if (item is Map) {
+              final cat = (item['category'] ?? '').toString().trim();
+              final defaultTitle = (item['title'] ?? '').toString().trim();
+              if (cat.isNotEmpty && !_categories.any((c) => c.$1 == cat)) {
+                _categories.add((
+                  cat,
+                  defaultTitle.isNotEmpty ? defaultTitle : cat,
+                  Icons.label_important_rounded,
+                  const Color(0xFFEA580C),
+                ));
+              }
+            }
+          }
+          if (mounted) setState(() {});
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _showAddCategoryDialog() async {
+    final catController = TextEditingController();
+    final titleController = TextEditingController();
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.add_circle_outline_rounded, color: Color(0xFFEA580C)),
+            SizedBox(width: 8),
+            Text('નવી નોટિસ કેટેગરી ઉમેરો', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: catController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'કેટેગરી નામ *',
+                hintText: 'દા.ત. લિફ્ટ, સિક્યોરિટી, નિયમો, વગેરે',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(
+                labelText: 'ડિફૉલ્ટ શીર્ષક (વૈકલ્પિક)',
+                hintText: 'દા.ત. લિફ્ટ સર્વિસ બાબત જરૂરી પરિપત્ર',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('રદ કરો'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (catController.text.trim().isNotEmpty) {
+                Navigator.pop(ctx, true);
+              }
+            },
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEA580C)),
+            child: const Text('ઉમેરો'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && catController.text.trim().isNotEmpty) {
+      final newCat = catController.text.trim();
+      final newTitle = titleController.text.trim().isNotEmpty
+          ? titleController.text.trim()
+          : 'સોસાયટી $newCat સૂચના';
+
+      setState(() {
+        if (!_categories.any((c) => c.$1 == newCat)) {
+          _categories.add((
+            newCat,
+            newTitle,
+            Icons.label_important_rounded,
+            const Color(0xFFEA580C),
+          ));
+        }
+        _selectedCategory = newCat;
+        if (_titleC.text.isEmpty) {
+          _titleC.text = newTitle;
+        }
+      });
+
+      try {
+        final sid = SocietyService.instance.societyId;
+        await AppFirestore.instance.collection('society_settings').doc(sid).set({
+          'customNoticeCategories': FieldValue.arrayUnion([
+            {'category': newCat, 'title': newTitle}
+          ])
+        }, SetOptions(merge: true));
+      } catch (_) {}
+    }
+  }
+
+  @override
   void dispose() {
     _titleC.dispose();
     _bodyC.dispose();
@@ -155,35 +277,54 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: _categories.map((c) {
-                  final isSelected = _selectedCategory == c.$1;
-                  return Padding(
+                children: [
+                  ..._categories.map((c) {
+                    final isSelected = _selectedCategory == c.$1;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        avatar: Icon(
+                          c.$3,
+                          size: 16,
+                          color: isSelected ? Colors.white : c.$4,
+                        ),
+                        label: Text(c.$1),
+                        selected: isSelected,
+                        selectedColor: const Color(0xFFEA580C),
+                        labelStyle: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                        ),
+                        onSelected: (val) {
+                          if (val) {
+                            setState(() {
+                              _selectedCategory = c.$1;
+                              if (_titleC.text.isEmpty) _titleC.text = c.$2;
+                            });
+                          }
+                        },
+                      ),
+                    );
+                  }),
+                  Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      avatar: Icon(
-                        c.$3,
-                        size: 16,
-                        color: isSelected ? Colors.white : c.$4,
+                    child: ActionChip(
+                      avatar: const Icon(Icons.add_circle_outline_rounded, size: 16, color: Color(0xFFEA580C)),
+                      label: const Text(
+                        '+ નવી કેટેગરી',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          color: Color(0xFFEA580C),
+                        ),
                       ),
-                      label: Text(c.$1),
-                      selected: isSelected,
-                      selectedColor: const Color(0xFFEA580C),
-                      labelStyle: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                        color: isSelected ? Colors.white : const Color(0xFF0F172A),
-                      ),
-                      onSelected: (val) {
-                        if (val) {
-                          setState(() {
-                            _selectedCategory = c.$1;
-                            if (_titleC.text.isEmpty) _titleC.text = c.$2;
-                          });
-                        }
-                      },
+                      backgroundColor: const Color(0xFFFFF7ED),
+                      side: const BorderSide(color: Color(0xFFFDBA74)),
+                      onPressed: _showAddCategoryDialog,
                     ),
-                  );
-                }).toList(),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 20),
