@@ -56,6 +56,8 @@ class MaintenanceBill {
   final DateTime dueDate;
   final double amount;
   final double penaltyAmount;
+  final double festivalCharge;
+  final String festivalName;
   final String blockName;
   final String unitNumber;
   final String? memberId;
@@ -79,6 +81,8 @@ class MaintenanceBill {
     required this.dueDate,
     required this.amount,
     this.penaltyAmount = 0.0,
+    this.festivalCharge = 0.0,
+    this.festivalName = '',
     required this.blockName,
     required this.unitNumber,
     this.memberId,
@@ -95,7 +99,7 @@ class MaintenanceBill {
     this.note = '',
   }) : createdAt = createdAt ?? DateTime.now();
 
-  double get totalPayable => amount + penaltyAmount;
+  double get totalPayable => amount + penaltyAmount + festivalCharge;
 
   String get cleanBlockName {
     if (blockName.contains('_')) {
@@ -142,6 +146,8 @@ class MaintenanceBill {
       dueDate: parseDate(data['dueDate']),
       amount: (data['amount'] as num?)?.toDouble() ?? 0.0,
       penaltyAmount: (data['penaltyAmount'] as num?)?.toDouble() ?? 0.0,
+      festivalCharge: (data['festivalCharge'] as num?)?.toDouble() ?? 0.0,
+      festivalName: (data['festivalName'] ?? '').toString(),
       blockName: (data['blockName'] ?? '').toString(),
       unitNumber: (data['unitNumber'] ?? '').toString(),
       memberId: data['memberId']?.toString(),
@@ -167,6 +173,8 @@ class MaintenanceBill {
       'dueDate': Timestamp.fromDate(dueDate),
       'amount': amount,
       'penaltyAmount': penaltyAmount,
+      'festivalCharge': festivalCharge,
+      'festivalName': festivalName,
       'blockName': blockName,
       'unitNumber': unitNumber,
       'memberId': memberId,

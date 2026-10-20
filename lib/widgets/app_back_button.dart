@@ -22,12 +22,12 @@ class AppBackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final effectiveIconColor = color ?? IconTheme.of(context).color ?? const Color(0xFF0F172A);
-    final isDark = effectiveIconColor == Colors.white;
+    final isLightIcon = effectiveIconColor.computeLuminance() > 0.45;
 
     final effectiveBg = backgroundColor ??
-        (isDark ? Colors.white.withValues(alpha: 0.14) : const Color(0xFFF1F5F9));
+        (isLightIcon ? Colors.white.withValues(alpha: 0.18) : const Color(0xFFF1F5F9));
     final effectiveBorder = borderColor ??
-        (isDark ? Colors.white.withValues(alpha: 0.22) : const Color(0xFFE2E8F0));
+        (isLightIcon ? Colors.white.withValues(alpha: 0.28) : const Color(0xFFE2E8F0));
 
     return Tooltip(
       message: 'પાછા જાઓ',

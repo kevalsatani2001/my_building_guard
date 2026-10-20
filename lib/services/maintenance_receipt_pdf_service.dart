@@ -9,6 +9,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../models/maintenance_model.dart';
+import '../widgets/premium_app_bar.dart';
 import 'package:building_guard/core/app_firestore.dart';
 
 class MaintenanceReceiptPdfService {
@@ -538,6 +539,20 @@ class MaintenanceReceiptPdfService {
       fit: pw.BoxFit.contain,
     );
 
+    final festivalLabelText = bill.festivalName.isNotEmpty
+        ? 'તહેવાર ફાળો (${bill.festivalName})'
+        : 'Festival Contribution (તહેવાર ફાળો)';
+    final pw.Widget festivalTitleValWidget = pw.Image(
+      await _renderShapedText(
+        text: festivalLabelText,
+        fontSize: 9.5,
+        color: const Color(0xFFB45309),
+        fontWeight: FontWeight.w500,
+      ),
+      height: 13,
+      fit: pw.BoxFit.contain,
+    );
+
     final pw.Widget grandTotalLabelWidget = pw.Image(
       await _renderShapedText(
         text: isPaid ? 'TOTAL AMOUNT PAID (કુલ ચૂકવેલ રકમ):' : 'TOTAL AMOUNT DUE (કુલ બાકી રકમ):',
@@ -937,7 +952,27 @@ class MaintenanceReceiptPdfService {
                           ),
                         ],
                       ),
-                      // Row 2: Penalty (if applicable)
+                      // Row 2: Festival Contribution (if applicable)
+                      if (bill.festivalCharge > 0)
+                        pw.TableRow(
+                          decoration: const pw.BoxDecoration(color: PdfColor(1.0, 0.99, 0.95)),
+                          children: [
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                              child: festivalTitleValWidget,
+                            ),
+                            _buildTableCell(
+                              bill.billingMonth.isNotEmpty ? bill.billingMonth : 'તહેવાર ફંડ',
+                            ),
+                            _buildTableCell(isPaid ? 'Paid in Full' : 'Payment Due'),
+                            _buildTableCell(
+                              currencyFmt.format(bill.festivalCharge),
+                              alignRight: true,
+                              isBold: true,
+                            ),
+                          ],
+                        ),
+                      // Row 3: Penalty (if applicable)
                       if (bill.penaltyAmount > 0)
                         pw.TableRow(
                           decoration: const pw.BoxDecoration(color: PdfColor(1.0, 0.97, 0.93)),
@@ -1429,27 +1464,16 @@ class MaintenanceReceiptViewerScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'મેન્ટેનન્સ રસીદ (Receipt)',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              receiptNum,
-              style: const TextStyle(fontSize: 12, color: Colors.white70),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFF0F766E),
-        foregroundColor: Colors.white,
+      appBar: PremiumAppBar(
+        title: 'મેન્ટેનન્સ રસીદ (Receipt)',
+        subtitle: receiptNum,
         actions: [
-          IconButton(
+          PremiumAppBarAction(
+            icon: Icons.download_rounded,
             tooltip: 'PDF ડાઉનલોડ કરો',
-            icon: const Icon(Icons.download_rounded),
-            onPressed: () {
+            color: const Color(0xFF0F766E),
+            backgroundColor: const Color(0xFFCCFBF1),
+            onTap: () {
               MaintenanceReceiptPdfService.downloadReceiptPdf(
                 context,
                 bill,
@@ -1457,6 +1481,7 @@ class MaintenanceReceiptViewerScreen extends StatelessWidget {
               );
             },
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: PdfPreview(

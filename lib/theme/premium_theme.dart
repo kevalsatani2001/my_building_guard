@@ -45,11 +45,11 @@ class PremiumTheme {
       ),
       actionIconTheme: ActionIconThemeData(
         backButtonIconBuilder: (BuildContext context) {
-          final isDark = Theme.of(context).appBarTheme.backgroundColor == brandPrimary ||
-              Theme.of(context).brightness == Brightness.dark;
-          final fg = IconTheme.of(context).color ?? (isDark ? Colors.white : const Color(0xFF0F172A));
-          final bg = isDark ? Colors.white.withValues(alpha: 0.12) : const Color(0xFFF1F5F9);
-          final border = isDark ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFE2E8F0);
+          final iconColor = IconTheme.of(context).color ?? const Color(0xFF0F172A);
+          final isLightIcon = iconColor.computeLuminance() > 0.45;
+          final fg = isLightIcon ? Colors.white : const Color(0xFF0F172A);
+          final bg = isLightIcon ? Colors.white.withValues(alpha: 0.18) : const Color(0xFFF1F5F9);
+          final border = isLightIcon ? Colors.white.withValues(alpha: 0.28) : const Color(0xFFE2E8F0);
 
           return Container(
             width: 36,

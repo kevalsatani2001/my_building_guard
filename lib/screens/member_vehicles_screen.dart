@@ -40,11 +40,11 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
   bool _isAdding = false;
   bool _showAddForm = false;
 
-  final List<(String, IconData)> _types = [
-    ('૪-વ્હીલર (કાર)', Icons.directions_car_rounded),
-    ('૨-વ્હીલર (બાઇક/સ્કૂટર)', Icons.two_wheeler_rounded),
-    ('⚡ ઇલેક્ટ્રિક EV', Icons.electric_car_rounded),
-    ('અન્ય વાહન', Icons.airport_shuttle_rounded),
+  final List<(String, String, IconData, Color)> _vehicleTypeOptions = const [
+    ('૪-વ્હીલર (કાર)', 'કાર / SUV', Icons.directions_car_filled_rounded, Color(0xFF0284C7)),
+    ('૨-વ્હીલર (બાઇક/સ્કૂટર)', 'બાઇક / સ્કૂટર', Icons.two_wheeler_rounded, Color(0xFF0D9488)),
+    ('ઇલેક્ટ્રિક વાહન (EV)', 'ઇલેક્ટ્રિક EV', Icons.electric_car_rounded, Color(0xFF10B981)),
+    ('અન્ય વાહન', 'કોમર્શિયલ / અન્ય', Icons.local_shipping_rounded, Color(0xFF6366F1)),
   ];
 
   @override
@@ -679,30 +679,92 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                       style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
                                     ),
                                     const SizedBox(height: 8),
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 8,
-                                      children: _types.map((t) {
-                                        final isSelected = _selectedType == t.$1;
-                                        return ChoiceChip(
-                                          label: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(t.$2, size: 14, color: isSelected ? Colors.white : const Color(0xFF0284C7)),
-                                              const SizedBox(width: 6),
-                                              Text(t.$1),
-                                            ],
+                                    GridView.count(
+                                      crossAxisCount: 2,
+                                      shrinkWrap: true,
+                                      physics: const NeverScrollableScrollPhysics(),
+                                      mainAxisSpacing: 8,
+                                      crossAxisSpacing: 8,
+                                      childAspectRatio: 2.3,
+                                      children: _vehicleTypeOptions.map((t) {
+                                        final (name, subtitle, iconData, color) = t;
+                                        final isSelected = _selectedType == name || (name.contains('ઇલેક્ટ્રિક') && _selectedType.contains('ઇલેક્ટ્રિક'));
+                                        return Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            onTap: () {
+                                              HapticFeedback.lightImpact();
+                                              setState(() => _selectedType = name);
+                                            },
+                                            borderRadius: BorderRadius.circular(14),
+                                            child: AnimatedContainer(
+                                              duration: const Duration(milliseconds: 180),
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                              decoration: BoxDecoration(
+                                                color: isSelected ? color.withValues(alpha: 0.08) : Colors.white,
+                                                borderRadius: BorderRadius.circular(14),
+                                                border: Border.all(
+                                                  color: isSelected ? color : const Color(0xFFE2E8F0),
+                                                  width: isSelected ? 1.8 : 1.0,
+                                                ),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: isSelected ? color.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.02),
+                                                    blurRadius: 6,
+                                                    offset: const Offset(0, 2),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Container(
+                                                    width: 34,
+                                                    height: 34,
+                                                    decoration: BoxDecoration(
+                                                      color: isSelected ? color : color.withValues(alpha: 0.12),
+                                                      borderRadius: BorderRadius.circular(10),
+                                                    ),
+                                                    child: Icon(
+                                                      iconData,
+                                                      size: 18,
+                                                      color: isSelected ? Colors.white : color,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                      children: [
+                                                        Text(
+                                                          name,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
+                                                          style: TextStyle(
+                                                            fontSize: 11,
+                                                            fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                                                            color: isSelected ? color : const Color(0xFF0F172A),
+                                                          ),
+                                                        ),
+                                                        Text(
+                                                          subtitle,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
+                                                          style: TextStyle(
+                                                            fontSize: 9.5,
+                                                            fontWeight: FontWeight.w500,
+                                                            color: isSelected ? color.withValues(alpha: 0.85) : const Color(0xFF64748B),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  if (isSelected)
+                                                    Icon(Icons.check_circle_rounded, size: 15, color: color),
+                                                ],
+                                              ),
+                                            ),
                                           ),
-                                          selected: isSelected,
-                                          selectedColor: const Color(0xFF0284C7),
-                                          backgroundColor: const Color(0xFFF1F5F9),
-                                          labelStyle: TextStyle(
-                                            color: isSelected ? Colors.white : const Color(0xFF334155),
-                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                                            fontSize: 11.5,
-                                          ),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                          onSelected: (_) => setState(() => _selectedType = t.$1),
                                         );
                                       }).toList(),
                                     ),

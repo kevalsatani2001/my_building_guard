@@ -12,6 +12,14 @@ class SocietyService {
 
   String _societyId = kDefaultSocietyId;
   String get societyId => _societyId;
+  String get currentSocietyId => _societyId;
+
+  String _societyName = 'માય સોસાયટી (My Society)';
+  String get currentSocietyName => _societyName;
+
+  void setSocietyName(String name) {
+    if (name.trim().isNotEmpty) _societyName = name.trim();
+  }
 
   void bindFromUserMap(Map<String, dynamic>? data) {
     final raw = data?['societyId'];
@@ -20,10 +28,16 @@ class SocietyService {
     } else {
       _societyId = kDefaultSocietyId;
     }
+
+    final rawName = data?['societyName'];
+    if (rawName is String && rawName.trim().isNotEmpty) {
+      _societyName = rawName.trim();
+    }
   }
 
   void clear() {
     _societyId = kDefaultSocietyId;
+    _societyName = 'માય સોસાયટી (My Society)';
   }
 
   /// `societyId` ન હોય / ખાલી → માત્ર [kDefaultSocietyId] સોસાયટી (જૂનો ડેટા / માઇગ્રેશન પહેલાં).

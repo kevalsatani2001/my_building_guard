@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:building_guard/core/app_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,6 +23,7 @@ import 'member_daily_staff_screen.dart';
 import 'member_pre_approve_screen.dart';
 import 'member_vehicles_screen.dart';
 import 'member_visitors_screen.dart';
+import 'member_accounts_screen.dart';
 import '../widgets/visitor_detail_sheet.dart';
 
 const String _kMemberFunctionsRegion = 'us-central1';
@@ -402,7 +404,10 @@ class _MemberScreenState extends State<MemberScreen> {
     if (_visitorTimeFilter == '7d') {
       return now.subtract(const Duration(days: 7));
     }
-    return now.subtract(const Duration(days: 30));
+    if (_visitorTimeFilter == '30d') {
+      return now.subtract(const Duration(days: 30));
+    }
+    return DateTime(2020);
   }
 
   @override
@@ -592,23 +597,19 @@ class _MemberScreenState extends State<MemberScreen> {
 
                     // ૭. Scope Switcher Bar: [ 🏠 મારા ફ્લેટ (myCount) ] | [ 🏢 આખી સોસાયટી ગેટ (allCount) ]
                     _buildScopeSwitcher(myFlatDocs.length, tenantDocs.length),
+                    const SizedBox(height: 12),
+
+                    // ૮. Filter Control Header: Status Filter Bar + Executive Time Selector
+                    _buildFilterControlHeader(),
                     const SizedBox(height: 10),
 
-                    // ૮. Time Filter Pills & Status Filter Tabs in responsive row
-                    Row(
-                      children: [
-                        _buildTimeFilterPill(),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildStatusFilterTabs(
-                            activeScopeDocs.length,
-                            pendingCount,
-                            approvedCount,
-                            rejectedCount,
-                            checkedOutCount,
-                          ),
-                        ),
-                      ],
+                    // ૯. Full-Width Premium Status Filter Chips
+                    _buildStatusFilterTabs(
+                      activeScopeDocs.length,
+                      pendingCount,
+                      approvedCount,
+                      rejectedCount,
+                      checkedOutCount,
                     ),
                     const SizedBox(height: 14),
 
@@ -1335,6 +1336,108 @@ class _MemberScreenState extends State<MemberScreen> {
             ),
           ],
         ),
+        const SizedBox(height: 10),
+        // Society Accounts & Treasury Fund VIP Card
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MemberAccountsScreen()),
+              );
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFF0FDFA), Color(0xFFCCFBF1)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF99F6E4)),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0F766E).withValues(alpha: 0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0F766E).withValues(alpha: 0.25),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.account_balance_rounded, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "સોસાયટી હિસાબ & તિજોરી ફંડ",
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F766E),
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          "બચત, વોચમેન પગાર, સફાઈ, લાઈટ બિલ & ખર્ચ વિગત",
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF475569),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F766E),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "હિસાબ જુઓ",
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 3),
+                        Icon(Icons.arrow_forward_ios_rounded, size: 9, color: Colors.white),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -1504,104 +1607,283 @@ class _MemberScreenState extends State<MemberScreen> {
     );
   }
 
+  Widget _buildFilterControlHeader() {
+    final timeLabel = switch (_visitorTimeFilter) {
+      'today' => 'આજે',
+      '7d' => '૭ દિવસ',
+      '30d' => '૩૦ દિવસ',
+      'all' => 'બધો સમય',
+      _ => '૩૦ દિવસ',
+    };
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.filter_list_rounded, size: 14, color: Color(0xFF475569)),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              "સ્થિતિ ફિલ્ટર",
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF475569),
+                letterSpacing: 0.1,
+              ),
+            ),
+          ],
+        ),
+        // Executive Time Period Chip Button
+        InkWell(
+          onTap: _showTimeFilterModal,
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5.5),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFCBD5E1)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF0F766E)),
+                const SizedBox(width: 6),
+                Text(
+                  timeLabel,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Color(0xFF64748B)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showTimeFilterModal() {
+    final options = [
+      ('today', 'આજે', 'આજના તમામ મુલાકાતીઓ', Icons.today_rounded),
+      ('7d', 'છેલ્લા ૭ દિવસ', 'છેલ્લા એક અઠવાડિયાની વિગત', Icons.date_range_rounded),
+      ('30d', 'છેલ્લા ૩૦ દિવસ', 'ચાલુ માસની મુલાકાતો', Icons.calendar_month_rounded),
+      ('all', 'બધો સમય', 'તમામ ઐતિહાસિક રેકોર્ડ્સ', Icons.all_inclusive_rounded),
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Row(
+              children: [
+                Icon(Icons.calendar_month_rounded, color: Color(0xFF0F766E), size: 20),
+                SizedBox(width: 8),
+                Text(
+                  "સમયગાળો પસંદ કરો (Time Range)",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            ...options.map((opt) {
+              final isSelected = _visitorTimeFilter == opt.$1;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFFF0FDFA) : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isSelected ? const Color(0xFF0D9488) : const Color(0xFFE2E8F0),
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: ListTile(
+                  dense: true,
+                  leading: Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: isSelected ? const Color(0xFF0D9488) : const Color(0xFFE2E8F0),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      opt.$4,
+                      size: 16,
+                      color: isSelected ? Colors.white : const Color(0xFF475569),
+                    ),
+                  ),
+                  title: Text(
+                    opt.$2,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: isSelected ? const Color(0xFF0F766E) : const Color(0xFF1E293B),
+                    ),
+                  ),
+                  subtitle: Text(
+                    opt.$3,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: isSelected ? const Color(0xFF0D9488) : const Color(0xFF64748B),
+                    ),
+                  ),
+                  trailing: isSelected
+                      ? const Icon(Icons.check_circle_rounded, color: Color(0xFF0D9488), size: 22)
+                      : null,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _visitorTimeFilter = opt.$1);
+                    Navigator.pop(ctx);
+                  },
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildStatusFilterTabs(int total, int pending, int approved, int rejected, int out) {
     final tabs = [
-      ('all', 'બધા ($total)'),
-      ('pending', 'પેન્ડિંગ ($pending)'),
-      ('approved', 'મંજૂર ($approved)'),
-      ('rejected', 'અસ્વીકાર ($rejected)'),
-      ('checked_out', 'બહાર ગયા ($out)'),
+      ('all', 'બધા', total, Icons.grid_view_rounded, const Color(0xFF0F172A), const Color(0xFFF1F5F9)),
+      ('pending', 'પેન્ડિંગ', pending, Icons.hourglass_top_rounded, const Color(0xFFD97706), const Color(0xFFFEF3C7)),
+      ('approved', 'મંજૂર', approved, Icons.check_circle_rounded, const Color(0xFF059669), const Color(0xFFD1FAE5)),
+      ('checked_out', 'બહાર ગયા', out, Icons.logout_rounded, const Color(0xFF475569), const Color(0xFFF1F5F9)),
+      ('rejected', 'અસ્વીકાર', rejected, Icons.cancel_rounded, const Color(0xFFE11D48), const Color(0xFFFFE4E6)),
     ];
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
       child: Row(
         children: tabs.map((t) {
           final isSelected = _visitorStatusFilter == t.$1;
+          final key = t.$1;
+          final label = t.$2;
+          final count = t.$3;
+          final icon = t.$4;
+          final primaryColor = t.$5;
+          final lightBg = t.$6;
+
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () => setState(() => _visitorStatusFilter = t.$1),
-                borderRadius: BorderRadius.circular(20),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  setState(() => _visitorStatusFilter = key);
+                },
+                borderRadius: BorderRadius.circular(24),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                   decoration: BoxDecoration(
                     color: isSelected ? const Color(0xFF0F172A) : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: isSelected ? Colors.transparent : const Color(0xFFE2E8F0),
+                      color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0),
+                      width: isSelected ? 1.5 : 1,
                     ),
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: const Color(0xFF0F172A).withValues(alpha: 0.2),
+                              color: const Color(0xFF0F172A).withValues(alpha: 0.18),
                               blurRadius: 8,
-                              offset: const Offset(0, 2),
+                              offset: const Offset(0, 3),
                             ),
                           ]
-                        : null,
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.02),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                   ),
-                  child: Text(
-                    t.$2,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: isSelected ? Colors.white : const Color(0xFF475569),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildTimeFilterPill() {
-    final options = [
-      ('today', 'આજે'),
-      ('7d', '૭ દિવસ'),
-      ('30d', '૩૦ દિવસ'),
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: options.map((opt) {
-          final isSelected = _visitorTimeFilter == opt.$1;
-          return GestureDetector(
-            onTap: () => setState(() => _visitorTimeFilter = opt.$1),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.white : Colors.transparent,
-                borderRadius: BorderRadius.circular(9),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        icon,
+                        size: 14,
+                        color: isSelected ? Colors.white : primaryColor,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                          color: isSelected ? Colors.white : const Color(0xFF334155),
                         ),
-                      ]
-                    : null,
-              ),
-              child: Text(
-                opt.$2,
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                  color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? Colors.white.withValues(alpha: 0.22)
+                              : lightBg,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '$count',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w900,
+                            color: isSelected ? Colors.white : primaryColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

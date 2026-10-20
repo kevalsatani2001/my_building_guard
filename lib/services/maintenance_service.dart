@@ -25,6 +25,8 @@ class MaintenanceService {
     required double amount,
     required DateTime dueDate,
     double penaltyAmount = 0.0,
+    double festivalCharge = 0.0,
+    String festivalName = '',
   }) async {
     final societyId = _currentSocietyId;
 
@@ -141,6 +143,8 @@ class MaintenanceService {
         dueDate: dueDate,
         amount: amount,
         penaltyAmount: penaltyAmount,
+        festivalCharge: festivalCharge,
+        festivalName: festivalName,
         blockName: block,
         unitNumber: unit,
         memberId: memberUid,

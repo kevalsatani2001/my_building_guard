@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:building_guard/models/maintenance_model.dart';
+import 'package:building_guard/models/society_expense_model.dart';
 import 'package:building_guard/services/maintenance_service.dart';
 import 'package:building_guard/services/parking_slot_service.dart';
 
@@ -212,6 +213,67 @@ void main() {
     test('Reject invalid random characters', () {
       final res = VehiclePlateValidator.validate('ABCDEF123456');
       expect(res.isValid, isFalse);
+    });
+  });
+
+  group('Society Accounts & Festival Charges Tests', () {
+    test('MaintenanceBill with festival contribution calculation', () {
+      final bill = MaintenanceBill(
+        id: 'fest_bill_1',
+        societyId: 'soc_1',
+        billTitle: 'દિવાળી મેન્ટેનન્સ',
+        billingMonth: '2026-11',
+        dueDate: DateTime(2026, 11, 10),
+        amount: 2000.0,
+        penaltyAmount: 50.0,
+        festivalCharge: 500.0,
+        festivalName: 'દિવાળી લાઈટિંગ ફાળો',
+        blockName: 'B',
+        unitNumber: '102',
+      );
+
+      expect(bill.totalPayable, 2550.0);
+      expect(bill.festivalCharge, 500.0);
+      expect(bill.festivalName, 'દિવાળી લાઈટિંગ ફાળો');
+
+      final map = bill.toMap();
+      expect(map['festivalCharge'], 500.0);
+      expect(map['festivalName'], 'દિવાળી લાઈટિંગ ફાળો');
+      expect(map['amount'], 2000.0);
+    });
+
+    test('SocietyExpenseCategory resolution and labels', () {
+      final watchman = SocietyExpenseCategory.fromKey('watchman_salary');
+      expect(watchman.titleGujarati, contains('વોચમેન'));
+
+      final cleaning = SocietyExpenseCategory.fromKey('cleaning_staff');
+      expect(cleaning.titleGujarati, contains('સફાઈ'));
+
+      final fallback = SocietyExpenseCategory.fromKey('unknown_key');
+      expect(fallback.key, 'other');
+    });
+
+    test('SocietyExpense data model serialization and paymentMode labels', () {
+      final exp = SocietyExpense(
+        id: 'exp_1',
+        societyId: 'soc_1',
+        title: 'ઓક્ટોબર વોચમેન પગાર',
+        categoryKey: 'watchman_salary',
+        amount: 8000.0,
+        expenseDate: DateTime(2026, 10, 1),
+        paidTo: 'રમેશભાઈ',
+        paymentMode: 'cash',
+        notes: 'ઓક્ટોબર મહિનો ચુકતે',
+      );
+
+      expect(exp.paymentModeLabel, contains('રોકડ'));
+      expect(exp.category.titleGujarati, contains('વોચમેન'));
+
+      final map = exp.toMap();
+      expect(map['societyId'], 'soc_1');
+      expect(map['amount'], 8000.0);
+      expect(map['paidTo'], 'રમેશભાઈ');
+      expect(map['categoryKey'], 'watchman_salary');
     });
   });
 }

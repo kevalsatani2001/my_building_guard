@@ -25,6 +25,7 @@ import 'admin_users_directory_screen.dart';
 import 'admin_visitor_report_screen.dart';
 import 'admin_watchmen_manage_screen.dart';
 import 'admin_parking_management_screen.dart';
+import 'admin_accounts_screen.dart';
 import 'architecture_preview.dart';
 
 class AdminDashboard extends StatefulWidget {
@@ -618,6 +619,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(builder: (_) => const AdminMaintenanceScreen()),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildHeroActionButton(
+                          icon: Icons.account_balance_rounded,
+                          label: "સોસાયટી હિસાબ",
+                          color: const Color(0xFF0F766E),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AdminAccountsScreen()),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -1263,6 +1274,27 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F766E),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                      ),
+                      icon: const Icon(Icons.account_balance_rounded, size: 16),
+                      label: const Text(
+                        "સોસાયટી હિસાબ & ખર્ચ (Ledger & Fund)",
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                      ),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AdminAccountsScreen()),
+                      ),
+                    ),
                   ),
                 ],
               ),

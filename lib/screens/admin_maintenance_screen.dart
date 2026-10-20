@@ -139,6 +139,9 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
     );
     final amountController =
         TextEditingController(text: defaultAmt.toStringAsFixed(0));
+    bool addFestivalCharge = false;
+    final festivalTitleController = TextEditingController(text: 'તહેવાર / ગણેશ મહોત્સવ ફાળો');
+    final festivalAmtController = TextEditingController(text: '500');
     DateTime dueDate = DateTime(
       int.parse(_selectedMonth.split('-')[0]),
       int.parse(_selectedMonth.split('-')[1]),
@@ -178,7 +181,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                   controller: amountController,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'રકમ (પ્રતિ ફ્લેટ)',
+                    labelText: 'નિયમિત મેન્ટેનન્સ રકમ (પ્રતિ ફ્લેટ)',
                     prefixText: '₹ ',
                     border: OutlineInputBorder(),
                   ),
@@ -201,6 +204,43 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                     }
                   },
                 ),
+                const Divider(),
+                // તહેવાર / ઉત્સવ વધારાનો ફાળો સ્વિચ
+                SwitchListTile(
+                  value: addFestivalCharge,
+                  onChanged: (val) => setDlgState(() => addFestivalCharge = val),
+                  title: const Text(
+                    'તહેવાર / વિશેષ ફાળો ઉમેરો',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                  ),
+                  subtitle: const Text(
+                    'મેન્ટેનન્સ સાથે તહેવારનો વધારાનો ફાળો રસીદમાં અલગથી દર્શાવવા માટે',
+                    style: TextStyle(fontSize: 11),
+                  ),
+                  contentPadding: EdgeInsets.zero,
+                  activeThumbColor: Colors.teal,
+                ),
+                if (addFestivalCharge) ...[
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: festivalTitleController,
+                    decoration: const InputDecoration(
+                      labelText: 'તહેવાર / પ્રસંગનું નામ',
+                      hintText: 'દા.ત. નવરાત્રિ / ગણેશ મહોત્સવ ફાળો',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: festivalAmtController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'તહેવાર ફાળો રકમ (પ્રતિ ફ્લેટ)',
+                      prefixText: '₹ ',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -218,6 +258,11 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                   return;
                 }
 
+                final festAmt = addFestivalCharge
+                    ? (double.tryParse(festivalAmtController.text.trim()) ?? 0.0)
+                    : 0.0;
+                final festName = addFestivalCharge ? festivalTitleController.text.trim() : '';
+
                 Navigator.pop(ctx);
                 setState(() => _isLoading = true);
 
@@ -227,6 +272,8 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                     billTitle: title,
                     amount: amt,
                     dueDate: dueDate,
+                    festivalCharge: festAmt,
+                    festivalName: festName,
                   );
                   _showSnackBar(
                     'સફળતા: ${result['created']} નવા બિલ બન્યા! (${result['skipped']} પહેલાથી બનેલા હતા)',
