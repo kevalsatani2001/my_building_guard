@@ -187,3 +187,33 @@ class SocietyExpense {
     };
   }
 }
+
+/// A unified chronological ledger entry for society income or expense with running balance.
+class SocietyLedgerEntry {
+  final String id;
+  final DateTime date;
+  final String title;
+  final String subtitle;
+  final String categoryKey;
+  final String categoryLabel;
+  final bool isCredit; // true = Income (+), false = Expense (-)
+  final double amount;
+  final String paymentMode;
+  final String reference;
+  double runningBalance; // Net treasury fund balance on that date after this transaction
+
+  SocietyLedgerEntry({
+    required this.id,
+    required this.date,
+    required this.title,
+    required this.subtitle,
+    required this.categoryKey,
+    required this.categoryLabel,
+    required this.isCredit,
+    required this.amount,
+    required this.paymentMode,
+    required this.reference,
+    this.runningBalance = 0.0,
+  });
+}
+

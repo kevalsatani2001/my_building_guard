@@ -22,6 +22,7 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
   String _selectedCategoryKey = 'all';
   SocietyFinancialSummary _summary = SocietyFinancialSummary.empty();
   bool _isLoadingSummary = true;
+  int _selectedViewTab = 0; // 0: તારીખવાર ખાતાવહી (Passbook Ledger), 1: ખર્ચ કેટેગરી (Expenses)
 
   @override
   void initState() {
@@ -95,26 +96,35 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
 
                 // ૨. Quick Action Buttons: Export PDF & Add Expense
                 _buildActionButtonsRow(allExpenses),
-                const SizedBox(height: 18),
-
-                // ૩. Filter Header & Category Filter Chips
-                _buildCategoryFilterHeader(allExpenses),
-                const SizedBox(height: 10),
-                _buildCategoryFilterChips(allExpenses),
                 const SizedBox(height: 16),
 
-                // ૪. Expense Ledger Entries
-                if (snapshot.connectionState == ConnectionState.waiting && allExpenses.isEmpty)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(40),
-                      child: CircularProgressIndicator(color: Color(0xFF0F766E)),
-                    ),
-                  )
-                else if (filteredExpenses.isEmpty)
-                  _buildEmptyState()
-                else
-                  ...filteredExpenses.map((expense) => _buildExpenseCard(expense)),
+                // ૩. Segmented Tab Switch: Passbook Ledger vs Expense Categories
+                _buildViewToggle(),
+                const SizedBox(height: 16),
+
+                // ૪. Content based on Selected Tab
+                if (_selectedViewTab == 0) ...[
+                  _buildPassbookLedgerSection(),
+                ] else ...[
+                  // Filter Header & Category Filter Chips
+                  _buildCategoryFilterHeader(allExpenses),
+                  const SizedBox(height: 10),
+                  _buildCategoryFilterChips(allExpenses),
+                  const SizedBox(height: 16),
+
+                  // Expense Ledger Entries
+                  if (snapshot.connectionState == ConnectionState.waiting && allExpenses.isEmpty)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(40),
+                        child: CircularProgressIndicator(color: Color(0xFF0F766E)),
+                      ),
+                    )
+                  else if (filteredExpenses.isEmpty)
+                    _buildEmptyState()
+                  else
+                    ...filteredExpenses.map((expense) => _buildExpenseCard(expense)),
+                ],
               ],
             ),
           );
@@ -1035,20 +1045,444 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
     );
   }
 
-  Future<void> _openPdfStatement() async {
-    final expenses = await _accountsService.streamExpenses().first;
-    if (!mounted) return;
+  Widget _buildViewToggle() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE2E8F0),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() => _selectedViewTab = 0);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 9),
+                decoration: BoxDecoration(
+                  color: _selectedViewTab == 0 ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: _selectedViewTab == 0
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.menu_book_rounded,
+                      size: 16,
+                      color: _selectedViewTab == 0 ? const Color(0xFF0F766E) : const Color(0xFF64748B),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'તારીખવાર ખાતાવહી',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: _selectedViewTab == 0 ? FontWeight.w800 : FontWeight.w600,
+                        color: _selectedViewTab == 0 ? const Color(0xFF0F766E) : const Color(0xFF64748B),
+                      ),
+                    ),
+                    if (_summary.ledgerEntries.isNotEmpty) ...[
+                      const SizedBox(width: 5),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: _selectedViewTab == 0 ? const Color(0xFFCCFBF1) : const Color(0xFFCBD5E1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '${_summary.ledgerEntries.length}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: _selectedViewTab == 0 ? const Color(0xFF0F766E) : const Color(0xFF475569),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() => _selectedViewTab = 1);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 9),
+                decoration: BoxDecoration(
+                  color: _selectedViewTab == 1 ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: _selectedViewTab == 1
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.category_rounded,
+                      size: 16,
+                      color: _selectedViewTab == 1 ? const Color(0xFF0F766E) : const Color(0xFF64748B),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'ખર્ચ કેટેગરી',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: _selectedViewTab == 1 ? FontWeight.w800 : FontWeight.w600,
+                        color: _selectedViewTab == 1 ? const Color(0xFF0F766E) : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => SocietyAccountsPdfPreviewScreen(
-          summary: _summary,
-          expenses: expenses,
-          societyName: SocietyService.instance.currentSocietyName,
-          societyCode: SocietyService.instance.currentSocietyId,
+  Widget _buildPassbookLedgerSection() {
+    if (_isLoadingSummary && _summary.ledgerEntries.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40),
+          child: CircularProgressIndicator(color: Color(0xFF0F766E)),
+        ),
+      );
+    }
+
+    if (_summary.ledgerEntries.isEmpty) {
+      return Container(
+        margin: const EdgeInsets.only(top: 20),
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF0FDFA),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.receipt_long_rounded, color: Color(0xFF0F766E), size: 28),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'કોઈ નાણાકીય એન્ટ્રી ઉપલબ્ધ નથી',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'જ્યારે સભ્યો મેન્ટેનન્સ જમા કરશે અથવા એડમિન ખર્ચ નોંધશે, ત્યારે તારીખવાર સંપૂર્ણ પાસબુક અહીં દેખાશે.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Display in reverse chronological order (latest date first) for easy app viewing
+    final reversedList = _summary.ledgerEntries.reversed.toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Passbook Header Bar with Opening vs Closing Balance
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('શરૂઆતની સિલક', style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  const Text('₹ 0', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                ],
+              ),
+              Container(width: 1, height: 28, color: const Color(0xFFCBD5E1)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Text('કુલ જમા / ખર્ચ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  Text(
+                    '+${currencyFmt.format(_summary.totalIncome)} / -${currencyFmt.format(_summary.totalExpenses)}',
+                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
+                  ),
+                ],
+              ),
+              Container(width: 1, height: 28, color: const Color(0xFFCBD5E1)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text('વર્તમાન આખર સિલક', style: TextStyle(fontSize: 11, color: Color(0xFF0F766E), fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 2),
+                  Text(
+                    currencyFmt.format(_summary.currentSavings),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: _summary.currentSavings >= 0 ? const Color(0xFF047857) : const Color(0xFFDC2626),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'પાસબુક એન્ટ્રીઓ (${reversedList.length})',
+              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
+            ),
+            const Text(
+              'નવીનતમ તારીખ પ્રથમ',
+              style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        ...reversedList.map((entry) => _buildPassbookEntryCard(entry)),
+      ],
+    );
+  }
+
+  Widget _buildPassbookEntryCard(SocietyLedgerEntry entry) {
+    final isCredit = entry.isCredit;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isCredit ? const Color(0xFFA7F3D0).withValues(alpha: 0.6) : const Color(0xFFFECACA).withValues(alpha: 0.6),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: isCredit ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+                            size: 14,
+                            color: isCredit ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          dateFmt.format(entry.date),
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF334155),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            entry.paymentMode,
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '${isCredit ? "+" : "-"} ${currencyFmt.format(entry.amount)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: isCredit ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  entry.title,
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                if (entry.subtitle.isNotEmpty && entry.subtitle != '-') ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    entry.subtitle,
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Text(
+                    entry.categoryLabel,
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Running Balance bar on that exact date
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(15),
+                bottomRight: Radius.circular(15),
+              ),
+              border: Border(
+                top: BorderSide(color: const Color(0xFFDCFCE7).withValues(alpha: 0.8)),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.account_balance_wallet_rounded, size: 14, color: Color(0xFF059669)),
+                const SizedBox(width: 6),
+                const Text(
+                  'તે તારીખે તિજોરી સિલક (Balance):',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: Color(0xFF065F46),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  currencyFmt.format(entry.runningBalance),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: entry.runningBalance >= 0 ? const Color(0xFF047857) : const Color(0xFFDC2626),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openPdfStatement() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF0F766E)),
+                ),
+                SizedBox(width: 16),
+                Text('હિસાબ & પાસબુક લોડ થઈ રહી છે...', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
+              ],
+            ),
+          ),
         ),
       ),
     );
+
+    try {
+      final freshSummary = await _accountsService.calculateFinancialSummary();
+      final expenses = await _accountsService.streamExpenses().first;
+      if (mounted) Navigator.pop(context); // close loader
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SocietyAccountsPdfPreviewScreen(
+            summary: freshSummary,
+            expenses: expenses,
+            societyName: SocietyService.instance.currentSocietyName,
+            societyCode: SocietyService.instance.currentSocietyId,
+          ),
+        ),
+      );
+    } catch (_) {
+      if (mounted) Navigator.pop(context);
+    }
   }
 }

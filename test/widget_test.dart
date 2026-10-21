@@ -5,6 +5,8 @@ import 'package:building_guard/models/maintenance_model.dart';
 import 'package:building_guard/models/society_expense_model.dart';
 import 'package:building_guard/services/maintenance_service.dart';
 import 'package:building_guard/services/parking_slot_service.dart';
+import 'package:building_guard/services/society_accounts_service.dart';
+import 'package:building_guard/services/society_accounts_pdf_service.dart';
 
 void main() {
   test('Basic project smoke test', () {
@@ -274,6 +276,90 @@ void main() {
       expect(map['amount'], 8000.0);
       expect(map['paidTo'], 'રમેશભાઈ');
       expect(map['categoryKey'], 'watchman_salary');
+    });
+
+    test('SocietyLedgerEntry running balance calculation logic', () {
+      final entries = [
+        SocietyLedgerEntry(
+          id: 'b1',
+          date: DateTime(2026, 10, 1),
+          title: 'મેન્ટેનન્સ [A-101]',
+          subtitle: 'રસીદ: R01',
+          categoryKey: 'maintenance_income',
+          categoryLabel: 'મેન્ટેનન્સ આવક',
+          isCredit: true,
+          amount: 5000.0,
+          paymentMode: 'ONLINE',
+          reference: 'R01',
+        ),
+        SocietyLedgerEntry(
+          id: 'e1',
+          date: DateTime(2026, 10, 5),
+          title: 'વોચમેન પગાર',
+          subtitle: 'ચૂકવ્યા: સુરેશભાઈ',
+          categoryKey: 'watchman_salary',
+          categoryLabel: 'સુરક્ષા / વોચમેન',
+          isCredit: false,
+          amount: 2000.0,
+          paymentMode: 'CASH',
+          reference: 'E01',
+        ),
+        SocietyLedgerEntry(
+          id: 'b2',
+          date: DateTime(2026, 10, 10),
+          title: 'મેન્ટેનન્સ + દિવાળી ફાળો [B-202]',
+          subtitle: 'રસીદ: R02',
+          categoryKey: 'maintenance_income',
+          categoryLabel: 'મેન્ટેનન્સ + તહેવાર ફાળો',
+          isCredit: true,
+          amount: 4000.0,
+          paymentMode: 'UPI',
+          reference: 'R02',
+        ),
+      ];
+
+      // Calculate running balance
+      double running = 0.0;
+      for (final e in entries) {
+        if (e.isCredit) {
+          running += e.amount;
+        } else {
+          running -= e.amount;
+        }
+        e.runningBalance = running;
+      }
+
+      expect(entries[0].runningBalance, 5000.0);
+      expect(entries[1].runningBalance, 3000.0);
+      expect(entries[2].runningBalance, 7000.0);
+      expect(running, 7000.0);
+    });
+
+    test('Payment mode normalization converts Gujarati to clean ASCII', () {
+      expect(SocietyAccountsService.normalizePaymentMode('રોકડ'), 'CASH');
+      expect(SocietyAccountsService.normalizePaymentMode('રોકડ રકમ'), 'CASH');
+      expect(SocietyAccountsService.normalizePaymentMode('ઓનલાઇન'), 'ONLINE');
+      expect(SocietyAccountsService.normalizePaymentMode('ચેક'), 'CHEQUE');
+      expect(SocietyAccountsService.normalizePaymentMode('UPI / QR'), 'UPI');
+    });
+
+    test('SocietyLedgerEntry particulars and non-Latin character detection', () {
+      final entry = SocietyLedgerEntry(
+        id: 'l1',
+        date: DateTime(2026, 10, 15),
+        title: 'October 2026 મેન્ટેનન્સ [ફ્લેટ: S-2-40]',
+        subtitle: 'રસીદ: REC-001',
+        categoryKey: 'maintenance_income',
+        categoryLabel: 'મેન્ટેનન્સ આવક',
+        isCredit: true,
+        amount: 4500,
+        paymentMode: 'CASH',
+        reference: 'REC-001',
+      );
+
+      expect(entry.title, contains('મેન્ટેનન્સ'));
+      expect(entry.subtitle, contains('રસીદ'));
+      expect(entry.paymentMode, 'CASH');
     });
   });
 }

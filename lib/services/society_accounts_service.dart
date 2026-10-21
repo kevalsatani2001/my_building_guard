@@ -19,6 +19,7 @@ class SocietyFinancialSummary {
   final int pendingBillsCount;
   final Map<String, double> categoryTotals;
   final List<SocietyExpense> recentExpenses;
+  final List<SocietyLedgerEntry> ledgerEntries;
 
   SocietyFinancialSummary({
     required this.totalIncome,
@@ -34,6 +35,7 @@ class SocietyFinancialSummary {
     required this.pendingBillsCount,
     required this.categoryTotals,
     required this.recentExpenses,
+    required this.ledgerEntries,
   });
 
   factory SocietyFinancialSummary.empty() {
@@ -51,6 +53,7 @@ class SocietyFinancialSummary {
       pendingBillsCount: 0,
       categoryTotals: {},
       recentExpenses: [],
+      ledgerEntries: [],
     );
   }
 }
@@ -124,6 +127,24 @@ class SocietyAccountsService {
     await _firestore.collection('society_expenses').doc(expenseId).delete();
   }
 
+  /// Helper to normalize payment mode to clean Latin ASCII string
+  static String normalizePaymentMode(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return 'ONLINE';
+    final m = raw.toLowerCase().trim();
+    if (m.contains('cash') || m.contains('રોકડ')) return 'CASH';
+    if (m.contains('upi') || m.contains('qr')) return 'UPI';
+    if (m.contains('cheque') || m.contains('ચેક')) return 'CHEQUE';
+    if (m.contains('bank') ||
+        m.contains('neft') ||
+        m.contains('imps') ||
+        m.contains('transfer') ||
+        m.contains('ઓનલાઇન') ||
+        m.contains('online')) {
+      return 'ONLINE';
+    }
+    return raw.trim().toUpperCase();
+  }
+
   /// Comprehensive calculation of society income, expenses, and current treasury balance
   Future<SocietyFinancialSummary> calculateFinancialSummary({String? societyId}) async {
     final sId = societyId ?? _currentSocietyId;
@@ -145,6 +166,8 @@ class SocietyAccountsService {
     final now = DateTime.now();
     final currentMonthPrefix = '${now.year}-${now.month.toString().padLeft(2, '0')}';
 
+    final List<SocietyLedgerEntry> ledgerEntries = [];
+
     for (final doc in billsSnap.docs) {
       final bill = MaintenanceBill.fromFirestore(doc);
       if (bill.isPaid) {
@@ -152,6 +175,23 @@ class SocietyAccountsService {
         totalMaint += bill.amount;
         totalFest += bill.festivalCharge;
         totalPen += bill.penaltyAmount;
+
+        final txDate = bill.paidAt ?? bill.createdAt;
+        final memPart = bill.memberName.isNotEmpty ? ' (${bill.memberName})' : '';
+        ledgerEntries.add(
+          SocietyLedgerEntry(
+            id: bill.id,
+            date: txDate,
+            title: '${bill.billTitle} [ફ્લેટ ${bill.flatDisplay}$memPart]',
+            subtitle: 'રસીદ: ${bill.receiptNumber.isNotEmpty ? bill.receiptNumber : (bill.id.length > 8 ? bill.id.substring(0, 8).toUpperCase() : bill.id)}',
+            categoryKey: 'maintenance_income',
+            categoryLabel: bill.festivalCharge > 0 ? 'મેન્ટેનન્સ + તહેવાર ફાળો' : 'મેન્ટેનન્સ આવક',
+            isCredit: true,
+            amount: bill.totalPayable,
+            paymentMode: normalizePaymentMode(bill.paymentMode),
+            reference: bill.receiptNumber.isNotEmpty ? bill.receiptNumber : (bill.id.length > 8 ? bill.id.substring(0, 8).toUpperCase() : bill.id),
+          ),
+        );
 
         if (bill.billingMonth == currentMonthPrefix ||
             (bill.paidAt != null &&
@@ -185,12 +225,39 @@ class SocietyAccountsService {
 
       categoryTotals[exp.categoryKey] = (categoryTotals[exp.categoryKey] ?? 0.0) + exp.amount;
 
+      ledgerEntries.add(
+        SocietyLedgerEntry(
+          id: exp.id,
+          date: exp.expenseDate,
+          title: exp.title,
+          subtitle: exp.paidTo.isNotEmpty ? 'ચૂકવ્યા: ${exp.paidTo}' : (exp.notes.isNotEmpty ? exp.notes : '-'),
+          categoryKey: exp.categoryKey,
+          categoryLabel: exp.category.titleGujarati,
+          isCredit: false,
+          amount: exp.amount,
+          paymentMode: normalizePaymentMode(exp.paymentMode),
+          reference: exp.id.length > 8 ? exp.id.substring(0, 8).toUpperCase() : exp.id.toUpperCase(),
+        ),
+      );
+
       if (exp.expenseDate.year == now.year && exp.expenseDate.month == now.month) {
         thisMonthExp += exp.amount;
       }
     }
 
     allExpenses.sort((a, b) => b.expenseDate.compareTo(a.expenseDate));
+
+    // Calculate chronological running balance (earliest date to latest date)
+    ledgerEntries.sort((a, b) => a.date.compareTo(b.date));
+    double running = 0.0;
+    for (final entry in ledgerEntries) {
+      if (entry.isCredit) {
+        running += entry.amount;
+      } else {
+        running -= entry.amount;
+      }
+      entry.runningBalance = running;
+    }
 
     final currentSavings = totalIncome - totalExp;
 
@@ -208,6 +275,7 @@ class SocietyAccountsService {
       pendingBillsCount: pendingCount,
       categoryTotals: categoryTotals,
       recentExpenses: allExpenses.take(15).toList(),
+      ledgerEntries: ledgerEntries,
     );
   }
 }
