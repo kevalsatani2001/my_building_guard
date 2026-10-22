@@ -163,7 +163,7 @@ class _MemberPreApproveScreenState extends State<MemberPreApproveScreen> {
                       child: Image.asset(
                         'assets/images/digital_pass.jpg',
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0D9488)),
+                        errorBuilder: (_, _, _) => Container(color: const Color(0xFF0D9488)),
                       ),
                     ),
                     Positioned.fill(
@@ -572,7 +572,7 @@ class _MemberPreApproveScreenState extends State<MemberPreApproveScreen> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: docs.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final d = docs[index].data() as Map<String, dynamic>;
                   final name = (d['guestName'] ?? 'અનામી મહેમાન').toString();

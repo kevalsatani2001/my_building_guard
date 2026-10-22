@@ -18,15 +18,24 @@ class MaintenanceService {
   String get _currentSocietyId => SocietyService.instance.societyId;
   String? get _currentUserId => FirebaseAuth.instance.currentUser?.uid;
 
-  /// બલ્ક બિલ જનરેશન (સોસાયટીના તમામ ફ્લેટ્સ / મેમ્બર્સ માટે એક સાથે માસિક બિલ બનાવવું)
+  /// બલ્ક બિલ જનરેશન (સોસાયટીના તમામ ફ્લેટ્સ / મેમ્બર્સ / દુકાનો માટે એક સાથે માસિક બિલ બનાવવું)
   Future<Map<String, int>> generateBulkBills({
     required String billingMonth, // દા.ત. '2026-10'
     required String billTitle, // દા.ત. 'ઓક્ટોબર ૨૦૨૬ મેન્ટેનન્સ'
-    required double amount,
+    required double amount, // મૂળભૂત નિયમિત રકમ
     required DateTime dueDate,
     double penaltyAmount = 0.0,
     double festivalCharge = 0.0,
     String festivalName = '',
+    // --- પ્રિમાઇસીસ ટાઇપ (શોપિંગ, ફ્લેટ, સોસાયટી, મિક્સ્ડ) પેરામીટર્સ ---
+    String billingMode = 'fixed', // 'fixed' (ફિક્સ દર) અથવા 'sqft' (ચોરસ ફૂટ મુજબ)
+    double ratePerSqFt = 0.0, // દા.ત. ₹ 4.5 પ્રતિ Sq.Ft
+    String targetCategory = 'all', // 'all', 'commercial', 'residential'
+    String targetBlock = 'all', // 'all' અથવા ચોક્કસ બ્લોક ID
+    double gstRate = 0.0, // દા.ત. 18.0 (18% GST)
+    String gstin = '',
+    double commercialRate = 0.0, // મિક્સ્ડ મોડમાં દુકાનો માટે સ્પ્લિટ રેટ
+    double residentialRate = 0.0, // મિક્સ્ડ મોડમાં ફ્લેટ્સ માટે સ્પ્લિટ રેટ
   }) async {
     final societyId = _currentSocietyId;
 
@@ -60,8 +69,8 @@ class MaintenanceService {
       // જો users ક્વેરીમાં પરમિશન ન હોય તો units થી આગળ વધવું
     }
 
-    // ૨. સોસાયટીના તમામ રજીસ્ટર્ડ ફ્લેટ્સ (units) લાવો
-    final List<Map<String, String>> flatsToBill = [];
+    // ૨. સોસાયટીના તમામ રજીસ્ટર્ડ ફ્લેટ્સ / દુકાનો (units) લાવો
+    final List<Map<String, dynamic>> flatsToBill = [];
     try {
       final unitsSnap = await _firestore
           .collection('units')
@@ -72,10 +81,33 @@ class MaintenanceService {
         final block = (d['blockName'] ?? '').toString();
         final unit = (d['unitNumber'] ?? '').toString();
         final rawMem = (d['memberId'] ?? '').toString();
+        final unitType = (d['unitType'] ?? 'flat').toString().toLowerCase();
+        final areaSqFt = (d['areaSqFt'] as num?)?.toDouble() ?? 0.0;
+        final category = (d['category'] ?? '').toString().toLowerCase();
+        final isComm = unitType == 'shop' ||
+            unitType == 'office' ||
+            unitType == 'showroom' ||
+            unitType == 'godown' ||
+            category == 'commercial';
+
+        // ટાર્ગેટ કેટેગરી ફિલ્ટર (શોપિંગ vs રહેણાંક)
+        if (targetCategory == 'commercial' && !isComm) continue;
+        if (targetCategory == 'residential' && isComm) continue;
+
+        // ટાર્ગેટ બ્લોક ફિલ્ટર
+        if (targetBlock != 'all' &&
+            block != targetBlock &&
+            SocietyService.instance.logicalBlockName(block) != targetBlock) {
+          continue;
+        }
+
         if (block.isNotEmpty || unit.isNotEmpty) {
           flatsToBill.add({
             'block': block,
             'unit': unit,
+            'unitType': unitType,
+            'areaSqFt': areaSqFt,
+            'isCommercial': isComm,
             if (rawMem.isNotEmpty) 'unitMemberId': rawMem,
           });
         }
@@ -88,7 +120,13 @@ class MaintenanceService {
         final parts = key.split('-');
         final block = parts.isNotEmpty ? parts[0] : '';
         final unit = parts.length > 1 ? parts[1] : '';
-        flatsToBill.add({'block': block, 'unit': unit});
+        flatsToBill.add({
+          'block': block,
+          'unit': unit,
+          'unitType': 'flat',
+          'areaSqFt': 0.0,
+          'isCommercial': false,
+        });
       }
     }
 
@@ -116,8 +154,8 @@ class MaintenanceService {
     int batchOps = 0;
 
     for (final flat in flatsToBill) {
-      final block = flat['block'] ?? '';
-      final unit = flat['unit'] ?? '';
+      final block = (flat['block'] ?? '').toString();
+      final unit = (flat['unit'] ?? '').toString();
       final key = '$block-$unit';
 
       if (alreadyBilledUnits.contains(key)) {
@@ -134,6 +172,28 @@ class MaintenanceService {
       final memberName = memberInfo?['name'] ?? '';
       final memberPhone = memberInfo?['phone'] ?? '';
 
+      final isComm = flat['isCommercial'] == true;
+      final uType = (flat['unitType'] ?? (isComm ? 'shop' : 'flat')).toString();
+      final uArea = (flat['areaSqFt'] as num?)?.toDouble() ?? 0.0;
+
+      // પ્રિમાઇસીસ મુજબ રકમ નિર્ધારણ
+      double finalAmount = amount;
+      if (billingMode == 'sqft' && uArea > 0 && ratePerSqFt > 0) {
+        finalAmount = uArea * ratePerSqFt;
+      } else if (commercialRate > 0 && residentialRate > 0) {
+        finalAmount = isComm ? commercialRate : residentialRate;
+      } else if (isComm && commercialRate > 0) {
+        finalAmount = commercialRate;
+      } else if (!isComm && residentialRate > 0) {
+        finalAmount = residentialRate;
+      }
+
+      // GST ગણતરી
+      double calculatedGst = 0.0;
+      if (gstRate > 0) {
+        calculatedGst = (finalAmount * gstRate) / 100.0;
+      }
+
       final newDocRef = _firestore.collection('maintenance_bills').doc();
       final bill = MaintenanceBill(
         id: newDocRef.id,
@@ -141,7 +201,7 @@ class MaintenanceService {
         billTitle: billTitle,
         billingMonth: billingMonth,
         dueDate: dueDate,
-        amount: amount,
+        amount: finalAmount,
         penaltyAmount: penaltyAmount,
         festivalCharge: festivalCharge,
         festivalName: festivalName,
@@ -151,6 +211,11 @@ class MaintenanceService {
         memberName: memberName,
         memberPhone: memberPhone,
         status: MaintenanceStatus.pending,
+        unitType: uType,
+        areaSqFt: uArea,
+        gstRate: gstRate,
+        gstAmount: calculatedGst,
+        gstin: gstin,
       );
 
       batch.set(newDocRef, bill.toMap());

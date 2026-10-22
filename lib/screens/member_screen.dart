@@ -24,6 +24,11 @@ import 'member_pre_approve_screen.dart';
 import 'member_vehicles_screen.dart';
 import 'member_visitors_screen.dart';
 import 'member_accounts_screen.dart';
+import 'member_polls_screen.dart';
+import 'member_amenities_screen.dart';
+import '../services/amenity_booking_service.dart';
+import '../models/patrol_model.dart';
+import '../services/guard_patrol_service.dart';
 import '../widgets/visitor_detail_sheet.dart';
 
 const String _kMemberFunctionsRegion = 'us-central1';
@@ -427,7 +432,7 @@ class _MemberScreenState extends State<MemberScreen> {
 
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
-          appBar: _buildMemberAppBar(flatDisplay),
+          appBar: _buildMemberAppBar(flatDisplay, blockName),
           body: StreamBuilder<QuerySnapshot>(
             stream: _getVisitorsStream(effectiveSocietyId),
             builder: (context, visitorSnap) {
@@ -638,7 +643,7 @@ class _MemberScreenState extends State<MemberScreen> {
     );
   }
 
-  PreferredSizeWidget _buildMemberAppBar(String flatDisplay) {
+  PreferredSizeWidget _buildMemberAppBar(String flatDisplay, [String blockName = '']) {
     return AppBar(
       elevation: 0,
       backgroundColor: Colors.white,
@@ -823,12 +828,14 @@ class _MemberScreenState extends State<MemberScreen> {
                       unreadCount = docs.where((d) {
                         final data = d.data() as Map<String, dynamic>;
                         final target = (data['targetUID'] ?? '').toString().trim();
-                        return target == uid || target == 'ALL' || target == 'MEMBERS';
+                        final tBlock = (data['targetBlock'] ?? '').toString().trim();
+                        final isBlock = blockName.isNotEmpty && (tBlock == blockName || target == 'BLOCK_$blockName');
+                        return target == uid || target == 'ALL' || target == 'MEMBERS' || isBlock;
                       }).length;
                     }
 
                     return InkWell(
-                      onTap: () => MemberNotificationsSheet.show(context),
+                      onTap: () => MemberNotificationsSheet.show(context, userBlock: blockName),
                       borderRadius: BorderRadius.circular(11),
                       child: Stack(
                         clipBehavior: Clip.none,
@@ -1438,7 +1445,484 @@ class _MemberScreenState extends State<MemberScreen> {
             ),
           ),
         ),
+        const SizedBox(height: 10),
+        // Society Digital Polls VIP Card
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MemberPollsScreen()),
+              );
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFF5F3FF), Color(0xFFEDE9FE)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFDDD6FE)),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF7C3AED).withValues(alpha: 0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF7C3AED), Color(0xFF8B5CF6)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF7C3AED).withValues(alpha: 0.25),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.how_to_vote_rounded, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "સોસાયટી નિર્ણય મતદાન (Polls)",
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF6D28D9),
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          "નવા સોસાયટી નિર્ણયો અને આયોજન માટે આપનો મત આપો",
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF475569),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF7C3AED),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "મત આપો",
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 3),
+                        Icon(Icons.arrow_forward_ios_rounded, size: 9, color: Colors.white),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        // Society Amenities & Clubhouse Booking Card (ONLY IF ENABLED)
+        StreamBuilder<bool>(
+          stream: AmenityBookingService.instance.hasAmenitiesStream(),
+          builder: (context, snapshot) {
+            final hasAmenities = snapshot.data == true;
+            if (!hasAmenities) return const SizedBox.shrink();
+
+            return Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MemberAmenitiesScreen()),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFF0FDF4), Color(0xFFDCFCE7)],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFF86EFAC)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF16A34A).withValues(alpha: 0.06),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(9),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF15803D), Color(0xFF16A34A)],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF16A34A).withValues(alpha: 0.25),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(Icons.domain_rounded, color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "એમેનિટીઝ & વાડી બુકિંગ",
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF14532D),
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                "વાડી, ક્લબહાઉસ કે ટેરેસ સ્લોટ બુક કરો અને ગેટ પાસ મેળવો",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF475569),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF16A34A),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                "બુક કરો",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(width: 3),
+                              Icon(Icons.arrow_forward_ios_rounded, size: 9, color: Colors.white),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        // Security Night Patrol Compliance Audit Banner
+        _buildSecurityPatrolAuditBanner(),
       ],
+    );
+  }
+
+  Widget _buildSecurityPatrolAuditBanner() {
+    final societyId = SocietyService.instance.societyId;
+    if (societyId.isEmpty) return const SizedBox.shrink();
+
+    return FutureBuilder<Map<String, dynamic>>(
+      future: GuardPatrolService().getPatrolComplianceStats(societyId),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        final stats = snapshot.data!;
+        final statusMsg = stats['statusMessage'] as String? ?? '';
+        final compliance = (stats['compliancePercent'] as num?)?.toInt() ?? 0;
+
+        return Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _showMemberPatrolDetailsSheet(stats),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF334155)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(9),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.shield_moon_rounded, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Text(
+                                "રાત્રિ સુરક્ષા ઓડિટ (Night Patrol)",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: (compliance >= 75
+                                          ? const Color(0xFF10B981)
+                                          : const Color(0xFFF59E0B))
+                                      .withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '$compliance%',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: compliance >= 75
+                                        ? const Color(0xFF34D399)
+                                        : const Color(0xFFFBBF24),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            statusMsg,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF94A3B8),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "રિપોર્ટ",
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(width: 3),
+                          Icon(Icons.arrow_forward_ios_rounded, size: 9, color: Colors.white),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showMemberPatrolDetailsSheet(Map<String, dynamic> stats) {
+    final completed = (stats['completedRounds'] as num?)?.toInt() ?? 0;
+    final target = (stats['targetRounds'] as num?)?.toInt() ?? 4;
+    final compliance = (stats['compliancePercent'] as num?)?.toInt() ?? 0;
+    final lastPatrol = stats['lastPatrol'] as PatrolShiftSession?;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.verified_user_rounded, color: Color(0xFF4F46E5), size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'સોસાયટી સુરક્ષા પ્રમાણપત્ર',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                        ),
+                        Text(
+                          'વોચમેન ૨૪x૭ રાત્રિ પેટ્રોલિંગ ઓડિટ સ્ટેટસ',
+                          style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const Divider(height: 24),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('સુરક્ષા કમ્પ્લાયન્સ:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text('$compliance% સુરક્ષિત', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('રાત્રિ પેટ્રોલિંગ રાઉન્ડ:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        Text('$completed / $target રાઉન્ડ પૂર્ણ', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    if (lastPatrol != null) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('છેલ્લો રાઉન્ડ:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                          Text('${lastPatrol.guardName} (${DateFormat('hh:mm a').format(lastPatrol.startTime)})',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Row(
+                children: [
+                  Icon(Icons.check_circle, size: 16, color: Color(0xFF10B981)),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'મુખ્ય ગેટ, ટેરેસ, બેઝમેન્ટ પાર્કિંગ & પંપ રૂમ સુરક્ષિત રીતે તપાસવામાં આવ્યા છે.',
+                      style: TextStyle(fontSize: 11.5, color: Color(0xFF475569), fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF4F46E5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('સમજાયું (ઓકે)'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

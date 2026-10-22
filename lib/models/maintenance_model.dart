@@ -72,6 +72,11 @@ class MaintenanceBill {
   final String verifiedBy;
   final DateTime createdAt;
   final String note;
+  final String unitType; // 'flat', 'shop', 'office', 'godown', 'bungalow'
+  final double areaSqFt;
+  final double gstRate;
+  final double gstAmount;
+  final String gstin;
 
   MaintenanceBill({
     required this.id,
@@ -97,9 +102,14 @@ class MaintenanceBill {
     this.verifiedBy = '',
     DateTime? createdAt,
     this.note = '',
+    this.unitType = 'flat',
+    this.areaSqFt = 0.0,
+    this.gstRate = 0.0,
+    this.gstAmount = 0.0,
+    this.gstin = '',
   }) : createdAt = createdAt ?? DateTime.now();
 
-  double get totalPayable => amount + penaltyAmount + festivalCharge;
+  double get totalPayable => amount + penaltyAmount + festivalCharge + gstAmount;
 
   String get cleanBlockName {
     if (blockName.contains('_')) {
@@ -162,6 +172,11 @@ class MaintenanceBill {
       verifiedBy: (data['verifiedBy'] ?? '').toString(),
       createdAt: parseDate(data['createdAt']),
       note: (data['note'] ?? '').toString(),
+      unitType: (data['unitType'] ?? 'flat').toString(),
+      areaSqFt: (data['areaSqFt'] as num?)?.toDouble() ?? 0.0,
+      gstRate: (data['gstRate'] as num?)?.toDouble() ?? 0.0,
+      gstAmount: (data['gstAmount'] as num?)?.toDouble() ?? 0.0,
+      gstin: (data['gstin'] ?? '').toString(),
     );
   }
 
@@ -189,6 +204,11 @@ class MaintenanceBill {
       'verifiedBy': verifiedBy,
       'createdAt': Timestamp.fromDate(createdAt),
       'note': note,
+      'unitType': unitType,
+      'areaSqFt': areaSqFt,
+      'gstRate': gstRate,
+      'gstAmount': gstAmount,
+      'gstin': gstin,
     };
   }
 }

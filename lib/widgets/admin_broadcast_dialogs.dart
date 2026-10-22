@@ -132,6 +132,7 @@ class AdminBroadcastDialogs {
   }
 
   /// Sends a push notification via Firebase Functions (Topic or Member direct)
+  /// Sends a push notification via Firebase Functions (Topic or Member direct or Block-specific)
   /// and always mirrors the notification in AppFirestore so in-app delivery is guaranteed.
   static Future<void> sendPushNotification({
     required BuildContext context,
@@ -139,9 +140,11 @@ class AdminBroadcastDialogs {
     required String body,
     String? targetUID,
     String? targetName,
+    String? targetBlock,
   }) async {
     final cleanUid = targetUID?.trim();
-    final bool isAll = cleanUid == null || cleanUid.isEmpty;
+    final bool isBlockTarget = targetBlock != null && targetBlock.isNotEmpty && targetBlock != 'ALL';
+    final bool isAll = (cleanUid == null || cleanUid.isEmpty) && !isBlockTarget;
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
     final societyId = SocietyService.instance.societyId;
 
@@ -150,7 +153,10 @@ class AdminBroadcastDialogs {
       await AppFirestore.instance.collection('notifications').add({
         'title': title,
         'body': body,
-        'targetUID': isAll ? 'ALL' : cleanUid,
+        'targetUID': isAll
+            ? 'ALL'
+            : (isBlockTarget ? 'BLOCK_$targetBlock' : cleanUid),
+        'targetBlock': isBlockTarget ? targetBlock : null,
         'societyId': societyId,
         'type': isAll ? 'general' : 'admin_notice',
         'createdAt': FieldValue.serverTimestamp(),
@@ -184,6 +190,52 @@ class AdminBroadcastDialogs {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('✅ સોસાયટીના તમામ સભ્યોને સૂચના મોકલાઈ ગઈ છે!'),
+            backgroundColor: Colors.green.shade800,
+            duration: const Duration(seconds: 6),
+          ),
+        );
+        return;
+      }
+
+      // Block-specific targeted push
+      if (isBlockTarget) {
+        final usersSnap = await AppFirestore.instance
+            .collection('users')
+            .where('societyId', isEqualTo: societyId)
+            .get();
+
+        int sentCount = 0;
+        final callable = functions.httpsCallable(
+          'sendMemberPush',
+          options: HttpsCallableOptions(timeout: const Duration(seconds: 30)),
+        );
+
+        for (final doc in usersSnap.docs) {
+          final data = doc.data();
+          final rawBlock = (data['blockName'] ?? '').toString();
+          final cleanBlock = SocietyService.instance.logicalBlockName(rawBlock);
+          if (cleanBlock == targetBlock) {
+            final token = data['fcmToken']?.toString().trim();
+            if (token != null && token.isNotEmpty) {
+              try {
+                await callable.call<Map<String, dynamic>>({
+                  'memberUid': doc.id,
+                  'title': title,
+                  'body': body,
+                  'type': 'admin_notice',
+                  'senderUid': currentUid,
+                  'fcmToken': token,
+                });
+                sentCount++;
+              } catch (_) {}
+            }
+          }
+        }
+
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ $targetBlock ના સભ્યોને સૂચના મોકલાઈ ગઈ છે! ($sentCount ડિવાઇસ)'),
             backgroundColor: Colors.green.shade800,
             duration: const Duration(seconds: 6),
           ),

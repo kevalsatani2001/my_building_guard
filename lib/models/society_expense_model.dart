@@ -109,6 +109,8 @@ class SocietyExpense {
   final String notes;
   final String billReceiptUrl;
   final String recordedBy;
+  final String scope; // 'common' (all wings/streets) or 'wing' (block-specific)
+  final String targetBlock; // 'ALL' or block name e.g. 'A', 'B', 'શેરી-૧'
   final DateTime createdAt;
 
   SocietyExpense({
@@ -123,10 +125,19 @@ class SocietyExpense {
     this.notes = '',
     this.billReceiptUrl = '',
     this.recordedBy = '',
+    this.scope = 'common',
+    this.targetBlock = 'ALL',
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
   SocietyExpenseCategory get category => SocietyExpenseCategory.fromKey(categoryKey);
+
+  bool get isCommon => scope == 'common' || targetBlock == 'ALL' || targetBlock.isEmpty;
+
+  String get scopeLabelGujarati {
+    if (isCommon) return 'સમગ્ર સોસાયટી (કોમન)';
+    return '$targetBlock (વિંગ/શેરી સ્પેશિયલ)';
+  }
 
   String get paymentModeLabel {
     switch (paymentMode.toLowerCase()) {
@@ -167,6 +178,8 @@ class SocietyExpense {
       notes: (data['notes'] ?? '').toString(),
       billReceiptUrl: (data['billReceiptUrl'] ?? '').toString(),
       recordedBy: (data['recordedBy'] ?? '').toString(),
+      scope: (data['scope'] ?? 'common').toString(),
+      targetBlock: (data['targetBlock'] ?? 'ALL').toString(),
       createdAt: parseDate(data['createdAt']),
     );
   }
@@ -183,6 +196,8 @@ class SocietyExpense {
       'notes': notes,
       'billReceiptUrl': billReceiptUrl,
       'recordedBy': recordedBy,
+      'scope': scope,
+      'targetBlock': targetBlock,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }

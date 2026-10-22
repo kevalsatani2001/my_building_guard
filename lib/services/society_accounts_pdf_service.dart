@@ -270,6 +270,7 @@ class SocietyAccountsPdfService {
     required List<SocietyExpense> expenses,
     String? societyName,
     String? societyCode,
+    String? blockFilter,
   }) async {
     final pdf = pw.Document();
 
@@ -300,9 +301,12 @@ class SocietyAccountsPdfService {
     final dateStr = dateFmt.format(now);
     final stampImage = await _renderStatementStamp(dateStr: dateStr, societyName: effectiveSocName);
 
+    final isBlockSpecific = blockFilter != null && blockFilter.isNotEmpty && blockFilter != 'ALL';
+    final socDisplayName = isBlockSpecific ? '$effectiveSocName - $blockFilter' : effectiveSocName;
+
     // Pre-render Gujarati headers & titles cleanly
     final socNameImg = await _renderShapedText(
-      text: effectiveSocName,
+      text: socDisplayName,
       fontSize: 14,
       color: const Color(0xFF0F766E),
       fontWeight: FontWeight.w900,
@@ -310,7 +314,9 @@ class SocietyAccountsPdfService {
     );
 
     final titleGujImg = await _renderShapedText(
-      text: 'સોસાયટી નાણાકીય ખાતાવહી & પાસબુક અહેવાલ (Financial Statement & Ledger)',
+      text: isBlockSpecific
+          ? 'નાણાકીય ખાતાવહી & પાસબુક અહેવાલ [$blockFilter]'
+          : 'સોસાયટી નાણાકીય ખાતાવહી & પાસબુક અહેવાલ (Financial Statement & Ledger)',
       fontSize: 10,
       color: const Color(0xFF0F172A),
       fontWeight: FontWeight.w800,
@@ -1166,6 +1172,7 @@ class SocietyAccountsPdfPreviewScreen extends StatelessWidget {
   final List<SocietyExpense> expenses;
   final String? societyName;
   final String? societyCode;
+  final String? blockFilter;
 
   const SocietyAccountsPdfPreviewScreen({
     super.key,
@@ -1173,18 +1180,24 @@ class SocietyAccountsPdfPreviewScreen extends StatelessWidget {
     required this.expenses,
     this.societyName,
     this.societyCode,
+    this.blockFilter,
   });
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final dateStr = DateFormat('yyyyMMdd').format(now);
-    final safeFileName = 'Society_Passbook_Statement_$dateStr.pdf';
+    final blockPart = (blockFilter != null && blockFilter!.isNotEmpty && blockFilter != 'ALL')
+        ? '_$blockFilter'
+        : '';
+    final safeFileName = 'Society_Passbook_Statement${blockPart}_$dateStr.pdf';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: PremiumAppBar(
-        title: 'સોસાયટી નાણાકીય સ્ટેટમેન્ટ (PDF)',
+        title: (blockFilter != null && blockFilter!.isNotEmpty && blockFilter != 'ALL')
+            ? '$blockFilter નાણાકીય સ્ટેટમેન્ટ'
+            : 'સોસાયટી નાણાકીય સ્ટેટમેન્ટ (PDF)',
         subtitle: 'Date-wise Treasury Passbook & Ledger',
         actions: [
           PremiumAppBarAction(
@@ -1198,6 +1211,7 @@ class SocietyAccountsPdfPreviewScreen extends StatelessWidget {
                 expenses: expenses,
                 societyName: societyName,
                 societyCode: societyCode,
+                blockFilter: blockFilter,
               );
               await Printing.layoutPdf(onLayout: (_) => pdfBytes);
             },
@@ -1211,6 +1225,7 @@ class SocietyAccountsPdfPreviewScreen extends StatelessWidget {
           expenses: expenses,
           societyName: societyName,
           societyCode: societyCode,
+          blockFilter: blockFilter,
         ),
         canChangeOrientation: false,
         canChangePageFormat: false,

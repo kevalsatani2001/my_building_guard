@@ -54,6 +54,30 @@ class UserModel extends Equatable {
     };
   }
 
+  bool get isPlatformSuperAdmin => role == 'super_admin' || role == 'superadmin';
+  bool get isSuperAdmin =>
+      role == 'admin' ||
+      role == 'chairman' ||
+      role == 'president' ||
+      isPlatformSuperAdmin;
+  bool get isWingAdmin =>
+      role == 'wing_admin' ||
+      role == 'sub_admin' ||
+      role == 'subadmin' ||
+      role == 'committee' ||
+      role == 'committee_member' ||
+      role == 'kamiti' ||
+      role == 'kamiti_member';
+  bool get isCommitteeMember => isWingAdmin;
+  bool get isGuard =>
+      role == 'watchman' ||
+      role == 'guard' ||
+      role == 'security' ||
+      role == 'gate_staff';
+  bool get isAnyAdmin => isSuperAdmin || isWingAdmin;
+  bool canManageBlock(String? block) =>
+      isSuperAdmin || (isWingAdmin && (blockName == block || subGroup == block));
+
   @override
   List<Object?> get props =>
       [uid, name, email, role, unitNumber, blockName, subGroup, fcmToken, phone, societyId];

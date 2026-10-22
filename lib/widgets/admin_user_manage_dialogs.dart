@@ -28,12 +28,6 @@ bool _isValidEmail(String email) {
   ).hasMatch(email);
 }
 
-String _normalizeSocietyId(String input) {
-  final trimmed = input.trim().toLowerCase();
-  if (trimmed.isEmpty) return SocietyService.kDefaultSocietyId;
-  return trimmed.replaceAll(RegExp(r'[^a-z0-9_-]'), '_');
-}
-
 /// Dialogs for User Management, Watchman Management, and Visitor Reports.
 class AdminUserManageDialog {
   /// Opens dialog to register a new User (Member, Watchman, or Co-Admin)
@@ -42,10 +36,8 @@ class AdminUserManageDialog {
     final eC = TextEditingController();
     final pC = TextEditingController();
     final phoneC = TextEditingController();
-    final societyCodeC = TextEditingController();
     final uC = TextEditingController();
     String selectedRole = 'member';
-    bool createSeparateSociety = false;
     bool obscurePassword = true;
     bool isSubmitting = false;
     String? sB;
@@ -64,7 +56,7 @@ class AdminUserManageDialog {
             actionsPadding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
             title: PremiumDialogHeader(
               title: "નવું યુઝર રજીસ્ટ્રેશન",
-              subtitle: "મેમ્બર, વોચમેન કે એડમિન એકાઉન્ટ બનાવો",
+              subtitle: "મેમ્બર, સબ-એડમિન કે વોચમેન એકાઉન્ટ બનાવો",
               icon: Icons.person_add_alt_1_rounded,
               accentColor: cs.primary,
               onClose: isSubmitting ? null : () => Navigator.pop(ctx),
@@ -94,65 +86,23 @@ class AdminUserManageDialog {
                         ),
                         const SizedBox(width: 8),
                         _buildRoleCard(
+                          label: 'સબ-એડમિન',
+                          role: 'sub_admin',
+                          icon: Icons.shield_rounded,
+                          selected: selectedRole == 'sub_admin',
+                          onTap: () => setDS(() => selectedRole = 'sub_admin'),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildRoleCard(
                           label: 'વોચમેન',
                           role: 'watchman',
                           icon: Icons.security_rounded,
                           selected: selectedRole == 'watchman',
                           onTap: () => setDS(() => selectedRole = 'watchman'),
                         ),
-                        const SizedBox(width: 8),
-                        _buildRoleCard(
-                          label: 'એડમિન',
-                          role: 'admin',
-                          icon: Icons.admin_panel_settings_rounded,
-                          selected: selectedRole == 'admin',
-                          onTap: () => setDS(() => selectedRole = 'admin'),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 14),
-
-                    if (selectedRole == 'admin') ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.shade50,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.amber.shade200),
-                        ),
-                        child: Column(
-                          children: [
-                            SwitchListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: const Text(
-                                "આ એડમિનને અલગ સોસાયટી આપો",
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                              ),
-                              subtitle: const Text(
-                                "ON કરશો તો આ યુઝર નવી/અલગ society manage કરશે",
-                                style: TextStyle(fontSize: 11),
-                              ),
-                              value: createSeparateSociety,
-                              onChanged: (v) => setDS(() => createSeparateSociety = v),
-                            ),
-                            if (createSeparateSociety) ...[
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: societyCodeC,
-                                decoration: InputDecoration(
-                                  labelText: "સોસાયટી કોડ (Society Code)",
-                                  hintText: "દા.ત. shiv-residency",
-                                  prefixIcon: const Icon(Icons.tag_rounded, size: 20),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                  isDense: true,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
 
                     // Full Name
                     TextField(
@@ -259,25 +209,56 @@ class AdminUserManageDialog {
                                   .snapshots(),
                               builder: (context, snap) {
                                 if (!snap.hasData) return const LinearProgressIndicator();
+                                // Deduplicate blocks by canonical normalized name
+                                final uniqueBlocks = <String, Map<String, dynamic>>{};
+                                for (final d in snap.data!.docs) {
+                                  final data = d.data() as Map<String, dynamic>;
+                                  final rawName = (data['name'] ?? SocietyService.instance.logicalBlockName(d.id)).toString();
+                                  final clean = SocietyService.instance.normalizeBlockName(rawName);
+                                  if (clean.isEmpty) continue;
+                                  if (!uniqueBlocks.containsKey(clean)) {
+                                    uniqueBlocks[clean] = {
+                                      'id': d.id,
+                                      'name': clean,
+                                      'type': (data['type'] ?? 'Wing').toString(),
+                                      'category': (data['category'] ?? '').toString(),
+                                    };
+                                  }
+                                }
+                                final sortedKeys = uniqueBlocks.keys.toList()
+                                  ..sort((a, b) {
+                                    if (SocietyService.instance.isGroundBlock(a)) return -1;
+                                    if (SocietyService.instance.isGroundBlock(b)) return 1;
+                                    return a.compareTo(b);
+                                  });
+
+                                final effectiveSB = (sB != null && sortedKeys.contains(SocietyService.instance.normalizeBlockName(sB!)))
+                                    ? SocietyService.instance.normalizeBlockName(sB!)
+                                    : null;
+
                                 return DropdownButtonFormField<String>(
-                                  key: ValueKey('dialog_block_$sB'),
-                                  initialValue: sB,
+                                  key: ValueKey('dialog_block_$effectiveSB'),
+                                  initialValue: effectiveSB,
                                   decoration: InputDecoration(
-                                    labelText: "વિંગ / બ્લોક",
+                                    labelText: "વિંગ / બ્લોક / ફ્લોર",
                                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                     isDense: true,
                                     filled: true,
                                     fillColor: Colors.white,
                                   ),
                                   hint: const Text("બ્લોક પસંદ કરો"),
-                                  items: snap.data!.docs
-                                      .map(
-                                        (d) => DropdownMenuItem(
-                                          value: d.id,
-                                          child: Text('${d['name']}'),
-                                        ),
-                                      )
-                                      .toList(),
+                                  items: sortedKeys.map((k) {
+                                    final item = uniqueBlocks[k]!;
+                                    final label = SocietyService.instance.formatBlockDisplayName(
+                                      k,
+                                      architectureType: item['type'] as String?,
+                                      category: item['category'] as String?,
+                                    );
+                                    return DropdownMenuItem<String>(
+                                      value: k,
+                                      child: Text(label),
+                                    );
+                                  }).toList(),
                                   onChanged: (v) => setDS(() {
                                     sB = v;
                                     sU = null;
@@ -296,12 +277,13 @@ class AdminUserManageDialog {
                                     )
                                     .snapshots(),
                                 builder: (context, snap) {
-                                  final cleanB = SocietyService.instance.logicalBlockName(sB!);
+                                  final cleanB = SocietyService.instance.normalizeBlockName(sB!);
                                   final unitDocs = snap.hasData
                                       ? snap.data!.docs.where((d) {
                                           final data = d.data() as Map<String, dynamic>;
                                           final b = (data['blockName'] ?? '').toString();
-                                          return b == sB || b == cleanB || d.id.startsWith('$sB-') || d.id.startsWith('$cleanB-');
+                                          final normB = SocietyService.instance.normalizeBlockName(b);
+                                          return normB == cleanB || b == sB || d.id.startsWith('$sB-') || d.id.startsWith('$cleanB-');
                                         }).toList()
                                       : <QueryDocumentSnapshot>[];
 
@@ -414,14 +396,6 @@ class AdminUserManageDialog {
                           );
                           return;
                         }
-                        if (selectedRole == 'admin' &&
-                            createSeparateSociety &&
-                            societyCodeC.text.trim().isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("અલગ સોસાયટી માટે સોસાયટી કોડ આપો!")),
-                          );
-                          return;
-                        }
 
                         setDS(() => isSubmitting = true);
 
@@ -434,11 +408,7 @@ class AdminUserManageDialog {
                           selectedRole,
                           sB,
                           effectiveU,
-                          phone: selectedRole == 'member' ? phoneC.text.trim() : null,
-                          societyIdOverride:
-                              selectedRole == 'admin' && createSeparateSociety
-                                  ? _normalizeSocietyId(societyCodeC.text)
-                                  : null,
+                          phone: phoneC.text.trim().isNotEmpty ? phoneC.text.trim() : null,
                         );
 
                         if (ctx.mounted) {
@@ -513,45 +483,63 @@ class AdminUserManageDialog {
     String? block,
     String? unit, {
     String? phone,
-    String? societyIdOverride,
   }) async {
+    final cleanEmail = email.trim().toLowerCase();
+    final cleanPhone = phone?.replaceAll(RegExp(r'[^0-9]'), '') ?? '';
+    final cleanPass = pass.trim();
+
     try {
       final defaultApp = await ensureDefaultFirebaseApp();
       FirebaseApp tempApp = await Firebase.initializeApp(
         name: 'TempApp_${DateTime.now().millisecondsSinceEpoch}',
         options: defaultApp.options,
       );
-      UserCredential res = await FirebaseAuth.instanceFor(
-        app: tempApp,
-      ).createUserWithEmailAndPassword(email: email, password: pass);
+
+      UserCredential res;
+      try {
+        res = await FirebaseAuth.instanceFor(
+          app: tempApp,
+        ).createUserWithEmailAndPassword(email: cleanEmail, password: cleanPass);
+      } finally {
+        try {
+          await tempApp.delete();
+        } catch (_) {}
+      }
+
+      final uid = res.user!.uid;
 
       Map<String, dynamic> userData = {
-        'uid': res.user!.uid,
-        'name': name,
-        'email': email,
+        'uid': uid,
+        'name': name.trim(),
+        'email': cleanEmail,
         'role': role,
         'createdAt': FieldValue.serverTimestamp(),
         'isActive': true,
-        'societyId':
-            (societyIdOverride != null && societyIdOverride.trim().isNotEmpty)
-                ? societyIdOverride.trim()
-                : SocietyService.instance.societyId,
+        'societyId': SocietyService.instance.societyId,
       };
 
-      if (role == 'member') {
-        userData['unitNumber'] = unit;
-        userData['blockName'] = block;
-        if (phone != null && phone.isNotEmpty) {
-          userData['phone'] = phone;
-        }
+      if (cleanPhone.isNotEmpty) {
+        userData['phone'] = cleanPhone;
+        userData['displayPhone'] = phone?.trim();
+      }
 
-        final unitDocId = '$block-$unit';
+      if (role == 'sub_admin') {
+        userData['isSubAdmin'] = true;
+        userData['isCommitteeMember'] = true;
+      }
+
+      if (role == 'member') {
+        final cleanBlock = SocietyService.instance.normalizeBlockName(block ?? '');
+        userData['unitNumber'] = unit;
+        userData['blockName'] = cleanBlock;
+
+        final unitDocId = SocietyService.instance.unitFirestoreDocId(cleanBlock, unit ?? '');
         final unitRef = AppFirestore.instance
             .collection('units')
             .doc(unitDocId);
         await AppFirestore.instance.runTransaction((tx) async {
           final snap = await tx.get(unitRef);
-          final memberIds = <String>{res.user!.uid};
+          final memberIds = <String>{uid};
           String? primaryMemberId;
           if (snap.exists) {
             final d = snap.data()!;
@@ -569,16 +557,16 @@ class AdminUserManageDialog {
           }
           if (primaryMemberId == null) {
             final others = memberIds
-                .where((id) => id != res.user!.uid)
+                .where((id) => id != uid)
                 .toList();
-            primaryMemberId = others.isNotEmpty ? others.first : res.user!.uid;
+            primaryMemberId = others.isNotEmpty ? others.first : uid;
           }
           tx.set(unitRef, {
             'isOccupied': true,
             'memberIds': memberIds.toList(),
             'memberId': primaryMemberId,
             'societyId': SocietyService.instance.societyId,
-            'blockName': block,
+            'blockName': cleanBlock,
             'unitNumber': unit,
           }, SetOptions(merge: true));
         });
@@ -586,23 +574,39 @@ class AdminUserManageDialog {
 
       await AppFirestore.instance
           .collection('users')
-          .doc(res.user!.uid)
+          .doc(uid)
           .set(userData);
 
-      await tempApp.delete();
       if (dialogContext.mounted) Navigator.pop(dialogContext);
       if (parentContext.mounted) {
+        final label = role == 'sub_admin'
+            ? 'સબ-એડમિન'
+            : (role == 'watchman' ? 'વોચમેન' : 'મેમ્બર');
         ScaffoldMessenger.of(parentContext).showSnackBar(
           SnackBar(
-            content: Text("$role સફળતાપૂર્વક ઉમેરાયો!"),
+            content: Text("$label સફળતાપૂર્વક ઉમેરાયો!"),
             backgroundColor: Colors.green,
           ),
+        );
+      }
+    } on FirebaseAuthException catch (authErr) {
+      if (parentContext.mounted) {
+        String msg = 'ભૂલ: ${authErr.message ?? authErr.code}';
+        if (authErr.code == 'email-already-in-use') {
+          msg = 'આ ઇમેઇલ ($cleanEmail) પહેલેથી જ રજીસ્ટર થયેલો છે. કૃપા કરીને અન્ય ઇમેઇલ વાપરો.';
+        } else if (authErr.code == 'weak-password') {
+          msg = 'પાસવર્ડ ઓછામાં ઓછો 6 અક્ષરનો હોવો જોઈએ.';
+        } else if (authErr.code == 'invalid-email') {
+          msg = 'અમાન્ય ઈમેલ એડ્રેસ: $cleanEmail';
+        }
+        ScaffoldMessenger.of(parentContext).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
       if (parentContext.mounted) {
         ScaffoldMessenger.of(parentContext).showSnackBar(
-          SnackBar(content: Text("ભૂલ: $e"), backgroundColor: Colors.red),
+          SnackBar(content: Text("ભૂલ આવી: $e"), backgroundColor: Colors.red),
         );
       }
     }

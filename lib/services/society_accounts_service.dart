@@ -66,8 +66,8 @@ class SocietyAccountsService {
 
   String get _currentSocietyId => SocietyService.instance.currentSocietyId;
 
-  /// Stream of all expenses for a society
-  Stream<List<SocietyExpense>> streamExpenses({String? societyId}) {
+  /// Stream of all expenses for a society (optional blockFilter)
+  Stream<List<SocietyExpense>> streamExpenses({String? societyId, String? blockFilter}) {
     final sId = societyId ?? _currentSocietyId;
     return _firestore
         .collection('society_expenses')
@@ -76,11 +76,14 @@ class SocietyAccountsService {
         .map((snap) {
           final list = snap.docs.map((d) => SocietyExpense.fromFirestore(d)).toList();
           list.sort((a, b) => b.expenseDate.compareTo(a.expenseDate));
+          if (blockFilter != null && blockFilter.isNotEmpty && blockFilter != 'ALL') {
+            return list.where((e) => e.targetBlock == blockFilter || e.isCommon).toList();
+          }
           return list;
         });
   }
 
-  /// Record a new expense by Admin
+  /// Record a new expense by Admin (common or block-specific)
   Future<void> recordExpense({
     required String title,
     required String categoryKey,
@@ -90,6 +93,8 @@ class SocietyAccountsService {
     String paymentMode = 'cash',
     String notes = '',
     String billReceiptUrl = '',
+    String scope = 'common',
+    String targetBlock = 'ALL',
   }) async {
     final societyId = _currentSocietyId;
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -108,6 +113,8 @@ class SocietyAccountsService {
       notes: notes.trim(),
       billReceiptUrl: billReceiptUrl,
       recordedBy: recordedBy,
+      scope: scope,
+      targetBlock: targetBlock,
       createdAt: DateTime.now(),
     );
 
@@ -146,8 +153,12 @@ class SocietyAccountsService {
   }
 
   /// Comprehensive calculation of society income, expenses, and current treasury balance
-  Future<SocietyFinancialSummary> calculateFinancialSummary({String? societyId}) async {
+  Future<SocietyFinancialSummary> calculateFinancialSummary({
+    String? societyId,
+    String? blockFilter,
+  }) async {
     final sId = societyId ?? _currentSocietyId;
+    final isFiltered = blockFilter != null && blockFilter.isNotEmpty && blockFilter != 'ALL';
 
     // 1. Fetch all maintenance bills
     final billsSnap = await _firestore
@@ -170,6 +181,13 @@ class SocietyAccountsService {
 
     for (final doc in billsSnap.docs) {
       final bill = MaintenanceBill.fromFirestore(doc);
+      if (isFiltered) {
+        final matchesBlock = bill.blockName == blockFilter ||
+            bill.cleanBlockName == blockFilter ||
+            bill.flatDisplay.startsWith(blockFilter);
+        if (!matchesBlock) continue;
+      }
+
       if (bill.isPaid) {
         paidCount++;
         totalMaint += bill.amount;
@@ -220,6 +238,11 @@ class SocietyAccountsService {
 
     for (final doc in expensesSnap.docs) {
       final exp = SocietyExpense.fromFirestore(doc);
+      if (isFiltered) {
+        final matchesExpense = exp.targetBlock == blockFilter || exp.isCommon;
+        if (!matchesExpense) continue;
+      }
+
       allExpenses.add(exp);
       totalExp += exp.amount;
 

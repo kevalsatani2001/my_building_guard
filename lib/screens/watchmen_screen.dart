@@ -20,6 +20,11 @@ import '../widgets/watchman_vehicle_lookup_sheet.dart';
 import '../widgets/premium_ui.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../models/amenity_model.dart';
+import '../services/amenity_booking_service.dart';
+import '../models/patrol_model.dart';
+import '../services/guard_patrol_service.dart';
+import 'watchman_patrol_screen.dart';
 
 /// Cloud Functions v2 `sendMemberPush` નું રીજન — [GCP Console] → Functions માં ચેક કરો (ઘણી વખત `us-central1`).
 const String _kSendMemberPushRegion = 'us-central1';
@@ -151,6 +156,20 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       'color': Color(0xFF0284C7),
       'label': 'Guest Visit',
       'category': 'other',
+    },
+    {
+      'name': 'માલ-સામાન / ટેમ્પો',
+      'icon': Icons.local_shipping_rounded,
+      'color': Color(0xFF0F766E),
+      'label': 'Cargo / Goods Delivery',
+      'category': 'cargo',
+    },
+    {
+      'name': 'વેપારી / શોપ સ્ટાફ',
+      'icon': Icons.store_rounded,
+      'color': Color(0xFF7C3AED),
+      'label': 'Merchant / Shop Staff',
+      'category': 'commercial',
     },
   ];
 
@@ -1786,6 +1805,278 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     );
   }
 
+  // --- VIP EVENT BANNER (આજની ઇવેન્ટ્સ) ---
+  Widget _buildTodayEventsBanner() {
+    return StreamBuilder<List<AmenityBookingModel>>(
+      stream: AmenityBookingService.instance.getTodayEventsStream(),
+      builder: (context, snapshot) {
+        final events = snapshot.data ?? [];
+        if (events.isEmpty) return const SizedBox.shrink();
+
+        final event = events.first;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFF334155)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.amberAccent),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.celebration_rounded, color: Colors.amberAccent, size: 12),
+                        SizedBox(width: 4),
+                        Text(
+                          'આજનો પ્રસંગ (Today Event)',
+                          style: TextStyle(
+                            color: Colors.amberAccent,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  if (event.eventPassCode.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'પાસકોડ: ${event.eventPassCode}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${event.amenityName} • ${event.purpose}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'આયોજક: ${event.memberName} (ફ્લેટ ${event.unitDisplay}) • ${event.slotName}',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  fontSize: 11.5,
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    setState(() {
+                      _purposeController.text = '${event.amenityName} - ${event.purpose}';
+                      _nameController.text = 'ઇવેન્ટ મહેમાન (Guest)';
+                      _selectedBlock = SocietyService.instance.logicalBlockName(event.unitDisplay.split('-').first);
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('✅ ${event.amenityName} ના મહેમાન માટે ફોર્મ ઓટો-સેટ થઈ ગયું.'),
+                        backgroundColor: const Color(0xFF0F766E),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.flash_on_rounded, size: 15, color: Colors.amberAccent),
+                  label: const Text(
+                    'ઇવેન્ટ મહેમાન ત્વરિત એન્ટ્રી (Quick Entry)',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F766E),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildNightPatrolQuickBanner() {
+    final sid = SocietyService.instance.societyId;
+    final user = FirebaseAuth.instance.currentUser;
+    final guardUid = user?.uid ?? '';
+    final guardName = user?.displayName ?? 'સુરક્ષા ગાર્ડ';
+    final guardPhone = user?.phoneNumber ?? '';
+
+    return StreamBuilder<PatrolShiftSession?>(
+      stream: GuardPatrolService().streamActiveSession(sid, guardUid),
+      builder: (context, snapshot) {
+        final active = snapshot.data;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: active != null
+                  ? const Color(0xFF6366F1)
+                  : const Color(0xFF334155),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => WatchmanPatrolScreen(
+                      societyId: sid,
+                      guardUid: guardUid,
+                      guardName: guardName,
+                      guardPhone: guardPhone,
+                    ),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: (active != null
+                                ? const Color(0xFF6366F1)
+                                : const Color(0xFF818CF8))
+                            .withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        active != null
+                            ? Icons.radar_rounded
+                            : Icons.shield_moon_rounded,
+                        color: const Color(0xFF818CF8),
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                active != null
+                                    ? '🚨 પેટ્રોલિંગ રાઉન્ડ ચાલુ છે'
+                                    : 'રાત્રિ સુરક્ષા પેટ્રોલિંગ (Night Patrol)',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              if (active != null) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981)
+                                        .withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    '${active.progressPercent}%',
+                                    style: const TextStyle(
+                                      color: Color(0xFF34D399),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            active != null
+                                ? '${active.roundLabel}: ${active.scannedCount}/${active.totalCheckpoints} ચેકપોઇન્ટ્સ સ્કેન થયા'
+                                : 'QR સ્કેન રાઉન્ડ શરૂ કરો અને ચેકપોઇન્ટ્સ ઓડિટ કરો',
+                            style: const TextStyle(
+                              color: Color(0xFF94A3B8),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: Color(0xFF94A3B8),
+                      size: 15,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   // --- UI: વિઝિટર એન્ટ્રી ફોર્મ (Ultra Pro Premium & Spacious) ---
   Widget _buildEntryForm() {
     final isAllSocietyActive = _isAllSociety;
@@ -1795,6 +2086,16 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ══════════════════════════════════════════════════
+          // VIP EVENT BANNER (જો આજે વાડી/હોલમાં પ્રસંગ હોય)
+          // ══════════════════════════════════════════════════
+          _buildTodayEventsBanner(),
+
+          // ══════════════════════════════════════════════════
+          // NIGHT PATROL QUICK BANNER (રાત્રિ સુરક્ષા ઓડિટ)
+          // ══════════════════════════════════════════════════
+          _buildNightPatrolQuickBanner(),
+
           // ══════════════════════════════════════════════════
           // CARD 1: મુલાકાતી પ્રોફાઇલ (Visitor Profile)
           // ══════════════════════════════════════════════════

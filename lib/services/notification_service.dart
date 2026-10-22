@@ -16,6 +16,7 @@ import 'society_service.dart';
 const String kSocietyMembersTopic = 'society_members';
 const String kSocietyAdminsTopic = 'society_admins';
 const String kSocietyWatchmenTopic = 'society_watchmen';
+const String kPlatformSuperAdminsTopic = 'platform_super_admins';
 
 /// Must match AndroidManifest default_notification_channel_id and Cloud Function `channelId`.
 const String kAndroidNotificationChannelId = 'high_importance_channel';
@@ -43,6 +44,8 @@ class NotificationService {
     'Society notifications',
     description: 'Alerts, visitors, and broadcasts',
     importance: Importance.max,
+    playSound: true,
+    sound: RawResourceAndroidNotificationSound('notification'),
   );
 
   bool _initialized = false;
@@ -159,7 +162,39 @@ class NotificationService {
     final tAdmins = SocietyService.instance.topicAdmins;
     final tWatch = SocietyService.instance.topicWatchmen;
 
-    if (role == 'admin') {
+    if (role == 'super_admin' || role == 'superadmin') {
+      // 🌟 સુપર એડમિન માત્ર પ્લેટફોર્મ સુપર એડમિન ટોપિક સાંભળશે — સામાન્ય સોસાયટી બ્રોડકાસ્ટ નહીં
+      await _withRetries(
+        () => _fcm.subscribeToTopic(kPlatformSuperAdminsTopic),
+        label: 'FCM subscribe super admins topic',
+      );
+      _subscribedTopics.add(kPlatformSuperAdminsTopic);
+
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(tMembers),
+        label: 'FCM unsubscribe super_admin from tMembers',
+      );
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(kSocietyMembersTopic),
+        label: 'FCM unsubscribe super_admin from legacy kSocietyMembersTopic',
+      );
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(tAdmins),
+        label: 'FCM unsubscribe super_admin from tAdmins',
+      );
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(kSocietyAdminsTopic),
+        label: 'FCM unsubscribe super_admin from legacy kSocietyAdminsTopic',
+      );
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(tWatch),
+        label: 'FCM unsubscribe super_admin from tWatch',
+      );
+      await _withRetries(
+        () => _fcm.unsubscribeFromTopic(kSocietyWatchmenTopic),
+        label: 'FCM unsubscribe super_admin from legacy kSocietyWatchmenTopic',
+      );
+    } else if (role == 'admin') {
       // એડમિન માત્ર એડમિન ટોપિક (SOS, ફરિયાદો, રિક્વેસ્ટ એલર્ટ) સાંભળશે — જનરલ બ્રોડકાસ્ટ નહીં જેથી પોતાને પુશ ન આવે.
       await _withRetries(
         () => _fcm.subscribeToTopic(tAdmins),
@@ -390,6 +425,25 @@ class NotificationService {
             importance: Importance.max,
             priority: Priority.high,
             icon: android?.smallIcon ?? '@mipmap/ic_launcher',
+            playSound: true,
+            sound: const RawResourceAndroidNotificationSound('notification'),
+          ),
+        );
+        break;
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+        details = const NotificationDetails(
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+            sound: 'notification.wav',
+          ),
+          macOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+            sound: 'notification.wav',
           ),
         );
         break;

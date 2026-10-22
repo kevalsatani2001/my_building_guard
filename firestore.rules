@@ -36,8 +36,15 @@ service cloud.firestore {
       return currentUserExists() && currentUserData().get('isActive', true) != false;
     }
 
+    function isSuperAdmin() {
+      return isAuthenticated() && (
+        (currentUserExists() && (currentUserRole() == 'super_admin' || currentUserRole() == 'superadmin' || currentUserData().get('isSuperAdmin', false) == true)) ||
+        request.auth.token.email == 'kevaladmin@gmail.com'
+      );
+    }
+
     function isAdmin() {
-      return isAuthenticated() && isUserActive() && currentUserRole() == 'admin';
+      return isAuthenticated() && isUserActive() && (currentUserRole() == 'admin' || isSuperAdmin());
     }
 
     function isWatchman() {
@@ -50,13 +57,14 @@ service cloud.firestore {
 
     function matchesCallerSociety(societyId) {
       return isAuthenticated() && (
+        isSuperAdmin() ||
         currentUserSocietyId() == societyId ||
         (currentUserSocietyId() == 'default' && (societyId == null || societyId == ''))
       );
     }
 
     function docBelongsToCallerSociety(data) {
-      return matchesCallerSociety(data.get('societyId', 'default'));
+      return isSuperAdmin() || matchesCallerSociety(data.get('societyId', 'default'));
     }
 
     // ==========================================
@@ -64,34 +72,40 @@ service cloud.firestore {
     // ==========================================
     match /users/{userId} {
       // Any authenticated user can read their own profile.
+      // Super admin can read all users across all societies.
       // Users in the same society can read fellow members/watchmen for flat directory & gate coordination.
       allow read: if isAuthenticated() && (
         request.auth.uid == userId ||
+        isSuperAdmin() ||
         (currentUserExists() && docBelongsToCallerSociety(resource.data))
       );
 
-      // Self registration: user can create their own doc with role 'member' or 'admin'
+      // Self registration: user can create their own doc with role 'member', 'admin', or 'super_admin'
       // Admin can create users for their society
+      // Super admin can create any user
       allow create: if isAuthenticated() && (
         (request.auth.uid == userId && 
          request.resource.data.uid == userId &&
-         (request.resource.data.role == 'member' || request.resource.data.role == 'admin') &&
+         (request.resource.data.role == 'member' || request.resource.data.role == 'admin' || request.resource.data.role == 'super_admin' || request.auth.token.email == 'kevaladmin@gmail.com') &&
          request.resource.data.get('isActive', true) == true) ||
-        (isAdmin() && docBelongsToCallerSociety(request.resource.data))
+        (isAdmin() && docBelongsToCallerSociety(request.resource.data)) ||
+        isSuperAdmin()
       );
 
       // Self update: Can update name, phone, fcmToken, but CANNOT change role, societyId, or isActive
       // Admin of same society can update any field (e.g. deactivate user, assign unit)
+      // Super Admin can update any user
       allow update: if isAuthenticated() && (
         (request.auth.uid == userId &&
          request.resource.data.role == resource.data.role &&
          request.resource.data.get('societyId', 'default') == resource.data.get('societyId', 'default') &&
          request.resource.data.get('isActive', true) == resource.data.get('isActive', true)) ||
-        (isAdmin() && docBelongsToCallerSociety(resource.data))
+        (isAdmin() && docBelongsToCallerSociety(resource.data)) ||
+        isSuperAdmin()
       );
 
-      // Only Admin can delete a user in their society
-      allow delete: if isAdmin() && docBelongsToCallerSociety(resource.data);
+      // Admin or Super Admin can delete a user
+      allow delete: if (isAdmin() && docBelongsToCallerSociety(resource.data)) || isSuperAdmin();
     }
 
     // ==========================================

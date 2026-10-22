@@ -226,7 +226,7 @@ class _AdminEmergencyContactsDialogState
                     )
                   : ListView.separated(
                       itemCount: _contacts.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 6),
+                      separatorBuilder: (_, _) => const SizedBox(height: 6),
                       itemBuilder: (context, i) {
                         final c = _contacts[i];
                         final name = (c['name'] ?? '').toString();

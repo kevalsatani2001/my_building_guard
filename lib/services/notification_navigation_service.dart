@@ -86,7 +86,18 @@ class NotificationNavigationService {
         _handleParkingAlert(title, body);
         break;
 
-      // ૬. સોસાયટી નોટિસ / સામાન્ય બ્રોડકાસ્ટ
+      // ૬. SOS / ઇમરજન્સી એલર્ટ (ગેટ કે વોચમેન તરફથી)
+      case 'sos':
+      case 'emergency':
+        _handleSosAlert(title, body);
+        break;
+
+      // ૭. સુપર એડમિન / પ્લેટફોર્મ હેડ ઓફિસ નોટિસ
+      case 'super_admin_notice':
+        _handleSuperAdminNotice(title, body);
+        break;
+
+      // ૮. સોસાયટી નોટિસ / સામાન્ય બ્રોડકાસ્ટ
       case 'admin_notice':
       case 'general':
       case 'notice':
@@ -316,6 +327,165 @@ class NotificationNavigationService {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ૬. SOS ઇમરજન્સી એલર્ટ ડાયલોગ (ગેટ / વોચમેન તરફથી તાત્કાલિક મદદ)
+  static void _handleSosAlert(String title, String body) {
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+
+    showDialog(
+      context: ctx,
+      barrierDismissible: false,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: const Color(0xFFFEF2F2),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDC2626).withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 28),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title.isNotEmpty ? title : '🚨 ગેટ ઇમરજન્સી SOS એલર્ટ!',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  color: Color(0xFF991B1B),
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              body.isNotEmpty ? body : 'ગેટ પર સુરક્ષા સહાયતાની તાત્કાલિક જરૂર છે.',
+              style: const TextStyle(fontSize: 14, height: 1.5, color: Color(0xFF1E293B), fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFECACA)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.shield_rounded, color: Color(0xFFDC2626), size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'વોચમેન અથવા સિક્યોરિટી કેબિનનો તાત્કાલિક સંપર્ક કરો.',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF7F1D1D)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(dialogCtx),
+            icon: const Icon(Icons.check_rounded, size: 18),
+            label: const Text('મેં એલર્ટ જોયો (Dismiss)'),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ૭. સુપર એડમિન / હેડ ઓફિસ સત્તાવાર નોટિસ ડાયલોગ
+  static void _handleSuperAdminNotice(String title, String body) {
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+
+    showDialog(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
+                ),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 26),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'સત્તાવાર હેડ ઓફિસ નોટિસ',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0284C7),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  Text(
+                    title.isNotEmpty ? title : 'સુપર એડમિન સૂચના',
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F172A)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F9FF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFBAE6FD)),
+              ),
+              child: Text(
+                body.isNotEmpty ? body : 'હેડ ઓફિસ તરફથી અગત્યની સૂચના આપવામાં આવી છે.',
+                style: const TextStyle(fontSize: 14, height: 1.5, color: Color(0xFF0C4A6E)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF0284C7),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            child: const Text('સમજાઈ ગયું (Acknowledge)'),
           ),
         ],
       ),

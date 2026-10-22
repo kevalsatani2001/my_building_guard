@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/notification_service.dart';
 import '../services/session_guard_service.dart';
 import '../services/society_service.dart';
+import '../models/premise_type.dart';
 import '../widgets/premium_ui.dart';
 import 'admin_add_block_screen.dart';
 import 'admin_add_user_screen.dart';
@@ -20,12 +21,16 @@ import 'admin_emergency_contacts_screen.dart';
 import 'admin_maintenance_screen.dart';
 import 'admin_publish_notice_screen.dart';
 import 'admin_setup_wizard_screen.dart';
+import 'admin_member_signature_sheet_screen.dart';
 import 'admin_society_bank_settings_screen.dart';
 import 'admin_users_directory_screen.dart';
 import 'admin_visitor_report_screen.dart';
 import 'admin_watchmen_manage_screen.dart';
 import 'admin_parking_management_screen.dart';
 import 'admin_accounts_screen.dart';
+import 'admin_polls_screen.dart';
+import 'admin_amenities_screen.dart';
+import 'admin_patrol_screen.dart';
 import 'architecture_preview.dart';
 
 class AdminDashboard extends StatefulWidget {
@@ -73,13 +78,39 @@ class _AdminDashboardState extends State<AdminDashboard> {
           .doc('society_config')
           .get();
     }
+    bool isSetup = false;
+    String socName = "";
+    String archType = "Wing";
+    if (doc.exists) {
+      final data = doc.data() ?? {};
+      isSetup = data['isSetupComplete'] == true;
+      socName = (data['societyName'] ?? "").toString();
+      archType = (data['architectureType'] ?? "Wing").toString();
+      SocietyService.instance.setArchitectureType(archType);
+      if (socName.isNotEmpty) {
+        SocietyService.instance.setSocietyName(socName);
+      }
+
+      // જો isSetupComplete: true હોય છતાં પણ જો સોસાયટીમાં કોઈ જ એકમો (units) ન હોય,
+      // તો એડમિનને પ્રથમવારનું આર્કિટેક્ચર સેટઅપ વિઝાર્ડ બતાવવું જરૂરી છે.
+      if (isSetup) {
+        try {
+          final unitsSnap = await AppFirestore.instance
+              .collection('units')
+              .where('societyId', isEqualTo: sid)
+              .limit(1)
+              .get();
+          if (unitsSnap.docs.isEmpty) {
+            isSetup = false;
+          }
+        } catch (_) {}
+      }
+    }
     if (mounted) {
       setState(() {
-        if (doc.exists) {
-          _isSetupComplete = doc.data()?['isSetupComplete'] ?? false;
-          _societyName = doc.data()?['societyName'] ?? "";
-          _architectureType = doc.data()?['architectureType'] ?? "Wing";
-        }
+        _isSetupComplete = isSetup;
+        _societyName = socName;
+        _architectureType = archType;
         _isLoading = false;
       });
     }
@@ -188,7 +219,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
     return _isSetupComplete
         ? _buildMainDashboard()
-        : AdminSetupWizardScreen(onSetupComplete: _checkSetupStatus);
+        : AdminSetupWizardScreen(
+            onSetupComplete: _checkSetupStatus,
+            initialSocietyName: _societyName,
+            initialArchitectureType: _architectureType,
+          );
   }
 
   // ==========================================
@@ -563,7 +598,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
                         ),
                         child: Text(
-                          _architectureType == 'Wing' ? '🏢 વિંગ / એપાર્ટમેન્ટ' : '🏡 શેરી / બંગલો',
+                          PremiseVocabulary.fromString(_architectureType).premiseBadge,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 11,
@@ -866,7 +901,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ),
         _buildTodayVisitorsMetricCard(),
         _buildLiveMetricCard(
-          title: _architectureType == 'Wing' ? "વિંગ્સ / બ્લોક્સ" : "શેરીઓ",
+          title: PremiseVocabulary.fromString(_architectureType).blockLabel,
           subtitle: "સ્ટ્રક્ચર નકશો",
           icon: Icons.apartment_rounded,
           gradientColors: const [Color(0xFFF59E0B), Color(0xFFD97706)],
@@ -1724,30 +1759,42 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: photoUrl.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: photoUrl,
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                              errorWidget: (_, _, _) => _fallbackAdminAvatar(name),
-                            )
-                          : _fallbackAdminAvatar(name),
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: photoUrl.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: photoUrl,
+                                fit: BoxFit.cover,
+                                errorWidget: (_, _, _) => _fallbackAdminAvatar(name),
+                              )
+                            : _fallbackAdminAvatar(name),
+                      ),
                     ),
                     Positioned(
                       right: -3,
                       bottom: -3,
                       child: Container(
-                        padding: const EdgeInsets.all(3),
+                        padding: const EdgeInsets.all(3.5),
                         decoration: BoxDecoration(
                           color: typeBg,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1.5),
+                          border: Border.all(color: Colors.white, width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
+                              color: Colors.black.withValues(alpha: 0.12),
                               blurRadius: 4,
                             ),
                           ],
@@ -1764,62 +1811,41 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF0F172A),
-                                letterSpacing: -0.2,
-                              ),
-                            ),
-                          ),
-                          if (phone.isNotEmpty) ...[
-                            const SizedBox(width: 6),
-                            InkWell(
-                              onTap: () => _makePhoneCall(phone),
-                              borderRadius: BorderRadius.circular(20),
-                              child: Container(
-                                padding: const EdgeInsets.all(5.5),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFECFDF5),
-                                  shape: BoxShape.circle,
-                                  border:
-                                      Border.all(color: const Color(0xFFA7F3D0)),
-                                ),
-                                child: const Icon(Icons.phone_rounded,
-                                    size: 13, color: Color(0xFF059669)),
-                              ),
-                            ),
-                          ],
-                        ],
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A),
+                          letterSpacing: -0.2,
+                        ),
                       ),
                       const SizedBox(height: 4),
-                      Row(
+                      Wrap(
+                        spacing: 5,
+                        runSpacing: 4,
                         children: [
+                          // Purpose tag
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6.5, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                             decoration: BoxDecoration(
                               color: typeBg,
-                              borderRadius: BorderRadius.circular(5.5),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: typeColor.withValues(alpha: 0.2)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(typeIcon, size: 10, color: typeColor),
-                                const SizedBox(width: 3),
+                                Icon(typeIcon, size: 10.5, color: typeColor),
+                                const SizedBox(width: 3.5),
                                 Text(
                                   purpose,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    fontSize: 10,
+                                    fontSize: 10.5,
                                     fontWeight: FontWeight.w700,
                                     color: typeColor,
                                   ),
@@ -1827,26 +1853,26 @@ class _AdminDashboardState extends State<AdminDashboard> {
                               ],
                             ),
                           ),
-                          const SizedBox(width: 5),
+
+                          // Destination flat
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6.5, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(5.5),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.apartment_rounded,
-                                    size: 10, color: Color(0xFF64748B)),
-                                const SizedBox(width: 3),
+                                const Icon(Icons.apartment_rounded, size: 10.5, color: Color(0xFF475569)),
+                                const SizedBox(width: 3.5),
                                 Text(
                                   flatDisplay,
                                   style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF475569),
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF334155),
                                   ),
                                 ),
                               ],
@@ -1854,33 +1880,29 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 5),
                       Row(
                         children: [
-                          Icon(Icons.schedule_rounded,
-                              size: 11, color: Colors.grey.shade500),
-                          const SizedBox(width: 3),
+                          Icon(Icons.schedule_rounded, size: 12, color: Colors.grey.shade500),
+                          const SizedBox(width: 3.5),
                           Text(
                             timeStr,
                             style: TextStyle(
-                              fontSize: 10.5,
+                              fontSize: 11,
                               color: Colors.grey.shade600,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           if (status == 'checked_out' && exitTs != null) ...[
                             const SizedBox(width: 6),
-                            const Text('•',
-                                style:
-                                    TextStyle(color: Colors.grey, fontSize: 10)),
+                            const Text('•', style: TextStyle(color: Colors.grey, fontSize: 10)),
                             const SizedBox(width: 6),
-                            Icon(Icons.logout_rounded,
-                                size: 11, color: Colors.grey.shade600),
+                            Icon(Icons.logout_rounded, size: 11, color: Colors.grey.shade600),
                             const SizedBox(width: 3),
                             Text(
                               DateFormat('hh:mm a').format(exitTs.toDate()),
                               style: const TextStyle(
-                                fontSize: 10.5,
+                                fontSize: 11,
                                 color: Color(0xFF64748B),
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1893,23 +1915,66 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 const SizedBox(width: 8),
 
-                // Status Pill
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                  decoration: BoxDecoration(
-                    color: statusBg,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: statusColor.withValues(alpha: 0.25)),
-                  ),
-                  child: Text(
-                    statusLabel,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w800,
+                // Right Actions: Call button & Status Pill
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (phone.isNotEmpty) ...[
+                      InkWell(
+                        onTap: () => _makePhoneCall(phone),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFECFDF5),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color(0xFFA7F3D0)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF059669).withValues(alpha: 0.1),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(Icons.phone_in_talk_rounded, size: 14, color: Color(0xFF059669)),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+
+                    // Status Pill with live indicator
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                      decoration: BoxDecoration(
+                        color: statusBg,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4.5),
+                          Text(
+                            statusLabel,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -2404,6 +2469,43 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final allActions = [
       (
         category: 'admin',
+        title: "પરિસર સેટઅપ વિઝાર્ડ",
+        subtitle: "આર્કિટેક્ચર & બ્લોક ગોઠવણી",
+        icon: Icons.architecture_rounded,
+        gradient: [const Color(0xFF6366F1), const Color(0xFF4F46E5)],
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AdminSetupWizardScreen(
+                onSetupComplete: () {
+                  Navigator.pop(context);
+                  _checkSetupStatus();
+                },
+                initialSocietyName: _societyName,
+                initialArchitectureType: _architectureType,
+              ),
+            ),
+          );
+        },
+      ),
+      (
+        category: 'admin',
+        title: "સભ્ય સહી પત્રક (PDF)",
+        subtitle: "ઠરાવ/કારણ & સહી લિસ્ટ",
+        icon: Icons.draw_rounded,
+        gradient: [const Color(0xFF1E3A8A), const Color(0xFF2563EB)],
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const AdminMemberSignatureSheetScreen(),
+            ),
+          );
+        },
+      ),
+      (
+        category: 'admin',
         title: "નવી $_architectureType ઉમેરો",
         subtitle: "નવા બ્લોક/ઘર એડ કરો",
         icon: Icons.add_business_rounded,
@@ -2443,6 +2545,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
         onTap: () => _openComplaints(context),
       ),
       (
+        category: 'comm',
+        title: "નિર્ણય મતદાન (Polls)",
+        subtitle: "ડિજિટલ વોટિંગ & પોલ",
+        icon: Icons.how_to_vote_rounded,
+        gradient: [const Color(0xFF0F766E), const Color(0xFF14B8A6)],
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminPollsScreen()),
+        ),
+      ),
+      (
         category: 'security',
         title: "વિઝિટર રિપોર્ટ",
         subtitle: "મુલાકાતી એન્ટ્રી વિગત",
@@ -2465,6 +2578,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
         icon: Icons.phone_in_talk_rounded,
         gradient: [const Color(0xFFE11D48), const Color(0xFFBE123C)],
         onTap: () => _showEmergencyContactsDialog(context),
+      ),
+      (
+        category: 'security',
+        title: "નાઈટ પેટ્રોલિંગ ઓડિટ",
+        subtitle: "વોચમેન QR સ્કેન રિપોર્ટ",
+        icon: Icons.shield_moon_rounded,
+        gradient: [const Color(0xFF0F172A), const Color(0xFF334155)],
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminPatrolScreen()),
+        ),
       ),
       (
         category: 'admin',
@@ -2494,6 +2618,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const AdminParkingManagementScreen()),
+        ),
+      ),
+      (
+        category: 'admin',
+        title: "એમેનિટીઝ & હોલ",
+        subtitle: "વાડી, ક્લબહાઉસ સેટઅપ",
+        icon: Icons.domain_rounded,
+        gradient: [const Color(0xFF0F766E), const Color(0xFF14B8A6)],
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminAmenitiesScreen()),
         ),
       ),
     ];
@@ -2938,54 +3073,134 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
 
   Future<void> _navigateToPreview() async {
-    setState(() => _isLoading = true); // પ્રોસેસિંગ બતાવવા માટે
+    setState(() => _isLoading = true);
 
     try {
-      // Firestore માંથી બધા બ્લોક્સ (Wings/Streets) મેળવો
+      final sid = SocietyService.instance.societyId;
+      // Firestore માંથી બધા બ્લોક્સ (Wings/Streets/Commercial Blocks) મેળવો
       var snapshot = await AppFirestore.instance
           .collection('blocks')
-          .where('societyId', isEqualTo: SocietyService.instance.societyId)
+          .where('societyId', isEqualTo: sid)
           .get();
 
       List<Map<String, dynamic>> blocksData = [];
+      final seenLogicalNames = <String, int>{};
 
       for (var doc in snapshot.docs) {
         String bID = doc.id;
+        final bData = doc.data();
+        final rawName = (bData['name'] ?? (bID.contains('-') ? bID.split('-').last : bID)).toString();
+        final normName = SocietyService.instance.normalizeBlockName(rawName);
+        if (normName.isEmpty) continue;
 
-        // દરેક બ્લોકના યુનિટ્સની સંખ્યા મેળવો (ગણતરી માટે)
+        // દરેક બ્લોકના યુનિટ્સની સંખ્યા મેળવો
         var unitsSnapshot = await AppFirestore.instance
             .collection('units')
-            .where('societyId', isEqualTo: SocietyService.instance.societyId)
+            .where('societyId', isEqualTo: sid)
             .where('blockName', isEqualTo: bID)
             .get();
 
-        // આપણે પ્રિવ્યુ માટે v1 અને v2 ની જરૂર પડશે
-        // અંદાજે ગણતરી: જો વિંગ હોય તો માળ અને ઘરની સંખ્યા
-        // નોંધ: સેટઅપ વખતે આપણે આ ડેટા બ્લોક ડોક્યુમેન્ટમાં પણ સેવ કરી શકીએ છીએ
+        // જો phyBlock થી ના મળે, તો rawName / normName થી પ્રયાસ કરો (backward compatibility)
+        if (unitsSnapshot.docs.isEmpty && rawName != bID) {
+          unitsSnapshot = await AppFirestore.instance
+              .collection('units')
+              .where('societyId', isEqualTo: sid)
+              .where('blockName', isEqualTo: rawName)
+              .get();
+        }
+        if (unitsSnapshot.docs.isEmpty && normName != rawName) {
+          unitsSnapshot = await AppFirestore.instance
+              .collection('units')
+              .where('societyId', isEqualTo: sid)
+              .where('blockName', isEqualTo: normName)
+              .get();
+        }
 
+        final rawCategory = bData['category']?.toString();
+        final bCategory = (rawCategory != null && rawCategory.isNotEmpty)
+            ? rawCategory
+            : (_architectureType == 'Commercial'
+                ? 'commercial'
+                : (bID.startsWith('S-') ? 'street' : 'residential'));
+
+        final List<Map<String, dynamic>> unitList = [];
         int maxFloor = 0;
-        int unitsPerFloor = 0;
         int minUnit = 9999;
         int maxUnit = 0;
 
         for (var uDoc in unitsSnapshot.docs) {
-          int floor = uDoc.data()['floorNo'] ?? 0;
-          int uNum = int.parse(uDoc.data()['unitNumber']);
+          final uData = uDoc.data();
+          final floor = (uData['floorNo'] as num?)?.toInt() ?? 0;
+          final uNumStr = (uData['unitNumber'] ?? '').toString();
+          // સુરક્ષિત રીતે આંકડાકીય ભાગ કાઢવો (દા.ત. 'G-01' -> 1)
+          final parsedNum = int.tryParse(uNumStr.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+
           if (floor > maxFloor) maxFloor = floor;
-          if (uNum > maxUnit) maxUnit = uNum;
-          if (uNum < minUnit) minUnit = uNum;
+          if (parsedNum > maxUnit) maxUnit = parsedNum;
+          if (parsedNum < minUnit && parsedNum > 0) minUnit = parsedNum;
+
+          unitList.add({
+            'docId': uDoc.id,
+            'unitNumber': uNumStr,
+            'floorNo': floor,
+            'unitType': uData['unitType'] ?? (bCategory == 'commercial' ? 'shop' : 'flat'),
+            'areaSqFt': uData['areaSqFt'],
+            'isOccupied': uData['isOccupied'] == true,
+            'memberId': uData['memberId'],
+            'memberIds': uData['memberIds'],
+            'blockName': normName,
+            'societyId': sid,
+            'ownerName': uData['ownerName'],
+            'tenantName': uData['tenantName'],
+          });
         }
 
         // અંદાજિત units per floor
-        if (maxFloor > 0) unitsPerFloor = unitsSnapshot.docs.length ~/ maxFloor;
+        int unitsPerFloor = 0;
+        if (maxFloor > 0 && unitsSnapshot.docs.isNotEmpty) {
+          unitsPerFloor = unitsSnapshot.docs.length ~/ maxFloor;
+        }
 
+        final formattedDisplayName = SocietyService.instance.formatBlockDisplayName(
+          normName,
+          architectureType: _architectureType,
+          category: bCategory,
+        );
+
+        if (seenLogicalNames.containsKey(normName)) {
+          final existingIndex = seenLogicalNames[normName]!;
+          final existingBlock = blocksData[existingIndex];
+          final existingUnits = existingBlock['units'] as List<Map<String, dynamic>>;
+          for (final u in unitList) {
+            if (!existingUnits.any((eu) => eu['unitNumber'] == u['unitNumber'])) {
+              existingUnits.add(u);
+            }
+          }
+          continue;
+        }
+
+        seenLogicalNames[normName] = blocksData.length;
         blocksData.add({
-          'name': bID.split('-').last, // 'W-A' માંથી 'A' લેવા માટે
+          'name': normName,
           'id': bID,
-          'v1': _architectureType == 'Wing' ? maxFloor : minUnit,
+          'displayName': (bData['displayName'] != null && (bData['displayName'] as String).isNotEmpty)
+              ? bData['displayName']
+              : formattedDisplayName,
+          'category': bCategory,
+          'units': unitList, // ડાયનેમિક યુનિટ્સ લિસ્ટ
+          'v1': _architectureType == 'Wing' ? maxFloor : (minUnit == 9999 ? 1 : minUnit),
           'v2': _architectureType == 'Wing' ? unitsPerFloor : maxUnit,
         });
       }
+
+      // Ground floor ('G') always comes first in preview
+      blocksData.sort((a, b) {
+        final nameA = (a['name'] ?? '').toString();
+        final nameB = (b['name'] ?? '').toString();
+        if (SocietyService.instance.isGroundBlock(nameA)) return -1;
+        if (SocietyService.instance.isGroundBlock(nameB)) return 1;
+        return nameA.compareTo(nameB);
+      });
 
       if (!mounted) return;
 
@@ -3000,11 +3215,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(
+          backgroundColor: Colors.red.shade700,
+          content: Text("Error: $e"),
+        ));
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

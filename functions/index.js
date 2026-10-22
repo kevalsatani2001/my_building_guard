@@ -122,12 +122,20 @@ function buildFcmParts(title, body, typeStr, senderUid = "", extraData = {}) {
         priority: "high",
         notification: {
             channelId: "high_importance_channel",
-            sound: "default",
+            sound: "notification",
+        },
+    };
+    const apns = {
+        payload: {
+            aps: {
+                sound: "notification.wav",
+            },
         },
     };
     return {
         dataPayload,
         android,
+        apns,
         notification: { title, body },
     };
 }
@@ -178,6 +186,7 @@ async function sendMulticastTokens(admin, tokens, parts) {
             notification: parts.notification,
             data: parts.dataPayload,
             android: parts.android,
+            apns: parts.apns,
         }));
         const res = await admin.messaging().sendEach(messages);
         successCount += res.successCount;
@@ -199,6 +208,7 @@ async function sendTopicOrFanoutByRole(admin, societyId, kind, title, body, type
         notification: parts.notification,
         data: parts.dataPayload,
         android: parts.android,
+        apns: parts.apns,
     };
     try {
         await admin.messaging().send(message);
@@ -303,7 +313,14 @@ exports.sendMemberPush = onCall(async (request) => {
                     priority: "high",
                     notification: {
                         channelId: "high_importance_channel",
-                        sound: "default",
+                        sound: "notification",
+                    },
+                },
+                apns: {
+                    payload: {
+                        aps: {
+                            sound: "notification.wav",
+                        },
                     },
                 },
             });
@@ -525,6 +542,7 @@ exports.sendNotification = onDocumentCreated({
                 notification: parts.notification,
                 data: parts.dataPayload,
                 android: parts.android,
+                apns: parts.apns,
             });
             await mark("sent_token", {fcmDetail: String(targetUID)});
         }

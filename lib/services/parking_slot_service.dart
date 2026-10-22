@@ -16,6 +16,8 @@ class ParkingSlotModel {
   final String blockName;
   final String category; // 'Wing' or 'Street'
   final String slotType; // 'car', 'bike', 'ev', 'common_plot', 'general'
+  final String level; // 'Ground', 'B1', 'B2', 'B3', 'Open', 'Common Plot', 'Loading Bay'
+  final String parkingZone; // 'resident', 'visitor', 'merchant', 'loading'
   final bool isAssigned;
   final String? assignedMemberId;
   final String? assignedMemberName;
@@ -31,6 +33,8 @@ class ParkingSlotModel {
     required this.blockName,
     required this.category,
     required this.slotType,
+    this.level = 'Ground',
+    this.parkingZone = 'resident',
     required this.isAssigned,
     this.assignedMemberId,
     this.assignedMemberName,
@@ -39,6 +43,29 @@ class ParkingSlotModel {
     this.assignedVehicleModel,
     this.createdAt,
   });
+
+  String get levelLabelGujarati {
+    switch (level.toLowerCase()) {
+      case 'b1':
+        return 'બેઝમેન્ટ - 1 (B1)';
+      case 'b2':
+        return 'બેઝમેન્ટ - 2 (B2)';
+      case 'b3':
+        return 'બેઝમેન્ટ - 3 (B3)';
+      case 'ground':
+      case 'stilt':
+        return 'ગ્રાઉન્ડ / સ્ટીલ્ટ';
+      case 'open':
+        return 'ઓપન પાર્કિંગ';
+      case 'loading':
+      case 'tempo':
+        return 'લોડિંગ / ટેમ્પો બે';
+      case 'common_plot':
+        return 'કોમન પ્લોટ';
+      default:
+        return level.isNotEmpty ? level : 'જનરલ';
+    }
+  }
 
   factory ParkingSlotModel.fromFirestore(DocumentSnapshot doc) {
     final m = doc.data() as Map<String, dynamic>? ?? {};
@@ -54,6 +81,8 @@ class ParkingSlotModel {
       blockName: (m['blockName'] ?? '').toString(),
       category: (m['category'] ?? 'Wing').toString(),
       slotType: (m['slotType'] ?? 'general').toString(),
+      level: (m['level'] ?? 'Ground').toString(),
+      parkingZone: (m['parkingZone'] ?? 'resident').toString(),
       isAssigned: m['isAssigned'] == true,
       assignedMemberId: m['assignedMemberId']?.toString(),
       assignedMemberName: m['assignedMemberName']?.toString(),
@@ -71,6 +100,8 @@ class ParkingSlotModel {
       'blockName': blockName,
       'category': category,
       'slotType': slotType,
+      'level': level,
+      'parkingZone': parkingZone,
       'isAssigned': isAssigned,
       'assignedMemberId': assignedMemberId,
       'assignedMemberName': assignedMemberName,
@@ -150,13 +181,17 @@ class ParkingSlotService {
       for (final doc in snap.docs) {
         final data = doc.data();
         final rawName = (data['name'] ?? '').toString();
-        final clean = SocietyService.instance.logicalBlockName(rawName);
+        final clean = SocietyService.instance.normalizeBlockName(rawName);
         final type = (data['type'] ?? 'Wing').toString();
         if (clean.isNotEmpty && !list.any((b) => b.name == clean)) {
           list.add(SocietyBlockInfo(name: clean, type: type));
         }
       }
-      list.sort((a, b) => a.name.compareTo(b.name));
+      list.sort((a, b) {
+        if (SocietyService.instance.isGroundBlock(a.name)) return -1;
+        if (SocietyService.instance.isGroundBlock(b.name)) return 1;
+        return a.name.compareTo(b.name);
+      });
       return list;
     });
   }
@@ -320,7 +355,132 @@ class ParkingSlotService {
     return count;
   }
 
-  /// ૩. એડમિન દ્વારા કોઈ ૧ સિંગલ કસ્ટમ સ્લોટ ઉમેરવો
+  /// ૩. એડમિન દ્વારા મલ્ટી-લેવલ બેઝમેન્ટ (B1, B2, B3), ગ્રાઉન્ડ સ્ટીલ્ટ અથવા કોમર્શિયલ લોડિંગ સ્લોટ્સ જનરેટ કરવા
+  Future<int> generateMultiLevelSlotsInFirestore({
+    required String societyId,
+    required String blockName,
+    required String level, // 'Ground', 'B1', 'B2', 'B3', 'Open', 'Loading'
+    required int carCount,
+    required int bikeCount,
+    required int evCount,
+    int tempoCount = 0,
+    String parkingZone = 'resident',
+  }) async {
+    final batch = AppFirestore.instance.batch();
+    int count = 0;
+
+    String levelPrefix;
+    switch (level.toLowerCase().trim()) {
+      case 'b1':
+        levelPrefix = 'B1';
+        break;
+      case 'b2':
+        levelPrefix = 'B2';
+        break;
+      case 'b3':
+        levelPrefix = 'B3';
+        break;
+      case 'ground':
+      case 'stilt':
+        levelPrefix = 'G';
+        break;
+      case 'open':
+        levelPrefix = 'OPEN';
+        break;
+      case 'loading':
+      case 'tempo':
+        levelPrefix = 'LOAD';
+        break;
+      default:
+        levelPrefix = level.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+        if (levelPrefix.isEmpty) levelPrefix = 'P';
+    }
+
+    final blockPrefix = blockName.isNotEmpty && blockName != 'ALL'
+        ? '${blockName.replaceAll(RegExp(r'[^a-zA-Z0-9\-]'), '').toUpperCase()}-'
+        : '';
+
+    // Cars
+    for (int i = 1; i <= carCount; i++) {
+      final slotNum = '$blockPrefix$levelPrefix-C${i.toString().padLeft(2, '0')}';
+      final docId = '${societyId}_$slotNum';
+      final docRef = AppFirestore.instance.collection('parking_slots').doc(docId);
+      batch.set(docRef, {
+        'societyId': societyId,
+        'slotNumber': slotNum,
+        'blockName': blockName,
+        'category': 'Wing',
+        'slotType': 'car',
+        'level': level,
+        'parkingZone': parkingZone,
+        'isAssigned': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      count++;
+    }
+
+    // Bikes
+    for (int i = 1; i <= bikeCount; i++) {
+      final slotNum = '$blockPrefix$levelPrefix-B${i.toString().padLeft(2, '0')}';
+      final docId = '${societyId}_$slotNum';
+      final docRef = AppFirestore.instance.collection('parking_slots').doc(docId);
+      batch.set(docRef, {
+        'societyId': societyId,
+        'slotNumber': slotNum,
+        'blockName': blockName,
+        'category': 'Wing',
+        'slotType': 'bike',
+        'level': level,
+        'parkingZone': parkingZone,
+        'isAssigned': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      count++;
+    }
+
+    // EV
+    for (int i = 1; i <= evCount; i++) {
+      final slotNum = '$blockPrefix$levelPrefix-EV${i.toString().padLeft(2, '0')}';
+      final docId = '${societyId}_$slotNum';
+      final docRef = AppFirestore.instance.collection('parking_slots').doc(docId);
+      batch.set(docRef, {
+        'societyId': societyId,
+        'slotNumber': slotNum,
+        'blockName': blockName,
+        'category': 'Wing',
+        'slotType': 'ev',
+        'level': level,
+        'parkingZone': parkingZone,
+        'isAssigned': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      count++;
+    }
+
+    // Commercial Loading Tempo Bays
+    for (int i = 1; i <= tempoCount; i++) {
+      final slotNum = '$blockPrefix$levelPrefix-TEMPO${i.toString().padLeft(2, '0')}';
+      final docId = '${societyId}_$slotNum';
+      final docRef = AppFirestore.instance.collection('parking_slots').doc(docId);
+      batch.set(docRef, {
+        'societyId': societyId,
+        'slotNumber': slotNum,
+        'blockName': blockName,
+        'category': 'Commercial',
+        'slotType': 'loading',
+        'level': level,
+        'parkingZone': 'loading',
+        'isAssigned': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      count++;
+    }
+
+    await batch.commit();
+    return count;
+  }
+
+  /// ૪. એડમિન દ્વારા કોઈ ૧ સિંગલ કસ્ટમ સ્લોટ ઉમેરવો
   Future<void> addSingleCustomSlotInFirestore({
     required String societyId,
     required String slotNumber,

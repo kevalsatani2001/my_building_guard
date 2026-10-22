@@ -7,6 +7,7 @@ import '../services/session_guard_service.dart';
 import '../services/society_service.dart';
 import 'admin_dashboard.dart';
 import 'member_screen.dart';
+import 'super_admin/super_admin_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,59 +20,182 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   Future<void> _login() async {
+    final rawInput = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (rawInput.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('કૃપા કરીને ઇમેઇલ અથવા મોબાઇલ નંબર અને પાસવર્ડ દાખલ કરો.')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
+      String resolvedEmail = rawInput;
+
+      // જો યુઝરે ૧૦ કે તેથી વધુ અંકનો ફોન નંબર દાખલ કર્યો હોય, તો તેના આધારે ઇમેઇલ શોધો
+      final cleanDigits = rawInput.replaceAll(RegExp(r'[^0-9]'), '');
+      if (cleanDigits.length >= 10 && !rawInput.contains('@')) {
+        // ૧. પૂરા નંબરે સર્ચ
+        var phoneQuery = await AppFirestore.instance
+            .collection('users')
+            .where('phone', isEqualTo: cleanDigits)
+            .limit(1)
+            .get();
+
+        // ૨. ૧૦-અંકના સ્ટાન્ડર્ડ ફોર્મેટમાં સર્ચ (દા.ત. 9876543210)
+        final last10 = cleanDigits.substring(cleanDigits.length - 10);
+        if (phoneQuery.docs.isEmpty) {
+          phoneQuery = await AppFirestore.instance
+              .collection('users')
+              .where('phone', isEqualTo: last10)
+              .limit(1)
+              .get();
+        }
+        // ૩. +91 ફોર્મેટમાં સર્ચ
+        if (phoneQuery.docs.isEmpty) {
+          phoneQuery = await AppFirestore.instance
+              .collection('users')
+              .where('phone', isEqualTo: '+91$last10')
+              .limit(1)
+              .get();
+        }
+        // ૪. displayPhone ફિલ્ડમાં સર્ચ
+        if (phoneQuery.docs.isEmpty) {
+          phoneQuery = await AppFirestore.instance
+              .collection('users')
+              .where('displayPhone', isEqualTo: rawInput)
+              .limit(1)
+              .get();
+        }
+
+        if (phoneQuery.docs.isNotEmpty) {
+          final foundEmail = (phoneQuery.docs.first.data()['email'] ?? '').toString().trim();
+          if (foundEmail.isNotEmpty) {
+            resolvedEmail = foundEmail;
+          }
+        }
+      }
+
+      final normalizedEmail = resolvedEmail.trim().toLowerCase();
+
       UserCredential userCredential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text.trim(),
+            email: normalizedEmail,
+            password: password,
           );
 
-      // Register new active session ID to enforce 1-device policy
-      await SessionGuardService.instance.registerNewLoginSession(userCredential.user!.uid);
+      final uid = userCredential.user!.uid;
 
-      // FCM token + topic subscription: [NotificationService] via authStateChanges
+      // Register new active session ID to enforce 1-device policy
+      await SessionGuardService.instance.registerNewLoginSession(uid);
 
       DocumentSnapshot userDoc = await AppFirestore.instance
           .collection('users')
-          .doc(userCredential.user!.uid)
+          .doc(uid)
           .get();
 
       if (!userDoc.exists) {
         try {
           final oldDoc = await FirebaseFirestore.instance
               .collection('users')
-              .doc(userCredential.user!.uid)
+              .doc(uid)
               .get();
           if (oldDoc.exists && oldDoc.data() != null) {
             await AppFirestore.instance
                 .collection('users')
-                .doc(userCredential.user!.uid)
+                .doc(uid)
                 .set(oldDoc.data()!);
             userDoc = await AppFirestore.instance
                 .collection('users')
-                .doc(userCredential.user!.uid)
+                .doc(uid)
                 .get();
           }
         } catch (_) {}
       }
 
-      SocietyService.instance.bindFromUserMap(
-        userDoc.data() as Map<String, dynamic>?,
-      );
+      // જો UID આધારે ન મળે, તો ઈમેલ આધારે શોધો અને સેલ્ફ-હીલ (UID લિંક) કરો
+      if (!userDoc.exists) {
+        final emailToSearch = (userCredential.user!.email ?? normalizedEmail).trim().toLowerCase();
+        if (emailToSearch.isNotEmpty) {
+          final q = await AppFirestore.instance
+              .collection('users')
+              .where('email', isEqualTo: emailToSearch)
+              .limit(1)
+              .get();
+          if (q.docs.isNotEmpty) {
+            final existingDoc = q.docs.first;
+            final existingData = Map<String, dynamic>.from(existingDoc.data());
+            existingData['uid'] = uid;
+            // સાચા Auth UID હેઠળ દસ્તાવેજ સેવ કરી લો
+            await AppFirestore.instance.collection('users').doc(uid).set(existingData, SetOptions(merge: true));
+            userDoc = await AppFirestore.instance.collection('users').doc(uid).get();
+          }
+        }
+      }
 
-      String role = userDoc.get('role');
+      final userData = userDoc.data() as Map<String, dynamic>?;
+
+      SocietyService.instance.bindFromUserMap(userData);
+
+      final email = (userCredential.user!.email ?? normalizedEmail).toLowerCase().trim();
+      final String rawRole = (userData?['role'] ?? '').toString().toLowerCase().trim();
+
+      // ઓટોમેટિક રોલ ડિટેક્શન (Automatic Role Fetching)
+      // ૧. સુપર એડમિન (Super Admin)
+      final bool isSuper = rawRole == 'super_admin' ||
+          rawRole == 'superadmin' ||
+          userData?['isSuperAdmin'] == true ||
+          email == 'kevaladmin@gmail.com';
+
+      // ૨. મુખ્ય સોસાયટી એડમિન (Chairman / Admin)
+      final bool isAdmin = rawRole == 'admin' ||
+          rawRole == 'chairman' ||
+          rawRole == 'president';
+
+      // ૩. સબ એડમિન / કમિટી મેમ્બર (Sub-Admin / Committee Member)
+      final bool isSubAdminOrCommittee = rawRole == 'sub_admin' ||
+          rawRole == 'subadmin' ||
+          rawRole == 'wing_admin' ||
+          rawRole == 'committee' ||
+          rawRole == 'committee_member' ||
+          rawRole == 'kamiti' ||
+          rawRole == 'kamiti_member' ||
+          userData?['isCommitteeMember'] == true ||
+          userData?['subAdmin'] == true ||
+          userData?['isSubAdmin'] == true;
+
+      // ૪. સિક્યુરિટી ગાર્ડ / વોચમેન (Gate Staff / Guard)
+      final bool isGuard = rawRole == 'watchman' ||
+          rawRole == 'guard' ||
+          rawRole == 'security' ||
+          rawRole == 'gate_staff' ||
+          userData?['isGuard'] == true;
 
       if (!mounted) return;
 
-      if (role == 'admin') {
+      if (isSuper) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const SuperAdminDashboard()),
+        );
+      } else if (isAdmin || isSubAdminOrCommittee) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const AdminDashboard()),
         );
-      } else if (role == 'watchman') {
+      } else if (isGuard) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const WatchmanScreen()),
@@ -82,11 +206,31 @@ class _LoginScreenState extends State<LoginScreen> {
           MaterialPageRoute(builder: (_) => const MemberScreen()),
         );
       }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        String msg = 'લૉગિન ભૂલ: ${e.message ?? e.code}';
+        if (e.code == 'user-not-found' || e.code == 'invalid-credential' || e.code == 'wrong-password') {
+          msg = 'અમાન્ય ક્રેડેન્શિયલ્સ: ઈમેલ/મોબાઇલ અથવા પાસવર્ડ ખોટો છે. કૃપા કરીને તપાસો અથવા એડમિનનો સંપર્ક કરો.';
+        } else if (e.code == 'invalid-email') {
+          msg = 'ઈમેલ એડ્રેસ અમાન્ય છે. કૃપા કરીને સાચો ઈમેલ દાખલ કરો.';
+        } else if (e.code == 'user-disabled') {
+          msg = 'આ એકાઉન્ટ નિષ્ક્રિય (ડીસેબલ) કરેલું છે. સોસાયટી એડમિનનો સંપર્ક કરો.';
+        } else if (e.code == 'too-many-requests') {
+          msg = 'ઘણી બધી અસફળ કોશિશો થઈ છે. થોડી મિનિટો પછી ફરી પ્રયાસ કરો.';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          content: Text(msg),
+        ));
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          content: Text('લૉગિન ભૂલ: ${e.toString()}'),
+        ));
       }
     } finally {
       if (mounted) {
@@ -97,115 +241,593 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              cs.primary.withValues(alpha: 0.15),
-              Theme.of(context).scaffoldBackgroundColor,
-              Colors.white,
-            ],
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(22),
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // ટોપ પ્રીમિયમ હીરો બેનર
+            Stack(
+              children: [
+                Container(
+                  height: 240,
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/register_hero.jpg'),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                Container(
+                  height: 240,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.35),
+                        const Color(0xFF0F172A).withValues(alpha: 0.92),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 24,
+                  left: 20,
+                  right: 20,
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
-                        radius: 38,
-                        backgroundColor: cs.primary.withValues(alpha: 0.12),
-                        child: Icon(
-                          Icons.apartment_rounded,
-                          size: 42,
-                          color: cs.primary,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0F766E).withValues(alpha: 0.85),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white24, width: 1),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.shield_rounded, size: 14, color: Colors.white),
+                            SizedBox(width: 6),
+                            Text(
+                              "My Building Guard ERP",
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 8),
+                      const Text(
+                        "સ્માર્ટ પ્રિમાઇસીસ સુરક્ષા",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
                       Text(
-                        "સોસાયટી મેનેજમેન્ટ એપ",
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: cs.primary,
-                          fontWeight: FontWeight.w800,
+                        "રેસીડેન્સી, બંગલો, શોપિંગ મોલ અને હાઇબ્રિડ સોસાયટી પોર્ટલ",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontWeight: FontWeight.w500,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 22),
-                      TextField(
-                        controller: _emailController,
-                        decoration: const InputDecoration(labelText: 'ઇમેઇલ'),
-                      ),
-                      const SizedBox(height: 14),
-                      TextField(
-                        controller: _passwordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(labelText: 'પાસવર્ડ'),
-                      ),
-                      const SizedBox(height: 6),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: _showForgotPasswordDialog,
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            minimumSize: const Size(50, 30),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: const Text(
-                            "પાસવર્ડ ભૂલી ગયા?",
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF4F46E5),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _login,
-                          child: _isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2.2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text("લોગઈન"),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const RegisterScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text("એકાઉન્ટ નથી? નવું બનાવો"),
                       ),
                     ],
                   ),
                 ),
+              ],
+            ),
+
+            // લૉગિન કાર્ડ
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: Container(
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.lock_person_rounded, size: 20, color: Color(0xFF0F766E)),
+                            SizedBox(width: 8),
+                            Text(
+                              "તમારા એકાઉન્ટમાં લૉગિન કરો",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          "એડમિન, કમિટી સભ્ય, ગાર્ડ કે મેમ્બર — ઓટોમેટિક ડિટેક્શન સાથે પ્રવેશ.",
+                          style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // સ્માર્ટ ઓટો-રોલ ડિટેક્શન બેનર
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDFA),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFF99F6E4), width: 1.1),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFF0F766E)),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    "ઓટોમેટિક રોલ ડિટેક્શન (Auto Role)",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF0F766E),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                "કોઈપણ રોલ પસંદ કરવાની જરૂર નથી — ફક્ત ઈમેલ/મોબાઇલ અને પાસવર્ડથી લૉગિન કરો. સિસ્ટમ આપમેળે આપનો રોલ ઓળખી ડેશબોર્ડ ખોલશે.",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF047857),
+                                  height: 1.35,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 4,
+                                children: [
+                                  _buildRoleMiniBadge("👑 એડમિન", const Color(0xFF0F766E)),
+                                  _buildRoleMiniBadge("🎖️ કમિટી / સબ-એડમિન", const Color(0xFF2563EB)),
+                                  _buildRoleMiniBadge("🛡️ સિક્યુરિટી ગાર્ડ", const Color(0xFFD97706)),
+                                  _buildRoleMiniBadge("🏠 સોસાયટી સભ્ય", const Color(0xFF475569)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+
+                        // ઇમેઇલ અથવા મોબાઇલ નંબર
+                        TextField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            labelText: 'ઇમેઇલ અથવા મોબાઇલ નંબર',
+                            hintText: 'તમારો રજીસ્ટર્ડ ઇમેઇલ કે ફોન',
+                            prefixIcon: _inputIcon(Icons.person_outline_rounded),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: Color(0xFF0F766E), width: 1.8),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // પાસવર્ડ
+                        TextField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            labelText: 'પાસવર્ડ',
+                            hintText: 'તમારો ગુપ્ત પાસવર્ડ',
+                            prefixIcon: _inputIcon(Icons.lock_outline_rounded),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                color: const Color(0xFF64748B),
+                                size: 20,
+                              ),
+                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: Color(0xFF0F766E), width: 1.8),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: _showForgotPasswordDialog,
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: const Size(50, 30),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text(
+                              "પાસવર્ડ ભૂલી ગયા?",
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F766E),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+
+                        // લૉગિન બટન
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF0F766E), Color(0xFF0D9488)],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF0F766E).withValues(alpha: 0.3),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                )
+                              ],
+                            ),
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _login,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              ),
+                              child: _isLoading
+                                  ? const Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          height: 18,
+                                          width: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.2,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        SizedBox(width: 10),
+                                        Text(
+                                          "ચકાસણી ચાલુ છે...",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 14,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : const Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.login_rounded, size: 20, color: Colors.white),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          "લૉગિન કરો",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 16,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+
+                        // એકાઉન્ટ મેળવવા માટે સત્તાવાર નીતિ & સહાય
+                        Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => _showAccountAccessPolicySheet(context),
+                              borderRadius: BorderRadius.circular(16),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF0F766E).withValues(alpha: 0.12),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.shield_outlined,
+                                        size: 18,
+                                        color: Color(0xFF0F766E),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    const Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "નવું એકાઉન્ટ કેવી રીતે મેળવવું?",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 13,
+                                              color: Color(0xFF0F172A),
+                                            ),
+                                          ),
+                                          SizedBox(height: 2),
+                                          Text(
+                                            "કોઈપણ સભ્ય કે એડમિન જાતે એકાઉન્ટ બનાવી શકતા નથી. અધિકૃત પ્રક્રિયા જાણો →",
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w500,
+                                              color: Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAccountAccessPolicySheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F766E).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(Icons.admin_panel_settings_rounded, color: Color(0xFF0F766E), size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "એકાઉન્ટ એક્સેસ નીતિ",
+                          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: Color(0xFF0F172A)),
+                        ),
+                        Text(
+                          "સુરક્ષા માટે જાતે રજીસ્ટ્રેશન પ્રતિબંધિત છે",
+                          style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFFDE68A)),
+                ),
+                child: const Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline_rounded, color: Color(0xFFB45309), size: 20),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        "Building Guard એપમાં કોઈ સભ્ય કે એડમિન સીધા જાતે એકાઉન્ટ બનાવી શકતા નથી. ફક્ત અધિકૃત એડમિન જ નવું એકાઉન્ટ બનાવીને લૉગિન વિગતો આપી શકે છે.",
+                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF92400E)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildPolicyItem(
+                title: "૧. સોસાયટી એડમિન (ચેરમેન / પ્રમુખ)",
+                desc: "નવી સોસાયટીના મુખ્ય એડમિનનું એકાઉન્ટ પ્લેટફોર્મના 'સુપર એડમિન' દ્વારા બનાવવામાં આવે છે અને તેમને સુરક્ષિત લૉગિન ક્રેડેન્શિયલ્સ આપવામાં આવે છે.",
+                icon: Icons.business_rounded,
+                color: const Color(0xFF0F766E),
+              ),
+              const SizedBox(height: 12),
+              _buildPolicyItem(
+                title: "૨. સોસાયટી મેમ્બર / રહીશ",
+                desc: "તમારા ફ્લેટ/ઘર માટેનું એકાઉન્ટ તમારી સોસાયટીના એડમિન (ચેરમેન) દ્વારા ડેશબોર્ડમાંથી ઉમેરવામાં આવે છે અને તમને લૉગિન ઈમેલ/મોબાઈલ અને પાસવર્ડ આપવામાં આવે છે.",
+                icon: Icons.apartment_rounded,
+                color: const Color(0xFF2563EB),
+              ),
+              const SizedBox(height: 12),
+              _buildPolicyItem(
+                title: "૩. સબ-એડમિન અને વોચમેન (ગાર્ડ)",
+                desc: "કમિટી મેમ્બર, વિંગ એડમિન તથા સિક્યોરિટી ગાર્ડ્સનું એકાઉન્ટ પણ સોસાયટી એડમિન દ્વારા તેમના એડમિન પેનલમાંથી તૈયાર કરવામાં આવે છે.",
+                icon: Icons.security_rounded,
+                color: const Color(0xFFD97706),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F172A),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text("સમજાઈ ગયું (Close)", style: TextStyle(fontWeight: FontWeight.w800)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPolicyItem({
+    required String title,
+    required String desc,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF0F172A)),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  desc,
+                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569), height: 1.35),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _inputIcon(IconData icon) {
+    return Container(
+      margin: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(7),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F766E).withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(icon, size: 18, color: const Color(0xFF0F766E)),
+    );
+  }
+
+  Widget _buildRoleMiniBadge(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.25), width: 0.8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w700,
+          color: color,
         ),
       ),
     );
@@ -217,10 +839,10 @@ class _LoginScreenState extends State<LoginScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: const Row(
           children: [
-            Icon(Icons.lock_reset_rounded, color: Color(0xFF4F46E5)),
+            Icon(Icons.lock_reset_rounded, color: Color(0xFF0F766E)),
             SizedBox(width: 8),
             Text("પાસવર્ડ રીસેટ",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
@@ -237,9 +859,12 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 14),
             TextField(
               controller: resetEmailController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'ઇમેઇલ',
-                prefixIcon: Icon(Icons.email_outlined, size: 20),
+                prefixIcon: const Icon(Icons.email_outlined, size: 20),
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
               ),
             ),
           ],
@@ -250,6 +875,10 @@ class _LoginScreenState extends State<LoginScreen> {
             child: const Text("રદ કરો"),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF0F766E),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
             onPressed: () async {
               final email = resetEmailController.text.trim();
               if (email.isEmpty) return;
@@ -304,9 +933,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   _RegMode _mode = _RegMode.member;
   bool _isLoading = false;
+  bool _obscurePassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _blockController.addListener(_refreshUi);
+    _unitController.addListener(_refreshUi);
+  }
+
+  void _refreshUi() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void dispose() {
+    _blockController.removeListener(_refreshUi);
+    _unitController.removeListener(_refreshUi);
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -443,198 +1086,960 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Scaffold(
-      appBar: AppBar(title: const Text("નવું એકાઉન્ટ બનાવો")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(22.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // રજીસ્ટ્રેશન પ્રકાર પસંદગી
-            const Text(
-              "તમારું એકાઉન્ટ પ્રકાર પસંદ કરો:",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-            ),
-            const SizedBox(height: 10),
-            SegmentedButton<_RegMode>(
-              segments: const [
-                ButtonSegment<_RegMode>(
-                  value: _RegMode.member,
-                  icon: Icon(Icons.person_outline),
-                  label: Text("રહીશ / સભ્ય"),
+  void _showRegistrationGuideModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
-                ButtonSegment<_RegMode>(
-                  value: _RegMode.newSocietyAdmin,
-                  icon: Icon(Icons.domain_add),
-                  label: Text("નવી સોસાયટી (ચેરમેન)"),
-                ),
-              ],
-              selected: {_mode},
-              onSelectionChanged: (newSet) {
-                setState(() => _mode = newSet.first);
-              },
-            ),
-            const SizedBox(height: 14),
-
-            // સુરક્ષા નોંધ (વોચમેન માત્ર એડમિન બનાવી શકે)
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: cs.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: cs.primary.withValues(alpha: 0.2)),
               ),
-              child: Row(
+              const SizedBox(height: 16),
+              const Row(
                 children: [
-                  Icon(Icons.info_outline, color: cs.primary, size: 22),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      _mode == _RegMode.member
-                          ? "સોસાયટીમાં રહેતા તમામ પરિવારો અહીંથી રજીસ્ટર થઈ શકે છે."
-                          : "નવી સોસાયટી શરૂ કરવા ચેરમેન / સેક્રેટરી અહીંથી સેટઅપ કરી શકે છે.",
-                      style: TextStyle(fontSize: 13, color: cs.primary),
-                    ),
+                  Icon(Icons.help_center_rounded, color: Color(0xFF0F766E), size: 24),
+                  SizedBox(width: 10),
+                  Text(
+                    "રજીસ્ટ્રેશન માર્ગદર્શિકા (Help)",
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: Color(0xFF0F172A)),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 18),
-
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: _mode == _RegMode.member ? 'પૂરું નામ' : 'ચેરમેન / એડમિનનું નામ',
-                prefixIcon: const Icon(Icons.badge_outlined),
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'મોબાઇલ નંબર (કોન્ટેક્ટ)',
-                prefixIcon: Icon(Icons.phone_outlined),
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'ઇમેઇલ એડ્રેસ',
-                prefixIcon: Icon(Icons.email_outlined),
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'પાસવર્ડ (ઓછામાં ઓછા ૬ અક્ષર)',
-                prefixIcon: Icon(Icons.lock_outline),
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            if (_mode == _RegMode.newSocietyAdmin) ...[
-              TextField(
-                controller: _societyNameController,
-                decoration: const InputDecoration(
-                  labelText: 'સોસાયટીનું નામ',
-                  hintText: 'દા.ત. શિવ રેસીડેન્સી',
-                  prefixIcon: Icon(Icons.apartment),
-                ),
-              ),
               const SizedBox(height: 14),
-              TextField(
-                controller: _societyCodeController,
-                decoration: const InputDecoration(
-                  labelText: 'નવો સોસાયટી કોડ (અંગ્રેજીમાં)',
-                  hintText: 'દા.ત. shiv-residency',
-                  helperText: 'અન્ય સભ્યો આ કોડ વાપરીને જોડાશે.',
-                  prefixIcon: Icon(Icons.tag),
-                ),
+
+              _buildGuideStep(
+                number: "૧",
+                title: "રહીશ / સભ્ય રજીસ્ટ્રેશન",
+                description:
+                    "તમારા ચેરમેન કે સેક્રેટરી પાસેથી મેળવેલ સોસાયટી કોડ દાખલ કરો. તમારો વિંગ (દા.ત. A) અને ફ્લેટ/દુકાન નંબર (દા.ત. 101, G-02) લખીને રજીસ્ટર કરો.",
+                icon: Icons.person_pin_rounded,
+                color: const Color(0xFF0F766E),
               ),
-            ] else ...[
-              TextField(
-                controller: _societyCodeController,
-                decoration: const InputDecoration(
-                  labelText: 'સોસાયટી કોડ',
-                  hintText: 'દા.ત. shiv-residency',
-                  helperText: 'ખાલી રાખશો તો default society ગણાશે.',
-                  prefixIcon: Icon(Icons.tag),
-                ),
+              const SizedBox(height: 10),
+
+              _buildGuideStep(
+                number: "૨",
+                title: "નવી સોસાયટી (ચેરમેન / બિલ્ડર)",
+                description:
+                    "નવી સોસાયટી, રેસીડેન્સી કે શોપિંગ મોલનું સેટઅપ કરવા અહીંથી રજીસ્ટર કરો. તમારી સોસાયટી માટે અંગ્રેજીમાં યુનિક કોડ (દા.ત. shiv-residency) પસંદ કરો. લૉગિન કર્યા પછી એડમિન સેટઅપ વિઝાર્ડમાં વિંગ અને દુકાનો ઉમેરી શકશો.",
+                icon: Icons.domain_add_rounded,
+                color: const Color(0xFF2563EB),
               ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _blockController,
-                      decoration: const InputDecoration(
-                        labelText: 'વિંગ / શેરી',
-                        hintText: 'દા.ત. A અથવા શેરી-૧',
-                        prefixIcon: Icon(Icons.holiday_village_outlined),
-                      ),
-                    ),
+              const SizedBox(height: 10),
+
+              _buildGuideStep(
+                number: "૩",
+                title: "વોચમેન / સિક્યુરિટી ગાર્ડ એકાઉન્ટ",
+                description:
+                    "સુરક્ષાના કારણોસર વોચમેનનું એકાઉન્ટ બહારથી રજીસ્ટર થઈ શકતું નથી. માત્ર ચેરમેન પોતાના એડમિન ડેશબોર્ડના 'સ્ટાફ મેનેજમેન્ટ'માંથી જ વોચમેનનું ખાતું બનાવી શકે છે.",
+                icon: Icons.shield_rounded,
+                color: const Color(0xFFD97706),
+              ),
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F766E),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _unitController,
-                      decoration: const InputDecoration(
-                        labelText: 'ફ્લેટ / મકાન નં.',
-                        hintText: 'દા.ત. 101',
-                        prefixIcon: Icon(Icons.meeting_room_outlined),
-                      ),
-                    ),
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text(
+                    "સમજાઈ ગયું",
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                   ),
-                ],
+                ),
               ),
             ],
+          ),
+        );
+      },
+    );
+  }
 
-            const SizedBox(height: 24),
-
-            // વોચમેન નોંધ
-            Text(
-              "ℹ️ નોંધ: સિક્યુરિટી ગાર્ડ / વોચમેનનું ખાતું માત્ર એડમિન ડેશબોર્ડમાંથી જ બનાવી શકાય છે.",
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+  Widget _buildGuideStep({
+    required String number,
+    required String title,
+    required String description,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
             ),
-            const SizedBox(height: 16),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _register,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(
-                        _mode == _RegMode.newSocietyAdmin
-                            ? "નવી સોસાયટી રજીસ્ટર કરો"
-                            : "મેમ્બર તરીકે રજીસ્ટર કરો",
-                      ),
-              ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5, color: Color(0xFF0F172A)),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  description,
+                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), height: 1.35),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
-}
 
+  @override
+  Widget build(BuildContext context) {
+    final previewBlock = _blockController.text.trim();
+    final previewUnit = _unitController.text.trim();
+    final hasAddressPreview = _mode == _RegMode.member && (previewBlock.isNotEmpty || previewUnit.isNotEmpty);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: CustomScrollView(
+        slivers: [
+          // ટોપ પ્રીમિયમ ૩D હીરો એપ્પબાર
+          SliverAppBar(
+            expandedHeight: 190.0,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: const Color(0xFF0F172A),
+            surfaceTintColor: Colors.transparent,
+            leading: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white24, width: 1),
+                ),
+                child: const Icon(Icons.arrow_back_rounded, size: 18, color: Colors.white),
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 14),
+                child: Center(
+                  child: InkWell(
+                    onTap: () => _showRegistrationGuideModal(context),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white30, width: 1),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.help_outline_rounded, size: 15, color: Colors.white),
+                          SizedBox(width: 5),
+                          Text(
+                            "માર્ગદર્શિકા",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    'assets/images/register_hero.jpg',
+                    fit: BoxFit.cover,
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.35),
+                          const Color(0xFF0F172A).withValues(alpha: 0.92),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 16,
+                    left: 20,
+                    right: 20,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F766E).withValues(alpha: 0.85),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.white24, width: 0.8),
+                          ),
+                          child: const Text(
+                            "✨ સ્માર્ટ સોસાયટી એન્ડ પ્રિમાઇસીસ પોર્ટલ",
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          "નવું એકાઉન્ટ બનાવો",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _mode == _RegMode.member
+                              ? "રહીશ, ભાડુઆત કે દુકાનદાર તરીકે પ્રવેશ મેળવો"
+                              : "નવી સોસાયટી, મોલ કે બંગલો પ્રોજેક્ટ સેટઅપ કરો",
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: Colors.white.withValues(alpha: 0.82),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ફોર્મ બોડી
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ૧. એકાઉન્ટ પ્રકાર સિલેક્ટર કાર્ડ્સ
+                  const Row(
+                    children: [
+                      Icon(Icons.verified_user_rounded, size: 18, color: Color(0xFF0F766E)),
+                      SizedBox(width: 8),
+                      Text(
+                        "૧. તમારું એકાઉન્ટ પ્રકાર પસંદ કરો:",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14.5,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  Row(
+                    children: [
+                      // સભ્ય મોડ કાર્ડ
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => _mode = _RegMode.member),
+                          borderRadius: BorderRadius.circular(18),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 220),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: _mode == _RegMode.member
+                                  ? const Color(0xFF0F766E).withValues(alpha: 0.08)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: _mode == _RegMode.member
+                                    ? const Color(0xFF0F766E)
+                                    : const Color(0xFFE2E8F0),
+                                width: _mode == _RegMode.member ? 2 : 1.2,
+                              ),
+                              boxShadow: _mode == _RegMode.member
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFF0F766E).withValues(alpha: 0.16),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      )
+                                    ]
+                                  : null,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF0F766E).withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(Icons.family_restroom_rounded,
+                                          size: 22, color: Color(0xFF0F766E)),
+                                    ),
+                                    if (_mode == _RegMode.member)
+                                      const Icon(Icons.check_circle_rounded,
+                                          size: 22, color: Color(0xFF0F766E))
+                                    else
+                                      const Icon(Icons.circle_outlined,
+                                          size: 20, color: Color(0xFFCBD5E1)),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  "રહીશ / સભ્ય",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 14.5,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                const Text(
+                                  "ફ્લેટ, બંગલો કે દુકાનદાર",
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+
+                      // ચેરમેન / એડમિન મોડ કાર્ડ
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => _mode = _RegMode.newSocietyAdmin),
+                          borderRadius: BorderRadius.circular(18),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 220),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: _mode == _RegMode.newSocietyAdmin
+                                  ? const Color(0xFF0F766E).withValues(alpha: 0.08)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: _mode == _RegMode.newSocietyAdmin
+                                    ? const Color(0xFF0F766E)
+                                    : const Color(0xFFE2E8F0),
+                                width: _mode == _RegMode.newSocietyAdmin ? 2 : 1.2,
+                              ),
+                              boxShadow: _mode == _RegMode.newSocietyAdmin
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFF0F766E).withValues(alpha: 0.16),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      )
+                                    ]
+                                  : null,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF0F766E).withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(Icons.domain_add_rounded,
+                                          size: 22, color: Color(0xFF0F766E)),
+                                    ),
+                                    if (_mode == _RegMode.newSocietyAdmin)
+                                      const Icon(Icons.check_circle_rounded,
+                                          size: 22, color: Color(0xFF0F766E))
+                                    else
+                                      const Icon(Icons.circle_outlined,
+                                          size: 20, color: Color(0xFFCBD5E1)),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  "નવી સોસાયટી",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 14.5,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                const Text(
+                                  "ચેરમેન / એડમિન સેટઅપ",
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ૨. પ્રીમિયમ ઇન્ફો બેનર
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFF0F766E).withValues(alpha: 0.08),
+                          const Color(0xFF14B8A6).withValues(alpha: 0.03),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFF0F766E).withValues(alpha: 0.25),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F766E).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.info_outline_rounded,
+                              color: Color(0xFF0F766E), size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _mode == _RegMode.member
+                                ? "સોસાયટીમાં રહેતા તમામ પરિવારો કે દુકાનદારો અહીંથી સીધા જોડાઈ શકે છે."
+                                : "નવી સોસાયટી શરૂ કરવા ચેરમેન / સેક્રેટરી અહીંથી સેટઅપ કરી શકે છે.",
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF0F766E),
+                              height: 1.35,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ૩. ફોર્મ કાર્ડ ૧: વ્યક્તિગત વિગતો
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.badge_rounded, size: 18, color: Color(0xFF0F766E)),
+                            SizedBox(width: 8),
+                            Text(
+                              "વ્યક્તિગત પ્રોફાઇલ માહિતી",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // નામ
+                        TextField(
+                          controller: _nameController,
+                          decoration: InputDecoration(
+                            labelText: _mode == _RegMode.member ? 'પૂરું નામ *' : 'ચેરમેન / એડમિનનું નામ *',
+                            hintText: "દા.ત. રમેશભાઈ પટેલ",
+                            prefixIcon: _inputIcon(Icons.person_rounded),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: Color(0xFF0F766E), width: 1.8),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // મોબાઇલ
+                        TextField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          decoration: InputDecoration(
+                            labelText: 'મોબાઇલ નંબર (કોન્ટેક્ટ)',
+                            hintText: "દા.ત. 9876543210",
+                            prefixIcon: _inputIcon(Icons.phone_rounded),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: Color(0xFF0F766E), width: 1.8),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // ઇમેઇલ
+                        TextField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            labelText: 'ઇમેઇલ એડ્રેસ *',
+                            hintText: "દા.ત. ramesh@example.com",
+                            prefixIcon: _inputIcon(Icons.alternate_email_rounded),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: Color(0xFF0F766E), width: 1.8),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // પાસવર્ડ
+                        TextField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            labelText: 'પાસવર્ડ (ઓછામાં ઓછા ૬ અક્ષર) *',
+                            hintText: "••••••••",
+                            prefixIcon: _inputIcon(Icons.lock_rounded),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                color: const Color(0xFF64748B),
+                                size: 20,
+                              ),
+                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: Color(0xFF0F766E), width: 1.8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ૪. ફોર્મ કાર્ડ ૨: પ્રિમાઇસીસ અને યુનિટ વિગતો
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.apartment_rounded, size: 18, color: Color(0xFF0F766E)),
+                            const SizedBox(width: 8),
+                            Text(
+                              _mode == _RegMode.member ? "સોસાયટી અને યુનિટ વિગતો" : "નવી સોસાયટી કોન્ફિગરેશન",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        if (_mode == _RegMode.newSocietyAdmin) ...[
+                          // સોસાયટી નામ
+                          TextField(
+                            controller: _societyNameController,
+                            decoration: InputDecoration(
+                              labelText: 'સોસાયટીનું નામ *',
+                              hintText: 'દા.ત. શિવ રેસીડેન્સી / રત્નમ મોલ',
+                              prefixIcon: _inputIcon(Icons.location_city_rounded),
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(color: Color(0xFF0F766E), width: 1.8),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+
+                          // નવો સોસાયટી કોડ
+                          TextField(
+                            controller: _societyCodeController,
+                            decoration: InputDecoration(
+                              labelText: 'નવો સોસાયટી કોડ (અંગ્રેજીમાં) *',
+                              hintText: 'દા.ત. shiv-residency',
+                              helperText: 'અન્ય સભ્યો આ કોડ વાપરીને જોડાશે.',
+                              helperStyle: const TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.w600),
+                              prefixIcon: _inputIcon(Icons.tag_rounded),
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(color: Color(0xFF0F766E), width: 1.8),
+                              ),
+                            ),
+                          ),
+                        ] else ...[
+                          // સભ્ય સોસાયટી કોડ
+                          TextField(
+                            controller: _societyCodeController,
+                            decoration: InputDecoration(
+                              labelText: 'સોસાયટી કોડ (Society Code)',
+                              hintText: 'દા.ત. shiv-residency',
+                              helperText: 'ખાલી રાખશો તો default society ગણાશે.',
+                              helperStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
+                              prefixIcon: _inputIcon(Icons.tag_rounded),
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(color: Color(0xFF0F766E), width: 1.8),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+
+                          // વિંગ અને ફ્લેટ નંબર
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _blockController,
+                                  decoration: InputDecoration(
+                                    labelText: 'વિંગ / શેરી',
+                                    hintText: 'દા.ત. A, શેરી 1',
+                                    prefixIcon: _inputIcon(Icons.home_work_rounded),
+                                    filled: true,
+                                    fillColor: const Color(0xFFF8FAFC),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                      borderSide: const BorderSide(color: Color(0xFF0F766E), width: 1.8),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextField(
+                                  controller: _unitController,
+                                  decoration: InputDecoration(
+                                    labelText: 'ફ્લેટ / દુકાન નં.',
+                                    hintText: 'દા.ત. 101, G-01',
+                                    prefixIcon: _inputIcon(Icons.door_front_door_rounded),
+                                    filled: true,
+                                    fillColor: const Color(0xFFF8FAFC),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                      borderSide: const BorderSide(color: Color(0xFF0F766E), width: 1.8),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          // લાઇવ એડ્રેસ પ્રીવ્યૂ બેજ
+                          if (hasAddressPreview) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0F766E).withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFF0F766E).withValues(alpha: 0.3)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.pin_drop_rounded, size: 16, color: Color(0xFF0F766E)),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      "તમારું યુનિટ: વિંગ '${previewBlock.isEmpty ? '-' : previewBlock}' - ફ્લેટ/દુકાન '${previewUnit.isEmpty ? '-' : previewUnit}'",
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF0F766E),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ૫. સુરક્ષા નોંધ
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.shield_outlined, size: 18, color: Color(0xFF475569)),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            "સુરક્ષા નિયમ: વોચમેન / ગાર્ડનું ખાતું માત્ર એડમિન ડેશબોર્ડના સ્ટાફ વિભાગમાંથી જ બની શકે છે.",
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF475569),
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+
+                  // ૬. સબમિટ CTA બટન
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0F766E), Color(0xFF0D9488)],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0F766E).withValues(alpha: 0.32),
+                            blurRadius: 12,
+                            offset: const Offset(0, 5),
+                          )
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _register,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    _mode == _RegMode.newSocietyAdmin
+                                        ? Icons.rocket_launch_rounded
+                                        : Icons.how_to_reg_rounded,
+                                    size: 20,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    _mode == _RegMode.newSocietyAdmin
+                                        ? "નવી સોસાયટી રજીસ્ટર કરો"
+                                        : "મેમ્બર તરીકે રજીસ્ટર કરો",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ૭. લૉગિન પેજ લિંક
+                  Center(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: RichText(
+                        text: const TextSpan(
+                          text: "પહેલેથી એકાઉન્ટ છે? ",
+                          style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                          children: [
+                            TextSpan(
+                              text: "લૉગિન કરો",
+                              style: TextStyle(
+                                color: Color(0xFF0F766E),
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _inputIcon(IconData icon) {
+    return Container(
+      margin: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(7),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F766E).withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(icon, size: 18, color: const Color(0xFF0F766E)),
+    );
+  }
+}

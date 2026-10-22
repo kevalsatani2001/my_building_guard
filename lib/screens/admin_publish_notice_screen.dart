@@ -16,6 +16,8 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
   final _bodyC = TextEditingController();
 
   String _selectedCategory = 'સામાન્ય';
+  String _targetBlock = 'ALL';
+  List<String> _availableBlocks = [];
   bool _isUrgent = false;
   bool _isPinned = true;
   bool _sendPushAlert = true;
@@ -33,7 +35,29 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
   @override
   void initState() {
     super.initState();
+    _loadBlocks();
     _loadCustomCategories();
+  }
+
+  Future<void> _loadBlocks() async {
+    try {
+      final snap = await AppFirestore.instance
+          .collection('blocks')
+          .where('societyId', isEqualTo: SocietyService.instance.societyId)
+          .get();
+      final blocks = <String>{};
+      for (final doc in snap.docs) {
+        final raw = (doc.data()['name'] ?? '').toString();
+        final clean = SocietyService.instance.logicalBlockName(raw);
+        if (clean.isNotEmpty) blocks.add(clean);
+      }
+      final sorted = blocks.toList()..sort();
+      if (mounted) {
+        setState(() {
+          _availableBlocks = sorted;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadCustomCategories() async {
@@ -181,6 +205,7 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
         'title': title,
         'body': body,
         'category': _selectedCategory,
+        'targetBlock': _targetBlock == 'ALL' ? null : _targetBlock,
         'isUrgent': _isUrgent,
         'isPinned': _isPinned,
         'societyId': sid,
@@ -192,6 +217,7 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
           context: context,
           title: "📢 નવી નોટિસ: $title",
           body: body,
+          targetBlock: _targetBlock,
         );
       }
 
@@ -264,6 +290,70 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Target Audience (All vs Specific Wing)
+            if (_availableBlocks.isNotEmpty) ...[
+              const Text(
+                "લક્ષ્ય પરિસર / વિંગ (Target Audience):",
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    ChoiceChip(
+                      avatar: Icon(
+                        Icons.domain_rounded,
+                        size: 15,
+                        color: _targetBlock == 'ALL' ? Colors.white : const Color(0xFFEA580C),
+                      ),
+                      label: const Text('સમગ્ર પરિસર (All)'),
+                      selected: _targetBlock == 'ALL',
+                      selectedColor: const Color(0xFFEA580C),
+                      labelStyle: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: _targetBlock == 'ALL' ? Colors.white : const Color(0xFF334155),
+                      ),
+                      onSelected: (val) {
+                        if (val) setState(() => _targetBlock = 'ALL');
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    ..._availableBlocks.map((b) {
+                      final isSelected = _targetBlock == b;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          avatar: Icon(
+                            Icons.apartment_rounded,
+                            size: 15,
+                            color: isSelected ? Colors.white : const Color(0xFFEA580C),
+                          ),
+                          label: Text('${SocietyService.instance.vocabulary.blockShortLabel} $b'),
+                          selected: isSelected,
+                          selectedColor: const Color(0xFFEA580C),
+                          labelStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: isSelected ? Colors.white : const Color(0xFF334155),
+                          ),
+                          onSelected: (val) {
+                            if (val) setState(() => _targetBlock = b);
+                          },
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+            ],
+
             // Category Chips
             const Text(
               "નોટિસ પ્રકાર / કેટેગરી:",

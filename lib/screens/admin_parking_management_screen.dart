@@ -16,6 +16,7 @@ class AdminParkingManagementScreen extends StatefulWidget {
 class _AdminParkingManagementScreenState extends State<AdminParkingManagementScreen> {
   String _selectedBlock = '';
   String _statusFilter = 'all'; // 'all', 'available', 'occupied'
+  String _selectedParkingLevel = 'Ground'; // 'Ground', 'B1', 'B2', 'B3', 'Open', 'Loading'
   bool _isSaving = false;
 
   final TextEditingController _carSlotsC = TextEditingController(text: '12');
@@ -59,9 +60,10 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
       if (targetBlock == '__ALL__') {
         int totalCount = 0;
         for (final b in blocks) {
-          final count = await ParkingSlotService.instance.generateAndSaveWingSlotsInFirestore(
+          final count = await ParkingSlotService.instance.generateMultiLevelSlotsInFirestore(
             societyId: societyId,
             blockName: b.name,
+            level: _selectedParkingLevel,
             carCount: cars,
             bikeCount: bikes,
             evCount: evs,
@@ -73,15 +75,16 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('તમામ ${blocks.length} વિંગ્સ માટે કુલ $totalCount સ્લોટ્સ સફળતાપૂર્વક Firestore માં સેવ થઈ ગયા!'),
+            content: Text('તમામ ${blocks.length} વિંગ્સ ($_selectedParkingLevel) માટે કુલ $totalCount સ્લોટ્સ સફળતાપૂર્વક Firestore માં સેવ થઈ ગયા!'),
             backgroundColor: const Color(0xFF059669),
             behavior: SnackBarBehavior.floating,
           ),
         );
       } else {
-        final count = await ParkingSlotService.instance.generateAndSaveWingSlotsInFirestore(
+        final count = await ParkingSlotService.instance.generateMultiLevelSlotsInFirestore(
           societyId: societyId,
           blockName: targetBlock,
+          level: _selectedParkingLevel,
           carCount: cars,
           bikeCount: bikes,
           evCount: evs,
@@ -91,7 +94,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('વિંગ "$targetBlock" માટે $count સ્લોટ્સ સફળતાપૂર્વક Firestore માં સેવ થઈ ગયા!'),
+            content: Text('વિંગ "$targetBlock" ($_selectedParkingLevel) માટે $count સ્લોટ્સ સફળતાપૂર્વક Firestore માં સેવ થઈ ગયા!'),
             backgroundColor: const Color(0xFF059669),
             behavior: SnackBarBehavior.floating,
           ),
@@ -319,8 +322,8 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                                   isStreet
                                       ? 'કોમન પ્લોટ સ્લોટ્સ લિસ્ટ (${displaySlots.length})'
                                       : (_selectedBlock == '__ALL__'
-                                          ? 'તમામ વિંગ્સ સ્લોટ્સ (${displaySlots.length})'
-                                          : 'વિંગ $_selectedBlock સ્લોટ્સ (${displaySlots.length})'),
+                                          ? 'તમામ સ્લોટ્સ (${displaySlots.length})'
+                                          : '${SocietyService.instance.formatBlockDisplayName(_selectedBlock, architectureType: societyArchType)} સ્લોટ્સ (${displaySlots.length})'),
                                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                                 ),
                                 const Spacer(),
@@ -346,7 +349,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                                       ? 'હજુ સુધી કોઈ કોમન પ્લોટ સ્લોટ્સ બનાવવામાં આવ્યા નથી.\n(શેરી સોસાયટીમાં દરેક સભ્ય ઘર આગળ પાર્ક કરે છે).'
                                       : (_selectedBlock == '__ALL__'
                                           ? 'હજુ સુધી કોઈ વિંગ્સ સ્લોટ્સ બનાવવામાં આવ્યા નથી.\nઉપરના બટનથી સ્લોટ્સ જનરેટ કરો.'
-                                          : 'વિંગ $_selectedBlock માં હજુ કોઈ સ્લોટ્સ બનાવવામાં આવ્યા નથી.\nઉપરના બટનથી સ્લોટ્સ જનરેટ કરો.'),
+                                          : '${SocietyService.instance.formatBlockDisplayName(_selectedBlock, architectureType: societyArchType)} માં હજુ કોઈ સ્લોટ્સ બનાવવામાં આવ્યા નથી.\nઉપરના બટનથી સ્લોટ્સ જનરેટ કરો.'),
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.4),
                                 ),
@@ -586,7 +589,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: ChoiceChip(
-                        label: Text('વિંગ ${b.name}'),
+                        label: Text(SocietyService.instance.formatBlockDisplayName(b.name, architectureType: b.type)),
                         selected: isSel,
                         onSelected: (_) => setState(() => _selectedBlock = b.name),
                         selectedColor: const Color(0xFF0284C7),
@@ -618,6 +621,45 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
             ),
             const SizedBox(height: 14),
           ],
+
+          // Level / Floor Selector
+          const Text(
+            'પાર્કિંગ લેવલ / ફ્લોર:',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+          ),
+          const SizedBox(height: 6),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                ('Ground', 'ગ્રાઉન્ડ / સ્ટીલ્ટ', Icons.garage_rounded),
+                ('B1', 'બેઝમેન્ટ - ૧ (B1)', Icons.stairs_rounded),
+                ('B2', 'બેઝમેન્ટ - ૨ (B2)', Icons.stairs_rounded),
+                ('B3', 'બેઝમેન્ટ - ૩ (B3)', Icons.stairs_rounded),
+                ('Open', 'ઓપન / સપાટી', Icons.wb_sunny_rounded),
+                ('Loading', 'કોમર્શિયલ લોડિંગ બે', Icons.local_shipping_rounded),
+              ].map((lvl) {
+                final isSel = _selectedParkingLevel == lvl.$1;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: ChoiceChip(
+                    avatar: Icon(lvl.$3, size: 14, color: isSel ? Colors.white : const Color(0xFF0284C7)),
+                    label: Text(lvl.$2),
+                    selected: isSel,
+                    onSelected: (_) => setState(() => _selectedParkingLevel = lvl.$1),
+                    selectedColor: const Color(0xFF0284C7),
+                    backgroundColor: const Color(0xFFF1F5F9),
+                    labelStyle: TextStyle(
+                      color: isSel ? Colors.white : const Color(0xFF334155),
+                      fontWeight: isSel ? FontWeight.bold : FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 14),
 
           Row(
             children: [

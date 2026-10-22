@@ -9,10 +9,14 @@ import '../widgets/premium_ui.dart';
 
 class AdminAddUserScreen extends StatefulWidget {
   final String initialRole;
+  final String? initialBlock;
+  final String? initialUnit;
 
   const AdminAddUserScreen({
     super.key,
     this.initialRole = 'member',
+    this.initialBlock,
+    this.initialUnit,
   });
 
   @override
@@ -25,14 +29,12 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
   final _emailC = TextEditingController();
   final _passwordC = TextEditingController();
   final _phoneC = TextEditingController();
-  final _societyCodeC = TextEditingController();
   final _unitC = TextEditingController();
   final _customBlockC = TextEditingController();
 
   late String _selectedRole;
   bool _obscurePassword = true;
   bool _isSubmitting = false;
-  bool _createSeparateSociety = false;
 
   String? _selectedBlock;
   String? _selectedUnit;
@@ -40,7 +42,14 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedRole = widget.initialRole;
+    _selectedRole = widget.initialRole == 'admin' ? 'sub_admin' : widget.initialRole;
+    if (widget.initialBlock != null && widget.initialBlock!.isNotEmpty) {
+      _selectedBlock = widget.initialBlock;
+    }
+    if (widget.initialUnit != null && widget.initialUnit!.isNotEmpty) {
+      _selectedUnit = widget.initialUnit;
+      _unitC.text = widget.initialUnit!;
+    }
   }
 
   @override
@@ -49,7 +58,6 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
     _emailC.dispose();
     _passwordC.dispose();
     _phoneC.dispose();
-    _societyCodeC.dispose();
     _unitC.dispose();
     _customBlockC.dispose();
     super.dispose();
@@ -59,12 +67,6 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
     return RegExp(
       r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
     ).hasMatch(email);
-  }
-
-  String _normalizeSocietyId(String input) {
-    final trimmed = input.trim().toLowerCase();
-    if (trimmed.isEmpty) return SocietyService.kDefaultSocietyId;
-    return trimmed.replaceAll(RegExp(r'[^a-z0-9_-]'), '_');
   }
 
   int _unitMemberCount(Map<String, dynamic>? d) {
@@ -140,24 +142,7 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      final currentAdminSid = SocietyService.instance.societyId;
-      final targetSocietyId = (_selectedRole == 'admin' && _createSeparateSociety)
-          ? _normalizeSocietyId(_societyCodeC.text)
-          : currentAdminSid;
-
-      if (_selectedRole == 'admin' && _createSeparateSociety) {
-        final code = _societyCodeC.text.trim();
-        if (code.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('કૃપા કરીને નવી સોસાયટીનો કોડ દાખલ કરો.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-          setState(() => _isSubmitting = false);
-          return;
-        }
-      }
+      final targetSocietyId = SocietyService.instance.societyId;
 
       // Member assignment validation and warning check
       if (_selectedRole == 'member' && effectiveBlock.isNotEmpty && effectiveUnit.isNotEmpty) {
@@ -169,13 +154,17 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
             .where('societyId', isEqualTo: targetSocietyId)
             .get();
 
+        final normEffectiveBlock = SocietyService.instance.normalizeBlockName(effectiveBlock);
         final registeredUnitsInBlock = unitsSnapshot.docs.where((doc) {
           final d = doc.data();
           final bName = (d['blockName'] ?? '').toString();
-          return bName == effectiveBlock ||
+          final normB = SocietyService.instance.normalizeBlockName(bName);
+          return normB == normEffectiveBlock ||
+              bName == effectiveBlock ||
               bName == cleanBlock ||
               doc.id.startsWith('$effectiveBlock-') ||
-              doc.id.startsWith('$cleanBlock-');
+              doc.id.startsWith('$cleanBlock-') ||
+              doc.id.startsWith('$normEffectiveBlock-');
         }).map((doc) => (doc.data()['unitNumber'] ?? '').toString()).toSet();
 
         if (registeredUnitsInBlock.isNotEmpty && !registeredUnitsInBlock.contains(effectiveUnit)) {
@@ -226,6 +215,10 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
         }
       }
 
+      final cleanEmail = email.trim().toLowerCase();
+      final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+      final cleanPass = password.trim();
+
       final defaultApp = await ensureDefaultFirebaseApp();
       final tempApp = await Firebase.initializeApp(
         name: 'UserRegApp_${DateTime.now().millisecondsSinceEpoch}',
@@ -234,25 +227,33 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
 
       try {
         UserCredential userCred = await FirebaseAuth.instanceFor(app: tempApp)
-            .createUserWithEmailAndPassword(email: email, password: password);
+            .createUserWithEmailAndPassword(email: cleanEmail, password: cleanPass);
 
         final batch = AppFirestore.instance.batch();
         final usersCol = AppFirestore.instance.collection('users');
 
-        final cleanBlockName = SocietyService.instance.logicalBlockName(effectiveBlock);
+        final cleanBlockName = SocietyService.instance.normalizeBlockName(effectiveBlock);
 
-        batch.set(usersCol.doc(userCred.user!.uid), {
+        final userData = <String, dynamic>{
           'uid': userCred.user!.uid,
-          'name': name,
-          'phone': phone,
-          'email': email,
+          'name': name.trim(),
+          'phone': cleanPhone.isNotEmpty ? cleanPhone : phone.trim(),
+          'displayPhone': phone.trim(),
+          'email': cleanEmail,
           'role': _selectedRole,
           'blockName': _selectedRole == 'member' ? cleanBlockName : '',
           'unitNumber': _selectedRole == 'member' ? effectiveUnit : '',
           'societyId': targetSocietyId,
           'createdAt': FieldValue.serverTimestamp(),
-          if (_selectedRole == 'watchman') 'isActive': true,
-        });
+          'isActive': true,
+        };
+
+        if (_selectedRole == 'sub_admin') {
+          userData['isSubAdmin'] = true;
+          userData['isCommitteeMember'] = true;
+        }
+
+        batch.set(usersCol.doc(userCred.user!.uid), userData);
 
         if (_selectedRole == 'member' && effectiveBlock.isNotEmpty && effectiveUnit.isNotEmpty) {
           final unitDocId = SocietyService.instance.unitFirestoreDocId(
@@ -276,10 +277,16 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
 
         await batch.commit();
       } finally {
-        await tempApp.delete();
+        try {
+          await tempApp.delete();
+        } catch (_) {}
       }
 
       if (!mounted) return;
+
+      final roleLabel = _selectedRole == 'sub_admin'
+          ? 'સબ-એડમિન'
+          : (_selectedRole == 'watchman' ? 'વોચમેન' : 'મેમ્બર');
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -287,7 +294,7 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
             children: [
               const Icon(Icons.check_circle_rounded, color: Colors.white),
               const SizedBox(width: 10),
-              Expanded(child: Text('$name નું એકાઉન્ટ સફળતાપૂર્વક બની ગયું!')),
+              Expanded(child: Text('$name ($roleLabel) નું એકાઉન્ટ સફળતાપૂર્વક બની ગયું!')),
             ],
           ),
           backgroundColor: const Color(0xFF047857),
@@ -296,6 +303,23 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
       );
 
       Navigator.pop(context);
+    } on FirebaseAuthException catch (authErr) {
+      if (!mounted) return;
+      String msg = 'ભૂલ આવી: ${authErr.message ?? authErr.code}';
+      if (authErr.code == 'email-already-in-use') {
+        msg = 'આ ઇમેઇલ ($email) પહેલેથી જ રજીસ્ટર થયેલો છે. કૃપા કરીને અન્ય ઇમેઇલ વાપરો.';
+      } else if (authErr.code == 'weak-password') {
+        msg = 'પાસવર્ડ ઓછામાં ઓછો 6 અક્ષરનો હોવો જોઈએ.';
+      } else if (authErr.code == 'invalid-email') {
+        msg = 'અમાન્ય ઈમેલ એડ્રેસ: $email';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: Colors.red.shade800,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -375,21 +399,21 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildRoleCard(
-                      label: 'વોચમેન',
-                      role: 'watchman',
-                      subtitle: 'ગેટ સ્ટાફ',
-                      icon: Icons.security_rounded,
-                      gradient: [const Color(0xFF10B981), const Color(0xFF047857)],
+                      label: 'સબ-એડમિન',
+                      role: 'sub_admin',
+                      subtitle: 'કમિટી સભ્ય',
+                      icon: Icons.shield_rounded,
+                      gradient: [const Color(0xFF8B5CF6), const Color(0xFF6D28D9)],
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildRoleCard(
-                      label: 'એડમિન',
-                      role: 'admin',
-                      subtitle: 'કમિટી હેડ',
-                      icon: Icons.admin_panel_settings_rounded,
-                      gradient: [const Color(0xFF8B5CF6), const Color(0xFF6D28D9)],
+                      label: 'વોચમેન',
+                      role: 'watchman',
+                      subtitle: 'ગેટ સ્ટાફ',
+                      icon: Icons.security_rounded,
+                      gradient: [const Color(0xFF10B981), const Color(0xFF047857)],
                     ),
                   ),
                 ],
@@ -523,7 +547,30 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                         .snapshots(),
                     builder: (context, blockSnap) {
                       final blocks = blockSnap.hasData ? blockSnap.data!.docs : <QueryDocumentSnapshot>[];
-                      final hasBlocks = blocks.isNotEmpty;
+                      
+                      // Deduplicate blocks by canonical normalized name
+                      final uniqueBlocks = <String, Map<String, dynamic>>{};
+                      for (final b in blocks) {
+                        final d = b.data() as Map<String, dynamic>?;
+                        final rawName = (d?['name'] ?? SocietyService.instance.logicalBlockName(b.id)).toString();
+                        final clean = SocietyService.instance.normalizeBlockName(rawName);
+                        if (clean.isEmpty) continue;
+                        if (!uniqueBlocks.containsKey(clean)) {
+                          uniqueBlocks[clean] = {
+                            'id': b.id,
+                            'name': clean,
+                            'type': (d?['type'] ?? 'Wing').toString(),
+                            'category': (d?['category'] ?? '').toString(),
+                          };
+                        }
+                      }
+                      final sortedBlockKeys = uniqueBlocks.keys.toList()
+                        ..sort((a, b) {
+                          if (SocietyService.instance.isGroundBlock(a)) return -1;
+                          if (SocietyService.instance.isGroundBlock(b)) return 1;
+                          return a.compareTo(b);
+                        });
+                      final hasBlocks = sortedBlockKeys.isNotEmpty;
 
                       return StreamBuilder<QuerySnapshot>(
                         stream: AppFirestore.instance
@@ -534,14 +581,15 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                           // Find units matching currently selected block
                           final matchingUnits = <Map<String, dynamic>>[];
                           if (unitSnap.hasData && _selectedBlock != null) {
-                            final cleanBlock = SocietyService.instance.logicalBlockName(_selectedBlock!);
+                            final normSelected = SocietyService.instance.normalizeBlockName(_selectedBlock!);
                             for (final doc in unitSnap.data!.docs) {
                               final d = doc.data() as Map<String, dynamic>;
                               final bName = (d['blockName'] ?? '').toString();
-                              if (bName == _selectedBlock ||
-                                  bName == cleanBlock ||
+                              final normB = SocietyService.instance.normalizeBlockName(bName);
+                              if (normB == normSelected ||
+                                  bName == _selectedBlock ||
                                   doc.id.startsWith('$_selectedBlock-') ||
-                                  doc.id.startsWith('$cleanBlock-')) {
+                                  doc.id.startsWith('$normSelected-')) {
                                 matchingUnits.add({
                                   'id': doc.id,
                                   'unitNumber': d['unitNumber']?.toString() ?? '',
@@ -565,9 +613,12 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                               if (hasBlocks) ...[
                                 DropdownButtonFormField<String>(
                                   key: ValueKey('block_$_selectedBlock'),
-                                  initialValue: _selectedBlock,
+                                  initialValue: (_selectedBlock != null &&
+                                          sortedBlockKeys.contains(SocietyService.instance.normalizeBlockName(_selectedBlock!)))
+                                      ? SocietyService.instance.normalizeBlockName(_selectedBlock!)
+                                      : null,
                                   decoration: InputDecoration(
-                                    labelText: 'બ્લોક / વિંગ (Block / Wing) *',
+                                    labelText: 'બ્લોક / વિંગ / ફ્લોર *',
                                     hintText: 'બ્લોક પસંદ કરો',
                                     prefixIcon: const Icon(Icons.apartment_rounded, size: 20, color: Color(0xFF0D9488)),
                                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -575,12 +626,16 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                                     filled: true,
                                     fillColor: const Color(0xFFF8FAFC),
                                   ),
-                                  items: blocks.map((b) {
-                                    final d = b.data() as Map<String, dynamic>?;
-                                    final cleanName = (d?['name'] ?? SocietyService.instance.logicalBlockName(b.id)).toString();
+                                  items: sortedBlockKeys.map((k) {
+                                    final item = uniqueBlocks[k]!;
+                                    final label = SocietyService.instance.formatBlockDisplayName(
+                                      k,
+                                      architectureType: item['type'] as String?,
+                                      category: item['category'] as String?,
+                                    );
                                     return DropdownMenuItem<String>(
-                                      value: b.id,
-                                      child: Text('બ્લોક $cleanName ($cleanName)'),
+                                      value: k,
+                                      child: Text(label),
                                     );
                                   }).toList(),
                                   onChanged: (val) {
@@ -770,48 +825,7 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                 ),
               ],
 
-              // 4. Conditional: Separate Society for Co-Admin
-              if (_selectedRole == 'admin') ...[
-                const SizedBox(height: 24),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F3FF),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFDDD6FE)),
-                  ),
-                  child: Column(
-                    children: [
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text(
-                          "નવી અલગ સોસાયટી માટે એડમિન બનાવો?",
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                        subtitle: const Text(
-                          "ચાલુ રાખશો તો આ એડમિન પોતાની નવી સોસાયટી બનાવી શકશે.",
-                          style: TextStyle(fontSize: 11),
-                        ),
-                        value: _createSeparateSociety,
-                        onChanged: (v) => setState(() => _createSeparateSociety = v),
-                      ),
-                      if (_createSeparateSociety) ...[
-                        const SizedBox(height: 10),
-                        TextFormField(
-                          controller: _societyCodeC,
-                          textCapitalization: TextCapitalization.characters,
-                          decoration: InputDecoration(
-                            labelText: 'નવી સોસાયટી કોડ *',
-                            hintText: 'દા.ત. SHIV_RESIDENCY',
-                            prefixIcon: const Icon(Icons.business_rounded, size: 20),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
+              const SizedBox(height: 16),
 
               const SizedBox(height: 32),
 

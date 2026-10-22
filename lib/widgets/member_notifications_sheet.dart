@@ -9,7 +9,7 @@ import '../services/society_service.dart';
 
 /// સભ્ય અને એડમિન માટે પ્રીમિયમ ઇન-એપ નોટિફિકેશન સેન્ટર બોટમ શીટ
 class MemberNotificationsSheet {
-  static Future<void> show(BuildContext context) async {
+  static Future<void> show(BuildContext context, {String? userBlock}) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
     final societyId = SocietyService.instance.societyId;
@@ -135,12 +135,16 @@ class MemberNotificationsSheet {
                       return _buildEmptyState();
                     }
 
-                    // વર્તમાન મેમ્બર માટે ફિલ્ટર: પોતાના targetUID અથવા 'ALL' અથવા 'MEMBERS'
+                    // વર્તમાન મેમ્બર માટે ફિલ્ટર: પોતાના targetUID અથવા 'ALL' અથવા 'MEMBERS' અથવા પોતાના બ્લોકની નોટિસ
                     final uid = user.uid;
                     final notifs = snapshot.data!.docs.where((d) {
                       final data = d.data() as Map<String, dynamic>;
                       final target = (data['targetUID'] ?? '').toString().trim();
-                      return target == uid || target == 'ALL' || target == 'MEMBERS';
+                      final tBlock = (data['targetBlock'] ?? '').toString().trim();
+                      final isMyBlock = userBlock != null &&
+                          userBlock.isNotEmpty &&
+                          (tBlock == userBlock || target == 'BLOCK_$userBlock');
+                      return target == uid || target == 'ALL' || target == 'MEMBERS' || isMyBlock;
                     }).toList();
 
                     if (notifs.isEmpty) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:building_guard/core/app_firestore.dart';
 import '../models/society_expense_model.dart';
 import '../services/society_accounts_service.dart';
 import '../services/society_accounts_pdf_service.dart';
@@ -20,6 +21,8 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
   final dateFmt = DateFormat('dd MMM yyyy');
 
   String _selectedCategoryKey = 'all';
+  String _selectedBlockFilter = 'ALL';
+  List<String> _availableBlocks = [];
   SocietyFinancialSummary _summary = SocietyFinancialSummary.empty();
   bool _isLoadingSummary = true;
   int _selectedViewTab = 0; // 0: તારીખવાર ખાતાવહી (Passbook Ledger), 1: ખર્ચ કેટેગરી (Expenses)
@@ -27,13 +30,37 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
   @override
   void initState() {
     super.initState();
+    _loadBlocks();
     _loadSummary();
+  }
+
+  Future<void> _loadBlocks() async {
+    try {
+      final snap = await AppFirestore.instance
+          .collection('blocks')
+          .where('societyId', isEqualTo: SocietyService.instance.societyId)
+          .get();
+      final blocks = <String>{};
+      for (final doc in snap.docs) {
+        final raw = (doc.data()['name'] ?? '').toString();
+        final clean = SocietyService.instance.logicalBlockName(raw);
+        if (clean.isNotEmpty) blocks.add(clean);
+      }
+      final sorted = blocks.toList()..sort();
+      if (mounted) {
+        setState(() {
+          _availableBlocks = sorted;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadSummary() async {
     setState(() => _isLoadingSummary = true);
     try {
-      final s = await _accountsService.calculateFinancialSummary();
+      final s = await _accountsService.calculateFinancialSummary(
+        blockFilter: _selectedBlockFilter,
+      );
       if (mounted) {
         setState(() {
           _summary = s;
@@ -74,7 +101,7 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
         foregroundColor: Colors.white,
       ),
       body: StreamBuilder<List<SocietyExpense>>(
-        stream: _accountsService.streamExpenses(),
+        stream: _accountsService.streamExpenses(blockFilter: _selectedBlockFilter),
         builder: (context, snapshot) {
           final allExpenses = snapshot.data ?? [];
           final filteredExpenses = _selectedCategoryKey == 'all'
@@ -87,6 +114,12 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 90),
               children: [
+                // ૦. Block / Wing Filter Chips
+                if (_availableBlocks.isNotEmpty) ...[
+                  _buildBlockFilterChips(),
+                  const SizedBox(height: 14),
+                ],
+
                 // ૧. Treasury Balance Hero Banner
                 _buildTreasuryHeroBanner(),
                 const SizedBox(height: 16),
@@ -126,6 +159,74 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildBlockFilterChips() {
+    final vocab = SocietyService.instance.vocabulary;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          ChoiceChip(
+            avatar: Icon(
+              Icons.domain_rounded,
+              size: 15,
+              color: _selectedBlockFilter == 'ALL' ? Colors.white : const Color(0xFF0F766E),
+            ),
+            label: const Text('સમગ્ર પરિસર (All)'),
+            selected: _selectedBlockFilter == 'ALL',
+            selectedColor: const Color(0xFF0F766E),
+            labelStyle: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: _selectedBlockFilter == 'ALL' ? Colors.white : const Color(0xFF334155),
+            ),
+            backgroundColor: Colors.white,
+            side: BorderSide(
+              color: _selectedBlockFilter == 'ALL' ? const Color(0xFF0F766E) : const Color(0xFFE2E8F0),
+            ),
+            onSelected: (val) {
+              if (val) {
+                setState(() => _selectedBlockFilter = 'ALL');
+                _loadSummary();
+              }
+            },
+          ),
+          const SizedBox(width: 8),
+          ..._availableBlocks.map((b) {
+            final isSelected = _selectedBlockFilter == b;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                avatar: Icon(
+                  Icons.apartment_rounded,
+                  size: 15,
+                  color: isSelected ? Colors.white : const Color(0xFF0F766E),
+                ),
+                label: Text('${vocab.blockShortLabel} $b'),
+                selected: isSelected,
+                selectedColor: const Color(0xFF0F766E),
+                labelStyle: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? Colors.white : const Color(0xFF334155),
+                ),
+                backgroundColor: Colors.white,
+                side: BorderSide(
+                  color: isSelected ? const Color(0xFF0F766E) : const Color(0xFFE2E8F0),
+                ),
+                onSelected: (val) {
+                  if (val) {
+                    setState(() => _selectedBlockFilter = b);
+                    _loadSummary();
+                  }
+                },
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
@@ -1080,8 +1181,12 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
     );
 
     try {
-      final freshSummary = await _accountsService.calculateFinancialSummary();
-      final expenses = await _accountsService.streamExpenses().first;
+      final freshSummary = await _accountsService.calculateFinancialSummary(
+        blockFilter: _selectedBlockFilter,
+      );
+      final expenses = await _accountsService.streamExpenses(
+        blockFilter: _selectedBlockFilter,
+      ).first;
       if (mounted) Navigator.pop(context); // close loader
       if (!mounted) return;
 
@@ -1093,6 +1198,7 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
             expenses: expenses,
             societyName: SocietyService.instance.currentSocietyName,
             societyCode: SocietyService.instance.currentSocietyId,
+            blockFilter: _selectedBlockFilter,
           ),
         ),
       );

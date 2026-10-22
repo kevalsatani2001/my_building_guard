@@ -12,10 +12,11 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/maintenance_model.dart';
 import '../services/maintenance_service.dart';
 import '../services/society_service.dart';
-import '../widgets/premium_ui.dart';
 import '../services/maintenance_receipt_pdf_service.dart';
 import 'admin_broadcast_screen.dart';
 import 'admin_society_bank_settings_screen.dart';
+import 'admin_bulk_bill_screen.dart';
+import '../widgets/smart_maintenance_reminder_sheet.dart';
 
 class AdminMaintenanceScreen extends StatefulWidget {
   const AdminMaintenanceScreen({super.key});
@@ -32,6 +33,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
   late String _selectedMonth; // Format: YYYY-MM
   String _statusFilter = 'all'; // 'all', 'pending', 'under_review', 'paid'
   bool _isLoading = false;
+  List<MaintenanceBill> _latestBills = [];
 
   @override
   void initState() {
@@ -85,216 +87,23 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
     }
   }
 
-  void _showPermissionErrorDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.lock_rounded, color: Colors.red),
-            SizedBox(width: 8),
-            Text('ફાયરબેઝ પરમિશન જરૂરી છે'),
-          ],
-        ),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Firestore Rules માં ડેટા લખવાની પરમિશન બ્લોક થયેલી છે.',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            Text('ઉકેલવા માટેનાં પગલાં:'),
-            Text('૧. Firebase Console ઓપન કરો.'),
-            Text('૨. Build -> Firestore Database -> Rules ટેબ ખોલો.'),
-            Text('૩. ત્યાં allow read, write રૂલ પેસ્ટ કરી વાદળી "Publish" બટન દબાવો.'),
-            SizedBox(height: 8),
-            Text(
-              'નોંધ: Realtime Database નહીં, પણ Cloud Firestore ના Rules પબ્લિશ કરવા જરૂરી છે.',
-              style: TextStyle(fontSize: 12, color: Colors.black54),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('સમજાયું'),
-          ),
-        ],
-      ),
-    );
-  }
 
-  // --- ડાયલોગ ૧: ૧-ક્લિક બલ્ક બિલ જનરેશન ---
+
+  // --- ૧-ક્લિક બલ્ક બિલ જનરેશન સ્ક્રીન ---
   Future<void> _showBulkGenerateDialog() async {
-    final settings = await _service.getPaymentSettings();
-    final defaultAmt = (settings['defaultAmount'] as num?)?.toDouble() ?? 1500.0;
-    final dueDay = (settings['dueDay'] as num?)?.toInt() ?? 10;
-
-    if (!mounted) return;
-
-    final titleController = TextEditingController(
-      text: '${_formatMonthDisplay(_selectedMonth)} મેન્ટેનન્સ',
-    );
-    final amountController =
-        TextEditingController(text: defaultAmt.toStringAsFixed(0));
-    bool addFestivalCharge = false;
-    final festivalTitleController = TextEditingController(text: 'તહેવાર / ગણેશ મહોત્સવ ફાળો');
-    final festivalAmtController = TextEditingController(text: '500');
-    DateTime dueDate = DateTime(
-      int.parse(_selectedMonth.split('-')[0]),
-      int.parse(_selectedMonth.split('-')[1]),
-      dueDay,
-    );
-
-    await showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setDlgState) => AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.receipt_long_rounded, color: Colors.teal),
-              SizedBox(width: 8),
-              Text('બલ્ક બિલ જનરેટ કરો'),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'મહિનો: ${_formatMonthDisplay(_selectedMonth)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'બિલનું શીર્ષક (Title)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: amountController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'નિયમિત મેન્ટેનન્સ રકમ (પ્રતિ ફ્લેટ)',
-                    prefixText: '₹ ',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('છેલ્લી તારીખ (Due Date)'),
-                  subtitle: Text(DateFormat('dd MMM yyyy').format(dueDate)),
-                  trailing: const Icon(Icons.calendar_today_rounded),
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: dueDate,
-                      firstDate: DateTime(2025),
-                      lastDate: DateTime(2030),
-                    );
-                    if (picked != null) {
-                      setDlgState(() => dueDate = picked);
-                    }
-                  },
-                ),
-                const Divider(),
-                // તહેવાર / ઉત્સવ વધારાનો ફાળો સ્વિચ
-                SwitchListTile(
-                  value: addFestivalCharge,
-                  onChanged: (val) => setDlgState(() => addFestivalCharge = val),
-                  title: const Text(
-                    'તહેવાર / વિશેષ ફાળો ઉમેરો',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                  ),
-                  subtitle: const Text(
-                    'મેન્ટેનન્સ સાથે તહેવારનો વધારાનો ફાળો રસીદમાં અલગથી દર્શાવવા માટે',
-                    style: TextStyle(fontSize: 11),
-                  ),
-                  contentPadding: EdgeInsets.zero,
-                  activeThumbColor: Colors.teal,
-                ),
-                if (addFestivalCharge) ...[
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: festivalTitleController,
-                    decoration: const InputDecoration(
-                      labelText: 'તહેવાર / પ્રસંગનું નામ',
-                      hintText: 'દા.ત. નવરાત્રિ / ગણેશ મહોત્સવ ફાળો',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: festivalAmtController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'તહેવાર ફાળો રકમ (પ્રતિ ફ્લેટ)',
-                      prefixText: '₹ ',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('રદ'),
-            ),
-            FilledButton.icon(
-              onPressed: () async {
-                final amt = double.tryParse(amountController.text.trim()) ?? 0;
-                final title = titleController.text.trim();
-                if (amt <= 0 || title.isEmpty) {
-                  _showSnackBar('કૃપા કરીને માન્ય રકમ અને શીર્ષક દાખલ કરો', Colors.orange);
-                  return;
-                }
-
-                final festAmt = addFestivalCharge
-                    ? (double.tryParse(festivalAmtController.text.trim()) ?? 0.0)
-                    : 0.0;
-                final festName = addFestivalCharge ? festivalTitleController.text.trim() : '';
-
-                Navigator.pop(ctx);
-                setState(() => _isLoading = true);
-
-                try {
-                  final result = await _service.generateBulkBills(
-                    billingMonth: _selectedMonth,
-                    billTitle: title,
-                    amount: amt,
-                    dueDate: dueDate,
-                    festivalCharge: festAmt,
-                    festivalName: festName,
-                  );
-                  _showSnackBar(
-                    'સફળતા: ${result['created']} નવા બિલ બન્યા! (${result['skipped']} પહેલાથી બનેલા હતા)',
-                    Colors.green,
-                  );
-                } catch (e) {
-                  _showSnackBar('ભૂલ: $e', Colors.red);
-                  if (e.toString().contains('permission-denied') && mounted) {
-                    _showPermissionErrorDialog();
-                  }
-                } finally {
-                  if (mounted) setState(() => _isLoading = false);
-                }
-              },
-              icon: const Icon(Icons.flash_on_rounded),
-              label: const Text('બધા ફ્લેટ્સ માટે જનરેટ કરો'),
-            ),
-          ],
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AdminBulkBillScreen(
+          initialMonth: _selectedMonth,
+          architectureType: SocietyService.instance.architectureType,
         ),
       ),
     );
+
+    if (result == true && mounted) {
+      setState(() {});
+    }
   }
 
   // --- સોસાયટી UPI & એકાઉન્ટ સેટિંગ્સ (Dedicated Modern Screen) ---
@@ -310,48 +119,16 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
 
   // --- ડાયલોગ ૩: પેન્ડિંગ રીમાઇન્ડર મોકલવું ---
   Future<void> _sendReminders() async {
-    final confirmed = await PremiumConfirmationDialog.show(
-      context,
-      title: 'રીમાઇન્ડર એલર્ટ મોકલો',
-      message:
-          'શું તમે ${_formatMonthDisplay(_selectedMonth)} ના બાકી રહેલા તમામ સભ્યોને મોબાઈલ પર પુશ નોટિફિકેશન રીમાઇન્ડર મોકલવા માંગો છો?',
-      icon: Icons.notifications_active_rounded,
-      gradientColors: const [Color(0xFFD97706), Color(0xFFF59E0B)],
-      cancelText: 'ના, રદ કરો',
-      confirmText: 'હા, મોકલો',
-      confirmGradient: const [Color(0xFFD97706), Color(0xFFB45309)],
-      confirmColor: const Color(0xFFD97706),
-      confirmIcon: Icons.send_rounded,
-    );
-
-    if (confirmed != true) return;
-
-    setState(() => _isLoading = true);
-    try {
-      final res = await _service.sendDueReminders(
-        billingMonth: _selectedMonth,
-        billTitle: '${_formatMonthDisplay(_selectedMonth)} મેન્ટેનન્સ',
-      );
-      final total = res['totalPending'] ?? 0;
-      final notif = res['notifCount'] ?? 0;
-      final push = res['pushCount'] ?? 0;
-
-      if (total == 0) {
-        _showSnackBar(
-          'આ મહિના માટે કોઈ બાકી મેન્ટેનન્સ બિલ નથી.',
-          Colors.blueGrey,
-        );
-      } else {
-        _showSnackBar(
-          '✅ $notif સભ્યોને રીમાઇન્ડર એલર્ટ મોકલાઈ ગયું! ($push ના મોબાઈલ પર પુશ મળ્યો)',
-          Colors.green.shade800,
-        );
-      }
-    } catch (e) {
-      _showSnackBar('રીમાઇન્ડર મોકલવામાં ભૂલ: $e', Colors.red);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    if (_latestBills.isEmpty) {
+      _showSnackBar('આ મહિના માટે કોઈ બિલ ઉપલબ્ધ નથી.', Colors.blueGrey);
+      return;
     }
+    await SmartMaintenanceReminderSheet.showBatchQueue(
+      context: context,
+      billingMonth: _selectedMonth,
+      monthTitle: '${_formatMonthDisplay(_selectedMonth)} મેન્ટેનન્સ',
+      allBills: _latestBills,
+    );
   }
 
   // --- ડાયલોગ ૪.૧: ફ્લેટ માટે ડાયનેમિક UPI QR કોડ બતાવો (તત્કાલ પોપ-અપ) ---
@@ -2014,12 +1791,14 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                 child: ElevatedButton.icon(
                   onPressed: () {
                     Navigator.pop(ctx);
-                    final clean = phone.replaceAll(RegExp(r'[^0-9]'), '');
-                    launchUrl(Uri.parse('https://wa.me/$clean'), mode: LaunchMode.externalApplication);
+                    SmartMaintenanceReminderSheet.showSingle(
+                      context: context,
+                      bill: bill,
+                    );
                   },
                   icon: const Icon(Icons.chat_bubble_rounded, size: 17, color: Colors.white),
                   label: const Text(
-                    'વોટ્સએપ',
+                    'વોટ્સએપ રીમાઇન્ડર',
                     maxLines: 1,
                     softWrap: false,
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13.5),
@@ -2267,6 +2046,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                 final docs = snapshot.data?.docs ?? [];
                 final bills =
                     docs.map((d) => MaintenanceBill.fromFirestore(d)).toList();
+                _latestBills = bills;
 
                 // સ્ટેટિસ્ટિક્સ કેલ્ક્યુલેશન
                 final totalBills = bills.length;
@@ -2872,11 +2652,11 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8FAFC),
                               borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: const Color(0xFFF1F5F9)),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -2884,114 +2664,160 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                                 const Icon(Icons.event_outlined, size: 12, color: Color(0xFF94A3B8)),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'ડ્યુ: ${DateFormat('dd/MM/yyyy').format(bill.dueDate)}',
+                                  bill.status == MaintenanceStatus.paid && bill.paidAt != null
+                                      ? 'ચૂકવ્યા: ${DateFormat('dd/MM/yyyy').format(bill.paidAt!)}'
+                                      : 'ડ્યુ: ${DateFormat('dd/MM/yyyy').format(bill.dueDate)}',
                                   style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
                           ),
-                          Row(
-                            children: [
-                              if (bill.memberPhone.isNotEmpty &&
-                                  bill.status != MaintenanceStatus.paid) ...[
-                                InkWell(
-                                  onTap: () => _makePhoneCall(bill.memberPhone),
+                          if (bill.memberPhone.isNotEmpty && bill.status != MaintenanceStatus.paid)
+                            InkWell(
+                              onTap: () => _makePhoneCall(bill.memberPhone),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFECFDF5),
                                   borderRadius: BorderRadius.circular(8),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(7),
-                                    margin: const EdgeInsets.only(right: 6),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFECFDF5),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: const Color(0xFFA7F3D0)),
-                                    ),
-                                    child: const Icon(Icons.call_rounded, size: 15, color: Color(0xFF059669)),
-                                  ),
+                                  border: Border.all(color: const Color(0xFFA7F3D0)),
                                 ),
-                              ],
-                              if (bill.status != MaintenanceStatus.paid) ...[
-                                InkWell(
-                                  onTap: () => _showBillQrDialog(bill),
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF0FDFA),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: const Color(0xFF99F6E4)),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.call_rounded, size: 13, color: Color(0xFF059669)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      bill.memberPhone,
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.bold),
                                     ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.qr_code_2_rounded, size: 14, color: Color(0xFF0D9488)),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'QR પે',
-                                          style: TextStyle(
-                                            color: Color(0xFF0F766E),
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 11,
-                                          ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Responsive Action Row
+                      if (bill.status == MaintenanceStatus.paid)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: OutlinedButton.icon(
+                            onPressed: () => _showReceiptDialog(bill),
+                            icon: const Icon(Icons.receipt_long_rounded, size: 14, color: Color(0xFF047857)),
+                            label: const Text('રસીદ (Receipt)', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF047857))),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFFA7F3D0)),
+                              backgroundColor: const Color(0xFFF0FDF4),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
+                        )
+                      else
+                        Row(
+                          children: [
+                            // QR Pay button
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => _showBillQrDialog(bill),
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 7.5),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF0FDFA),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0xFF99F6E4)),
+                                  ),
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.qr_code_2_rounded, size: 14, color: Color(0xFF0D9488)),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'QR પે',
+                                        style: TextStyle(
+                                          color: Color(0xFF0F766E),
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 11.5,
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(width: 6),
-                              ],
-                              if (bill.status == MaintenanceStatus.underReview)
-                                ElevatedButton.icon(
+                              ),
+                            ),
+                            const SizedBox(width: 7),
+
+                            // WhatsApp Reminder button
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => SmartMaintenanceReminderSheet.showSingle(
+                                  context: context,
+                                  bill: bill,
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 7.5),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFDCFCE7),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0xFF86EFAC)),
+                                  ),
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.chat_bubble_rounded, size: 13, color: Color(0xFF16A34A)),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'WhatsApp',
+                                        style: TextStyle(
+                                          color: Color(0xFF16A34A),
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 11.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 7),
+
+                            // Verify or Mark Paid Button
+                            if (bill.status == MaintenanceStatus.underReview)
+                              Expanded(
+                                child: ElevatedButton.icon(
                                   onPressed: () => _showVerifyUpiDialog(bill),
                                   icon: const Icon(Icons.verified_rounded, size: 13),
-                                  label: const Text('વેરિફાય', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                                  label: const Text('વેરિફાય', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF2563EB),
                                     foregroundColor: Colors.white,
-                                    elevation: 2,
-                                    shadowColor: const Color(0xFF2563EB).withValues(alpha: 0.3),
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    minimumSize: const Size(0, 32),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
+                                    padding: const EdgeInsets.symmetric(vertical: 7.5),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    elevation: 1,
                                   ),
                                 ),
-                              if (bill.status == MaintenanceStatus.pending ||
-                                  bill.status == MaintenanceStatus.overdue)
-                                ElevatedButton(
+                              )
+                            else
+                              Expanded(
+                                child: ElevatedButton(
                                   onPressed: () => _showOfflinePaymentDialog(bill),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF4338CA),
                                     foregroundColor: Colors.white,
-                                    elevation: 2,
-                                    shadowColor: const Color(0xFF4338CA).withValues(alpha: 0.3),
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    minimumSize: const Size(0, 32),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
+                                    padding: const EdgeInsets.symmetric(vertical: 7.5),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    elevation: 1,
                                   ),
-                                  child: const Text('Mark Paid', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                                  child: const Text('Mark Paid', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
                                 ),
-                              if (bill.status == MaintenanceStatus.paid)
-                                OutlinedButton.icon(
-                                  onPressed: () => _showReceiptDialog(bill),
-                                  icon: const Icon(Icons.receipt_long_rounded, size: 13, color: Color(0xFF047857)),
-                                  label: const Text('રસીદ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF047857))),
-                                  style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: Color(0xFFA7F3D0)),
-                                    backgroundColor: const Color(0xFFF0FDF4),
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    minimumSize: const Size(0, 32),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
+                              ),
+                          ],
+                        ),
                     ],
                   ),
                 ),

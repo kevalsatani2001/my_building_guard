@@ -24,6 +24,8 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
   final _titleC = TextEditingController();
   final _bodyC = TextEditingController();
   String _selectedCategory = 'સામાન્ય';
+  String _targetBlock = 'ALL';
+  List<String> _availableBlocks = [];
   bool _isSending = false;
 
   final List<(String, String, IconData)> _categories = [
@@ -38,7 +40,29 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
   void initState() {
     super.initState();
     _titleC.text = "સોસાયટી સામાન્ય સૂચના";
+    _loadBlocks();
     _loadCustomCategories();
+  }
+
+  Future<void> _loadBlocks() async {
+    try {
+      final snap = await AppFirestore.instance
+          .collection('blocks')
+          .where('societyId', isEqualTo: SocietyService.instance.societyId)
+          .get();
+      final blocks = <String>{};
+      for (final doc in snap.docs) {
+        final raw = (doc.data()['name'] ?? '').toString();
+        final clean = SocietyService.instance.logicalBlockName(raw);
+        if (clean.isNotEmpty) blocks.add(clean);
+      }
+      final sorted = blocks.toList()..sort();
+      if (mounted) {
+        setState(() {
+          _availableBlocks = sorted;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadCustomCategories() async {
@@ -177,6 +201,7 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
             'description': body,
             'category': _selectedCategory,
             'societyId': SocietyService.instance.societyId,
+            'targetBlock': _targetBlock == 'ALL' ? null : _targetBlock,
             'createdAt': FieldValue.serverTimestamp(),
             'authorId': FirebaseAuth.instance.currentUser?.uid,
             'authorRole': 'admin',
@@ -193,6 +218,7 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
         body: body,
         targetUID: widget.targetUID,
         targetName: widget.targetName,
+        targetBlock: _targetBlock,
       );
 
       if (!mounted) return;
@@ -369,6 +395,68 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
                 ],
               ),
             ),
+            if (isAll && _availableBlocks.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              const Text(
+                "લક્ષ્ય પરિસર / વિંગ (Target Audience):",
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    ChoiceChip(
+                      avatar: Icon(
+                        Icons.domain_rounded,
+                        size: 15,
+                        color: _targetBlock == 'ALL' ? Colors.white : const Color(0xFFF59E0B),
+                      ),
+                      label: const Text('સમગ્ર પરિસર (All)'),
+                      selected: _targetBlock == 'ALL',
+                      selectedColor: const Color(0xFFF59E0B),
+                      labelStyle: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: _targetBlock == 'ALL' ? Colors.white : const Color(0xFF334155),
+                      ),
+                      onSelected: (val) {
+                        if (val) setState(() => _targetBlock = 'ALL');
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    ..._availableBlocks.map((b) {
+                      final isSelected = _targetBlock == b;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          avatar: Icon(
+                            Icons.apartment_rounded,
+                            size: 15,
+                            color: isSelected ? Colors.white : const Color(0xFFF59E0B),
+                          ),
+                          label: Text('${SocietyService.instance.vocabulary.blockShortLabel} $b'),
+                          selected: isSelected,
+                          selectedColor: const Color(0xFFF59E0B),
+                          labelStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: isSelected ? Colors.white : const Color(0xFF334155),
+                          ),
+                          onSelected: (val) {
+                            if (val) setState(() => _targetBlock = b);
+                          },
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 20),
 
             // Category Chips

@@ -12,6 +12,9 @@ class VisitorModel {
   final String unitNumber;
   final String societyId;
   final String status; // pending, approved, rejected, checked_out
+  final String visitorType; // guest, delivery, cab, service, cargo
+  final String vehicleNumber;
+  final String goodsDescription;
   final DateTime entryTime;
   final DateTime? exitTime;
 
@@ -27,6 +30,9 @@ class VisitorModel {
     required this.unitNumber,
     this.societyId = '',
     required this.status,
+    this.visitorType = 'guest',
+    this.vehicleNumber = '',
+    this.goodsDescription = '',
     required this.entryTime,
     this.exitTime,
   });
@@ -45,6 +51,9 @@ class VisitorModel {
       unitNumber: data['unitNumber'] ?? '',
       societyId: data['societyId'] ?? '',
       status: data['status'] ?? 'pending',
+      visitorType: (data['visitorType'] ?? 'guest').toString(),
+      vehicleNumber: (data['vehicleNumber'] ?? '').toString(),
+      goodsDescription: (data['goodsDescription'] ?? '').toString(),
       entryTime: data['entryTime'] is Timestamp
           ? (data['entryTime'] as Timestamp).toDate()
           : DateTime.now(),
@@ -70,6 +79,9 @@ class VisitorModel {
       'unitNumber': unitNumber,
       'societyId': societyId,
       'status': status,
+      'visitorType': visitorType,
+      'vehicleNumber': vehicleNumber,
+      'goodsDescription': goodsDescription,
       'entryTime': Timestamp.fromDate(entryTime),
       'exitTime': exitTime != null ? Timestamp.fromDate(exitTime!) : null,
     };

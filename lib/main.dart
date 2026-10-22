@@ -13,6 +13,7 @@ import 'firebase_options.dart';
 import 'screens/admin_dashboard.dart';
 import 'screens/login_screen.dart';
 import 'screens/member_screen.dart';
+import 'screens/super_admin/super_admin_dashboard.dart';
 import 'services/notification_service.dart';
 import 'services/session_guard_service.dart';
 import 'services/society_service.dart';
@@ -96,9 +97,43 @@ class AuthWrapper extends StatelessWidget {
               // Bind single-device session guard listener
               SessionGuardService.instance.validateAndAttachSession(context, currentUser.uid, userData);
 
-              String role = userSnap.data!.get('role');
-              if (role == 'admin') return const AdminDashboard();
-              if (role == 'watchman') return const WatchmanScreen();
+              final email = (currentUser.email ?? '').toLowerCase().trim();
+              final rawRole = (userData?['role'] ??
+                      (userSnap.data!.data() as Map<String, dynamic>?)?['role'] ??
+                      'member')
+                  .toString()
+                  .toLowerCase()
+                  .trim();
+
+              final bool isSuper = email == 'kevaladmin@gmail.com' ||
+                  rawRole == 'super_admin' ||
+                  rawRole == 'superadmin' ||
+                  userData?['isSuperAdmin'] == true;
+
+              final bool isAdmin = rawRole == 'admin' ||
+                  rawRole == 'chairman' ||
+                  rawRole == 'president';
+
+              final bool isSubAdminOrCommittee = rawRole == 'sub_admin' ||
+                  rawRole == 'subadmin' ||
+                  rawRole == 'wing_admin' ||
+                  rawRole == 'committee' ||
+                  rawRole == 'committee_member' ||
+                  rawRole == 'kamiti' ||
+                  rawRole == 'kamiti_member' ||
+                  userData?['isCommitteeMember'] == true ||
+                  userData?['subAdmin'] == true ||
+                  userData?['isSubAdmin'] == true;
+
+              final bool isGuard = rawRole == 'watchman' ||
+                  rawRole == 'guard' ||
+                  rawRole == 'security' ||
+                  rawRole == 'gate_staff' ||
+                  userData?['isGuard'] == true;
+
+              if (isSuper) return const SuperAdminDashboard();
+              if (isAdmin || isSubAdminOrCommittee) return const AdminDashboard();
+              if (isGuard) return const WatchmanScreen();
               return const MemberScreen();
             },
           );
