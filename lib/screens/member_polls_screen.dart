@@ -15,20 +15,18 @@ class MemberPollsScreen extends StatefulWidget {
 }
 
 class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  late final TabController _tabController;
   final SocietyPollService _pollService = SocietyPollService.instance;
+  late final Stream<List<PollModel>> _pollsStream;
   UserModel? _currentUser;
   bool _isLoadingUser = true;
-
-  // Track selected option per poll before submission: Map<pollId, optionId>
-  final Map<String, String> _selectedOptionMap = {};
-  // Track submitting state per poll: Set<pollId>
-  final Set<String> _submittingPollIds = {};
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    // Cached once so that StreamBuilder does not reset or reload on parent rebuilds
+    _pollsStream = _pollService.getPollsStream();
     _loadCurrentUser();
   }
 
@@ -62,7 +60,10 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
   @override
   Widget build(BuildContext context) {
     if (_isLoadingUser) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        backgroundColor: Color(0xFFF8FAFC),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF0F766E))),
+      );
     }
 
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
@@ -72,18 +73,18 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
-        titleSpacing: 16,
+        titleSpacing: 14,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF0F172A), size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF0F172A), size: 19),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Column(
+        title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'સોસાયટી નિર્ણય મતદાન',
               style: TextStyle(
-                fontSize: 17,
+                fontSize: 17.5,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF0F172A),
                 letterSpacing: -0.3,
@@ -91,28 +92,17 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
             ),
             Text(
               'આપનો કિંમતી મત સોસાયટીના વિકાસ માટે',
-              style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+              style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
             ),
-          ],
-        ),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: const Color(0xFF0F766E),
-          unselectedLabelColor: const Color(0xFF64748B),
-          indicatorColor: const Color(0xFF0F766E),
-          indicatorWeight: 3,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
-          tabs: const [
-            Tab(text: '🗳️ સક્રિય પોલ (Active)'),
-            Tab(text: '📜 ભૂતકાળના નિર્ણયો (Past)'),
           ],
         ),
       ),
       body: StreamBuilder<List<PollModel>>(
-        stream: _pollService.getPollsStream(),
+        stream: _pollsStream,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+          // Only show full page spinner on initial fetch when no cached data exists
+          if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator(color: Color(0xFF0F766E)));
           }
 
           final allPolls = snapshot.data ?? [];
@@ -128,11 +118,77 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
           final activePolls = eligiblePolls.where((p) => p.isLive).toList();
           final closedPolls = eligiblePolls.where((p) => !p.isLive).toList();
 
-          return TabBarView(
-            controller: _tabController,
+          return Column(
             children: [
-              _buildPollList(activePolls, currentUid, isActiveTab: true),
-              _buildPollList(closedPolls, currentUid, isActiveTab: false),
+              // Hero Banner with 3D Illustration Asset
+              _buildHeroHeader(activeCount: activePolls.length, totalCount: eligiblePolls.length),
+
+              // Segmented Capsule TabBar
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0F766E).withValues(alpha: 0.28),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  labelColor: Colors.white,
+                  unselectedLabelColor: const Color(0xFF64748B),
+                  labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                  unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  tabs: [
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.how_to_vote_rounded, size: 16),
+                          const SizedBox(width: 6),
+                          Text('સક્રિય પોલ (${activePolls.length})'),
+                        ],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.history_edu_rounded, size: 16),
+                          const SizedBox(width: 6),
+                          Text('ભૂતકાળના નિર્ણયો (${closedPolls.length})'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Tab View Content
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildPollsTabList(activePolls, currentUid, isActiveTab: true),
+                    _buildPollsTabList(closedPolls, currentUid, isActiveTab: false),
+                  ],
+                ),
+              ),
             ],
           );
         },
@@ -140,49 +196,211 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
     );
   }
 
-  Widget _buildPollList(List<PollModel> polls, String currentUid, {required bool isActiveTab}) {
+  // ---------------------------------------------------------------------------
+  // HERO HEADER BANNER WITH 3D ASSET
+  // ---------------------------------------------------------------------------
+  Widget _buildHeroHeader({required int activeCount, required int totalCount}) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF0F172A),
+            Color(0xFF1E293B),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF14B8A6).withValues(alpha: 0.3),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.18),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // 3D Asset Box
+          Container(
+            width: 68,
+            height: 68,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF14B8A6).withValues(alpha: 0.25),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.asset(
+                'assets/images/polling_hero.jpg',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.how_to_vote_rounded,
+                  color: Color(0xFF2DD4BF),
+                  size: 32,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+
+          // Text & Stats
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0D9488).withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFF2DD4BF).withValues(alpha: 0.4)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.shield_outlined, size: 11, color: Color(0xFF2DD4BF)),
+                          SizedBox(width: 4),
+                          Text(
+                            'ડિજિટલ લોકશાહી',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF2DD4BF),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    if (_memberFlatDisplay.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          _memberFlatDisplay,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                const Text(
+                  'સોસાયટી નિર્ણયોમાં આપનો અવાજ',
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: activeCount > 0 ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      activeCount > 0
+                          ? '$activeCount નવો નિર્ણય મતદાન માટે ઉપલબ્ધ છે'
+                          : 'હાલ કોઈ સક્રિય મતદાન બાકી નથી',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: activeCount > 0 ? const Color(0xFF6EE7B7) : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // TAB CONTENT BUILDER
+  // ---------------------------------------------------------------------------
+  Widget _buildPollsTabList(List<PollModel> polls, String currentUid, {required bool isActiveTab}) {
     if (polls.isEmpty) {
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(20),
+                width: 100,
+                height: 100,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(26),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 12,
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                      blurRadius: 16,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Icon(
-                  isActiveTab ? Icons.how_to_vote_outlined : Icons.history_edu_outlined,
-                  size: 44,
-                  color: const Color(0xFF94A3B8),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(26),
+                  child: Image.asset(
+                    'assets/images/polling_hero.jpg',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Icon(
+                      isActiveTab ? Icons.how_to_vote_outlined : Icons.history_edu_outlined,
+                      size: 42,
+                      color: const Color(0xFF0F766E),
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
               Text(
                 isActiveTab ? 'અત્યારે કોઈ નવું મતદાન ચાલુ નથી.' : 'કોઈ અગાઉના નિર્ણયો નોંધાયેલા નથી.',
                 style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF334155),
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF0F172A),
                 ),
               ),
               const SizedBox(height: 6),
               Text(
                 isActiveTab
-                    ? 'જ્યારે પણ કમિટી તરફથી નવો નિર્ણય લેવાનો હશે ત્યારે અહીં પોલ જોવા મળશે.'
-                    : 'સમાપ્ત થયેલા પોલ્સ અહીં સંગ્રહિત થશે.',
+                    ? 'જ્યારે પણ કમિટી તરફથી સોસાયટીના ખર્ચ, સુવિધા કે નિયમો અંગે નવો નિર્ણય લેવાશે ત્યારે આપ અહીંથી મત આપી શકશો.'
+                    : 'સમાપ્ત થયેલા તમામ પોલ અને પસાર થયેલા ઠરાવો અહીં સંગ્રહિત થશે.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12.5, color: Colors.grey.shade500),
+                style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.45),
               ),
             ],
           ),
@@ -191,35 +409,169 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       itemCount: polls.length,
       itemBuilder: (context, idx) {
-        return _buildMemberPollCard(polls[idx], currentUid);
+        final poll = polls[idx];
+        return _MemberPollCardItem(
+          key: ValueKey(poll.id),
+          poll: poll,
+          currentUid: currentUid,
+          memberFlatDisplay: _memberFlatDisplay,
+        );
       },
     );
   }
+}
 
-  Widget _buildMemberPollCard(PollModel poll, String currentUid) {
-    final dateFormat = DateFormat('dd/MM/yyyy • hh:mm a');
-    final hasVoted = poll.hasUserVoted(currentUid) ||
-        (_memberFlatDisplay.isNotEmpty && poll.hasFlatVoted(_memberFlatDisplay));
-    final isSubmitting = _submittingPollIds.contains(poll.id);
+// =============================================================================
+// ISOLATED ULTRA-PREMIUM MEMBER POLL CARD WIDGET
+// Prevents entire screen / list reload on option selection or vote submission!
+// =============================================================================
+class _MemberPollCardItem extends StatefulWidget {
+  final PollModel poll;
+  final String currentUid;
+  final String memberFlatDisplay;
+
+  const _MemberPollCardItem({
+    super.key,
+    required this.poll,
+    required this.currentUid,
+    required this.memberFlatDisplay,
+  });
+
+  @override
+  State<_MemberPollCardItem> createState() => _MemberPollCardItemState();
+}
+
+class _MemberPollCardItemState extends State<_MemberPollCardItem> {
+  final SocietyPollService _pollService = SocietyPollService.instance;
+  String? _selectedOptionId;
+  bool _isSubmitting = false;
+  String? _userVotedOptionId;
+  bool _hasLocalVoted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUserVote();
+  }
+
+  @override
+  void didUpdateWidget(covariant _MemberPollCardItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.poll.id != widget.poll.id) {
+      _selectedOptionId = null;
+      _isSubmitting = false;
+      _userVotedOptionId = null;
+      _hasLocalVoted = false;
+      _checkUserVote();
+    }
+  }
+
+  void _checkUserVote() {
+    final poll = widget.poll;
+    final hasVoted = poll.hasUserVoted(widget.currentUid) ||
+        (widget.memberFlatDisplay.isNotEmpty && poll.hasFlatVoted(widget.memberFlatDisplay));
+    if (hasVoted) {
+      _pollService.getUserVotedOptionId(poll.id).then((optId) {
+        if (mounted && optId != null) {
+          setState(() {
+            _userVotedOptionId = optId;
+          });
+        }
+      });
+    }
+  }
+
+  Future<void> _submitVote() async {
+    if (_selectedOptionId == null || _isSubmitting) return;
+    final chosenOptId = _selectedOptionId!;
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      HapticFeedback.mediumImpact();
+      await _pollService.castVote(
+        pollId: widget.poll.id,
+        optionId: chosenOptId,
+        flatDisplay: widget.memberFlatDisplay,
+      );
+
+      if (mounted) {
+        setState(() {
+          _hasLocalVoted = true;
+          _userVotedOptionId = chosenOptId;
+          _isSubmitting = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🎉 આપનો મત સફળતાપૂર્વક નોંધાઈ ગયો છે! આભાર.'),
+            backgroundColor: Color(0xFF059669),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('ક્ષતિ: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final poll = widget.poll;
+    final dateFormat = DateFormat('dd MMM yyyy, hh:mm a');
+    final hasVoted = _hasLocalVoted ||
+        poll.hasUserVoted(widget.currentUid) ||
+        (widget.memberFlatDisplay.isNotEmpty && poll.hasFlatVoted(widget.memberFlatDisplay));
     final totalVotes = poll.totalVotes;
+
+    // Find max voted option for highlight trophy
+    int maxVotes = 0;
+    for (final opt in poll.options) {
+      if (opt.votesCount > maxVotes) maxVotes = opt.votesCount;
+    }
+
+    // Days remaining calculation
+    final now = DateTime.now();
+    final remaining = poll.endDate.difference(now);
+    final isExpired = remaining.isNegative;
+
+    String deadlineText;
+    if (isExpired || !poll.isLive) {
+      deadlineText = "મતદાન પૂર્ણ";
+    } else if (remaining.inDays > 0) {
+      deadlineText = "બાકી: ${remaining.inDays} દિવસ";
+    } else if (remaining.inHours > 0) {
+      deadlineText = "બાકી: ${remaining.inHours} કલાક";
+    } else {
+      deadlineText = "અંતિમ ઘડીઓ";
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: hasVoted ? const Color(0xFFE2E8F0) : const Color(0xFF0F766E).withValues(alpha: 0.4),
+          color: hasVoted ? const Color(0xFFE2E8F0) : const Color(0xFF0F766E).withValues(alpha: 0.35),
           width: hasVoted ? 1.0 : 1.5,
         ),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -228,11 +580,15 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status Badges
-            Row(
+            // Top Status & Badges Strip (Wrap to prevent screen width overflow)
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
+                // Vote Status Pill
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
                   decoration: BoxDecoration(
                     color: hasVoted
                         ? const Color(0xFFDCFCE7)
@@ -250,13 +606,13 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
                       Icon(
                         hasVoted
                             ? Icons.check_circle_rounded
-                            : (poll.isLive ? Icons.pending_rounded : Icons.lock_clock_rounded),
+                            : (poll.isLive ? Icons.hourglass_top_rounded : Icons.lock_clock_rounded),
                         size: 13,
                         color: hasVoted
                             ? const Color(0xFF16A34A)
                             : (poll.isLive ? const Color(0xFFB45309) : const Color(0xFF64748B)),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 4.5),
                       Text(
                         hasVoted
                             ? 'આપે મત આપી દીધો છે'
@@ -272,95 +628,240 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
                     ],
                   ),
                 ),
-                if (poll.targetScope != 'all') ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEEF2FF),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'વિંગ ${poll.targetScope}',
-                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF4F46E5)),
+
+                // Scope Tag (Wing / All)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: poll.targetScope == 'all' ? const Color(0xFFF1F5F9) : const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: poll.targetScope == 'all' ? const Color(0xFFE2E8F0) : const Color(0xFFC7D2FE),
                     ),
                   ),
-                ],
-                const Spacer(),
-                Text(
-                  poll.isLive
-                      ? 'અંતિમ: ${DateFormat('dd/MM').format(poll.endDate)}'
-                      : 'સમાપ્ત',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey.shade500),
+                  child: Text(
+                    poll.targetScope == 'all' ? 'સમગ્ર સોસાયટી' : 'વિંગ ${poll.targetScope}',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                      color: poll.targetScope == 'all' ? const Color(0xFF475569) : const Color(0xFF4338CA),
+                    ),
+                  ),
+                ),
+
+                // Deadline pill
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isExpired || !poll.isLive ? const Color(0xFFF8FAFC) : const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isExpired || !poll.isLive ? const Color(0xFFE2E8F0) : const Color(0xFFBBF7D0),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.access_time_rounded,
+                        size: 11.5,
+                        color: isExpired || !poll.isLive ? const Color(0xFF94A3B8) : const Color(0xFF16A34A),
+                      ),
+                      const SizedBox(width: 3.5),
+                      Text(
+                        deadlineText,
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: isExpired || !poll.isLive ? const Color(0xFF64748B) : const Color(0xFF166534),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
 
-            // Title
+            // Poll Title (Question)
             Text(
               poll.title,
               style: const TextStyle(
-                fontSize: 16.5,
+                fontSize: 17,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF0F172A),
                 letterSpacing: -0.3,
+                height: 1.3,
               ),
             ),
 
+            // Poll Description / Budget Callout (e.g. "15000" in screenshot)
             if (poll.description.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Text(
-                poll.description,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.4),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF0D9488)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        poll.description,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          color: Color(0xFF334155),
+                          fontWeight: FontWeight.w600,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
             const SizedBox(height: 16),
 
-            // IF USER HAS ALREADY VOTED (OR POLL IS CLOSED): SHOW LIVE RESULTS
+            // =================================================================
+            // CASE 1: IF USER HAS ALREADY VOTED (OR POLL IS CLOSED): LIVE RESULTS
+            // =================================================================
             if (hasVoted || !poll.isLive) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.leaderboard_rounded, size: 16, color: Color(0xFF0F766E)),
+                      SizedBox(width: 6),
+                      Text(
+                        'મતદાન પરિણામ:',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'કુલ $totalVotes મત',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF334155),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
               ...poll.options.map((opt) {
                 final pct = totalVotes > 0 ? ((opt.votesCount / totalVotes) * 100).toInt() : 0;
                 final frac = totalVotes > 0 ? (opt.votesCount / totalVotes) : 0.0;
+                final isMyVote = opt.id == _userVotedOptionId;
+                final isLeading = maxVotes > 0 && opt.votesCount == maxVotes;
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isMyVote ? const Color(0xFFECFDF5) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isMyVote ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
+                      width: isMyVote ? 1.5 : 1.0,
+                    ),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Flexible(
-                            child: Text(
-                              opt.text,
-                              style: const TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1E293B),
-                              ),
+                          Expanded(
+                            child: Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 6,
+                              runSpacing: 4,
+                              children: [
+                                Text(
+                                  opt.text,
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: isMyVote ? FontWeight.w900 : FontWeight.w700,
+                                    color: isMyVote ? const Color(0xFF065F46) : const Color(0xFF0F172A),
+                                  ),
+                                ),
+                                if (isMyVote)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF059669),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Text(
+                                      'આપનો મત',
+                                      style: TextStyle(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                if (isLeading && totalVotes > 0)
+                                  const Icon(Icons.emoji_events_rounded, size: 14, color: Color(0xFFEAB308)),
+                              ],
                             ),
                           ),
                           Text(
-                            '${opt.votesCount} મત ($pct%)',
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF0F766E),
+                            '${opt.votesCount} ($pct%)',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              color: isMyVote ? const Color(0xFF059669) : const Color(0xFF0F766E),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 5),
+                      const SizedBox(height: 8),
+
+                      // Gradient progress bar
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: frac,
-                          minHeight: 8,
-                          backgroundColor: const Color(0xFFF1F5F9),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            poll.isLive ? const Color(0xFF0F766E) : const Color(0xFF64748B),
-                          ),
+                        child: Stack(
+                          children: [
+                            Container(
+                              height: 9,
+                              color: const Color(0xFFE2E8F0),
+                            ),
+                            FractionallySizedBox(
+                              widthFactor: frac,
+                              child: Container(
+                                height: 9,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: isMyVote
+                                        ? [const Color(0xFF059669), const Color(0xFF10B981)]
+                                        : [const Color(0xFF0F766E), const Color(0xFF14B8A6)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -368,135 +869,175 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
                 );
               }),
 
-              const Divider(height: 16, color: Color(0xFFF1F5F9)),
+              const Divider(height: 18, color: Color(0xFFF1F5F9)),
+
+              // Timestamp footer
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'કુલ મતદાન: $totalVotes સભ્યો',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF0F766E)),
+                    poll.isLive ? 'મતદાન પ્રક્રિયા ચાલુ છે' : 'મતદાન પૂર્ણ થયેલ છે',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: poll.isLive ? const Color(0xFF059669) : const Color(0xFF64748B),
+                    ),
                   ),
                   Text(
-                    'સમાપ્તિ: ${dateFormat.format(poll.endDate)}',
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                    'અંતિમ: ${dateFormat.format(poll.endDate)}',
+                    style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
 
+              // Resolution if available
               if (poll.resolutionSummary != null && poll.resolutionSummary!.isNotEmpty) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF0FDF4),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: const Color(0xFF86EFAC)),
                   ),
-                  child: Text(
-                    'ઠરાવ: ${poll.resolutionSummary}',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF14532D)),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.verified_rounded, size: 18, color: Color(0xFF16A34A)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'સોસાયટી સત્તાવાર ઠરાવ:',
+                              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF14532D)),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              poll.resolutionSummary!,
+                              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF15803D)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ]
 
-            // IF USER HAS NOT VOTED YET AND POLL IS ACTIVE: SHOW VOTING CHOICES
+            // =================================================================
+            // CASE 2: IF USER HAS NOT VOTED YET: INTERACTIVE DECISION CARDS
+            // =================================================================
             else ...[
-              const Text(
-                'આપનો વિકલ્પ પસંદ કરો:',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+              const Row(
+                children: [
+                  Icon(Icons.touch_app_rounded, size: 16, color: Color(0xFF0F766E)),
+                  SizedBox(width: 6),
+                  Text(
+                    'આપનો વિકલ્પ પસંદ કરો:',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  Spacer(),
+                  Text(
+                    '(૧ મત પ્રતિ ફ્લેટ)',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
 
+              // Options
               ...poll.options.map((opt) {
-                final isSelected = _selectedOptionMap[poll.id] == opt.id;
+                final isSelected = _selectedOptionId == opt.id;
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: InkWell(
-                    onTap: () {
-                      setState(() {
-                        _selectedOptionMap[poll.id] = opt.id;
-                      });
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFFF0FDFA) : const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected ? const Color(0xFF0F766E) : const Color(0xFFCBD5E1),
-                          width: isSelected ? 1.5 : 1.0,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-                            color: isSelected ? const Color(0xFF0F766E) : const Color(0xFF94A3B8),
-                            size: 20,
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 9),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() {
+                          _selectedOptionId = opt.id;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(14),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                        decoration: BoxDecoration(
+                          color: isSelected ? const Color(0xFFECFDF5) : const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isSelected ? const Color(0xFF0D9488) : const Color(0xFFCBD5E1),
+                            width: isSelected ? 1.8 : 1.0,
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              opt.text,
-                              style: TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                                color: isSelected ? const Color(0xFF0F766E) : const Color(0xFF1E293B),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(0xFF0D9488).withValues(alpha: 0.12),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Row(
+                          children: [
+                            // Custom Animated Radio Icon
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isSelected ? const Color(0xFF0D9488) : Colors.white,
+                                border: Border.all(
+                                  color: isSelected ? const Color(0xFF0D9488) : const Color(0xFF94A3B8),
+                                  width: isSelected ? 2 : 1.5,
+                                ),
+                              ),
+                              child: isSelected
+                                  ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
+                                  : null,
+                            ),
+                            const SizedBox(width: 12),
+
+                            // Option Text
+                            Expanded(
+                              child: Text(
+                                opt.text,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                                  color: isSelected ? const Color(0xFF0F766E) : const Color(0xFF1E293B),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 );
               }),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
-              // Submit Vote Button
+              // Elevated Gradient Submit Vote Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: _selectedOptionMap[poll.id] == null || isSubmitting
+                  onPressed: _selectedOptionId == null || _isSubmitting
                       ? null
-                      : () async {
-                          final selectedOptId = _selectedOptionMap[poll.id]!;
-                          setState(() => _submittingPollIds.add(poll.id));
-
-                          try {
-                            HapticFeedback.mediumImpact();
-                            await _pollService.castVote(
-                              pollId: poll.id,
-                              optionId: selectedOptId,
-                              flatDisplay: _memberFlatDisplay,
-                            );
-
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('🎉 આપનો મત સફળતાપૂર્વક નોંધાઈ ગયો છે! આભાર.'),
-                                  backgroundColor: Color(0xFF059669),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('ભૂલ આવી: $e'), backgroundColor: Colors.red),
-                              );
-                            }
-                          } finally {
-                            if (mounted) {
-                              setState(() => _submittingPollIds.remove(poll.id));
-                            }
-                          }
-                        },
-                  icon: isSubmitting
+                      : () => _submitVote(),
+                  icon: _isSubmitting
                       ? const SizedBox(
                           width: 16,
                           height: 16,
@@ -504,14 +1045,22 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
                         )
                       : const Icon(Icons.how_to_vote_rounded, size: 18),
                   label: Text(
-                    isSubmitting ? 'મત નોંધાઈ રહ્યો છે...' : 'મત આપો (Submit Vote)',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+                    _isSubmitting
+                        ? 'મત નોંધાઈ રહ્યો છે...'
+                        : (_selectedOptionId == null
+                            ? 'પહેલાં વિકલ્પ પસંદ કરો'
+                            : 'મત આપો (Submit Vote)'),
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0F766E),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    disabledBackgroundColor: const Color(0xFFE2E8F0),
+                    disabledForegroundColor: const Color(0xFF94A3B8),
+                    elevation: _selectedOptionId != null ? 3 : 0,
+                    shadowColor: const Color(0xFF0F766E).withValues(alpha: 0.4),
+                    padding: const EdgeInsets.symmetric(vertical: 13.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                 ),
               ),

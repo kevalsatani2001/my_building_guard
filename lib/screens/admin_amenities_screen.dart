@@ -73,34 +73,31 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
             ),
           ],
         ),
-        bottom: _hasAmenities
-            ? TabBar(
-                controller: _tabController,
-                labelColor: const Color(0xFF0F766E),
-                unselectedLabelColor: const Color(0xFF64748B),
-                indicatorColor: const Color(0xFF0F766E),
-                indicatorWeight: 3,
-                labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                tabs: const [
-                  Tab(text: '📅 બુકિંગ્સ & કેલેન્ડર'),
-                  Tab(text: '🏛️ સુવિધાઓ ગોઠવણી (Setup)'),
-                ],
-              )
-            : null,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Master Switch Card: "Does this society have amenities?"
-            _buildMasterSwitchCard(),
+      body: Column(
+        children: [
+          // Master Switch Card: "Does this society have amenities?"
+          _buildMasterSwitchCard(),
 
-            if (!_hasAmenities)
-              Padding(
+          if (_hasAmenities) ...[
+            _buildCapsuleTabBar(),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildBookingsTab(),
+                  _buildAmenitiesSetupTab(),
+                ],
+              ),
+            ),
+          ] else
+            Expanded(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(22),
                       decoration: const BoxDecoration(
                         color: Color(0xFFF1F5F9),
                         shape: BoxShape.circle,
@@ -120,20 +117,78 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                     ),
                   ],
                 ),
-              )
-            else
-              SizedBox(
-                height: MediaQuery.of(context).size.height - 180,
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildBookingsTab(),
-                    _buildAmenitiesSetupTab(),
-                  ],
-                ),
               ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // Segmented Capsule TabBar (with FittedBox to guarantee 0 overflow on any device)
+  Widget _buildCapsuleTabBar() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicator: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F766E).withValues(alpha: 0.28),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
+        labelColor: Colors.white,
+        unselectedLabelColor: const Color(0xFF64748B),
+        labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        dividerColor: Colors.transparent,
+        tabs: const [
+          Tab(
+            height: 38,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.calendar_month_rounded, size: 16),
+                  SizedBox(width: 6),
+                  Text('બુકિંગ્સ'),
+                ],
+              ),
+            ),
+          ),
+          Tab(
+            height: 38,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.apartment_rounded, size: 16),
+                  SizedBox(width: 6),
+                  Text('સુવિધાઓ (Setup)'),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -141,11 +196,11 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
   // Master Switch Card
   Widget _buildMasterSwitchCard() {
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: _hasAmenities ? const Color(0xFF99F6E4) : const Color(0xFFE2E8F0),
           width: _hasAmenities ? 1.5 : 1.0,
@@ -153,46 +208,60 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(11),
             decoration: BoxDecoration(
-              color: _hasAmenities ? const Color(0xFFF0FDFA) : const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
+              color: _hasAmenities ? const Color(0xFF0F766E).withValues(alpha: 0.1) : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
-              Icons.domain_rounded,
+              Icons.holiday_village_rounded,
               color: _hasAmenities ? const Color(0xFF0F766E) : const Color(0xFF94A3B8),
               size: 24,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'સોસાયટીમાં એમેનિટીઝ / વાડી છે?',
-                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
                 ),
-                Text(
-                  _hasAmenities ? 'સક્રિય • સમગ્ર એપમાં બુકિંગ ઉપલબ્ધ' : 'અદ્રશ્ય • બુકિંગ મોડ્યુલ છુપાયેલું છે',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: _hasAmenities ? const Color(0xFF0F766E) : const Color(0xFF64748B),
-                  ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Container(
+                      width: 6.5,
+                      height: 6.5,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _hasAmenities ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      _hasAmenities ? 'સક્રિય • સમગ્ર એપમાં બુકિંગ ઉપલબ્ધ' : 'અદ્રશ્ય • બુકિંગ મોડ્યુલ છુપાયેલું છે',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: _hasAmenities ? const Color(0xFF0D9488) : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          Switch(
+          Switch.adaptive(
             value: _hasAmenities,
             activeTrackColor: const Color(0xFF0F766E).withValues(alpha: 0.5),
             activeThumbColor: const Color(0xFF0F766E),
@@ -227,7 +296,118 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
         final bookings = snapshot.data!;
 
         if (bookings.isEmpty) {
-          return const Center(child: Text('હજુ કોઈ બુકિંગ રિક્વેસ્ટ આવેલ નથી.'));
+          return Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F766E).withValues(alpha: 0.08),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF0F766E).withValues(alpha: 0.18),
+                          width: 2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.event_available_rounded,
+                        size: 44,
+                        color: Color(0xFF0F766E),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'હજુ કોઈ બુકિંગ રિક્વેસ્ટ આવેલ નથી',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'જ્યારે સોસાયટીના સભ્યો વાડી, ક્લબહાઉસ કે ટેરેસ માટે સ્લોટ બુક કરશે ત્યારે તેમની મંજૂરી માટેની વિનંતી અહીં દર્શાવવામાં આવશે.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.45),
+                    ),
+                    const SizedBox(height: 18),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.holiday_village_rounded, size: 13, color: Color(0xFF0F766E)),
+                              SizedBox(width: 4),
+                              Text('વાડી / હોલ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.apartment_rounded, size: 13, color: Color(0xFF0F766E)),
+                              SizedBox(width: 4),
+                              Text('ક્લબહાઉસ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.deck_rounded, size: 13, color: Color(0xFF0F766E)),
+                              SizedBox(width: 4),
+                              Text('ટેરેસ ગાર્ડન', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
         }
 
         return ListView.builder(
@@ -530,16 +710,51 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
 
           if (amenities.isEmpty) {
             return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('કોઈ સુવિધા ઉમેરેલ નથી.'),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () => _addDefaultAmenities(),
-                    child: const Text('ડિફૉલ્ટ સુવિધાઓ ઉમેરો (વાડી & હોલ)'),
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(22),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F766E).withValues(alpha: 0.08),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF0F766E).withValues(alpha: 0.15),
+                          width: 2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.apartment_rounded,
+                        size: 46,
+                        color: Color(0xFF0F766E),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'કોઈ સુવિધા ઉમેરેલ નથી',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'સોસાયટીમાં ઉપલબ્ધ વાડી, પાર્ટી પ્લોટ, ક્લબહાઉસ કે ટેરેસ જેવી સુવિધાઓ અહીં ઉમેરો.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.4),
+                    ),
+                    const SizedBox(height: 18),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F766E),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      onPressed: () => _addDefaultAmenities(),
+                      icon: const Icon(Icons.playlist_add_rounded, size: 18),
+                      label: const Text('ડિફૉલ્ટ સુવિધાઓ ઉમેરો (વાડી & હોલ)', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -549,22 +764,71 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
             itemCount: amenities.length,
             itemBuilder: (context, idx) {
               final a = amenities[idx];
-              return Card(
+              return Container(
                 margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: const Color(0xFF0F766E).withValues(alpha: 0.15),
-                    child: const Icon(Icons.domain_rounded, color: Color(0xFF0F766E)),
-                  ),
-                  title: Text(a.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(
-                    'ક્ષમતા: ${a.capacity} | ભાડું: ₹${a.rentAmount.toStringAsFixed(0)} | ડિપોઝિટ: ₹${a.securityDeposit.toStringAsFixed(0)}',
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
-                    onPressed: () => _service.deleteAmenity(a.id),
-                  ),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F766E).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.domain_rounded, color: Color(0xFF0F766E), size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            a.name,
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF0F172A)),
+                          ),
+                          const SizedBox(height: 4),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
+                                child: Text('ક્ષમતા: ${a.capacity}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF475569))),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(color: const Color(0xFFF0FDF4), borderRadius: BorderRadius.circular(6)),
+                                child: Text('ભાડું: ₹${a.rentAmount.toStringAsFixed(0)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF16A34A))),
+                              ),
+                              if (a.securityDeposit > 0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(color: const Color(0xFFFFFBEB), borderRadius: BorderRadius.circular(6)),
+                                  child: Text('ડિપોઝિટ: ₹${a.securityDeposit.toStringAsFixed(0)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFFD97706))),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                      onPressed: () => _service.deleteAmenity(a.id),
+                    ),
+                  ],
                 ),
               );
             },
@@ -628,10 +892,28 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                     decoration: const InputDecoration(labelText: 'ક્ષમતા (મહેમાનો)', border: OutlineInputBorder()),
                   ),
                   const SizedBox(height: 10),
-                  SwitchListTile(
-                    title: const Text('પેઇડ સુવિધા (ભાડું / ડિપોઝિટ લાગશે?)'),
-                    value: isPaid,
-                    onChanged: (v) => setDialogState(() => isPaid = v),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'પેઇડ સુવિધા (ભાડું / ડિપોઝિટ લાગશે?)',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                        ),
+                        Switch.adaptive(
+                          value: isPaid,
+                          activeThumbColor: const Color(0xFF0F766E),
+                          activeTrackColor: const Color(0xFF0F766E).withValues(alpha: 0.5),
+                          onChanged: (v) => setDialogState(() => isPaid = v),
+                        ),
+                      ],
+                    ),
                   ),
                   if (isPaid) ...[
                     TextField(

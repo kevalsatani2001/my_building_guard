@@ -381,16 +381,40 @@ class SuperAdminService {
   Future<void> toggleSocietyStatus(String societyId, bool isActive) async {
     await _firestore.collection('society_settings').doc(societyId).set({
       'isActive': isActive,
+      'isSuspendedBySuperAdmin': !isActive,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
 
-  /// યુઝર બ્લોક / અનબ્લોક
+  /// યુઝર બ્લોક / અનબ્લોક (એડમિન બ્લોક થાય તો સોસાયટીના તમામ યુઝર્સ પણ આપોઆપ સ્થગિત થશે)
   Future<void> toggleUserStatus(String uid, bool isActive) async {
     await _firestore.collection('users').doc(uid).set({
       'isActive': isActive,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+
+    // જો આ યુઝર સોસાયટીનો એડમિન/પ્રમુખ હોય તો સોસાયટી સેટિંગ્સમાં isAdminBlocked અપડેટ કરો
+    try {
+      final uDoc = await _firestore.collection('users').doc(uid).get();
+      if (uDoc.exists) {
+        final uData = uDoc.data();
+        final rawRole = (uData?['role'] ?? '').toString().toLowerCase().trim();
+        final societyId = (uData?['societyId'] ?? '').toString().trim();
+        final bool isAdminUser = rawRole == 'admin' ||
+            rawRole == 'chairman' ||
+            rawRole == 'president' ||
+            uData?['isAdmin'] == true;
+
+        if (isAdminUser && societyId.isNotEmpty && societyId != 'default') {
+          await _firestore.collection('society_settings').doc(societyId).set({
+            'isAdminBlocked': !isActive,
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+        }
+      }
+    } catch (e) {
+      debugPrint('Cascade admin block error in toggleUserStatus: $e');
+    }
   }
 
   /// નવી સોસાયટીનું ડાયરેક્ટ ઓનબોર્ડિંગ (Super Admin One-Click Onboard)

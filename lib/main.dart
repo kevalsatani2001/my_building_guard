@@ -14,6 +14,8 @@ import 'screens/admin_dashboard.dart';
 import 'screens/login_screen.dart';
 import 'screens/member_screen.dart';
 import 'screens/super_admin/super_admin_dashboard.dart';
+import 'screens/admin_suspended_screen.dart';
+import 'screens/society_suspended_notice_screen.dart';
 import 'services/notification_service.dart';
 import 'services/session_guard_service.dart';
 import 'services/society_service.dart';
@@ -90,9 +92,6 @@ class AuthWrapper extends StatelessWidget {
               }
               final userData = userSnap.data!.data() as Map<String, dynamic>?;
               SocietyService.instance.bindFromUserMap(userData);
-              if (userData != null && userData['isActive'] == false) {
-                return const _AccountBlockedMessage();
-              }
 
               // Bind single-device session guard listener
               SessionGuardService.instance.validateAndAttachSession(context, currentUser.uid, userData);
@@ -109,6 +108,9 @@ class AuthWrapper extends StatelessWidget {
                   rawRole == 'super_admin' ||
                   rawRole == 'superadmin' ||
                   userData?['isSuperAdmin'] == true;
+
+              // સુપર એડમિન સીધા સુપર એડમિન ડેશબોર્ડમાં પ્રવેશશે
+              if (isSuper) return const SuperAdminDashboard();
 
               final bool isAdmin = rawRole == 'admin' ||
                   rawRole == 'chairman' ||
@@ -131,7 +133,50 @@ class AuthWrapper extends StatelessWidget {
                   rawRole == 'gate_staff' ||
                   userData?['isGuard'] == true;
 
-              if (isSuper) return const SuperAdminDashboard();
+              final societyId = (userData?['societyId'] ?? '').toString().trim();
+
+              // જો societyId હોય તો society_settings નો રીયલ-ટાઇમ પ્રવાહ સાંભળો જેથી કેસ્કેડ બ્લોક આપમેળે લાગુ પડે
+              if (societyId.isNotEmpty && societyId != 'default') {
+                return StreamBuilder<DocumentSnapshot>(
+                  stream: AppFirestore.instance.collection('society_settings').doc(societyId).snapshots(),
+                  builder: (context, socSnap) {
+                    final socData = socSnap.data?.data() as Map<String, dynamic>?;
+                    final bool isSocietyActive = socData == null || socData['isActive'] != false;
+                    final bool isAdminBlocked = socData?['isAdminBlocked'] == true;
+                    final bool isUserActive = userData?['isActive'] != false;
+
+                    // જો સોસાયટી ફ્રીઝ હોય અથવા સોસાયટીનો એડમિન બ્લોક હોય અથવા યુઝર જાતે બ્લોક હોય:
+                    if (!isSocietyActive || isAdminBlocked || !isUserActive) {
+                      if (isAdmin) {
+                        return AdminSuspendedScreen(
+                          societyId: societyId,
+                          userData: userData,
+                          societyData: socData,
+                        );
+                      } else {
+                        return SocietySuspendedNoticeScreen(
+                          societyData: socData,
+                          societyName: socData?['name'] ?? userData?['societyName'],
+                        );
+                      }
+                    }
+
+                    if (isAdmin || isSubAdminOrCommittee) return const AdminDashboard();
+                    if (isGuard) return const WatchmanScreen();
+                    return const MemberScreen();
+                  },
+                );
+              }
+
+              // Default society fallback
+              if (userData != null && userData['isActive'] == false) {
+                if (isAdmin) {
+                  return AdminSuspendedScreen(societyId: 'default', userData: userData);
+                } else {
+                  return const SocietySuspendedNoticeScreen();
+                }
+              }
+
               if (isAdmin || isSubAdminOrCommittee) return const AdminDashboard();
               if (isGuard) return const WatchmanScreen();
               return const MemberScreen();

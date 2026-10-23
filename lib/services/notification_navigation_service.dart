@@ -10,6 +10,7 @@ import '../screens/admin_maintenance_screen.dart';
 import '../screens/member_complaint_register_screen.dart';
 import '../screens/watchmen_screen.dart';
 import '../widgets/member_maintenance_sheet.dart';
+import '../screens/super_admin/super_admin_appeal_detail_screen.dart';
 import 'session_guard_service.dart';
 
 /// સેન્ટ્રલ નોટિફિકેશન નેવિગેશન રાઉટર
@@ -97,7 +98,18 @@ class NotificationNavigationService {
         _handleSuperAdminNotice(title, body);
         break;
 
-      // ૮. સોસાયટી નોટિસ / સામાન્ય બ્રોડકાસ્ટ
+      // ૮. સુપર એડમિન માટે સોસાયટી અપીલ વિનંતી
+      case 'admin_appeal_request':
+      case 'society_appeal':
+        _handleAdminAppealRequest(rawData['appealId']?.toString() ?? '');
+        break;
+
+      // ૯. એડમિન માટે સુપર એડમિન તરફથી અપીલ રિપ્લાય
+      case 'super_admin_appeal_reply':
+        _handleSuperAdminAppealReply(title, body);
+        break;
+
+      // ૧૦. સોસાયટી નોટિસ / સામાન્ય બ્રોડકાસ્ટ
       case 'admin_notice':
       case 'general':
       case 'notice':
@@ -486,6 +498,72 @@ class NotificationNavigationService {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
             child: const Text('સમજાઈ ગયું (Acknowledge)'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ૮. સુપર એડમિન માટે સોસાયટી અપીલ વિનંતી સ્ક્રીન ખોલો
+  static void _handleAdminAppealRequest(String appealId) {
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted || appealId.isEmpty) return;
+    Navigator.of(ctx).push(
+      MaterialPageRoute(
+        builder: (_) => SuperAdminAppealDetailScreen(appealId: appealId),
+      ),
+    );
+  }
+
+  /// ૯. એડમિન માટે સુપર એડમિન તરફથી અપીલ રિપ્લાય દર્શાવો
+  static void _handleSuperAdminAppealReply(String title, String body) {
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+    showDialog(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFECFDF5),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.verified_rounded, color: Color(0xFF059669), size: 22),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title.isNotEmpty ? title : 'સુપર એડમિન તરફથી જવાબ',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+              ),
+            ),
+          ],
+        ),
+        content: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Text(
+            body.isNotEmpty ? body : 'તમારી સોસાયટીની અપીલ અંગે સુપર એડમિન દ્વારા પ્રત્યુત્તર આપવામાં આવ્યો છે.',
+            style: const TextStyle(fontSize: 13.5, height: 1.45, color: Color(0xFF334155)),
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF0F172A),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('સમજાઈ ગયું (OK)'),
           ),
         ],
       ),

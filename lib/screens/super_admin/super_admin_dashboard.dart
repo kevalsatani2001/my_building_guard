@@ -12,6 +12,8 @@ import '../../screens/login_screen.dart';
 import 'super_admin_create_admin_screen.dart';
 import 'super_admin_onboard_society_screen.dart';
 import 'super_admin_broadcast_screen.dart';
+import 'super_admin_appeal_detail_screen.dart';
+import '../../services/society_appeal_service.dart';
 import '../../widgets/admin_credentials_modal.dart';
 
 
@@ -1416,6 +1418,15 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
       children: [
         _buildActionTile(
+          title: "સોસાયટી અપીલ વિનંતીઓ (Appeals & Reviews)",
+          subtitle: "સ્થગિત સોસાયટીના એડમિન તરફથી આવેલી પુનઃસક્રિયતા અપીલો ચકાસો અને નિર્ણય લો",
+          icon: Icons.gavel_rounded,
+          color: const Color(0xFFEF4444),
+          onTap: _showAppealsListDialog,
+        ),
+        const SizedBox(height: 12),
+
+        _buildActionTile(
           title: "નવા કો-સુપર એડમિન બનાવો (Co-Super Admin)",
           subtitle: "તમારા પાર્ટનર કે ઓપરેશન્સ મેનેજરને સંપૂર્ણ માસ્ટર એક્સેસ આપો",
           icon: Icons.person_add_alt_1_rounded,
@@ -2050,6 +2061,170 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
       MaterialPageRoute(
         builder: (_) => SuperAdminCreateAdminScreen(
           onSuccess: _loadAllData,
+        ),
+      ),
+    );
+  }
+
+  // ૭.૧ સોસાયટી અપીલ વિનંતીઓ લિસ્ટ મોડલ શીટ (Society Appeals List)
+  void _showAppealsListDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(ctx).size.height * 0.85,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        decoration: const BoxDecoration(
+          color: Color(0xFF0F172A),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF475569),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Row(
+              children: [
+                Icon(Icons.gavel_rounded, color: Color(0xFFEF4444), size: 22),
+                SizedBox(width: 8),
+                Text(
+                  "સોસાયટી અપીલ વિનંતીઓ",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Expanded(
+              child: StreamBuilder<List<Map<String, dynamic>>>(
+                stream: SocietyAppealService.instance.streamAllAppeals(),
+                builder: (ctx, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator(color: Colors.white));
+                  }
+                  final appeals = snap.data ?? [];
+                  if (appeals.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.inbox_rounded, size: 48, color: Colors.grey.shade600),
+                          const SizedBox(height: 10),
+                          const Text(
+                            "હાલ કોઈ અપીલ વિનંતી પેન્ડિંગ નથી.",
+                            style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    itemCount: appeals.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 10),
+                    itemBuilder: (ctx, i) {
+                      final item = appeals[i];
+                      final sName = (item['societyName'] ?? 'સોસાયટી').toString();
+                      final aName = (item['adminName'] ?? 'એડમિન').toString();
+                      final msg = (item['appealMessage'] ?? '').toString();
+                      final status = (item['status'] ?? 'pending').toString();
+                      final appealId = (item['appealId'] ?? item['docId'] ?? '').toString();
+
+                      final (statusLabel, statusColor, statusBg) = switch (status) {
+                        'resolved' => ('મંજૂર', const Color(0xFF10B981), const Color(0xFF064E3B)),
+                        'rejected' => ('અસ્વીકૃત', const Color(0xFFEF4444), const Color(0xFF7F1D1D)),
+                        _ => ('પેન્ડિંગ', const Color(0xFFF59E0B), const Color(0xFF78350F)),
+                      };
+
+                      return InkWell(
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SuperAdminAppealDetailScreen(
+                                appealId: appealId,
+                                initialData: item,
+                              ),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E293B),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFF334155)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      sName,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14.5,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                                    decoration: BoxDecoration(
+                                      color: statusBg,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                                    ),
+                                    child: Text(
+                                      statusLabel,
+                                      style: TextStyle(
+                                        color: statusColor,
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "એડમિન: $aName",
+                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11.5, fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                msg,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12.5),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

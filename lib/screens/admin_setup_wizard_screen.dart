@@ -1426,11 +1426,14 @@ class _AdminSetupWizardScreenState extends State<AdminSetupWizardScreen> {
     );
   }
 
-  void _showArchitectureLockedDialog(String targetArchitectureName, List<Map<String, dynamic>> types) {
-    final currentTitle = types.firstWhere(
-      (e) => e['key'] == _wizardType,
-      orElse: () => {'title': _wizardType},
-    )['title'];
+  void _showArchitectureLockedDialog(String targetArchitectureName, List<dynamic> types) {
+    String currentTitle = _wizardType;
+    for (final t in types) {
+      if (t is Map && t['key'] == _wizardType) {
+        currentTitle = (t['title'] ?? _wizardType).toString();
+        break;
+      }
+    }
 
     showModalBottomSheet(
       context: context,

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/poll_model.dart';
 import '../models/user_model.dart';
 import '../services/society_poll_service.dart';
+import '../services/society_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:building_guard/core/app_firestore.dart';
 
@@ -18,12 +19,14 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
   final SocietyPollService _pollService = SocietyPollService.instance;
   UserModel? _currentUser;
   bool _isLoadingUser = true;
+  List<String> _availableBlocks = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadCurrentUser();
+    _loadBlocks();
   }
 
   @override
@@ -43,6 +46,25 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
       } catch (_) {}
     }
     if (mounted) setState(() => _isLoadingUser = false);
+  }
+
+  Future<void> _loadBlocks() async {
+    try {
+      final snap = await AppFirestore.instance
+          .collection('blocks')
+          .where('societyId', isEqualTo: SocietyService.instance.societyId)
+          .get();
+      final blocks = <String>{};
+      for (final doc in snap.docs) {
+        final raw = (doc.data()['name'] ?? '').toString();
+        final clean = SocietyService.instance.logicalBlockName(raw);
+        if (clean.isNotEmpty) blocks.add(clean);
+      }
+      final sorted = blocks.toList()..sort();
+      if (mounted) {
+        setState(() => _availableBlocks = sorted);
+      }
+    } catch (_) {}
   }
 
   String? get _userRestrictedBlock {
@@ -175,7 +197,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
       body: StreamBuilder<List<PollModel>>(
         stream: _pollService.getPollsStream(blockScope: _userRestrictedBlock),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
@@ -186,11 +208,18 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
           final activePolls = allPolls.where((p) => p.isLive).toList();
           final closedPolls = allPolls.where((p) => !p.isLive).toList();
 
-          return TabBarView(
-            controller: _tabController,
+          return Column(
             children: [
-              _buildPollList(activePolls, isActiveTab: true),
-              _buildPollList(closedPolls, isActiveTab: false),
+              _buildAdminHeroHeader(activeCount: activePolls.length, totalCount: allPolls.length),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildPollList(activePolls, isActiveTab: true),
+                    _buildPollList(closedPolls, isActiveTab: false),
+                  ],
+                ),
+              ),
             ],
           );
         },
@@ -267,36 +296,204 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
     );
   }
 
+  // --- 3D Hero Header Banner for Admin ---
+  Widget _buildAdminHeroHeader({required int activeCount, required int totalCount}) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF0F172A),
+            Color(0xFF1E293B),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF14B8A6).withValues(alpha: 0.3),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.18),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF14B8A6).withValues(alpha: 0.25),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.asset(
+                'assets/images/polling_hero.jpg',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.how_to_vote_rounded,
+                  color: Color(0xFF2DD4BF),
+                  size: 32,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0D9488).withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFF2DD4BF).withValues(alpha: 0.4)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.admin_panel_settings_outlined, size: 11, color: Color(0xFF2DD4BF)),
+                          SizedBox(width: 4),
+                          Text(
+                            'એડમિન પોલિંગ કંટ્રોલ',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF2DD4BF),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'કુલ: $totalCount',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                const Text(
+                  'સોસાયટી ડિજિટલ પોલિંગ & નિર્ણય',
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: activeCount > 0 ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      activeCount > 0
+                          ? '$activeCount પોલ અત્યારે ચાલુ મતદાનમાં છે'
+                          : 'કોઈ સક્રિય પોલ ચાલુ નથી',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: activeCount > 0 ? const Color(0xFF6EE7B7) : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPollCard(PollModel poll) {
-    final dateFormat = DateFormat('dd/MM/yyyy • hh:mm a');
+    final dateFormat = DateFormat('dd MMM yyyy • hh:mm a');
     final totalVotes = poll.totalVotes;
+
+    int maxVotes = 0;
+    for (final opt in poll.options) {
+      if (opt.votesCount > maxVotes) maxVotes = opt.votesCount;
+    }
+
+    final now = DateTime.now();
+    final remaining = poll.endDate.difference(now);
+    final isExpired = remaining.isNegative;
+
+    String deadlineText;
+    if (isExpired || !poll.isLive) {
+      deadlineText = "મતદાન પૂર્ણ";
+    } else if (remaining.inDays > 0) {
+      deadlineText = "બાકી: ${remaining.inDays} દિવસ";
+    } else if (remaining.inHours > 0) {
+      deadlineText = "બાકી: ${remaining.inHours} કલાક";
+    } else {
+      deadlineText = "અંતિમ ઘડીઓ";
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: poll.isLive ? const Color(0xFFCBD5E1) : const Color(0xFFE2E8F0),
-          width: poll.isLive ? 1.2 : 1.0,
+          color: poll.isLive ? const Color(0xFF0F766E).withValues(alpha: 0.35) : const Color(0xFFE2E8F0),
+          width: poll.isLive ? 1.5 : 1.0,
         ),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Badges & Actions Menu
-            Row(
+            // Top Badges Strip (Wrap to prevent horizontal overflow)
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                // Live status badge
+                // Live Status Badge
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
@@ -329,30 +526,35 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
 
-                // Scope badge
-                if (poll.targetScope != 'all')
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEEF2FF),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'વિંગ ${poll.targetScope}',
-                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF4F46E5)),
+                // Target Scope Tag
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: poll.targetScope == 'all' ? const Color(0xFFF1F5F9) : const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: poll.targetScope == 'all' ? const Color(0xFFE2E8F0) : const Color(0xFFC7D2FE),
                     ),
                   ),
+                  child: Text(
+                    poll.targetScope == 'all' ? 'સમગ્ર સોસાયટી' : 'વિંગ ${poll.targetScope}',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                      color: poll.targetScope == 'all' ? const Color(0xFF475569) : const Color(0xFF4338CA),
+                    ),
+                  ),
+                ),
 
-                // Anonymous badge
+                // Anonymous Badge
                 if (poll.isAnonymous)
                   Container(
-                    margin: const EdgeInsets.only(left: 6),
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFF7ED),
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFFED7AA)),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
@@ -367,166 +569,202 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                     ),
                   ),
 
-                const Spacer(),
-
-                // Admin Action Menu
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert_rounded, size: 20, color: Color(0xFF64748B)),
-                  onSelected: (val) {
-                    if (val == 'close') {
-                      _showClosePollDialog(poll);
-                    } else if (val == 'voters') {
-                      _showVotersSheet(poll);
-                    } else if (val == 'delete') {
-                      _confirmDeletePoll(poll);
-                    }
-                  },
-                  itemBuilder: (ctx) => [
-                    if (poll.isLive)
-                      const PopupMenuItem(
-                        value: 'close',
-                        child: Row(
-                          children: [
-                            Icon(Icons.lock_rounded, size: 16, color: Color(0xFFD97706)),
-                            SizedBox(width: 8),
-                            Text('મતદાન બંધ કરો'),
-                          ],
-                        ),
-                      ),
-                    if (!poll.isAnonymous)
-                      const PopupMenuItem(
-                        value: 'voters',
-                        child: Row(
-                          children: [
-                            Icon(Icons.groups_rounded, size: 16, color: Color(0xFF0F766E)),
-                            SizedBox(width: 8),
-                            Text('મતદારોનું લિસ્ટ'),
-                          ],
-                        ),
-                      ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('ડીલીટ કરો', style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
+                // Deadline pill
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isExpired || !poll.isLive ? const Color(0xFFF8FAFC) : const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isExpired || !poll.isLive ? const Color(0xFFE2E8F0) : const Color(0xFFBBF7D0),
                     ),
-                  ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.access_time_rounded,
+                        size: 11.5,
+                        color: isExpired || !poll.isLive ? const Color(0xFF94A3B8) : const Color(0xFF16A34A),
+                      ),
+                      const SizedBox(width: 3.5),
+                      Text(
+                        deadlineText,
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: isExpired || !poll.isLive ? const Color(0xFF64748B) : const Color(0xFF166534),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
 
             // Title
             Text(
               poll.title,
               style: const TextStyle(
-                fontSize: 16.5,
+                fontSize: 17,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF0F172A),
                 letterSpacing: -0.3,
+                height: 1.3,
               ),
             ),
 
-            // Description
+            // Description / Budget Callout
             if (poll.description.isNotEmpty) ...[
-              const SizedBox(height: 5),
-              Text(
-                poll.description,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF475569),
-                  height: 1.4,
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
-              ),
-            ],
-            const SizedBox(height: 14),
-
-            // Voting Options & Progress Bars
-            ...poll.options.map((opt) {
-              final pct = totalVotes > 0 ? ((opt.votesCount / totalVotes) * 100).toInt() : 0;
-              final frac = totalVotes > 0 ? (opt.votesCount / totalVotes) : 0.0;
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Column(
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            opt.text,
-                            style: const TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF1E293B),
-                            ),
-                          ),
-                        ),
-                        Text(
-                          '${opt.votesCount} મત ($pct%)',
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F766E),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 5),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: frac,
-                        minHeight: 8,
-                        backgroundColor: const Color(0xFFF1F5F9),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          poll.isLive ? const Color(0xFF0F766E) : const Color(0xFF64748B),
+                    const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF0D9488)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        poll.description,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          color: Color(0xFF334155),
+                          fontWeight: FontWeight.w600,
+                          height: 1.35,
                         ),
                       ),
                     ),
                   ],
                 ),
-              );
-            }),
+              ),
+            ],
+            const SizedBox(height: 14),
 
-            const Divider(height: 18, color: Color(0xFFF1F5F9)),
-
-            // Footer (Total Votes & Due Date)
+            // Results Section Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
+                const Row(
                   children: [
-                    const Icon(Icons.how_to_reg_rounded, size: 15, color: Color(0xFF0F766E)),
-                    const SizedBox(width: 5),
+                    Icon(Icons.leaderboard_rounded, size: 16, color: Color(0xFF0F766E)),
+                    SizedBox(width: 6),
                     Text(
-                      'કુલ મતદાન: $totalVotes સભ્યો',
-                      style: const TextStyle(
-                        fontSize: 12,
+                      'લાઈવ પરિણામ:',
+                      style: TextStyle(
+                        fontSize: 13,
                         fontWeight: FontWeight.w800,
                         color: Color(0xFF0F172A),
                       ),
                     ),
                   ],
                 ),
-                Text(
-                  poll.isLive
-                      ? 'અંતિમ: ${dateFormat.format(poll.endDate)}'
-                      : 'સમાપ્ત: ${DateFormat('dd/MM/yyyy').format(poll.endDate)}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: poll.isLive ? const Color(0xFFD97706) : Colors.grey.shade500,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'કુલ $totalVotes મત',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF334155),
+                    ),
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 10),
+
+            // Options & Progress Bars
+            ...poll.options.map((opt) {
+              final pct = totalVotes > 0 ? ((opt.votesCount / totalVotes) * 100).toInt() : 0;
+              final frac = totalVotes > 0 ? (opt.votesCount / totalVotes) : 0.0;
+              final isLeading = maxVotes > 0 && opt.votesCount == maxVotes;
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 9),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isLeading && totalVotes > 0 ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isLeading && totalVotes > 0 ? const Color(0xFF86EFAC) : const Color(0xFFE2E8F0),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 6,
+                            children: [
+                              Text(
+                                opt.text,
+                                style: const TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                              if (isLeading && totalVotes > 0)
+                                const Icon(Icons.emoji_events_rounded, size: 14, color: Color(0xFFEAB308)),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          '${opt.votesCount} ($pct%)',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            color: isLeading && totalVotes > 0 ? const Color(0xFF16A34A) : const Color(0xFF0F766E),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Stack(
+                        children: [
+                          Container(
+                            height: 8,
+                            color: const Color(0xFFE2E8F0),
+                          ),
+                          FractionallySizedBox(
+                            widthFactor: frac,
+                            child: Container(
+                              height: 8,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: isLeading && totalVotes > 0
+                                      ? [const Color(0xFF16A34A), const Color(0xFF22C55E)]
+                                      : [const Color(0xFF0F766E), const Color(0xFF14B8A6)],
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
 
             // Resolution remark if present
             if (poll.resolutionSummary != null && poll.resolutionSummary!.isNotEmpty) ...[
@@ -558,6 +796,81 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                 ),
               ),
             ],
+
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  poll.isLive ? 'મતદાન પ્રક્રિયા ચાલુ છે' : 'મતદાન પૂર્ણ થયેલ છે',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: poll.isLive ? const Color(0xFF059669) : const Color(0xFF64748B),
+                  ),
+                ),
+                Text(
+                  'અંતિમ: ${dateFormat.format(poll.endDate)}',
+                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            const Divider(height: 18, color: Color(0xFFF1F5F9)),
+
+            // Admin Actions Row (Quick buttons instead of hidden menu)
+            Row(
+              children: [
+                if (!poll.isAnonymous)
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        foregroundColor: const Color(0xFF0F766E),
+                        side: const BorderSide(color: Color(0xFF99F6E4)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () => _showVotersSheet(poll),
+                      icon: const Icon(Icons.groups_rounded, size: 16),
+                      label: Text(
+                        'મતદારો ($totalVotes)',
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                if (!poll.isAnonymous && poll.isLive) const SizedBox(width: 8),
+
+                if (poll.isLive)
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        foregroundColor: const Color(0xFFD97706),
+                        side: const BorderSide(color: Color(0xFFFDE68A)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () => _showClosePollDialog(poll),
+                      icon: const Icon(Icons.lock_rounded, size: 15),
+                      label: const Text(
+                        'મતદાન બંધ',
+                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+
+                const SizedBox(width: 8),
+                IconButton(
+                  tooltip: 'પોલ ડીલીટ કરો',
+                  style: IconButton.styleFrom(
+                    backgroundColor: const Color(0xFFFEF2F2),
+                    foregroundColor: Colors.red,
+                    padding: const EdgeInsets.all(8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () => _confirmDeletePoll(poll),
+                  icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -571,7 +884,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
       TextEditingController(text: 'હા, સંમત છીએ (Yes)'),
       TextEditingController(text: 'ના, અત્યારે જરૂર નથી (No)'),
     ];
-    String scope = 'ALL';
+    String scope = _userRestrictedBlock ?? 'all';
     DateTime endDate = DateTime.now().add(const Duration(days: 3));
     bool isAnon = false;
     String eligibility = 'all_members';
@@ -812,25 +1125,35 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                           ),
                           const SizedBox(height: 6),
-                          DropdownButtonFormField<String>(
-                            initialValue: scope,
-                            decoration: InputDecoration(
-                              prefixIcon: const Icon(Icons.groups_rounded, size: 20, color: Color(0xFF0F766E)),
-                              filled: true,
-                              fillColor: const Color(0xFFF8FAFC),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                              ),
-                            ),
-                            items: const [
-                              DropdownMenuItem(value: 'all', child: Text('સમગ્ર સોસાયટી (All Society)')),
-                              DropdownMenuItem(value: 'A', child: Text('માત્ર વિંગ A')),
-                              DropdownMenuItem(value: 'B', child: Text('માત્ર વિંગ B')),
-                              DropdownMenuItem(value: 'C', child: Text('માત્ર વિંગ C')),
-                            ],
-                            onChanged: (v) => setDialogState(() => scope = v ?? 'all'),
+                          Builder(
+                            builder: (context) {
+                              final blockTerm = SocietyService.instance.vocabulary.blockShortLabel;
+                              final dropdownItems = <DropdownMenuItem<String>>[
+                                const DropdownMenuItem(value: 'all', child: Text('સમગ્ર સોસાયટી (All Society)')),
+                                ..._availableBlocks.map((b) => DropdownMenuItem(
+                                  value: b,
+                                  child: Text('માત્ર $blockTerm $b'),
+                                )),
+                              ];
+                              final validValues = dropdownItems.map((e) => e.value).toSet();
+                              final safeScope = validValues.contains(scope) ? scope : 'all';
+
+                              return DropdownButtonFormField<String>(
+                                initialValue: safeScope,
+                                decoration: InputDecoration(
+                                  prefixIcon: const Icon(Icons.groups_rounded, size: 20, color: Color(0xFF0F766E)),
+                                  filled: true,
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                  ),
+                                ),
+                                items: dropdownItems,
+                                onChanged: (v) => setDialogState(() => scope = v ?? 'all'),
+                              );
+                            },
                           ),
                           const SizedBox(height: 16),
                         ],
@@ -883,33 +1206,46 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                         ),
                         const SizedBox(height: 16),
 
-                        // Anonymous Voting Switch Container
+                        // Anonymous Voting Switch Container (Custom Row to avoid ListTile invisible ink splash assertion)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF8FAFC),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
-                          child: SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            secondary: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: isAnon ? const Color(0xFF0F766E).withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
-                                shape: BoxShape.circle,
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: isAnon ? const Color(0xFF0F766E).withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.security_rounded,
+                                  size: 18,
+                                  color: isAnon ? const Color(0xFF0F766E) : const Color(0xFF64748B),
+                                ),
                               ),
-                              child: Icon(
-                                Icons.security_rounded,
-                                size: 18,
-                                color: isAnon ? const Color(0xFF0F766E) : const Color(0xFF64748B),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('ગુપ્ત મતદાન (Anonymous Voting)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+                                    const SizedBox(height: 2),
+                                    const Text('મતદારોનું નામ જાહેર નહીં થાય, માત્ર ટકાવારી દેખાશે', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                  ],
+                                ),
                               ),
-                            ),
-                            title: const Text('ગુપ્ત મતદાન (Anonymous Voting)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
-                            subtitle: const Text('મતદારોનું નામ જાહેર નહીં થાય, માત્ર ટકાવારી દેખાશે', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                            value: isAnon,
-                            activeThumbColor: const Color(0xFF0F766E),
-                            onChanged: (v) => setDialogState(() => isAnon = v),
+                              Switch.adaptive(
+                                value: isAnon,
+                                activeThumbColor: const Color(0xFF0F766E),
+                                activeTrackColor: const Color(0xFF0F766E).withValues(alpha: 0.5),
+                                onChanged: (v) => setDialogState(() => isAnon = v),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -1051,70 +1387,70 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.7),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            Center(
-              child: Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 8),
-                width: 44,
-                height: 5,
-                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)),
+      builder: (ctx) => Material(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: Container(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.7),
+          child: Column(
+            children: [
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)),
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  const Icon(Icons.groups_rounded, color: Color(0xFF0F766E)),
-                  const SizedBox(width: 8),
-                  const Text('મતદાન કરનાર સભ્યોનું લિસ્ટ', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                  const Spacer(),
-                  IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(ctx)),
-                ],
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    const Icon(Icons.groups_rounded, color: Color(0xFF0F766E)),
+                    const SizedBox(width: 8),
+                    const Text('મતદાન કરનાર સભ્યોનું લિસ્ટ', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                    IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(ctx)),
+                  ],
+                ),
               ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: StreamBuilder(
-                stream: _pollService.getPollVotersStream(poll.id),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-                  final docs = snapshot.data!.docs;
-                  if (docs.isEmpty) return const Center(child: Text('હજુ કોઈ મત પડ્યો નથી.'));
+              const Divider(height: 1),
+              Expanded(
+                child: StreamBuilder(
+                  stream: _pollService.getPollVotersStream(poll.id),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                    final docs = snapshot.data!.docs;
+                    if (docs.isEmpty) return const Center(child: Text('હજુ કોઈ મત પડ્યો નથી.'));
 
-                  return ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: docs.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1),
-                    itemBuilder: (context, i) {
-                      final d = docs[i].data() as Map<String, dynamic>;
-                      final flat = (d['flatDisplay'] ?? '').toString();
-                      final optId = (d['optionId'] ?? '').toString();
-                      final option = poll.options.firstWhere(
-                        (o) => o.id == optId,
-                        orElse: () => const PollOption(id: '', text: 'અજ્ઞાત વિકલ્પ'),
-                      );
+                    return ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: docs.length,
+                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      itemBuilder: (context, i) {
+                        final d = docs[i].data() as Map<String, dynamic>;
+                        final flat = (d['flatDisplay'] ?? '').toString();
+                        final optId = (d['optionId'] ?? '').toString();
+                        final option = poll.options.firstWhere(
+                          (o) => o.id == optId,
+                          orElse: () => const PollOption(id: '', text: 'અજ્ઞાત વિકલ્પ'),
+                        );
 
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: const Color(0xFF0F766E).withValues(alpha: 0.15),
-                          child: const Icon(Icons.check_rounded, color: Color(0xFF0F766E), size: 18),
-                        ),
-                        title: Text('ફ્લેટ: ${flat.isNotEmpty ? flat : 'સભ્ય'}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
-                        subtitle: Text('પસંદ કરેલ: ${option.text}', style: const TextStyle(fontSize: 12, color: Color(0xFF0F766E))),
-                      );
-                    },
-                  );
-                },
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: const Color(0xFF0F766E).withValues(alpha: 0.15),
+                            child: const Icon(Icons.check_rounded, color: Color(0xFF0F766E), size: 18),
+                          ),
+                          title: Text('ફ્લેટ: ${flat.isNotEmpty ? flat : 'સભ્ય'}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                          subtitle: Text('પસંદ કરેલ: ${option.text}', style: const TextStyle(fontSize: 12, color: Color(0xFF0F766E))),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
