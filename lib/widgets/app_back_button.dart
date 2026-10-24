@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:building_guard/l10n/app_strings.dart';
 
 /// A unique, tactile premium back button used across the entire Society Guard app.
 /// Featuring a sleek rounded squircle, micro-border, adaptive contrast and haptic feedback.
@@ -30,7 +31,7 @@ class AppBackButton extends StatelessWidget {
         (isLightIcon ? Colors.white.withValues(alpha: 0.28) : const Color(0xFFE2E8F0));
 
     return Tooltip(
-      message: 'પાછા જાઓ',
+      message: 'પાછા જાઓ'.tr,
       child: Center(
         child: Material(
           color: Colors.transparent,

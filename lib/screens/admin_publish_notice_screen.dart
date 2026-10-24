@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/society_service.dart';
 import '../widgets/admin_broadcast_dialogs.dart';
+import '../l10n/app_strings.dart';
+import '../services/localization_service.dart';
 
 class AdminPublishNoticeScreen extends StatefulWidget {
   const AdminPublishNoticeScreen({super.key});
@@ -15,7 +17,7 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
   final _titleC = TextEditingController();
   final _bodyC = TextEditingController();
 
-  String _selectedCategory = 'સામાન્ય';
+  String _selectedCategory = 'સામાન્ય'.tr;
   String _targetBlock = 'ALL';
   List<String> _availableBlocks = [];
   bool _isUrgent = false;
@@ -24,12 +26,12 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
   bool _isPublishing = false;
 
   final List<(String, String, IconData, Color)> _categories = [
-    ('સામાન્ય', 'સામાન્ય સૂચના', Icons.campaign_rounded, Colors.orange),
-    ('પાણી', 'પાણી પુરવઠા સમય', Icons.water_drop_rounded, Colors.blue),
-    ('લાઈટ', 'વીજળી / જનરેટર', Icons.bolt_rounded, Colors.amber),
-    ('મીટિંગ', 'વાર્ષિક / માસિક મીટિંગ', Icons.groups_rounded, Colors.indigo),
-    ('ઉત્સવ', 'તહેવાર / ઇવેન્ટ આયોજન', Icons.celebration_rounded, Colors.purple),
-    ('સફાઈ', 'સોસાયટી સ્વચ્છતા અભિયાન', Icons.cleaning_services_rounded, Colors.teal),
+    ('સામાન્ય'.tr, 'સામાન્ય સૂચના'.tr, Icons.campaign_rounded, Colors.orange),
+    ('પાણી'.tr, 'પાણી પુરવઠા સમય'.tr, Icons.water_drop_rounded, Colors.blue),
+    ('લાઈટ'.tr, 'વીજળી / જનરેટર'.tr, Icons.bolt_rounded, Colors.amber),
+    ('મીટિંગ'.tr, 'વાર્ષિક / માસિક મીટિંગ'.tr, Icons.groups_rounded, Colors.indigo),
+    ('ઉત્સવ'.tr, 'તહેવાર / ઇવેન્ટ આયોજન'.tr, Icons.celebration_rounded, Colors.purple),
+    ('સફાઈ'.tr, 'સોસાયટી સ્વચ્છતા અભિયાન'.tr, Icons.cleaning_services_rounded, Colors.teal),
   ];
 
   @override
@@ -95,11 +97,11 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.add_circle_outline_rounded, color: Color(0xFFEA580C)),
             SizedBox(width: 8),
-            Text('નવી નોટિસ કેટેગરી ઉમેરો', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text('નવી નોટિસ કેટેગરી ઉમેરો'.tr, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
@@ -109,18 +111,18 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
             TextField(
               controller: catController,
               autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'કેટેગરી નામ *',
-                hintText: 'દા.ત. લિફ્ટ, સિક્યોરિટી, નિયમો, વગેરે',
+              decoration: InputDecoration(
+                labelText: 'કેટેગરી નામ *'.tr,
+                hintText: 'દા.ત. લિફ્ટ, સિક્યોરિટી, નિયમો, વગેરે'.tr,
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: titleController,
-              decoration: const InputDecoration(
-                labelText: 'ડિફૉલ્ટ શીર્ષક (વૈકલ્પિક)',
-                hintText: 'દા.ત. લિફ્ટ સર્વિસ બાબત જરૂરી પરિપત્ર',
+              decoration: InputDecoration(
+                labelText: 'ડિફૉલ્ટ શીર્ષક (વૈકલ્પિક)'.tr,
+                hintText: 'દા.ત. લિફ્ટ સર્વિસ બાબત જરૂરી પરિપત્ર'.tr,
                 border: OutlineInputBorder(),
               ),
             ),
@@ -129,7 +131,7 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('રદ કરો'),
+            child: Text('રદ કરો'.tr),
           ),
           FilledButton(
             onPressed: () {
@@ -138,7 +140,7 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
               }
             },
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEA580C)),
-            child: const Text('ઉમેરો'),
+            child: Text('ઉમેરો'.tr),
           ),
         ],
       ),
@@ -148,7 +150,7 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
       final newCat = catController.text.trim();
       final newTitle = titleController.text.trim().isNotEmpty
           ? titleController.text.trim()
-          : 'સોસાયટી $newCat સૂચના';
+          : 'સોસાયટી $newCat સૂચના'.tr;
 
       setState(() {
         if (!_categories.any((c) => c.$1 == newCat)) {
@@ -189,8 +191,8 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
 
     if (title.isEmpty || body.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("કૃપા કરીને શીર્ષક અને વિગત બંને ભરો."),
+        SnackBar(
+          content: Text("કૃપા કરીને શીર્ષક અને વિગત બંને ભરો.".tr),
           backgroundColor: Colors.red,
         ),
       );
@@ -215,7 +217,7 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
       if (_sendPushAlert && mounted) {
         await AdminBroadcastDialogs.sendPushNotification(
           context: context,
-          title: "📢 નવી નોટિસ: $title",
+          title: "📢 નવી નોટિસ: $title".tr,
           body: body,
           targetBlock: _targetBlock,
         );
@@ -224,12 +226,12 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Row(
             children: [
               Icon(Icons.check_circle_rounded, color: Colors.white),
               SizedBox(width: 8),
-              Text("નોટિસ બોર્ડ પર સફળતાપૂર્વક પબ્લિશ થઈ ગઈ!"),
+              Text("નોટિસ બોર્ડ પર સફળતાપૂર્વક પબ્લિશ થઈ ગઈ!".tr),
             ],
           ),
           backgroundColor: Color(0xFF047857),
@@ -242,7 +244,7 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("નોટિસ પબ્લિશ કરવામાં ભૂલ: $e"),
+          content: Text("નોટિસ પબ્લિશ કરવામાં ભૂલ: $e".tr),
           backgroundColor: Colors.red.shade800,
         ),
       );
@@ -263,20 +265,20 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "ડિજિટલ નોટિસ બોર્ડ",
-              style: TextStyle(
+              "ડિજિટલ નોટિસ બોર્ડ".tr,
+              style: const TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 18,
                 color: Color(0xFF0F172A),
               ),
             ),
             Text(
-              "સોસાયટી પરિપત્ર અને સભાઓની જાહેરાત",
-              style: TextStyle(
+              "સોસાયટી પરિપત્ર અને સભાઓની જાહેરાત".tr,
+              style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF64748B),
@@ -284,6 +286,12 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
             ),
           ],
         ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Center(child: LanguageSwitchButton()),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -292,8 +300,8 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
           children: [
             // Target Audience (All vs Specific Wing)
             if (_availableBlocks.isNotEmpty) ...[
-              const Text(
-                "લક્ષ્ય પરિસર / વિંગ (Target Audience):",
+              Text(
+                "લક્ષ્ય પરિસર / વિંગ (Target Audience):".tr,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
@@ -311,7 +319,7 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
                         size: 15,
                         color: _targetBlock == 'ALL' ? Colors.white : const Color(0xFFEA580C),
                       ),
-                      label: const Text('સમગ્ર પરિસર (All)'),
+                      label: Text('સમગ્ર પરિસર (All)'.tr),
                       selected: _targetBlock == 'ALL',
                       selectedColor: const Color(0xFFEA580C),
                       labelStyle: TextStyle(
@@ -355,8 +363,8 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
             ],
 
             // Category Chips
-            const Text(
-              "નોટિસ પ્રકાર / કેટેગરી:",
+            Text(
+              "નોટિસ પ્રકાર / કેટેગરી:".tr,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
@@ -401,8 +409,8 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
                     padding: const EdgeInsets.only(right: 8),
                     child: ActionChip(
                       avatar: const Icon(Icons.add_circle_outline_rounded, size: 16, color: Color(0xFFEA580C)),
-                      label: const Text(
-                        '+ નવી કેટેગરી',
+                      label: Text(
+                        '+ નવી કેટેગરી'.tr,
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 12,
@@ -440,8 +448,8 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
                   TextField(
                     controller: _titleC,
                     decoration: InputDecoration(
-                      labelText: "નોટિસનું શીર્ષક (Title) *",
-                      hintText: "દા.ત. સોસાયટી સામાન્ય વાર્ષિક સભા",
+                      labelText: "નોટિસનું શીર્ષક (Title) *".tr,
+                      hintText: "દા.ત. સોસાયટી સામાન્ય વાર્ષિક સભા".tr,
                       prefixIcon: const Icon(Icons.article_rounded, size: 20, color: Color(0xFFEA580C)),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                     ),
@@ -452,8 +460,8 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
                     controller: _bodyC,
                     maxLines: 5,
                     decoration: InputDecoration(
-                      labelText: "નોટિસની સંપૂર્ણ વિગતો (Notice Content) *",
-                      hintText: "તારીખ, સમય, એજન્ડા અથવા નિયમો લખો...",
+                      labelText: "નોટિસની સંપૂર્ણ વિગતો (Notice Content) *".tr,
+                      hintText: "તારીખ, સમય, એજન્ડા અથવા નિયમો લખો...".tr,
                       alignLabelWithHint: true,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                     ),
@@ -476,12 +484,12 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
                 children: [
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text(
-                      "તાત્કાલિક / અર્જન્ટ નોટિસ (Urgent)",
+                    title: Text(
+                      "તાત્કાલિક / અર્જન્ટ નોટિસ (Urgent)".tr,
                       style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                     ),
-                    subtitle: const Text(
-                      "લાલ રંગના એલર્ટ બેજ સાથે હાઇલાઇટ થશે",
+                    subtitle: Text(
+                      "લાલ રંગના એલર્ટ બેજ સાથે હાઇલાઇટ થશે".tr,
                       style: TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                     value: _isUrgent,
@@ -491,12 +499,12 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
                   const Divider(height: 1),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text(
-                      "ટોચ પર પિન કરો (Pin to Top)",
+                    title: Text(
+                      "ટોચ પર પિન કરો (Pin to Top)".tr,
                       style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                     ),
-                    subtitle: const Text(
-                      "નોટિસ બોર્ડમાં સૌથી ઉપર દેખાશે",
+                    subtitle: Text(
+                      "નોટિસ બોર્ડમાં સૌથી ઉપર દેખાશે".tr,
                       style: TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                     value: _isPinned,
@@ -506,12 +514,12 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
                   const Divider(height: 1),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text(
-                      "તમામને તુરંત પુશ નોટિફિકેશન મોકલો",
+                    title: Text(
+                      "તમામને તુરંત પુશ નોટિફિકેશન મોકલો".tr,
                       style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                     ),
-                    subtitle: const Text(
-                      "નોટિસ પબ્લિશ થતા જ બધા સભ્યોના ફોનમાં એલર્ટ વાગશે",
+                    subtitle: Text(
+                      "નોટિસ પબ્લિશ થતા જ બધા સભ્યોના ફોનમાં એલર્ટ વાગશે".tr,
                       style: TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                     value: _sendPushAlert,
@@ -524,8 +532,8 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
             const SizedBox(height: 20),
 
             // Live Notice Board Preview
-            const Text(
-              "નોટિસ બોર્ડ પ્રિવ્યુ:",
+            Text(
+              "નોટિસ બોર્ડ પ્રિવ્યુ:".tr,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
@@ -563,7 +571,7 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          _isUrgent ? "🔴 અર્જન્ટ નોટિસ" : "📢 $_selectedCategory",
+                          _isUrgent ? "🔴 અર્જન્ટ નોટિસ".tr : "📢 $_selectedCategory",
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
@@ -579,8 +587,8 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
                             color: Colors.amber.shade50,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text(
-                            "📌 પિન કરેલ",
+                          child: Text(
+                            "📌 પિન કરેલ".tr,
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
@@ -590,15 +598,15 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
                         ),
                       ],
                       const Spacer(),
-                      const Text(
-                        "આજે",
+                      Text(
+                        "આજે".tr,
                         style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    _titleC.text.isEmpty ? "નોટિસનું શીર્ષક" : _titleC.text,
+                    _titleC.text.isEmpty ? "નોટિસનું શીર્ષક".tr : _titleC.text,
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
@@ -607,7 +615,7 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    _bodyC.text.isEmpty ? "અહીં નોટિસની વિગતો દેખાશે..." : _bodyC.text,
+                    _bodyC.text.isEmpty ? "અહીં નોટિસની વિગતો દેખાશે...".tr : _bodyC.text,
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.grey.shade700,
@@ -636,13 +644,13 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
                         height: 24,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                       )
-                    : const Row(
+                    : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.publish_rounded, size: 20),
                           SizedBox(width: 8),
                           Text(
-                            "નોટિસ પબ્લિશ કરો",
+                            "નોટિસ પબ્લિશ કરો".tr,
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                           ),
                         ],

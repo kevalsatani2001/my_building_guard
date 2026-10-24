@@ -18,12 +18,12 @@ class AdminMemberSignatureSheetScreen extends StatefulWidget {
 
 class _AdminMemberSignatureSheetScreenState
     extends State<AdminMemberSignatureSheetScreen> {
-  final _purposeCtrl = TextEditingController(text: 'સામાન્ય સભા ઠરાવ મંજૂરી');
+  final _purposeCtrl = TextEditingController(text: 'સામાન્ય સભા ઠરાવ મંજૂરી'.tr);
   final _resolutionCtrl = TextEditingController(
-      text: 'ઠરાવ નં. ${DateFormat('yyyy/MM').format(DateTime.now())}/૦૧');
+      text: 'ઠરાવ નં. ${DateFormat('yyyy/MM').format(DateTime.now())}/૦૧'.tr);
   final _declarationCtrl = TextEditingController(
     text:
-        'આથી અમે નીચે સહી કરનાર સોસાયટીના તમામ સભ્યો ઉપરોક્ત વિષય/ઠરાવ સાથે સંપૂર્ણ સંમત છીએ અને અમારી સ્વેચ્છાએ નીચે સહી કરીએ છીએ.',
+        'આથી અમે નીચે સહી કરનાર સોસાયટીના તમામ સભ્યો ઉપરોક્ત વિષય/ઠરાવ સાથે સંપૂર્ણ સંમત છીએ અને અમારી સ્વેચ્છાએ નીચે સહી કરીએ છીએ.'.tr,
   );
 
   DateTime _selectedDate = DateTime.now();
@@ -41,51 +41,51 @@ class _AdminMemberSignatureSheetScreenState
   final List<({String icon, String title, String declaration})> _presets = [
     (
       icon: '🛗',
-      title: 'લિફ્ટ મોડર્નાઇઝેશન / રીપેરીંગ મંજૂરી',
+      title: 'લિફ્ટ મોડર્નાઇઝેશન / રીપેરીંગ મંજૂરી'.tr,
       declaration:
-          'આથી સોસાયટીની લિફ્ટ રીપેરીંગ/AMC રીન્યુઅલ અને મોડર્નાઇઝેશનના ખર્ચ બાબતે અમે તમામ સભ્યો સર્વાનુમતે સંમતિ આપીએ છીએ.',
+          'આથી સોસાયટીની લિફ્ટ રીપેરીંગ/AMC રીન્યુઅલ અને મોડર્નાઇઝેશનના ખર્ચ બાબતે અમે તમામ સભ્યો સર્વાનુમતે સંમતિ આપીએ છીએ.'.tr,
     ),
     (
       icon: '📋',
-      title: 'સામાન્ય સભા (AGM) ઠરાવ મંજૂરી',
+      title: 'સામાન્ય સભા (AGM) ઠરાવ મંજૂરી'.tr,
       declaration:
-          'આથી સોસાયટીની સામાન્ય વાર્ષિક સભામાં પસાર કરાયેલ ઉપરોક્ત ઠરાવને અમે તમામ સભ્યો બહાલી આપીએ છીએ.',
+          'આથી સોસાયટીની સામાન્ય વાર્ષિક સભામાં પસાર કરાયેલ ઉપરોક્ત ઠરાવને અમે તમામ સભ્યો બહાલી આપીએ છીએ.'.tr,
     ),
     (
       icon: '📹',
-      title: 'સીસીટીવી કેમેરા ઇન્સ્ટોલેશન સંમતિ',
+      title: 'સીસીટીવી કેમેરા ઇન્સ્ટોલેશન સંમતિ'.tr,
       declaration:
-          'આથી સોસાયટી પરિસરની સુરક્ષા માટે નવા સીસીટીવી કેમેરા સિસ્ટમ ઇન્સ્ટોલ કરવા બાબતે અમે સભ્યો સંમતિ આપીએ છીએ.',
+          'આથી સોસાયટી પરિસરની સુરક્ષા માટે નવા સીસીટીવી કેમેરા સિસ્ટમ ઇન્સ્ટોલ કરવા બાબતે અમે સભ્યો સંમતિ આપીએ છીએ.'.tr,
     ),
     (
       icon: '🏢',
-      title: 'સોસાયટી રિડેવલપમેન્ટ સંમતિ પત્રક',
+      title: 'સોસાયટી રિડેવલપમેન્ટ સંમતિ પત્રક'.tr,
       declaration:
-          'આથી સોસાયટીના રિડેવલપમેન્ટ પ્રક્રિયા અને કમિટી દ્વારા આગળની કાર્યવાહી હાથ ધરવા બાબતે અમે સભ્યો સંમતિ આપીએ છીએ.',
+          'આથી સોસાયટીના રિડેવલપમેન્ટ પ્રક્રિયા અને કમિટી દ્વારા આગળની કાર્યવાહી હાથ ધરવા બાબતે અમે સભ્યો સંમતિ આપીએ છીએ.'.tr,
     ),
     (
       icon: '🎨',
-      title: 'સોસાયટી કલરકામ & વોટરપ્રૂફિંગ મંજૂરી',
+      title: 'સોસાયટી કલરકામ & વોટરપ્રૂફિંગ મંજૂરી'.tr,
       declaration:
-          'આથી સોસાયટીની બિલ્ડિંગના બાહ્ય કલરકામ અને ટેરેસ વોટરપ્રૂફિંગ કાર્ય હાથ ધરવા માટે અમે સભ્યો સંમતિ આપીએ છીએ.',
+          'આથી સોસાયટીની બિલ્ડિંગના બાહ્ય કલરકામ અને ટેરેસ વોટરપ્રૂફિંગ કાર્ય હાથ ધરવા માટે અમે સભ્યો સંમતિ આપીએ છીએ.'.tr,
     ),
     (
       icon: '☀️',
-      title: 'સોલાર રૂફટોપ પેનલ પ્લાન્ટ ઇન્સ્ટોલેશન',
+      title: 'સોલાર રૂફટોપ પેનલ પ્લાન્ટ ઇન્સ્ટોલેશન'.tr,
       declaration:
-          'આથી કોમન લાઈટિંગ અને લિફ્ટ માટે સોલાર રૂફટોપ સિસ્ટમ બેસાડવા તથા સબસિડી પ્રક્રિયા માટે અમે સભ્યો સંમતિ આપીએ છીએ.',
+          'આથી કોમન લાઈટિંગ અને લિફ્ટ માટે સોલાર રૂફટોપ સિસ્ટમ બેસાડવા તથા સબસિડી પ્રક્રિયા માટે અમે સભ્યો સંમતિ આપીએ છીએ.'.tr,
     ),
     (
       icon: '👮',
-      title: 'સિક્યોરિટી & નવા ગેટ પાસ નિયમો સંમતિ',
+      title: 'સિક્યોરિટી & નવા ગેટ પાસ નિયમો સંમતિ'.tr,
       declaration:
-          'આથી સોસાયટીમાં મુલાકાતીઓ (વિઝિટર્સ) અને વાહનો માટેના નવા સુરક્ષા નિયમોનું પાલન કરવા બાબતે અમે સભ્યો સંમતિ આપીએ છીએ.',
+          'આથી સોસાયટીમાં મુલાકાતીઓ (વિઝિટર્સ) અને વાહનો માટેના નવા સુરક્ષા નિયમોનું પાલન કરવા બાબતે અમે સભ્યો સંમતિ આપીએ છીએ.'.tr,
     ),
     (
       icon: '💰',
-      title: 'વિશેષ મેન્ટેનન્સ / ફાળો મંજૂરી પત્રક',
+      title: 'વિશેષ મેન્ટેનન્સ / ફાળો મંજૂરી પત્રક'.tr,
       declaration:
-          'આથી ઉપરોક્ત કામગીરી પેટે નક્કી કરેલ વિશેષ ફાળો નિયત સમયમાં જમા કરાવવા બાબતે અમે સભ્યો સંમતિ આપીએ છીએ.',
+          'આથી ઉપરોક્ત કામગીરી પેટે નક્કી કરેલ વિશેષ ફાળો નિયત સમયમાં જમા કરાવવા બાબતે અમે સભ્યો સંમતિ આપીએ છીએ.'.tr,
     ),
   ];
 
@@ -235,7 +235,7 @@ class _AdminMemberSignatureSheetScreenState
             srNo: sr++,
             wingOrBlock: b.isNotEmpty ? b : '-',
             unitNumber: uNum.isNotEmpty ? uNum : '-',
-            memberName: '— (ખાલી એકમ) —',
+            memberName: '— (ખાલી એકમ) —'.tr,
             phone: '—',
             unitType: u['unitType'] ?? 'flat',
             isOccupied: false,
@@ -266,8 +266,8 @@ class _AdminMemberSignatureSheetScreenState
     final records = _buildRecordList();
     if (records.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("પસંદ કરેલ વિંગમાં કોઈ સભ્યો કે ફ્લેટ્સ મળ્યા નથી!"),
+        SnackBar(
+          content: Text("પસંદ કરેલ વિંગમાં કોઈ સભ્યો કે ફ્લેટ્સ મળ્યા નથી!".tr),
           backgroundColor: Colors.orange,
         ),
       );
@@ -348,25 +348,25 @@ class _AdminMemberSignatureSheetScreenState
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: PremiumAppBar(
-        title: "સભ્ય સહી પત્રક જનરેટર",
-        subtitle: "વિષય & સહી કોલમ સાથે વિંગ-વાઇઝ PDF એક્સપોર્ટ",
+        title: "સભ્ય સહી પત્રક જનરેટર".tr,
+        subtitle: "વિષય & સહી કોલમ સાથે વિંગ-વાઇઝ PDF એક્સપોર્ટ".tr,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Color(0xFF1E3A8A)),
-            tooltip: "રીફ્રેશ ડેટા",
+            tooltip: "રીફ્રેશ ડેટા".tr,
             onPressed: _fetchSocietyStructureAndMembers,
           ),
           const SizedBox(width: 4),
         ],
       ),
       body: _isLoadingData
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   CircularProgressIndicator(color: Color(0xFF1E3A8A)),
                   SizedBox(height: 14),
-                  Text("સોસાયટી સભ્યો અને ફ્લેટ્સ લોડ થઈ રહ્યા છે..."),
+                  Text("સોસાયટી સભ્યો અને ફ્લેટ્સ લોડ થઈ રહ્યા છે...".tr),
                 ],
               ),
             )
@@ -417,8 +417,8 @@ class _AdminMemberSignatureSheetScreenState
                                 ),
                               ),
                               const SizedBox(height: 2),
-                              const Text(
-                                "સત્તાવાર સભ્ય સહી & સંમતિ રજીસ્ટર (Official Member Signature Register)",
+                              Text(
+                                "સત્તાવાર સભ્ય સહી & સંમતિ રજીસ્ટર (Official Member Signature Register)".tr,
                                 style: TextStyle(color: Colors.white70, fontSize: 11),
                               ),
                             ],
@@ -440,12 +440,12 @@ class _AdminMemberSignatureSheetScreenState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        Row(
                           children: [
                             Icon(Icons.edit_note_rounded, color: Color(0xFF1E3A8A), size: 20),
                             SizedBox(width: 8),
                             Text(
-                              "૧. સહી લેવાનું કારણ / ઠરાવ વિષય (Purpose)",
+                              "૧. સહી લેવાનું કારણ / ઠરાવ વિષય (Purpose)".tr,
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 14,
@@ -458,8 +458,8 @@ class _AdminMemberSignatureSheetScreenState
                         TextField(
                           controller: _purposeCtrl,
                           decoration: InputDecoration(
-                            labelText: "વિષય / હેતુનું નામ *",
-                            hintText: "દા.ત. લિફ્ટ રીપેરીંગ મંજૂરી / AGM ઠરાવ",
+                            labelText: "વિષય / હેતુનું નામ *".tr,
+                            hintText: "દા.ત. લિફ્ટ રીપેરીંગ મંજૂરી / AGM ઠરાવ".tr,
                             prefixIcon: const Icon(Icons.title_rounded, color: Color(0xFF1E3A8A), size: 20),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                             filled: true,
@@ -469,8 +469,8 @@ class _AdminMemberSignatureSheetScreenState
                         const SizedBox(height: 12),
 
                         // Suggestion Chips (ઝડપી પસંદગી)
-                        const Text(
-                          "વારંવાર વપરાતા સામાન્ય કારણો (વન-ટેપ સિલેક્ટ):",
+                        Text(
+                          "વારંવાર વપરાતા સામાન્ય કારણો (વન-ટેપ સિલેક્ટ):".tr,
                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
                         ),
                         const SizedBox(height: 8),
@@ -533,12 +533,12 @@ class _AdminMemberSignatureSheetScreenState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        Row(
                           children: [
                             Icon(Icons.tune_rounded, color: Color(0xFF1E3A8A), size: 20),
                             SizedBox(width: 8),
                             Text(
-                              "૨. પત્રક સેટિંગ્સ & વિંગ પસંદગી",
+                              "૨. પત્રક સેટિંગ્સ & વિંગ પસંદગી".tr,
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 14,
@@ -557,8 +557,8 @@ class _AdminMemberSignatureSheetScreenState
                               child: TextField(
                                 controller: _resolutionCtrl,
                                 decoration: InputDecoration(
-                                  labelText: "ઠરાવ / સંદર્ભ નં.",
-                                  hintText: "દા.ત. ૨૦૨૬/૦૧",
+                                  labelText: "ઠરાવ / સંદર્ભ નં.".tr,
+                                  hintText: "દા.ત. ૨૦૨૬/૦૧".tr,
                                   prefixIcon: const Icon(Icons.tag_rounded, size: 20),
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                   filled: true,
@@ -608,8 +608,8 @@ class _AdminMemberSignatureSheetScreenState
                         const SizedBox(height: 14),
 
                         // Wing Selector
-                        const Text(
-                          "વિંગ / બ્લોક પસંદ કરો:",
+                        Text(
+                          "વિંગ / બ્લોક પસંદ કરો:".tr,
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
                         ),
                         const SizedBox(height: 8),
@@ -621,7 +621,7 @@ class _AdminMemberSignatureSheetScreenState
                             return ChoiceChip(
                               label: Text(
                                 w == 'ALL'
-                                    ? 'તમામ એકમો (All)'
+                                    ? 'તમામ એકમો (All)'.tr
                                     : SocietyService.instance.formatBlockDisplayName(w),
                                 style: TextStyle(
                                   fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
@@ -642,8 +642,8 @@ class _AdminMemberSignatureSheetScreenState
                           controller: _declarationCtrl,
                           maxLines: 2,
                           decoration: InputDecoration(
-                            labelText: "જાહેરનામું / સંમતિ નોંધ (Declaration Text)",
-                            hintText: "સહી પત્રક ઉપર છપાતી સંમતિની શરતો...",
+                            labelText: "જાહેરનામું / સંમતિ નોંધ (Declaration Text)".tr,
+                            hintText: "સહી પત્રક ઉપર છપાતી સંમતિની શરતો...".tr,
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                             filled: true,
                             fillColor: const Color(0xFFF8FAFC),
@@ -655,8 +655,8 @@ class _AdminMemberSignatureSheetScreenState
                         SwitchListTile.adaptive(
                           dense: true,
                           contentPadding: EdgeInsets.zero,
-                          title: const Text("ખાલી એકમો (Unoccupied) પણ દર્શાવો", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                          subtitle: const Text("તમામ ફ્લેટ ક્રમબદ્ધ રહે તે માટે ખાલી એકમો સહિત", style: TextStyle(fontSize: 11)),
+                          title: Text("ખાલી એકમો (Unoccupied) પણ દર્શાવો".tr, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          subtitle: Text("તમામ ફ્લેટ ક્રમબદ્ધ રહે તે માટે ખાલી એકમો સહિત".tr, style: TextStyle(fontSize: 11)),
                           value: _includeUnoccupied,
                           activeTrackColor: const Color(0xFF1E3A8A),
                           onChanged: (v) => setState(() => _includeUnoccupied = v),
@@ -664,8 +664,8 @@ class _AdminMemberSignatureSheetScreenState
                         SwitchListTile.adaptive(
                           dense: true,
                           contentPadding: EdgeInsets.zero,
-                          title: const Text("સંમતિ / મંતવ્ય બોક્સ કોલમ સમાવો", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                          subtitle: const Text("સભ્ય સહી સાથે [✓] સંમત માર્કિંગ કરી શકે", style: TextStyle(fontSize: 11)),
+                          title: Text("સંમતિ / મંતવ્ય બોક્સ કોલમ સમાવો".tr, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          subtitle: Text("સભ્ય સહી સાથે [✓] સંમત માર્કિંગ કરી શકે".tr, style: TextStyle(fontSize: 11)),
                           value: _includeRemarks,
                           activeTrackColor: const Color(0xFF1E3A8A),
                           onChanged: (v) => setState(() => _includeRemarks = v),
@@ -673,8 +673,8 @@ class _AdminMemberSignatureSheetScreenState
                         SwitchListTile.adaptive(
                           dense: true,
                           contentPadding: EdgeInsets.zero,
-                          title: const Text("મોબાઈલ નંબર કોલમ સમાવો", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                          subtitle: const Text("સભ્યના વેરિફિકેશન માટે ફોન નંબર", style: TextStyle(fontSize: 11)),
+                          title: Text("મોબાઈલ નંબર કોલમ સમાવો".tr, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          subtitle: Text("સભ્યના વેરિફિકેશન માટે ફોન નંબર".tr, style: TextStyle(fontSize: 11)),
                           value: _includeContact,
                           activeTrackColor: const Color(0xFF1E3A8A),
                           onChanged: (v) => setState(() => _includeContact = v),
@@ -700,13 +700,13 @@ class _AdminMemberSignatureSheetScreenState
                             const Icon(Icons.people_alt_rounded, color: Color(0xFF1D4ED8), size: 20),
                             const SizedBox(width: 8),
                             Text(
-                              "કુલ સમાવિષ્ટ સભ્યો/યુનિટ્સ: ${records.length}",
+                              "કુલ સમાવિષ્ટ સભ્યો/યુનિટ્સ: ${records.length}".tr,
                               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF1E40AF)),
                             ),
                           ],
                         ),
                         Text(
-                          _selectedWing == 'ALL' ? 'બધી વિંગ્સ' : 'વિંગ: $_selectedWing',
+                          _selectedWing == 'ALL' ? 'બધી વિંગ્સ'.tr : 'વિંગ: $_selectedWing'.tr,
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF2563EB)),
                         ),
                       ],
@@ -721,8 +721,8 @@ class _AdminMemberSignatureSheetScreenState
                     child: ElevatedButton.icon(
                       onPressed: _openPdfPreview,
                       icon: const Icon(Icons.visibility_rounded, color: Colors.white, size: 20),
-                      label: const Text(
-                        "📄 પીડીએફ પ્રિવ્યૂ & એક્સપોર્ટ (Preview PDF)",
+                      label: Text(
+                        "📄 પીડીએફ પ્રિવ્યૂ & એક્સપોર્ટ (Preview PDF)".tr,
                         style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Colors.white),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -742,8 +742,8 @@ class _AdminMemberSignatureSheetScreenState
                           child: OutlinedButton.icon(
                             onPressed: _directPrint,
                             icon: const Icon(Icons.print_rounded, color: Color(0xFF1E3A8A), size: 18),
-                            label: const Text(
-                              "પ્રિન્ટ (Print)",
+                            label: Text(
+                              "પ્રિન્ટ (Print)".tr,
                               style: TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.w700),
                             ),
                             style: OutlinedButton.styleFrom(
@@ -760,8 +760,8 @@ class _AdminMemberSignatureSheetScreenState
                           child: OutlinedButton.icon(
                             onPressed: _directShare,
                             icon: const Icon(Icons.share_rounded, color: Color(0xFF059669), size: 18),
-                            label: const Text(
-                              "શેર (WhatsApp)",
+                            label: Text(
+                              "શેર (WhatsApp)".tr,
                               style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.w700),
                             ),
                             style: OutlinedButton.styleFrom(
@@ -817,12 +817,12 @@ class MemberSignaturePdfPreviewScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: PremiumAppBar(
-        title: "સભ્ય સહી પત્રક પ્રિવ્યૂ",
+        title: "સભ્ય સહી પત્રક પ્રિવ્યૂ".tr,
         subtitle: "$societyName ($selectedWing)",
         actions: [
           IconButton(
             icon: const Icon(Icons.print_rounded, color: Color(0xFF1E3A8A)),
-            tooltip: "પ્રિન્ટ કરો",
+            tooltip: "પ્રિન્ટ કરો".tr,
             onPressed: () async {
               final pdfBytes = await MemberSignatureSheetPdfService.generateSignatureSheetPdf(
                 societyName: societyName,
@@ -859,14 +859,14 @@ class MemberSignaturePdfPreviewScreen extends StatelessWidget {
         canChangePageFormat: false,
         canDebug: false,
         pdfFileName: filename,
-        loadingWidget: const Center(
+        loadingWidget: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               CircularProgressIndicator(color: Color(0xFF1E3A8A)),
               SizedBox(height: 12),
               Text(
-                "સહી પત્રક PDF જનરેટ થઈ રહ્યું છે...",
+                "સહી પત્રક PDF જનરેટ થઈ રહ્યું છે...".tr,
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ],

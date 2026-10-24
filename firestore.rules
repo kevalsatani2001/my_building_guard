@@ -224,16 +224,35 @@ service cloud.firestore {
     // ==========================================
     match /notifications/{notifId} {
       allow read: if isAuthenticated() && (
+        isSuperAdmin() ||
         isAdmin() ||
+        resource.data.targetUID == 'SUPER_ADMIN' ||
         resource.data.targetUID == request.auth.uid ||
         resource.data.targetUID == 'ALL' ||
         resource.data.targetUID == 'MEMBERS' ||
         docBelongsToCallerSociety(resource.data)
       );
       // Notifications are created by app triggers or Cloud Functions
-      allow create: if isAuthenticated() && docBelongsToCallerSociety(request.resource.data);
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin() || isSuperAdmin();
+      allow delete: if isAdmin() || isSuperAdmin();
+    }
+
+    // ==========================================
+    // 9.1 Society Appeals (Suspended Society Re-activation Appeals)
+    // ==========================================
+    match /society_appeals/{appealId} {
+      allow read: if isAuthenticated() && (
+        isSuperAdmin() ||
+        resource.data.adminUid == request.auth.uid ||
+        docBelongsToCallerSociety(resource.data)
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        isSuperAdmin() ||
+        resource.data.adminUid == request.auth.uid
+      );
+      allow delete: if isAuthenticated() && isSuperAdmin();
     }
 
     // ==========================================

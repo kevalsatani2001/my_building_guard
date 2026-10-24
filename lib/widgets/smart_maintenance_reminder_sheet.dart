@@ -8,6 +8,7 @@ import '../services/maintenance_reminder_service.dart';
 import '../services/maintenance_service.dart';
 import '../services/society_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:building_guard/l10n/app_strings.dart';
 
 class SmartMaintenanceReminderSheet {
   // =========================================================================
@@ -93,8 +94,8 @@ class SmartMaintenanceReminderSheet {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'સ્માર્ટ મેન્ટેનન્સ રીમાઇન્ડર',
+                            Text(
+                              'સ્માર્ટ મેન્ટેનન્સ રીમાઇન્ડર'.tr,
                               style: TextStyle(
                                 fontSize: 17,
                                 fontWeight: FontWeight.w900,
@@ -102,7 +103,7 @@ class SmartMaintenanceReminderSheet {
                               ),
                             ),
                             Text(
-                              'ફ્લેટ ${bill.cleanFlatDisplay} • ${bill.memberName.isNotEmpty ? bill.memberName : 'સભ્ય'}',
+                              'ફ્લેટ ${bill.cleanFlatDisplay} • ${bill.memberName.isNotEmpty ? bill.memberName : 'સભ્ય'.tr}',
                               style: const TextStyle(
                                 fontSize: 13,
                                 color: Color(0xFF64748B),
@@ -152,7 +153,7 @@ class SmartMaintenanceReminderSheet {
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
-                                    'છેલ્લી તારીખ: ${DateFormat('dd/MM/yyyy').format(bill.dueDate)}',
+                                    '${'છેલ્લી તારીખ:'.tr} ${DateFormat('dd/MM/yyyy').format(bill.dueDate)}',
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: Color(0xFF64748B),
@@ -172,8 +173,8 @@ class SmartMaintenanceReminderSheet {
                                       color: Color(0xFFB45309),
                                     ),
                                   ),
-                                  const Text(
-                                    'બાકી રકમ',
+                                  Text(
+                                    'બાકી રકમ'.tr,
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: Color(0xFFB45309),
@@ -192,8 +193,8 @@ class SmartMaintenanceReminderSheet {
                           controller: customNoteController,
                           onChanged: (_) => setSheetState(() {}),
                           decoration: InputDecoration(
-                            labelText: 'ખાસ નોંધ ઉમેરો (વૈકલ્પિક)',
-                            hintText: 'દા.ત. કૃપા કરીને સોસાયટી ઓફિસે મળવું...',
+                            labelText: 'ખાસ નોંધ ઉમેરો (વૈકલ્પિક)'.tr,
+                            hintText: 'દા.ત. કૃપા કરીને સોસાયટી ઓફિસે મળવું...'.tr,
                             labelStyle: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                             filled: true,
                             fillColor: const Color(0xFFF8FAFC),
@@ -211,12 +212,12 @@ class SmartMaintenanceReminderSheet {
                         const SizedBox(height: 16),
 
                         // Message Preview Title
-                        const Row(
+                        Row(
                           children: [
                             Icon(Icons.visibility_outlined, size: 16, color: Color(0xFF0F766E)),
                             SizedBox(width: 6),
                             Text(
-                              'WhatsApp મેસેજ પ્રિવ્યુ (Message Preview):',
+                              'WhatsApp મેસેજ પ્રિવ્યુ (Message Preview):'.tr,
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
@@ -273,8 +274,8 @@ class SmartMaintenanceReminderSheet {
                                 SnackBar(
                                   content: Text(
                                     sent
-                                        ? '✅ સભ્યને એપ પુશ નોટિફિકેશન સફળતાપૂર્વક મોકલાઈ ગયું.'
-                                        : 'નોટિફિકેશન સેવ થયું (FCM ટોકન ઉપલબ્ધ નહોતું).',
+                                        ? '✅ સભ્યને એપ પુશ નોટિફિકેશન સફળતાપૂર્વક મોકલાઈ ગયું.'.tr
+                                        : 'નોટિફિકેશન સેવ થયું (FCM ટોકન ઉપલબ્ધ નહોતું).'.tr,
                                   ),
                                   backgroundColor: sent ? const Color(0xFF059669) : Colors.orange,
                                   behavior: SnackBarBehavior.floating,
@@ -283,7 +284,7 @@ class SmartMaintenanceReminderSheet {
                             }
                           },
                           icon: const Icon(Icons.notifications_active_rounded, size: 16),
-                          label: const Text('એપ પુશ'),
+                          label: Text('એપ પુશ'.tr),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             foregroundColor: const Color(0xFF0F766E),
@@ -310,8 +311,8 @@ class SmartMaintenanceReminderSheet {
                             );
                           },
                           icon: const Icon(Icons.send_rounded, size: 17, color: Colors.white),
-                          label: const Text(
-                            'WhatsApp પર મોકલો',
+                          label: Text(
+                            'WhatsApp પર મોકલો'.tr,
                             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
                           ),
                           style: ElevatedButton.styleFrom(
@@ -350,8 +351,8 @@ class SmartMaintenanceReminderSheet {
 
     if (pendingBills.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('આ મહિના માટે કોઈ બાકી મેન્ટેનન્સ બિલ નથી.'),
+        SnackBar(
+          content: Text('આ મહિના માટે કોઈ બાકી મેન્ટેનન્સ બિલ નથી.'.tr),
           backgroundColor: Color(0xFF0F766E),
           behavior: SnackBarBehavior.floating,
         ),
@@ -526,8 +527,8 @@ class _BatchQueueSheetWidgetState extends State<_BatchQueueSheetWidget> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'સ્માર્ટ રીમાઇન્ડર કતાર (Queue)',
+                      Text(
+                        'સ્માર્ટ રીમાઇન્ડર કતાર (Queue)'.tr,
                         style: TextStyle(
                           fontSize: 16.5,
                           fontWeight: FontWeight.w900,
@@ -550,7 +551,7 @@ class _BatchQueueSheetWidgetState extends State<_BatchQueueSheetWidget> {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              '${filtered.length} બાકી',
+                              '${filtered.length} બાકી'.tr,
                               style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFFB45309)),
                             ),
                           ),
@@ -617,7 +618,7 @@ class _BatchQueueSheetWidgetState extends State<_BatchQueueSheetWidget> {
                                     const SizedBox(width: 4),
                                   ],
                                   Text(
-                                    blk == 'all' ? 'બધા બ્લોક્સ (${widget.pendingBills.length})' : 'વિંગ $blk',
+                                    blk == 'all' ? 'બધા બ્લોક્સ (${widget.pendingBills.length})'.tr : 'વિંગ $blk'.tr,
                                     style: TextStyle(
                                       color: isSel ? Colors.white : const Color(0xFF334155),
                                       fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
@@ -647,7 +648,7 @@ class _BatchQueueSheetWidgetState extends State<_BatchQueueSheetWidget> {
                     onChanged: (v) => setState(() => _searchQuery = v.trim()),
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                     decoration: InputDecoration(
-                      hintText: 'ફ્લેટ, નામ કે મોબાઈલ નંબર શોધો...',
+                      hintText: 'ફ્લેટ, નામ કે મોબાઈલ નંબર શોધો...'.tr,
                       hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12.5),
                       prefixIcon: const Icon(Icons.search_rounded, size: 19, color: Color(0xFF0F766E)),
                       suffixIcon: _searchQuery.isNotEmpty
@@ -705,12 +706,12 @@ class _BatchQueueSheetWidgetState extends State<_BatchQueueSheetWidget> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'બાકી સભ્યો',
+                        Text(
+                          'બાકી સભ્યો'.tr,
                           style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Color(0xFF92400E)),
                         ),
                         Text(
-                          '${filtered.length} સભ્યો',
+                          '${filtered.length} સભ્યો'.tr,
                           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF78350F)),
                         ),
                       ],
@@ -736,8 +737,8 @@ class _BatchQueueSheetWidgetState extends State<_BatchQueueSheetWidget> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'કુલ બાકી રકમ',
+                        Text(
+                          'કુલ બાકી રકમ'.tr,
                           style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Color(0xFF92400E)),
                         ),
                         Text(
@@ -755,11 +756,11 @@ class _BatchQueueSheetWidgetState extends State<_BatchQueueSheetWidget> {
           // List of Pending Bills
           Expanded(
             child: filtered.isEmpty
-                ? const Center(
+                ? Center(
                     child: Padding(
                       padding: EdgeInsets.all(24),
                       child: Text(
-                        'પસંદ કરેલા ફિલ્ટર મુજબ કોઈ બાકી સભ્ય નથી.',
+                        'પસંદ કરેલા ફિલ્ટર મુજબ કોઈ બાકી સભ્ય નથી.'.tr,
                         style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
                       ),
                     ),
@@ -834,7 +835,7 @@ class _BatchQueueSheetWidgetState extends State<_BatchQueueSheetWidget> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    b.memberName.isNotEmpty ? b.memberName : 'સભ્ય',
+                                    b.memberName.isNotEmpty ? b.memberName : 'સભ્ય'.tr,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
@@ -864,8 +865,8 @@ class _BatchQueueSheetWidgetState extends State<_BatchQueueSheetWidget> {
                                             color: const Color(0xFFFEF2F2),
                                             borderRadius: BorderRadius.circular(4),
                                           ),
-                                          child: const Text(
-                                            'નંબર નથી',
+                                          child: Text(
+                                            'નંબર નથી'.tr,
                                             style: TextStyle(
                                               fontSize: 10,
                                               fontWeight: FontWeight.w700,
@@ -898,13 +899,13 @@ class _BatchQueueSheetWidgetState extends State<_BatchQueueSheetWidget> {
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(color: const Color(0xFF86EFAC)),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF16A34A)),
                                     SizedBox(width: 4),
                                     Text(
-                                      'મોકલાઈ ગયું',
+                                      'મોકલાઈ ગયું'.tr,
                                       style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF16A34A)),
                                     ),
                                   ],
@@ -1010,7 +1011,7 @@ class _BatchQueueSheetWidgetState extends State<_BatchQueueSheetWidget> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  '✅ $notifCount સભ્યોને એપ નોટિફિકેશન મોકલાઈ! ($pushCount ને પુશ મળ્યો)',
+                                  '✅ $notifCount સભ્યોને એપ નોટિફિકેશન મોકલાઈ! ($pushCount ને પુશ મળ્યો)'.tr,
                                 ),
                                 backgroundColor: const Color(0xFF059669),
                                 behavior: SnackBarBehavior.floating,
@@ -1020,7 +1021,7 @@ class _BatchQueueSheetWidgetState extends State<_BatchQueueSheetWidget> {
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('ભૂલ: $e'), backgroundColor: Colors.red),
+                              SnackBar(content: Text('ભૂલ: $e'.tr), backgroundColor: Colors.red),
                             );
                           }
                         } finally {
@@ -1036,8 +1037,8 @@ class _BatchQueueSheetWidgetState extends State<_BatchQueueSheetWidget> {
                     : const Icon(Icons.notifications_active_rounded, size: 20),
                 label: Text(
                   _isSendingBulkPush
-                      ? 'પુશ નોટિફિકેશન મોકલાઈ રહ્યું છે...'
-                      : 'તમામ બાકી સભ્યોને એપ પુશ મોકલો (${filtered.length})',
+                      ? 'પુશ નોટિફિકેશન મોકલાઈ રહ્યું છે...'.tr
+                      : 'તમામ બાકી સભ્યોને એપ પુશ મોકલો (${filtered.length})'.tr,
                   style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
                 ),
                 style: ElevatedButton.styleFrom(

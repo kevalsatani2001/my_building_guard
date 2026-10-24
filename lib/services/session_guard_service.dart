@@ -7,6 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/app_firestore.dart';
 import '../screens/login_screen.dart';
 import 'society_service.dart';
+import 'package:building_guard/l10n/app_strings.dart';
+
+import '../screens/admin_suspended_screen.dart';
+import '../screens/society_suspended_notice_screen.dart';
 
 /// Global navigator key allowing the SessionGuardService to present
 /// non-dismissible kick-out dialogs regardless of current route or open modal.
@@ -21,8 +25,35 @@ class SessionGuardService {
 
   static const String _kSessionKey = 'active_session_id';
   StreamSubscription<DocumentSnapshot>? _subscription;
+  StreamSubscription<DocumentSnapshot>? _societySubscription;
   String? _listeningUid;
   bool _isEvicting = false;
+  bool _isSuspended = false;
+
+  /// Complete, unified app logout that cleans all state and immediately resets Navigator to LoginScreen
+  static Future<void> performAppLogout([BuildContext? context]) async {
+    try {
+      await SessionGuardService.instance.clearSession();
+      SessionGuardService.instance.stopListening();
+    } catch (_) {}
+    try {
+      await FirebaseAuth.instance.signOut();
+    } catch (_) {}
+    SocietyService.instance.clear();
+
+    final nav = rootNavigatorKey.currentState;
+    if (nav != null) {
+      nav.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    } else if (context != null && context.mounted) {
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    }
+  }
 
   /// Retrieves the locally stored session ID for this device
   Future<String?> getLocalSessionId() async {
@@ -55,14 +86,16 @@ class SessionGuardService {
   void stopListening() {
     _subscription?.cancel();
     _subscription = null;
+    _societySubscription?.cancel();
+    _societySubscription = null;
     _listeningUid = null;
+    _isSuspended = false;
   }
 
   /// Registers a new active session on this device upon successful login or registration
   Future<String> registerNewLoginSession(String uid) async {
     final randomSuffix = Random().nextInt(900000) + 100000;
     final sessionId = '${DateTime.now().millisecondsSinceEpoch}_$randomSuffix';
-
     await saveLocalSessionId(sessionId);
 
     try {
@@ -107,12 +140,13 @@ class SessionGuardService {
       }
     }
 
-    startListening(uid);
+    final sid = (userData?['societyId'] ?? '').toString();
+    startListening(uid, societyId: sid.isNotEmpty ? sid : null);
     return true;
   }
 
-  /// Actively monitors the Firestore user document for session invalidations
-  void startListening(String uid) {
+  /// Actively monitors the Firestore user document for session invalidations and block status
+  void startListening(String uid, {String? societyId}) {
     if (_listeningUid == uid && _subscription != null) return;
     stopListening();
     _listeningUid = uid;
@@ -132,10 +166,81 @@ class SessionGuardService {
           localSessionId != null &&
           remoteSessionId != localSessionId) {
         _triggerDeviceKickout();
+        return;
+      }
+
+      // Check if user account was blocked by Super Admin
+      final bool isUserActive = data['isActive'] != false;
+      if (!isUserActive) {
+        final rawRole = (data['role'] ?? '').toString().toLowerCase().trim();
+        final bool isAdmin = rawRole == 'admin' ||
+            rawRole == 'chairman' ||
+            rawRole == 'president' ||
+            data['isAdmin'] == true;
+        final sid = (data['societyId'] ?? societyId ?? SocietyService.kDefaultSocietyId).toString();
+        _triggerSuspensionKickout(isAdmin: isAdmin, societyId: sid, userData: data);
       }
     }, onError: (err) {
       debugPrint('SessionGuardService listener error: $err');
     });
+
+    // Also monitor society_settings for cascade admin block or society freeze
+    final effectiveSid = (societyId != null && societyId.trim().isNotEmpty)
+        ? societyId.trim()
+        : SocietyService.instance.societyId;
+    if (effectiveSid.isNotEmpty) {
+      _societySubscription = AppFirestore.instance
+          .collection('society_settings')
+          .doc(effectiveSid)
+          .snapshots()
+          .listen((socSnap) {
+        if (!socSnap.exists || socSnap.data() == null) return;
+        final socData = socSnap.data() as Map<String, dynamic>;
+        final bool isSocietyActive = socData['isActive'] != false;
+        final bool isAdminBlocked = socData['isAdminBlocked'] == true;
+        final bool isSuspendedBySuperAdmin = socData['isSuspendedBySuperAdmin'] == true;
+
+        if (!isSocietyActive || isAdminBlocked || isSuspendedBySuperAdmin) {
+          final bool isAdmin = SocietyService.instance.isAdmin;
+          _triggerSuspensionKickout(
+            isAdmin: isAdmin,
+            societyId: effectiveSid,
+            societyData: socData,
+          );
+        }
+      }, onError: (err) {
+        debugPrint('SessionGuardService society listener error: $err');
+      });
+    }
+  }
+
+  void _triggerSuspensionKickout({
+    required bool isAdmin,
+    required String societyId,
+    Map<String, dynamic>? societyData,
+    Map<String, dynamic>? userData,
+  }) {
+    if (_isSuspended) return;
+    _isSuspended = true;
+
+    final nav = rootNavigatorKey.currentState;
+    if (nav != null) {
+      nav.pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => isAdmin
+              ? AdminSuspendedScreen(
+                  societyId: societyId.isEmpty ? SocietyService.kDefaultSocietyId : societyId,
+                  userData: userData,
+                  societyData: societyData,
+                )
+              : SocietySuspendedNoticeScreen(
+                  societyData: societyData,
+                  societyName: societyData?['name'] ?? societyData?['societyName'] ?? userData?['societyName'],
+                ),
+        ),
+        (route) => false,
+      );
+    }
   }
 
   /// Evicts the current device with a luxury non-dismissible alert dialog
@@ -223,8 +328,8 @@ class SessionConflictDialog extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 18),
-              const Text(
-                "અન્ય ડિવાઇસમાં લૉગિન થયેલ છે",
+              Text(
+                "અન્ય ડિવાઇસમાં લૉગિન થયેલ છે".tr,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 17.5,
@@ -234,8 +339,8 @@ class SessionConflictDialog extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
-                "તમારું એકાઉન્ટ અન્ય ડિવાઇસ પર લૉગિન કરવામાં આવ્યું હોવાથી આ ડિવાઇસમાંથી સુરક્ષિત રીતે લૉગઆઉટ કરવામાં આવ્યું છે.\n\nસુરક્ષાના નિયમ મુજબ એક સમયે માત્ર ૧ જ ડિવાઇસમાં લૉગિન રહી શકાય છે.",
+              Text(
+                "તમારું એકાઉન્ટ અન્ય ડિવાઇસ પર લૉગિન કરવામાં આવ્યું હોવાથી આ ડિવાઇસમાંથી સુરક્ષિત રીતે લૉગઆઉટ કરવામાં આવ્યું છે.\n\nસુરક્ષાના નિયમ મુજબ એક સમયે માત્ર ૧ જ ડિવાઇસમાં લૉગિન રહી શકાય છે.".tr,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -267,9 +372,9 @@ class SessionConflictDialog extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Text(
-                        "સમજાઈ ગયું (લૉગિન કરો)",
+                        "સમજાઈ ગયું (લૉગિન કરો)".tr,
                         style: TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w800,

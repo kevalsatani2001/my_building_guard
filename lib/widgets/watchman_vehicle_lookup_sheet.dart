@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/society_service.dart';
+import 'package:building_guard/l10n/app_strings.dart';
 
 class WatchmanVehicleLookupSheet extends StatefulWidget {
   final Future<void> Function({
@@ -62,7 +63,7 @@ class _WatchmanVehicleLookupSheetState
   Future<void> _makePhoneCall(String phoneNumber) async {
     final clean = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
     if (clean.isEmpty) {
-      widget.onShowSnackBar('માન્ય ફોન નંબર મળ્યો નથી', Colors.orange);
+      widget.onShowSnackBar('માન્ય ફોન નંબર મળ્યો નથી'.tr, Colors.orange);
       return;
     }
     final launchUri = Uri(scheme: 'tel', path: clean);
@@ -71,12 +72,12 @@ class _WatchmanVehicleLookupSheetState
         await launchUrl(launchUri);
       } else {
         widget.onShowSnackBar(
-          'કૉલ શરૂ કરી શકાયો નહીં: $phoneNumber',
+          'કૉલ શરૂ કરી શકાયો નહીં: $phoneNumber'.tr,
           Colors.red,
         );
       }
     } catch (e) {
-      widget.onShowSnackBar('કૉલ ભૂલ: $e', Colors.red);
+      widget.onShowSnackBar('કૉલ ભૂલ: $e'.tr, Colors.red);
     }
   }
 
@@ -85,7 +86,7 @@ class _WatchmanVehicleLookupSheetState
     String ownerUid,
   ) async {
     final plate = v['number'] ?? '';
-    final name = v['ownerName'] ?? 'સભ્ય';
+    final name = v['ownerName'] ?? 'સભ્ય'.tr;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -110,8 +111,8 @@ class _WatchmanVehicleLookupSheetState
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
-                'ખોટું પાર્કિંગ એલર્ટ',
+              Text(
+                'ખોટું પાર્કિંગ એલર્ટ'.tr,
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -120,7 +121,7 @@ class _WatchmanVehicleLookupSheetState
               ),
               const SizedBox(height: 8),
               Text(
-                '$name ને તેમના વાહન ($plate) માટે તાત્કાલિક ગાડી હટાવવાનું પાર્કિંગ નોટિફિકેશન મોકલવું છે?',
+                '$name ને તેમના વાહન ($plate) માટે તાત્કાલિક ગાડી હટાવવાનું પાર્કિંગ નોટિફિકેશન મોકલવું છે?'.tr,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 13,
@@ -141,8 +142,8 @@ class _WatchmanVehicleLookupSheetState
                         ),
                       ),
                       onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text(
-                        'રદ કરો',
+                      child: Text(
+                        'રદ કરો'.tr,
                         style: TextStyle(
                           color: Color(0xFF64748B),
                           fontWeight: FontWeight.w700,
@@ -162,8 +163,8 @@ class _WatchmanVehicleLookupSheetState
                       ),
                       onPressed: () => Navigator.pop(ctx, true),
                       icon: const Icon(Icons.send_rounded, size: 16),
-                      label: const Text(
-                        'એલર્ટ મોકલો',
+                      label: Text(
+                        'એલર્ટ મોકલો'.tr,
                         style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
@@ -178,9 +179,9 @@ class _WatchmanVehicleLookupSheetState
 
     if (confirmed != true) return;
 
-    final title = '🚨 વાહન હટાવવાની વિનંતી';
+    final title = '🚨 વાહન હટાવવાની વિનંતી'.tr;
     final body =
-        'તમારું વાહન ($plate) સોસાયટીમાં ખોટી જગ્યાએ પાર્ક છે અથવા રસ્તો રોકે છે. કૃપા કરીને તેને તાત્કાલિક યોગ્ય જગ્યાએ હટાવો.';
+        'તમારું વાહન ($plate) સોસાયટીમાં ખોટી જગ્યાએ પાર્ક છે અથવા રસ્તો રોકે છે. કૃપા કરીને તેને તાત્કાલિક યોગ્ય જગ્યાએ હટાવો.'.tr;
 
     try {
       final sid = SocietyService.instance.societyId;
@@ -203,11 +204,11 @@ class _WatchmanVehicleLookupSheetState
       });
 
       widget.onShowSnackBar(
-        'પાર્કિંગ એલર્ટ સફળતાપૂર્વક મોકલાયું!',
+        'પાર્કિંગ એલર્ટ સફળતાપૂર્વક મોકલાયું!'.tr,
         Colors.green,
       );
     } catch (e) {
-      widget.onShowSnackBar('એલર્ટ મોકલવામાં ભૂલ: $e', Colors.red);
+      widget.onShowSnackBar('એલર્ટ મોકલવામાં ભૂલ: $e'.tr, Colors.red);
     }
   }
 
@@ -263,12 +264,12 @@ class _WatchmanVehicleLookupSheetState
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "વાહન નંબર સર્ચ (Vehicle Lookup)",
+                          "વાહન નંબર સર્ચ (Vehicle Lookup)".tr,
                           style: TextStyle(
                             fontSize: 15.5,
                             fontWeight: FontWeight.w800,
@@ -277,7 +278,7 @@ class _WatchmanVehicleLookupSheetState
                         ),
                         SizedBox(height: 1),
                         Text(
-                          "રહેવાસી વાહન વિગત અને પાર્કિંગ માહિતી",
+                          "રહેવાસી વાહન વિગત અને પાર્કિંગ માહિતી".tr,
                           style: TextStyle(
                             fontSize: 11.5,
                             color: Color(0xFF64748B),
@@ -310,7 +311,7 @@ class _WatchmanVehicleLookupSheetState
                   color: Color(0xFF0F172A),
                 ),
                 decoration: InputDecoration(
-                  hintText: "ગાડી નંબર (દા.ત. GJ-01), મોડેલ કે ફ્લેટ શોધો...",
+                  hintText: "ગાડી નંબર (દા.ત. GJ-01), મોડેલ કે ફ્લેટ શોધો...".tr,
                   hintStyle: const TextStyle(
                     fontSize: 12.5,
                     color: Color(0xFF94A3B8),
@@ -493,7 +494,7 @@ class _WatchmanVehicleLookupSheetState
                                               const Icon(Icons.check_circle_rounded, color: Color(0xFF4ADE80), size: 18),
                                               const SizedBox(width: 8),
                                               Expanded(
-                                                child: Text('વાહન નંબર કોપી થયો: $num'),
+                                                child: Text('વાહન નંબર કોપી થયો: $num'.tr),
                                               ),
                                             ],
                                           ),
@@ -530,7 +531,7 @@ class _WatchmanVehicleLookupSheetState
                                               borderRadius:
                                                   BorderRadius.circular(3),
                                             ),
-                                            child: const Text(
+                                            child: Text(
                                               "IND",
                                               style: TextStyle(
                                                 color: Colors.white,
@@ -585,8 +586,8 @@ class _WatchmanVehicleLookupSheetState
                                         const SizedBox(width: 4),
                                         Text(
                                           flat.isNotEmpty
-                                              ? 'ફ્લેટ $flat'
-                                              : 'સોસાયટી',
+                                              ? 'ફ્લેટ $flat'.tr
+                                              : 'સોસાયટી'.tr,
                                           style: const TextStyle(
                                             color: Color(0xFF3730A3),
                                             fontWeight: FontWeight.w800,
@@ -616,7 +617,7 @@ class _WatchmanVehicleLookupSheetState
                                       [
                                         if (model.isNotEmpty) model,
                                         if (slot.isNotEmpty)
-                                          '🅿️ પાર્કિંગ: $slot',
+                                          '🅿️ પાર્કિંગ: $slot'.tr,
                                       ].join(' • '),
                                       style: const TextStyle(
                                         fontSize: 12,
@@ -671,7 +672,7 @@ class _WatchmanVehicleLookupSheetState
                                       onPressed: () => _makePhoneCall(phone),
                                       icon: const Icon(Icons.call_rounded,
                                           size: 15),
-                                      label: const Text('કૉલ કરો'),
+                                      label: Text('કૉલ કરો'.tr),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor:
                                             const Color(0xFF16A34A),
@@ -698,7 +699,7 @@ class _WatchmanVehicleLookupSheetState
                                       Icons.warning_amber_rounded,
                                       size: 15,
                                     ),
-                                    label: const Text('પાર્કિંગ એલર્ટ'),
+                                    label: Text('પાર્કિંગ એલર્ટ'.tr),
                                     style: FilledButton.styleFrom(
                                       backgroundColor: const Color(0xFFDC2626),
                                       shape: RoundedRectangleBorder(
@@ -772,8 +773,8 @@ class _WatchmanVehicleLookupSheetState
             const SizedBox(height: 16),
             Text(
               isSearch
-                  ? "'$query' વાળું કોઈ વાહન મળ્યું નથી"
-                  : "સોસાયટીમાં કોઈ વાહન નોંધાયેલ નથી",
+                  ? "'$query' વાળું કોઈ વાહન મળ્યું નથી".tr
+                  : "સોસાયટીમાં કોઈ વાહન નોંધાયેલ નથી".tr,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 15.5,
@@ -784,8 +785,8 @@ class _WatchmanVehicleLookupSheetState
             const SizedBox(height: 6),
             Text(
               isSearch
-                  ? "ગાડી નંબર, મોડેલ અથવા ફ્લેટ નંબર ફરીથી ચકાસો."
-                  : "હજુ સુધી કોઈ સભ્ય દ્વારા વાહનની નોંધણી કરવામાં આવી નથી.",
+                  ? "ગાડી નંબર, મોડેલ અથવા ફ્લેટ નંબર ફરીથી ચકાસો.".tr
+                  : "હજુ સુધી કોઈ સભ્ય દ્વારા વાહનની નોંધણી કરવામાં આવી નથી.".tr,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 12.5,
@@ -805,7 +806,7 @@ class _WatchmanVehicleLookupSheetState
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFBBF7D0)),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
@@ -816,7 +817,7 @@ class _WatchmanVehicleLookupSheetState
                     SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        "સભ્યો પોતાની પ્રોફાઇલમાંથી વાહન નંબર ઉમેરી શકે છે.",
+                        "સભ્યો પોતાની પ્રોફાઇલમાંથી વાહન નંબર ઉમેરી શકે છે.".tr,
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
@@ -834,7 +835,7 @@ class _WatchmanVehicleLookupSheetState
                   setState(() => _query = '');
                 },
                 icon: const Icon(Icons.refresh_rounded, size: 16),
-                label: const Text("બધા વાહનો જુઓ"),
+                label: Text("બધા વાહનો જુઓ".tr),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF4F46E5),
                   side: const BorderSide(color: Color(0xFFC7D2FE)),

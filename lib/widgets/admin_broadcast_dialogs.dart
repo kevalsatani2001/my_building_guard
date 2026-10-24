@@ -32,10 +32,10 @@ class AdminBroadcastDialogs {
         contentPadding: const EdgeInsets.symmetric(horizontal: 20),
         actionsPadding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
         title: PremiumDialogHeader(
-          title: isAll ? "સૂચના બ્રોડકાસ્ટ" : "સભ્યને સૂચના",
+          title: isAll ? "સૂચના બ્રોડકાસ્ટ".tr : "સભ્યને સૂચના".tr,
           subtitle: isAll
-              ? "સોસાયટીના તમામ સભ્યોને પુશ એલર્ટ મળશે"
-              : "$targetName ને પર્સનલ પુશ એલર્ટ મળશે",
+              ? "સોસાયટીના તમામ સભ્યોને પુશ એલર્ટ મળશે".tr
+              : "$targetName ને પર્સનલ પુશ એલર્ટ મળશે".tr,
           icon: Icons.campaign_rounded,
           accentColor: Colors.orange.shade800,
           onClose: () => Navigator.pop(dialogCtx),
@@ -63,7 +63,7 @@ class AdminBroadcastDialogs {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        isAll ? "લક્ષ્ય: તમામ સભ્યો" : "લક્ષ્ય: $targetName",
+                        isAll ? "લક્ષ્ય: તમામ સભ્યો".tr : "લક્ષ્ય: $targetName".tr,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -78,8 +78,8 @@ class AdminBroadcastDialogs {
               TextField(
                 controller: titleC,
                 decoration: InputDecoration(
-                  labelText: "વિષય (Title) *",
-                  hintText: "દા.ત. પાણી સપ્લાય અંગે સૂચના",
+                  labelText: "વિષય (Title) *".tr,
+                  hintText: "દા.ત. પાણી સપ્લાય અંગે સૂચના".tr,
                   prefixIcon: const Icon(Icons.title_rounded, size: 20),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   filled: true,
@@ -92,8 +92,8 @@ class AdminBroadcastDialogs {
                 controller: bodyC,
                 maxLines: 3,
                 decoration: InputDecoration(
-                  labelText: "સંદેશ / સૂચના (Message) *",
-                  hintText: "સૂચનાની વિગત લખો...",
+                  labelText: "સંદેશ / સૂચના (Message) *".tr,
+                  hintText: "સૂચનાની વિગત લખો...".tr,
                   prefixIcon: const Icon(Icons.chat_bubble_outline_rounded, size: 20),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   filled: true,
@@ -106,7 +106,7 @@ class AdminBroadcastDialogs {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text("રદ કરો"),
+            child: Text("રદ કરો".tr),
           ),
           FilledButton.icon(
             onPressed: () {
@@ -123,7 +123,7 @@ class AdminBroadcastDialogs {
               }
             },
             icon: const Icon(Icons.send_rounded, size: 18),
-            label: const Text("મોકલો"),
+            label: Text("મોકલો".tr),
             style: FilledButton.styleFrom(backgroundColor: Colors.orange.shade800),
           ),
         ],
@@ -189,7 +189,7 @@ class AdminBroadcastDialogs {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('✅ સોસાયટીના તમામ સભ્યોને સૂચના મોકલાઈ ગઈ છે!'),
+            content: Text('✅ સોસાયટીના તમામ સભ્યોને સૂચના મોકલાઈ ગઈ છે!'.tr),
             backgroundColor: Colors.green.shade800,
             duration: const Duration(seconds: 6),
           ),
@@ -235,7 +235,7 @@ class AdminBroadcastDialogs {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ $targetBlock ના સભ્યોને સૂચના મોકલાઈ ગઈ છે! ($sentCount ડિવાઇસ)'),
+            content: Text('✅ $targetBlock ના સભ્યોને સૂચના મોકલાઈ ગઈ છે! ($sentCount ડિવાઇસ)'.tr),
             backgroundColor: Colors.green.shade800,
             duration: const Duration(seconds: 6),
           ),
@@ -273,8 +273,8 @@ class AdminBroadcastDialogs {
           SnackBar(
             content: Text(
               targetName != null
-                  ? '✅ $targetName ના ફોન પર પુશ નોટિફિકેશન સફળતાપૂર્વક પહોંચી ગયું!'
-                  : '✅ સભ્યના ફોન પર પુશ નોટિફિકેશન સફળતાપૂર્વક પહોંચી ગયું!',
+                  ? '✅ $targetName ના ફોન પર પુશ નોટિફિકેશન સફળતાપૂર્વક પહોંચી ગયું!'.tr
+                  : '✅ સભ્યના ફોન પર પુશ નોટિફિકેશન સફળતાપૂર્વક પહોંચી ગયું!'.tr,
             ),
             backgroundColor: Colors.green.shade800,
             duration: const Duration(seconds: 6),
@@ -283,8 +283,8 @@ class AdminBroadcastDialogs {
       } else if (data['reason'] == 'no_token') {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
-              'સભ્યના ફોનનું ટોકન મળ્યું નથી, પરંતુ ઇન-એપ સૂચના સફળતાપૂર્વક સેવ કરી દીધી છે.',
+            content: Text(
+              'સભ્યના ફોનનું ટોકન મળ્યું નથી, પરંતુ ઇન-એપ સૂચના સફળતાપૂર્વક સેવ કરી દીધી છે.'.tr,
             ),
             backgroundColor: Colors.deepOrange.shade800,
             duration: const Duration(seconds: 6),
@@ -306,7 +306,7 @@ class AdminBroadcastDialogs {
             : (e.details?.toString() ?? e.code);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('ઇન-એપ સૂચના સેવ થઈ ગઈ છે (સર્વર: $detail)'),
+            content: Text('ઇન-એપ સૂચના સેવ થઈ ગઈ છે (સર્વર: $detail)'.tr),
             backgroundColor: Colors.blueGrey.shade800,
             duration: const Duration(seconds: 7),
           ),
@@ -316,7 +316,7 @@ class AdminBroadcastDialogs {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('ઇન-એપ સૂચના સેવ થઈ ગઈ છે ($e)'),
+            content: Text('ઇન-એપ સૂચના સેવ થઈ ગઈ છે ($e)'.tr),
             backgroundColor: Colors.blueGrey.shade800,
           ),
         );
@@ -330,7 +330,7 @@ class AdminBroadcastDialogs {
     final bodyC = TextEditingController();
     bool sendPush = true;
 
-    final categories = ['📢 સામાન્ય', '💧 પાણી', '⚡ લાઈટ', '🗓️ મીટિંગ', '🪅 ઉત્સવ', '🧹 સફાઈ'];
+    final categories = ['📢 સામાન્ય'.tr, '💧 પાણી'.tr, '⚡ લાઈટ'.tr, '🗓️ મીટિંગ'.tr, '🪅 ઉત્સવ'.tr, '🧹 સફાઈ'.tr];
     String? selectedCategory;
 
     await showDialog(
@@ -342,8 +342,8 @@ class AdminBroadcastDialogs {
           contentPadding: const EdgeInsets.symmetric(horizontal: 20),
           actionsPadding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
           title: PremiumDialogHeader(
-            title: 'નોટિસ બોર્ડ પોસ્ટ',
-            subtitle: 'સોસાયટી ડિજિટલ બોર્ડ પર નવી નોટિસ જાહેર કરો',
+            title: 'નોટિસ બોર્ડ પોસ્ટ'.tr,
+            subtitle: 'સોસાયટી ડિજિટલ બોર્ડ પર નવી નોટિસ જાહેર કરો'.tr,
             icon: Icons.article_rounded,
             accentColor: Colors.deepOrange,
             onClose: () => Navigator.pop(ctx),
@@ -355,8 +355,8 @@ class AdminBroadcastDialogs {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'કેટેગરી પસંદ કરો (વૈકલ્પિક):',
+                  Text(
+                    'કેટેગરી પસંદ કરો (વૈકલ્પિક):'.tr,
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
                   ),
                   const SizedBox(height: 6),
@@ -384,8 +384,8 @@ class AdminBroadcastDialogs {
                   TextField(
                     controller: titleC,
                     decoration: InputDecoration(
-                      labelText: 'નોટિસનું શીર્ષક (Title) *',
-                      hintText: 'દા.ત. વાર્ષિક જનરલ મીટિંગ',
+                      labelText: 'નોટિસનું શીર્ષક (Title) *'.tr,
+                      hintText: 'દા.ત. વાર્ષિક જનરલ મીટિંગ'.tr,
                       prefixIcon: const Icon(Icons.title_rounded, size: 20),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       filled: true,
@@ -398,8 +398,8 @@ class AdminBroadcastDialogs {
                     controller: bodyC,
                     maxLines: 4,
                     decoration: InputDecoration(
-                      labelText: 'નોટિસનો સંદેશ / વિગત (Message) *',
-                      hintText: 'સભ્યો માટે જરૂરી સૂચના વિગતવાર લખો...',
+                      labelText: 'નોટિસનો સંદેશ / વિગત (Message) *'.tr,
+                      hintText: 'સભ્યો માટે જરૂરી સૂચના વિગતવાર લખો...'.tr,
                       prefixIcon: const Icon(Icons.description_outlined, size: 20),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       filled: true,
@@ -419,12 +419,12 @@ class AdminBroadcastDialogs {
                       value: sendPush,
                       activeThumbColor: Colors.deepOrange,
                       onChanged: (v) => setS(() => sendPush = v),
-                      title: const Text(
-                        'બધાને પુશ નોટિફિકેશન મોકલો',
+                      title: Text(
+                        'બધાને પુશ નોટિફિકેશન મોકલો'.tr,
                         style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                       ),
-                      subtitle: const Text(
-                        'સભ્યોના ફોનમાં તુરંત એલર્ટ જશે',
+                      subtitle: Text(
+                        'સભ્યોના ફોનમાં તુરંત એલર્ટ જશે'.tr,
                         style: TextStyle(fontSize: 11),
                       ),
                     ),
@@ -436,12 +436,12 @@ class AdminBroadcastDialogs {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('રદ'),
+              child: Text('રદ'.tr),
             ),
             FilledButton.icon(
               style: FilledButton.styleFrom(backgroundColor: Colors.deepOrange),
               icon: const Icon(Icons.publish_rounded, size: 18),
-              label: const Text('નોટિસ પબ્લિશ કરો'),
+              label: Text('નોટિસ પબ્લિશ કરો'.tr),
               onPressed: () async {
                 if (titleC.text.trim().isEmpty) return;
                 try {
@@ -456,7 +456,7 @@ class AdminBroadcastDialogs {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('નોટિસ સેવ ન થઈ: $e'),
+                        content: Text('નોટિસ સેવ ન થઈ: $e'.tr),
                         backgroundColor: Colors.red.shade800,
                       ),
                     );
@@ -481,7 +481,7 @@ class AdminBroadcastDialogs {
                     final currentUid = FirebaseAuth.instance.currentUser?.uid;
                     await callable.call<Map<String, dynamic>>({
                       'title': titleC.text.trim(),
-                      'body': b.isEmpty ? 'નવી નોટિસ' : b,
+                      'body': b.isEmpty ? 'નવી નોટિસ'.tr : b,
                       'type': 'notice',
                       'senderUid': ?currentUid,
                     });
@@ -494,8 +494,8 @@ class AdminBroadcastDialogs {
                 if (!context.mounted) return;
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('નોટિસ પ્રકાશિત!'),
+                  SnackBar(
+                    content: Text('નોટિસ પ્રકાશિત!'.tr),
                     backgroundColor: Colors.green,
                   ),
                 );
@@ -515,7 +515,7 @@ class AdminBroadcastDialogs {
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('પુશ નિષ્ફળ: $pushErr'),
+                        content: Text('પુશ નિષ્ફળ: $pushErr'.tr),
                         backgroundColor: Colors.deepOrange.shade800,
                         duration: const Duration(seconds: 8),
                       ),

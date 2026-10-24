@@ -11,6 +11,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'notification_navigation_service.dart';
 import 'society_service.dart';
+import '../l10n/app_strings.dart';
 
 /// ડિફૉલ્ટ સોસાયટી ટોપિક (અન્ય સોસાયટી માટે [SocietyService.topicMembers] વાપરો).
 const String kSocietyMembersTopic = 'society_members';
@@ -35,6 +36,8 @@ class NotificationService {
 
   /// લોગઆઉટ / સોસાયટી બદલાવ પર અનસબસ્ક્રાઇબ માટે.
   final List<String> _subscribedTopics = [];
+
+  StreamSubscription<QuerySnapshot>? _superAdminNotificationsSub;
 
   /// ડુપ્લિકેટ નોટિફિકેશન રોકવા માટે તાજેતરની નોટિફિકેશન કેશ
   final Map<String, DateTime> _recentlyHandledMessages = {};
@@ -79,6 +82,8 @@ class NotificationService {
     _pushSyncDebounce?.cancel();
     await _authSub?.cancel();
     await _tokenRefreshSub?.cancel();
+    await _superAdminNotificationsSub?.cancel();
+    _superAdminNotificationsSub = null;
   }
 
   /// Batches rapid auth updates; avoids overlapping FCM I/O on startup/login.
@@ -126,6 +131,8 @@ class NotificationService {
   }
 
   Future<void> _unsubscribeTrackedTopics() async {
+    await _superAdminNotificationsSub?.cancel();
+    _superAdminNotificationsSub = null;
     for (final t in List<String>.from(_subscribedTopics)) {
       await _withRetries(
         () => _fcm.unsubscribeFromTopic(t),
@@ -144,13 +151,15 @@ class NotificationService {
 
     await Future<void>.delayed(_playServicesWarmupDelay);
 
+    final email = (user.email ?? '').toLowerCase().trim();
     String? role;
     String? societyId;
+    Map<String, dynamic>? userData;
     try {
       final snap = await _db.collection('users').doc(user.uid).get();
-      final d = snap.data();
-      role = d?['role'] as String?;
-      societyId = d?['societyId'] as String?;
+      userData = snap.data();
+      role = userData?['role'] as String?;
+      societyId = userData?['societyId'] as String?;
     } catch (e) {
       if (kDebugMode) debugPrint('FCM read role: $e');
     }
@@ -162,7 +171,17 @@ class NotificationService {
     final tAdmins = SocietyService.instance.topicAdmins;
     final tWatch = SocietyService.instance.topicWatchmen;
 
-    if (role == 'super_admin' || role == 'superadmin') {
+    final rawRole = (role ?? '').toLowerCase().trim();
+    final bool isSuperAdmin = email == 'kevaladmin@gmail.com' ||
+        rawRole == 'super_admin' ||
+        rawRole == 'superadmin' ||
+        userData?['isSuperAdmin'] == true ||
+        userData?['superAdmin'] == true;
+
+    if (isSuperAdmin) {
+      // 🌟 સુપર એડમિન માટે રીયલ-ટાઇમ અપીલ/નોટિફિકેશન લિસનર શરૂ કરો
+      _startSuperAdminRealtimeListener(user.uid);
+
       // 🌟 સુપર એડમિન માત્ર પ્લેટફોર્મ સુપર એડમિન ટોપિક સાંભળશે — સામાન્ય સોસાયટી બ્રોડકાસ્ટ નહીં
       await _withRetries(
         () => _fcm.subscribeToTopic(kPlatformSuperAdminsTopic),
@@ -351,10 +370,13 @@ class NotificationService {
       return;
     }
 
-    // Deduplication check: ignore repeat notifications received within a 5-second window
+    // Deduplication check: ignore repeat notifications received within a 10-second window
     final parsed = _fcmTitleBody(message);
     final msgId = message.messageId;
-    final dedupeKey = msgId ?? '${parsed?.title}_${parsed?.body}_${message.data['type']}';
+    final appealId = message.data['appealId'];
+    final dedupeKey = (appealId != null && appealId.toString().isNotEmpty)
+        ? 'appeal_${appealId.toString().trim()}'
+        : (msgId ?? '${parsed?.title}_${parsed?.body}_${message.data['type']}');
     final now = DateTime.now();
     _recentlyHandledMessages.removeWhere((_, time) => now.difference(time).inSeconds > 10);
     if (_recentlyHandledMessages.containsKey(dedupeKey)) {
@@ -412,7 +434,10 @@ class NotificationService {
 
     final notification = message.notification;
     final android = notification?.android;
-    final id = message.messageId?.hashCode ?? '${parsed.title}${parsed.body}'.hashCode;
+    final appealId = message.data['appealId'];
+    final id = (appealId != null && appealId.toString().isNotEmpty)
+        ? ('appeal_${appealId.toString().trim()}'.hashCode.abs() % 1000000000)
+        : (message.messageId?.hashCode ?? '${parsed.title}${parsed.body}'.hashCode);
 
     final NotificationDetails details;
     switch (defaultTargetPlatform) {
@@ -467,6 +492,117 @@ class NotificationService {
       );
     } catch (e) {
       if (kDebugMode) debugPrint('Local notification show: $e');
+    }
+  }
+
+  /// સુપર એડમિન માટે રીયલ-ટાઇમ Firestore નોટિફિકેશન લિસનર (ઇન-એપ હેડ્સ-અપ એલર્ટ અને સાઉન્ડ માટે)
+  void _startSuperAdminRealtimeListener([String? superAdminUid]) {
+    _superAdminNotificationsSub?.cancel();
+
+    // Notifications કલેક્શનમાંથી એકમાત્ર ઓથોરિટેટિવ લિસનર (SUPER_ADMIN ટાર્ગેટ માટે)
+    _superAdminNotificationsSub = _db
+        .collection('notifications')
+        .where('targetUID', isEqualTo: 'SUPER_ADMIN')
+        .snapshots()
+        .listen((snapshot) {
+      for (final change in snapshot.docChanges) {
+        if (change.type == DocumentChangeType.added) {
+          final data = change.doc.data();
+          if (data == null) continue;
+
+          final title = (data['title'] ?? '🚨 સોસાયટી પુનઃસક્રિયતા અપીલ'.tr).toString();
+          final body = (data['body'] ?? '').toString();
+          final appealId = data['appealId'];
+          final docId = change.doc.id;
+
+          final dedupeKey = (appealId != null && appealId.toString().isNotEmpty)
+              ? 'appeal_${appealId.toString().trim()}'
+              : 'doc_$docId';
+          final now = DateTime.now();
+          _recentlyHandledMessages.removeWhere((_, time) => now.difference(time).inMinutes > 30);
+          if (_recentlyHandledMessages.containsKey(dedupeKey)) {
+            continue;
+          }
+          _recentlyHandledMessages[dedupeKey] = now;
+
+          final int notifId = (appealId != null && appealId.toString().isNotEmpty)
+              ? ('appeal_${appealId.toString().trim()}'.hashCode.abs() % 1000000000)
+              : ('${title}_$body'.hashCode.abs() % 1000000000);
+
+          unawaited(showDirectNotification(
+            title: title,
+            body: body,
+            payload: Map<String, dynamic>.from(data),
+            id: notifId,
+          ));
+        }
+      }
+    }, onError: (e) {
+      if (kDebugMode) debugPrint('Super admin notifications stream error: $e');
+    });
+  }
+
+  /// સીધી લોકલ નોટિફિકેશન દર્શાવો (Firestore Real-time Stream અથવા અગત્યના એલર્ટ્સ માટે)
+  Future<void> showDirectNotification({
+    required String title,
+    required String body,
+    Map<String, dynamic>? payload,
+    int? id,
+  }) async {
+    if (kIsWeb) return;
+    final appealId = payload?['appealId'];
+    final notifId = id ??
+        ((appealId != null && appealId.toString().isNotEmpty)
+            ? ('appeal_${appealId.toString().trim()}'.hashCode.abs() % 1000000000)
+            : ('${title}_$body'.hashCode.abs() % 1000000000));
+
+    final NotificationDetails details;
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        details = NotificationDetails(
+          android: AndroidNotificationDetails(
+            kAndroidNotificationChannelId,
+            _androidChannel.name,
+            channelDescription: _androidChannel.description,
+            importance: Importance.max,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            playSound: true,
+            sound: const RawResourceAndroidNotificationSound('notification'),
+          ),
+        );
+        break;
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+        details = const NotificationDetails(
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+            sound: 'notification.wav',
+          ),
+          macOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+            sound: 'notification.wav',
+          ),
+        );
+        break;
+      default:
+        return;
+    }
+
+    try {
+      await _local.show(
+        id: notifId,
+        title: title,
+        body: body,
+        notificationDetails: details,
+        payload: payload != null ? jsonEncode(payload) : null,
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('Direct notification show error: $e');
     }
   }
 

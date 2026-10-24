@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/parking_slot_service.dart';
 import '../services/society_service.dart';
+import 'package:building_guard/l10n/app_strings.dart';
 
 class ParkingSlotSelectorSheet extends StatefulWidget {
   final String? initialSlot;
@@ -55,11 +56,11 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
     _selectedSlot = widget.initialSlot?.trim();
 
     // Auto-detect category filter based on vehicle type
-    if (widget.vehicleType.contains('૨') || widget.vehicleType.toLowerCase().contains('bike')) {
+    if (widget.vehicleType.contains('૨'.tr) || widget.vehicleType.toLowerCase().contains('bike')) {
       _categoryFilter = 'bike';
-    } else if (widget.vehicleType.contains('EV') || widget.vehicleType.contains('ઇલેક્ટ્રિક')) {
+    } else if (widget.vehicleType.contains('EV') || widget.vehicleType.contains('ઇલેક્ટ્રિક'.tr)) {
       _categoryFilter = 'ev';
-    } else if (widget.vehicleType.contains('૪') || widget.vehicleType.toLowerCase().contains('car')) {
+    } else if (widget.vehicleType.contains('૪'.tr) || widget.vehicleType.toLowerCase().contains('car')) {
       _categoryFilter = 'car';
     }
   }
@@ -128,8 +129,8 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
                     children: [
                       Text(
                         widget.isCommonPlotOnly
-                            ? 'સોસાયટી કોમન પ્લોટ પાર્કિંગ'
-                            : '${widget.targetBlock} પાર્કિંગ સ્લોટ પસંદગી',
+                            ? 'સોસાયટી કોમન પ્લોટ પાર્કિંગ'.tr
+                            : '${widget.targetBlock} પાર્કિંગ સ્લોટ પસંદગી'.tr,
                         style: const TextStyle(
                           fontSize: 16.5,
                           fontWeight: FontWeight.w900,
@@ -140,8 +141,8 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
                       const SizedBox(height: 2),
                       Text(
                         widget.isCommonPlotOnly
-                            ? 'એડમિન દ્વારા મંજૂર કરેલા કોમન પ્લોટ સ્લોટ્સ'
-                            : 'તમારી વિંગના એડમિન દ્વારા માન્ય સ્લોટ્સ',
+                            ? 'એડમિન દ્વારા મંજૂર કરેલા કોમન પ્લોટ સ્લોટ્સ'.tr
+                            : 'તમારી વિંગના એડમિન દ્વારા માન્ય સ્લોટ્સ'.tr,
                         style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                       ),
                     ],
@@ -181,8 +182,8 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
                           final slots = slotSnap.data ?? [];
                           if (slots.isEmpty) {
                             return _buildEmptyState(
-                              title: 'કોઈ કોમન પ્લોટ સ્લોટ્સ નથી',
-                              message: 'સોસાયટી એડમિન દ્વારા હજુ કોઈ કોમન પ્લોટ સ્લોટ્સ બનાવવામાં આવ્યા નથી.',
+                              title: 'કોઈ કોમન પ્લોટ સ્લોટ્સ નથી'.tr,
+                              message: 'સોસાયટી એડમિન દ્વારા હજુ કોઈ કોમન પ્લોટ સ્લોટ્સ બનાવવામાં આવ્યા નથી.'.tr,
                               icon: Icons.park_outlined,
                             );
                           }
@@ -203,10 +204,10 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
 
                           if (filteredSlots.isEmpty) {
                             return _buildEmptyState(
-                              title: 'સ્લોટ્સ મળ્યા નથી',
+                              title: 'સ્લોટ્સ મળ્યા નથી'.tr,
                               message: rawSlots.isEmpty
-                                  ? 'એડમિન દ્વારા ${widget.targetBlock} માટે હજુ પાર્કિંગ સ્લોટ્સ બનાવવામાં આવ્યા નથી.\nકૃપા કરીને સોસાયટી એડમિનનો સંપર્ક કરો.'
-                                  : 'આ કેટેગરીમાં કોઈ સ્લોટ્સ ઉપલબ્ધ નથી.',
+                                  ? 'એડમિન દ્વારા ${widget.targetBlock} માટે હજુ પાર્કિંગ સ્લોટ્સ બનાવવામાં આવ્યા નથી.\nકૃપા કરીને સોસાયટી એડમિનનો સંપર્ક કરો.'.tr
+                                  : 'આ કેટેગરીમાં કોઈ સ્લોટ્સ ઉપલબ્ધ નથી.'.tr,
                               icon: Icons.local_parking_rounded,
                             );
                           }
@@ -231,15 +232,15 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'પસંદ કરેલ પાર્કિંગ સ્લોટ:',
+                      Text(
+                        'પસંદ કરેલ પાર્કિંગ સ્લોટ:'.tr,
                         style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         _selectedSlot != null && _selectedSlot!.isNotEmpty
                             ? _selectedSlot!
-                            : 'કોઈ સ્લોટ પસંદ નથી',
+                            : 'કોઈ સ્લોટ પસંદ નથી'.tr,
                         style: TextStyle(
                           fontSize: 15.5,
                           fontWeight: FontWeight.w900,
@@ -256,8 +257,8 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
                         ? () => Navigator.pop(context, _selectedSlot)
                         : null,
                     icon: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-                    label: const Text(
-                      'પાર્કિંગ કન્ફર્મ કરો',
+                    label: Text(
+                      'પાર્કિંગ કન્ફર્મ કરો'.tr,
                       style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 14),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -289,10 +290,10 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
 
   Widget _buildVehicleTypeChips() {
     final types = [
-      ('all', 'બધા સ્લોટ્સ', Icons.apps_rounded),
-      ('car', '૪-વ્હીલર કાર', Icons.directions_car_rounded),
-      ('bike', '૨-વ્હીલર બાઇક', Icons.two_wheeler_rounded),
-      ('ev', '⚡ EV ચાર્જિંગ', Icons.electric_car_rounded),
+      ('all', 'બધા સ્લોટ્સ'.tr, Icons.apps_rounded),
+      ('car', '૪-વ્હીલર કાર'.tr, Icons.directions_car_rounded),
+      ('bike', '૨-વ્હીલર બાઇક'.tr, Icons.two_wheeler_rounded),
+      ('ev', '⚡ EV ચાર્જિંગ'.tr, Icons.electric_car_rounded),
     ];
 
     return SingleChildScrollView(
@@ -369,7 +370,7 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          'સ્લોટ "$cleanSlot" પહેલેથી ફ્લેટ ${occInfo?.flatDisplay ?? 'અન્ય સભ્ય'} ને ફાળવેલ છે!',
+                          'સ્લોટ "$cleanSlot" પહેલેથી ફ્લેટ ${occInfo?.flatDisplay ?? '.trઅન્ય સભ્ય'} ને ફાળવેલ છે!'.tr,
                         ),
                         backgroundColor: const Color(0xFFDC2626),
                         behavior: SnackBarBehavior.floating,
@@ -449,8 +450,8 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
                     ),
                     child: Text(
                       isOccupied
-                          ? 'રોકાયેલ (${occInfo?.flatDisplay ?? 'બુક'})'
-                          : '🟢 ઉપલબ્ધ (Available)',
+                          ? 'રોકાયેલ (${occInfo?.flatDisplay ?? '.trબુક'})'
+                          : '🟢 ઉપલબ્ધ (Available)'.tr,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

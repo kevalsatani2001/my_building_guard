@@ -1,3 +1,5 @@
+import '../services/localization_service.dart';
+
 /// Universal Premise Architecture Types and Dynamic Vocabulary Engine
 /// Supports Residential Apartments (Wing), Row-Houses (Street),
 /// Commercial Shopping Centers / Markets (Commercial), and Mixed-Use Complexes.
@@ -23,6 +25,8 @@ class PremiseVocabulary {
     return const PremiseVocabulary(PremiseType.wing);
   }
 
+  String get _lang => LocalizationService.instance.currentCode;
+
   String get typeKey {
     switch (type) {
       case PremiseType.street:
@@ -38,6 +42,29 @@ class PremiseVocabulary {
 
   /// Title for Sub-group / Block (e.g. "વિંગ / બ્લોક", "શેરી / લાઇન", "ફ્લોર / બ્લોક", "બ્લોક / શેરી")
   String get blockLabel {
+    if (_lang == 'hi') {
+      switch (type) {
+        case PremiseType.street:
+          return 'गली / लाइन';
+        case PremiseType.commercial:
+          return 'फ्लोर / ब्लॉक';
+        case PremiseType.mixed:
+          return 'विंग / ज़ोन';
+        case PremiseType.wing:
+          return 'विंग / ब्लॉक';
+      }
+    } else if (_lang == 'en') {
+      switch (type) {
+        case PremiseType.street:
+          return 'Street / Lane';
+        case PremiseType.commercial:
+          return 'Floor / Block';
+        case PremiseType.mixed:
+          return 'Wing / Zone';
+        case PremiseType.wing:
+          return 'Wing / Block';
+      }
+    }
     switch (type) {
       case PremiseType.street:
         return 'શેરી / લાઇન';
@@ -52,6 +79,29 @@ class PremiseVocabulary {
 
   /// Single short block noun (e.g. "વિંગ", "શેરી", "ફ્લોર", "બ્લોક")
   String get blockShortLabel {
+    if (_lang == 'hi') {
+      switch (type) {
+        case PremiseType.street:
+          return 'गली';
+        case PremiseType.commercial:
+          return 'फ्लोर';
+        case PremiseType.mixed:
+          return 'ब्लॉक';
+        case PremiseType.wing:
+          return 'विंग';
+      }
+    } else if (_lang == 'en') {
+      switch (type) {
+        case PremiseType.street:
+          return 'Street';
+        case PremiseType.commercial:
+          return 'Floor';
+        case PremiseType.mixed:
+          return 'Block';
+        case PremiseType.wing:
+          return 'Wing';
+      }
+    }
     switch (type) {
       case PremiseType.street:
         return 'શેરી';
@@ -66,6 +116,29 @@ class PremiseVocabulary {
 
   /// Title for Unit (e.g. "ફ્લેટ નં.", "મકાન / પ્લોટ નં.", "દુકાન / ઓફિસ નં.", "યુનિટ નં.")
   String get unitLabel {
+    if (_lang == 'hi') {
+      switch (type) {
+        case PremiseType.street:
+          return 'मकान / प्लॉट नं.';
+        case PremiseType.commercial:
+          return 'दुकान / ऑफिस नं.';
+        case PremiseType.mixed:
+          return 'यूनिट नं. (दुकान/फ्लैट)';
+        case PremiseType.wing:
+          return 'फ्लैट नं.';
+      }
+    } else if (_lang == 'en') {
+      switch (type) {
+        case PremiseType.street:
+          return 'House / Plot No.';
+        case PremiseType.commercial:
+          return 'Shop / Office No.';
+        case PremiseType.mixed:
+          return 'Unit No. (Shop/Flat)';
+        case PremiseType.wing:
+          return 'Flat No.';
+      }
+    }
     switch (type) {
       case PremiseType.street:
         return 'મકાન / પ્લોટ નં.';
@@ -79,6 +152,29 @@ class PremiseVocabulary {
   }
 
   String get unitShortLabel {
+    if (_lang == 'hi') {
+      switch (type) {
+        case PremiseType.street:
+          return 'मकान';
+        case PremiseType.commercial:
+          return 'दुकान/ऑफिस';
+        case PremiseType.mixed:
+          return 'यूनिट';
+        case PremiseType.wing:
+          return 'फ्लैट';
+      }
+    } else if (_lang == 'en') {
+      switch (type) {
+        case PremiseType.street:
+          return 'House';
+        case PremiseType.commercial:
+          return 'Shop/Office';
+        case PremiseType.mixed:
+          return 'Unit';
+        case PremiseType.wing:
+          return 'Flat';
+      }
+    }
     switch (type) {
       case PremiseType.street:
         return 'મકાન';
@@ -93,6 +189,29 @@ class PremiseVocabulary {
 
   /// Member label (e.g. "રહીશ / સભ્ય", "રહીશ", "વેપારી / દુકાનદાર", "સભ્ય / વેપારી")
   String get memberLabel {
+    if (_lang == 'hi') {
+      switch (type) {
+        case PremiseType.street:
+          return 'निवासी / सदस्य';
+        case PremiseType.commercial:
+          return 'व्यापारी / दुकानदार';
+        case PremiseType.mixed:
+          return 'निवासी / दुकानदार';
+        case PremiseType.wing:
+          return 'निवासी / सदस्य';
+      }
+    } else if (_lang == 'en') {
+      switch (type) {
+        case PremiseType.street:
+          return 'Resident / Member';
+        case PremiseType.commercial:
+          return 'Merchant / Shopkeeper';
+        case PremiseType.mixed:
+          return 'Resident / Shopkeeper';
+        case PremiseType.wing:
+          return 'Resident / Member';
+      }
+    }
     switch (type) {
       case PremiseType.street:
         return 'રહીશ / સભ્ય';
@@ -107,6 +226,29 @@ class PremiseVocabulary {
 
   /// Admin title (e.g. "સોસાયટી પ્રમુખ", "સોસાયટી પ્રમુખ", "વેપારી મંડળ પ્રમુખ", "મુખ્ય પ્રમુખ")
   String get adminLabel {
+    if (_lang == 'hi') {
+      switch (type) {
+        case PremiseType.street:
+          return 'सोसायटी अध्यक्ष';
+        case PremiseType.commercial:
+          return 'व्यापारी मंडल अध्यक्ष';
+        case PremiseType.mixed:
+          return 'मुख्य अध्यक्ष';
+        case PremiseType.wing:
+          return 'सोसायटी अध्यक्ष';
+      }
+    } else if (_lang == 'en') {
+      switch (type) {
+        case PremiseType.street:
+          return 'Society President';
+        case PremiseType.commercial:
+          return 'Merchant Association Head';
+        case PremiseType.mixed:
+          return 'Chief President';
+        case PremiseType.wing:
+          return 'Society President';
+      }
+    }
     switch (type) {
       case PremiseType.street:
         return 'સોસાયટી પ્રમુખ';
@@ -121,6 +263,29 @@ class PremiseVocabulary {
 
   /// Project description badge (e.g. "🏢 વિંગ / એપાર્ટમેન્ટ", "🏡 શેરી / બંગલો", "🏬 શોપિંગ મોલ / માર્કેટ", "🏙️ મિક્સ્ડ (દુકાન + ફ્લેટ્સ)")
   String get premiseBadge {
+    if (_lang == 'hi') {
+      switch (type) {
+        case PremiseType.street:
+          return '🏡 गली / रो-हाउस';
+        case PremiseType.commercial:
+          return '🏬 शॉपिंग / कॉमर्शियल';
+        case PremiseType.mixed:
+          return '🏙️ मिक्स्ड (दुकान + फ्लैट)';
+        case PremiseType.wing:
+          return '🏢 विंग / अपार्टमेंट';
+      }
+    } else if (_lang == 'en') {
+      switch (type) {
+        case PremiseType.street:
+          return '🏡 Street / Row-House';
+        case PremiseType.commercial:
+          return '🏬 Shopping / Commercial';
+        case PremiseType.mixed:
+          return '🏙️ Mixed (Shop + Flat)';
+        case PremiseType.wing:
+          return '🏢 Wing / Apartment';
+      }
+    }
     switch (type) {
       case PremiseType.street:
         return '🏡 શેરી / રો-હાઉસ';

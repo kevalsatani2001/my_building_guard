@@ -4,6 +4,8 @@ import '../services/maintenance_service.dart';
 import '../services/society_service.dart';
 import '../models/premise_type.dart';
 import '../core/app_firestore.dart';
+import '../l10n/app_strings.dart';
+import '../services/localization_service.dart';
 
 class AdminBulkBillScreen extends StatefulWidget {
   final String initialMonth;
@@ -65,7 +67,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
     _premiseType = _normalizeArchType(widget.architectureType ?? SocietyService.instance.architectureType);
 
     _titleController = TextEditingController(
-      text: '${_formatMonthDisplay(_selectedMonth)} મેન્ટેનન્સ',
+      text: '${_formatMonthDisplay(_selectedMonth)} મેન્ટેનન્સ'.tr,
     );
     _amountController = TextEditingController(text: '1500');
     _ratePerSqFtController = TextEditingController(text: '5.0');
@@ -132,60 +134,60 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
       _billingMode = 'sqft';
       _targetCategory = 'commercial';
       _useDifferentiatedRates = false;
-      _titleController.text = '${_formatMonthDisplay(_selectedMonth)} શોપ મેન્ટેનન્સ';
+      _titleController.text = '${_formatMonthDisplay(_selectedMonth)} શોપ મેન્ટેનન્સ'.tr;
     } else if (_premiseType == 'Mixed') {
       _billingMode = 'fixed';
       _targetCategory = 'all';
       _useDifferentiatedRates = true;
-      _titleController.text = '${_formatMonthDisplay(_selectedMonth)} મેન્ટેનન્સ';
+      _titleController.text = '${_formatMonthDisplay(_selectedMonth)} મેન્ટેનન્સ'.tr;
     } else if (_premiseType == 'Street') {
       _billingMode = 'fixed';
       _targetCategory = 'residential';
       _useDifferentiatedRates = false;
       _applyGst = false;
-      _titleController.text = '${_formatMonthDisplay(_selectedMonth)} સોસાયટી મેન્ટેનન્સ';
+      _titleController.text = '${_formatMonthDisplay(_selectedMonth)} સોસાયટી મેન્ટેનન્સ'.tr;
     } else {
       // Wing / Flat
       _billingMode = 'fixed';
       _targetCategory = 'residential';
       _useDifferentiatedRates = false;
       _applyGst = false;
-      _titleController.text = '${_formatMonthDisplay(_selectedMonth)} મેન્ટેનન્સ';
+      _titleController.text = '${_formatMonthDisplay(_selectedMonth)} મેન્ટેનન્સ'.tr;
     }
   }
 
   String _defaultFestivalTitle() {
     if (_premiseType == 'Commercial') {
-      return 'દિવાળી ડેકોરેશન / સુરક્ષા ફાળો';
+      return 'દિવાળી ડેકોરેશન / સુરક્ષા ફાળો'.tr;
     } else if (_premiseType == 'Street') {
-      return 'સોસાયટી ઉત્સવ / વિકાસ ફાળો';
+      return 'સોસાયટી ઉત્સવ / વિકાસ ફાળો'.tr;
     }
-    return 'ગણેશ મહોત્સવ / નવરાત્રિ ફાળો';
+    return 'ગણેશ મહોત્સવ / નવરાત્રિ ફાળો'.tr;
   }
 
   String get _targetUnitSingular {
     switch (_premiseType) {
       case 'Commercial':
-        return 'દુકાન';
+        return 'દુકાન'.tr;
       case 'Street':
-        return 'મકાન';
+        return 'મકાન'.tr;
       case 'Mixed':
-        return 'એકમ';
+        return 'એકમ'.tr;
       default:
-        return 'ફ્લેટ';
+        return 'ફ્લેટ'.tr;
     }
   }
 
   String get _targetUnitPlural {
     switch (_premiseType) {
       case 'Commercial':
-        return 'દુકાનો';
+        return 'દુકાનો'.tr;
       case 'Street':
-        return 'મકાનો';
+        return 'મકાનો'.tr;
       case 'Mixed':
-        return 'એકમો';
+        return 'એકમો'.tr;
       default:
-        return 'ફ્લેટ્સ';
+        return 'ફ્લેટ્સ'.tr;
     }
   }
 
@@ -349,8 +351,8 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
       setState(() {
         _selectedMonth = newMonth;
         final suffix = _premiseType == 'Commercial'
-            ? 'શોપ મેન્ટેનન્સ'
-            : (_premiseType == 'Street' ? 'સોસાયટી મેન્ટેનન્સ' : 'મેન્ટેનન્સ');
+            ? 'શોપ મેન્ટેનન્સ'.tr
+            : (_premiseType == 'Street' ? 'સોસાયટી મેન્ટેનન્સ'.tr : 'મેન્ટેનન્સ'.tr);
         _titleController.text = '${_formatMonthDisplay(newMonth)} $suffix';
         _calculateSmartDueDate();
       });
@@ -452,23 +454,23 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
 
     if (_premiseType == 'Commercial' && _billingMode == 'sqft') {
       if (_sqftRate <= 0) {
-        _showToast('કૃપા કરીને માન્ય ચોરસ ફૂટ (Sq.Ft) દર દાખલ કરો.', Colors.orange);
+        _showToast('કૃપા કરીને માન્ય ચોરસ ફૂટ (Sq.Ft) દર દાખલ કરો.'.tr, Colors.orange);
         return;
       }
     } else if (_premiseType == 'Mixed' && _useDifferentiatedRates) {
       if (_commRate <= 0 || _resRate <= 0) {
-        _showToast('કૃપા કરીને દુકાન અને ફ્લેટ બંને માટે માન્ય રકમ દાખલ કરો.', Colors.orange);
+        _showToast('કૃપા કરીને દુકાન અને ફ્લેટ બંને માટે માન્ય રકમ દાખલ કરો.'.tr, Colors.orange);
         return;
       }
     } else {
       if (_baseAmount <= 0) {
-        _showToast('કૃપા કરીને માન્ય રકમ દાખલ કરો.', Colors.orange);
+        _showToast('કૃપા કરીને માન્ય રકમ દાખલ કરો.'.tr, Colors.orange);
         return;
       }
     }
 
     if (title.isEmpty) {
-      _showToast('કૃપા કરીને બિલનું શીર્ષક લખો.', Colors.orange);
+      _showToast('કૃપા કરીને બિલનું શીર્ષક લખો.'.tr, Colors.orange);
       return;
     }
 
@@ -499,7 +501,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
       _showSuccessDialog(result['created'] ?? 0, result['skipped'] ?? 0);
     } catch (e) {
       if (mounted) {
-        _showToast('બિલ જનરેશનમાં ભૂલ: $e', Colors.red.shade700);
+        _showToast('બિલ જનરેશનમાં ભૂલ: $e'.tr, Colors.red.shade700);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -535,20 +537,20 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
               child: const Icon(Icons.check_circle_rounded, color: Color(0xFF0F766E), size: 52),
             ),
             const SizedBox(height: 18),
-            const Text(
-              "બલ્ક બિલ સફળ!",
+            Text(
+              "બલ્ક બિલ સફળ!".tr,
               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: Color(0xFF0F172A)),
             ),
             const SizedBox(height: 8),
             Text(
-              "કુલ $created નવા બિલ સફળતાપૂર્વક જનરેટ થયા છે.",
+              "કુલ $created નવા બિલ સફળતાપૂર્વક જનરેટ થયા છે.".tr,
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 14, color: Color(0xFF475569)),
             ),
             if (skipped > 0) ...[
               const SizedBox(height: 6),
               Text(
-                "($skipped એકમોના બિલ અગાઉથી બનેલા હોવાથી સ્કિપ થયા)",
+                "($skipped એકમોના બિલ અગાઉથી બનેલા હોવાથી સ્કિપ થયા)".tr,
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
               ),
@@ -566,7 +568,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                   Navigator.pop(ctx);
                   Navigator.pop(context, true);
                 },
-                child: const Text("મેન્ટેનન્સ હિસાબ જુઓ", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+                child: Text("મેન્ટેનન્સ હિસાબ જુઓ".tr, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
               ),
             ),
           ],
@@ -659,6 +661,12 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
         ),
         onPressed: () => Navigator.pop(context),
       ),
+      actions: const [
+        Padding(
+          padding: EdgeInsets.only(right: 12),
+          child: Center(child: LanguageSwitchButton(isDark: true)),
+        ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,
@@ -708,7 +716,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                         const Icon(Icons.verified_rounded, size: 14, color: Colors.amber),
                         const SizedBox(width: 5),
                         Text(
-                          "${vocab.premiseBadge} બિલિંગ ડેસ્ક",
+                          "${vocab.premiseBadge} બિલિંગ ડેસ્ક".tr,
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
@@ -720,13 +728,13 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    isComm
-                        ? "શોપિંગ મોલ બિલિંગ ડેસ્ક"
+                    (isComm
+                        ? "શોપિંગ મોલ બિલિંગ ડેસ્ક".tr
                         : isMixed
-                            ? "મિક્સ્ડ કોમ્પ્લેક્સ બિલિંગ ડેસ્ક"
+                            ? "મિક્સ્ડ કોમ્પ્લેક્સ બિલિંગ ડેસ્ક".tr
                             : (_premiseType == 'Street'
-                                ? "સોસાયટી / બંગલો બિલિંગ ડેસ્ક"
-                                : "રેસિડેન્શિયલ ફ્લેટ બિલિંગ ડેસ્ક"),
+                                ? "સોસાયટી / બંગલો બિલિંગ ડેસ્ક".tr
+                                : "રેસિડેન્શિયલ ફ્લેટ બિલિંગ ડેસ્ક".tr)).tr,
                     style: const TextStyle(
                       fontSize: 23,
                       fontWeight: FontWeight.w900,
@@ -737,12 +745,12 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                   const SizedBox(height: 3),
                   Text(
                     isComm
-                        ? "દરેક દુકાન / ઓફિસ માટે એરિયા (Sq.Ft) દર & ૧૮% GST ઇન્વોઇસિંગ"
+                        ? "દરેક દુકાન / ઓફિસ માટે એરિયા (Sq.Ft) દર & ૧૮% GST ઇન્વોઇસિંગ".tr
                         : isMixed
-                            ? "દુકાનો અને ફ્લેટ્સ માટે ડ્યુઅલ સ્પ્લિટ રેટ બિલિંગ એન્જિન"
+                            ? "દુકાનો અને ફ્લેટ્સ માટે ડ્યુઅલ સ્પ્લિટ રેટ બિલિંગ એન્જિન".tr
                             : (_premiseType == 'Street'
-                                ? "શેરી અને પ્લોટ વાઇઝ બંગલો સોસાયટી મેન્ટેનન્સ બિલિંગ"
-                                : "સોસાયટી અને ટાવરના તમામ ફ્લેટ્સ માટે ઓટોમેટેડ માસિક બિલિંગ"),
+                                ? "શેરી અને પ્લોટ વાઇઝ બંગલો સોસાયટી મેન્ટેનન્સ બિલિંગ".tr
+                                : "સોસાયટી અને ટાવરના તમામ ફ્લેટ્સ માટે ઓટોમેટેડ માસિક બિલિંગ".tr),
                     style: TextStyle(
                       fontSize: 11.5,
                       color: Colors.white.withValues(alpha: 0.88),
@@ -777,7 +785,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                       : isMixed
                           ? Icons.apartment_rounded
                           : (isStreet ? Icons.home_work_rounded : Icons.domain_rounded),
-                  title: "૧. પરિસર વિગતો અને સ્કોપ",
+                  title: "૧. પરિસર વિગતો અને સ્કોપ".tr,
                 ),
               ),
               const SizedBox(width: 8),
@@ -788,7 +796,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  "કુલ: $_totalUnitsCount $_targetUnitPlural",
+                  "કુલ: $_totalUnitsCount $_targetUnitPlural".tr,
                   style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF0F766E)),
                 ),
               ),
@@ -854,12 +862,12 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                       const SizedBox(height: 2),
                       Text(
                         isComm
-                            ? "દરેક શોપ/ઓફિસ માટે કાર્પેટ એરિયા (Sq.Ft) આધારિત કોમર્શિયલ બિલિંગ"
+                            ? "દરેક શોપ/ઓફિસ માટે કાર્પેટ એરિયા (Sq.Ft) આધારિત કોમર્શિયલ બિલિંગ".tr
                             : isMixed
-                                ? "શોપ્સ માટે કોમર્શિયલ દર અને ફ્લેટ્સ માટે રેસિડેન્શિયલ દર"
+                                ? "શોપ્સ માટે કોમર્શિયલ દર અને ફ્લેટ્સ માટે રેસિડેન્શિયલ દર".tr
                                 : (isStreet
-                                    ? "શેરી નં. મુજબ બંગલા / રો-હાઉસ સોસાયટી બિલિંગ"
-                                    : "ટાવર અને વિંગ્સના તમામ ફ્લેટ્સ માટે નિયમિત બિલિંગ"),
+                                    ? "શેરી નં. મુજબ બંગલા / રો-હાઉસ સોસાયટી બિલિંગ".tr
+                                    : "ટાવર અને વિંગ્સના તમામ ફ્લેટ્સ માટે નિયમિત બિલિંગ".tr),
                         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                       ),
                     ],
@@ -877,24 +885,24 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
             children: [
               _buildStatBadge(
                 icon: Icons.tag_rounded,
-                label: "કુલ એકમો",
+                label: "કુલ એકમો".tr,
                 value: "$_totalUnitsCount",
               ),
               if (isComm && _totalSqFt > 0)
                 _buildStatBadge(
                   icon: Icons.square_foot_rounded,
-                  label: "કુલ એરિયા",
+                  label: "કુલ એરિયા".tr,
                   value: "${_totalSqFt.toStringAsFixed(0)} Sq.Ft",
                 ),
               if (isMixed) ...[
                 _buildStatBadge(
                   icon: Icons.storefront_rounded,
-                  label: "દુકાનો",
+                  label: "દુકાનો".tr,
                   value: "$_commercialUnitsCount",
                 ),
                 _buildStatBadge(
                   icon: Icons.meeting_room_rounded,
-                  label: "ફ્લેટ્સ",
+                  label: "ફ્લેટ્સ".tr,
                   value: "$_residentialUnitsCount",
                 ),
               ],
@@ -910,8 +918,8 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
           // મિક્સ્ડ મોડમાં લક્ષ્ય પસંદગી
           if (isMixed) ...[
             const SizedBox(height: 14),
-            const Text(
-              "બિલિંગ લક્ષ્ય (કોના માટે બિલ બનાવવું છે?):",
+            Text(
+              "બિલિંગ લક્ષ્ય (કોના માટે બિલ બનાવવું છે?):".tr,
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
             ),
             const SizedBox(height: 8),
@@ -919,7 +927,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
               children: [
                 Expanded(
                   child: _buildScopeSegmentChip(
-                    label: "બધા ($_totalUnitsCount)",
+                    label: "બધા ($_totalUnitsCount)".tr,
                     value: 'all',
                     icon: Icons.select_all_rounded,
                   ),
@@ -927,7 +935,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildScopeSegmentChip(
-                    label: "દુકાનો ($_commercialUnitsCount)",
+                    label: "દુકાનો ($_commercialUnitsCount)".tr,
                     value: 'commercial',
                     icon: Icons.storefront_rounded,
                   ),
@@ -935,7 +943,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildScopeSegmentChip(
-                    label: "ફ્લેટ્સ ($_residentialUnitsCount)",
+                    label: "ફ્લેટ્સ ($_residentialUnitsCount)".tr,
                     value: 'residential',
                     icon: Icons.meeting_room_rounded,
                   ),
@@ -960,7 +968,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      "ચોક્કસ ${vocab.blockLabel}:",
+                      "ચોક્કસ ${vocab.blockLabel}:".tr,
                       style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -975,7 +983,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                     items: [
                       DropdownMenuItem(
                         value: 'all',
-                        child: Text("તમામ ${vocab.blockLabel}"),
+                        child: Text("તમામ ${vocab.blockLabel}".tr),
                       ),
                       ..._availableBlocks.map(
                         (b) => DropdownMenuItem(
@@ -1002,20 +1010,20 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
     final monthDisp = _formatMonthDisplay(_selectedMonth);
     final titleSuggestions = _premiseType == 'Commercial'
         ? [
-            '$monthDisp શોપ મેન્ટેનન્સ',
-            'ત્રિમાસિક મેન્ટેનન્સ',
-            'વાર્ષિક કોમર્શિયલ મેન્ટેનન્સ',
+            '$monthDisp શોપ મેન્ટેનન્સ'.tr,
+            'ત્રિમાસિક મેન્ટેનન્સ'.tr,
+            'વાર્ષિક કોમર્શિયલ મેન્ટેનન્સ'.tr,
           ]
         : (_premiseType == 'Street'
             ? [
-                '$monthDisp સોસાયટી મેન્ટેનન્સ',
-                'ત્રિમાસિક મેન્ટેનન્સ',
-                'વાર્ષિક મેન્ટેનન્સ',
+                '$monthDisp સોસાયટી મેન્ટેનન્સ'.tr,
+                'ત્રિમાસિક મેન્ટેનન્સ'.tr,
+                'વાર્ષિક મેન્ટેનન્સ'.tr,
               ]
             : [
-                '$monthDisp મેન્ટેનન્સ',
-                'ત્રિમાસિક મેન્ટેનન્સ',
-                'વાર્ષિક મેન્ટેનન્સ',
+                '$monthDisp મેન્ટેનન્સ'.tr,
+                'ત્રિમાસિક મેન્ટેનન્સ'.tr,
+                'વાર્ષિક મેન્ટેનન્સ'.tr,
               ]);
 
     return _cardContainer(
@@ -1024,7 +1032,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
         children: [
           _cardHeaderIconTitle(
             icon: Icons.calendar_month_rounded,
-            title: "૨. બિલિંગ ચક્ર અને મહિનો",
+            title: "૨. બિલિંગ ચક્ર અને મહિનો".tr,
           ),
           const SizedBox(height: 14),
 
@@ -1055,7 +1063,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      "બિલિંગ કોડ: $_selectedMonth",
+                      "બિલિંગ કોડ: $_selectedMonth".tr,
                       style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                     ),
                   ],
@@ -1074,8 +1082,8 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
             controller: _titleController,
             style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
             decoration: InputDecoration(
-              labelText: 'બિલનું શીર્ષક (Title)',
-              hintText: 'દા.ત. $monthDisp મેન્ટેનન્સ',
+              labelText: 'બિલનું શીર્ષક (Title)'.tr,
+              hintText: 'દા.ત. $monthDisp મેન્ટેનન્સ'.tr,
               prefixIcon: _inputIcon(Icons.title_rounded),
               filled: true,
               fillColor: const Color(0xFFF8FAFC),
@@ -1133,7 +1141,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
               Expanded(
                 child: _cardHeaderIconTitle(
                   icon: Icons.currency_rupee_rounded,
-                  title: "૩. કોમર્શિયલ દર ગણતરી",
+                  title: "૩. કોમર્શિયલ દર ગણતરી".tr,
                 ),
               ),
               const SizedBox(width: 8),
@@ -1144,7 +1152,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  "લક્ષ્ય: $_targetedUnitsCount દુકાનો",
+                  "લક્ષ્ય: $_targetedUnitsCount દુકાનો".tr,
                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0F766E)),
                 ),
               ),
@@ -1155,8 +1163,8 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
           // સેગમેન્ટેડ ટેબ સ્વિચર
           _buildSegmentedCalculationBar(
             options: [
-              {'mode': 'sqft', 'icon': Icons.straighten_rounded, 'title': 'ચોરસ ફૂટ (Sq.Ft) દર', 'sub': 'દુકાન એરિયા મુજબ'},
-              {'mode': 'fixed', 'icon': Icons.store_rounded, 'title': 'ફિક્સ શોપ દર', 'sub': 'દરેક માટે સમાન રકમ'},
+              {'mode': 'sqft', 'icon': Icons.straighten_rounded, 'title': 'ચોરસ ફૂટ (Sq.Ft) દર'.tr, 'sub': 'દુકાન એરિયા મુજબ'.tr},
+              {'mode': 'fixed', 'icon': Icons.store_rounded, 'title': 'ફિક્સ શોપ દર'.tr, 'sub': 'દરેક માટે સમાન રકમ'.tr},
             ],
             selectedMode: _billingMode,
             onChanged: (mode) => setState(() => _billingMode = mode),
@@ -1176,9 +1184,9 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                 children: [
                   Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          "પ્રતિ ચોરસ ફૂટ (Sq.Ft) માસિક દર",
+                          "પ્રતિ ચોરસ ફૂટ (Sq.Ft) માસિક દર".tr,
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1191,7 +1199,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                           color: const Color(0xFF0F766E).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text("₹ / Sq.Ft", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0F766E))),
+                        child: Text("₹ / Sq.Ft", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0F766E))),
                       ),
                     ],
                   ),
@@ -1275,13 +1283,13 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "લાઇવ ગણતરી ઉદાહરણ (400 Sq.Ft દુકાન):",
+                        Text(
+                          "લાઇવ ગણતરી ઉદાહરણ (400 Sq.Ft દુકાન):".tr,
                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
                         ),
                         const SizedBox(height: 1),
                         Text(
-                          "400 Sq.Ft × ₹ ${_sqftRate.toStringAsFixed(rateHasFraction(_sqftRate) ? 2 : 1)} = ${_currency.format((400 * _sqftRate).toInt())} / મહિનો",
+                          "400 Sq.Ft × ₹ ${_sqftRate.toStringAsFixed(rateHasFraction(_sqftRate) ? 2 : 1)} = ${_currency.format((400 * _sqftRate).toInt())} / મહિનો".tr,
                           style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, color: Color(0xFF0F766E)),
                         ),
                       ],
@@ -1297,7 +1305,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
               keyboardType: TextInputType.number,
               style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Color(0xFF0F766E)),
               decoration: InputDecoration(
-                labelText: 'નિયમિત રકમ (પ્રતિ દુકાન / ઓફિસ)',
+                labelText: 'નિયમિત રકમ (પ્રતિ દુકાન / ઓફિસ)'.tr,
                 prefixIcon: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 14),
                   child: Center(
@@ -1351,7 +1359,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
               Expanded(
                 child: _cardHeaderIconTitle(
                   icon: Icons.call_split_rounded,
-                  title: "૩. સ્પ્લિટ રેટ ગણતરી",
+                  title: "૩. સ્પ્લિટ રેટ ગણતરી".tr,
                 ),
               ),
               const SizedBox(width: 8),
@@ -1362,7 +1370,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  "લક્ષ્ય: $_targetedUnitsCount એકમ",
+                  "લક્ષ્ય: $_targetedUnitsCount એકમ".tr,
                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0F766E)),
                 ),
               ),
@@ -1388,7 +1396,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          "દુકાન દર (પ્રતિ $_targetUnitSingular)",
+                          "દુકાન દર (પ્રતિ $_targetUnitSingular)".tr,
                           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF0F172A)),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1409,7 +1417,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                           child: Text("₹", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF0F766E))),
                         ),
                       ),
-                      hintText: 'દા.ત. 2500',
+                      hintText: 'દા.ત. 2500'.tr,
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -1446,13 +1454,13 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
                       Icon(Icons.meeting_room_rounded, size: 16, color: Color(0xFF2563EB)),
                       SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          "રેસિડેન્શિયલ ફ્લેટ દર (પ્રતિ ફ્લેટ)",
+                          "રેસિડેન્શિયલ ફ્લેટ દર (પ્રતિ ફ્લેટ)".tr,
                           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF0F172A)),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1473,7 +1481,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                           child: Text("₹", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF2563EB))),
                         ),
                       ),
-                      hintText: 'દા.ત. 1500',
+                      hintText: 'દા.ત. 1500'.tr,
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -1512,7 +1520,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
               Expanded(
                 child: _cardHeaderIconTitle(
                   icon: Icons.currency_rupee_rounded,
-                  title: "૩. ફ્લેટ મેન્ટેનન્સ રકમ",
+                  title: "૩. ફ્લેટ મેન્ટેનન્સ રકમ".tr,
                 ),
               ),
               const SizedBox(width: 8),
@@ -1523,7 +1531,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  "લક્ષ્ય: $_targetedUnitsCount ફ્લેટ્સ",
+                  "લક્ષ્ય: $_targetedUnitsCount ફ્લેટ્સ".tr,
                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0F766E)),
                 ),
               ),
@@ -1536,7 +1544,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
             keyboardType: TextInputType.number,
             style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Color(0xFF0F766E)),
             decoration: InputDecoration(
-              labelText: 'નિયમિત રકમ (પ્રતિ ફ્લેટ)',
+              labelText: 'નિયમિત રકમ (પ્રતિ ફ્લેટ)'.tr,
               prefixIcon: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 14),
                 child: Center(
@@ -1588,7 +1596,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
               Expanded(
                 child: _cardHeaderIconTitle(
                   icon: Icons.currency_rupee_rounded,
-                  title: "૩. સોસાયટી મેન્ટેનન્સ રકમ",
+                  title: "૩. સોસાયટી મેન્ટેનન્સ રકમ".tr,
                 ),
               ),
               const SizedBox(width: 8),
@@ -1599,7 +1607,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  "લક્ષ્ય: $_targetedUnitsCount મકાનો",
+                  "લક્ષ્ય: $_targetedUnitsCount મકાનો".tr,
                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0F766E)),
                 ),
               ),
@@ -1612,7 +1620,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
             keyboardType: TextInputType.number,
             style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Color(0xFF0F766E)),
             decoration: InputDecoration(
-              labelText: 'નિયમિત રકમ (પ્રતિ મકાન / પ્લોટ)',
+              labelText: 'નિયમિત રકમ (પ્રતિ મકાન / પ્લોટ)'.tr,
               prefixIcon: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 14),
                 child: Center(
@@ -1674,14 +1682,14 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "૧૮% GST ટેક્સ ઇનવોઇસ ઉમેરો",
+                    Text(
+                      "૧૮% GST ટેક્સ ઇનવોઇસ ઉમેરો".tr,
                       style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5, color: Color(0xFF0F172A)),
                     ),
                     Text(
                       _premiseType == 'Mixed'
-                          ? "કોમર્શિયલ શોપ્સ માટે 9% CGST + 9% SGST (ફ્લેટ્સ કરમુક્ત)"
-                          : "દુકાનો / ઑફિસો માટે 9% CGST + 9% SGST",
+                          ? "કોમર્શિયલ શોપ્સ માટે 9% CGST + 9% SGST (ફ્લેટ્સ કરમુક્ત)".tr
+                          : "દુકાનો / ઑફિસો માટે 9% CGST + 9% SGST".tr,
                       style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                     ),
                   ],
@@ -1700,8 +1708,8 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
               controller: _gstinController,
               textCapitalization: TextCapitalization.characters,
               decoration: InputDecoration(
-                labelText: 'સોસાયટી / મોલ GSTIN નંબર',
-                hintText: 'દા.ત. 24AAAAA0000A1Z5',
+                labelText: 'સોસાયટી / મોલ GSTIN નંબર'.tr,
+                hintText: 'દા.ત. 24AAAAA0000A1Z5'.tr,
                 prefixIcon: _inputIcon(Icons.badge_rounded),
                 filled: true,
                 fillColor: const Color(0xFFF8FAFC),
@@ -1713,7 +1721,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
               spacing: 8,
               runSpacing: 6,
               children: [
-                _buildGstPill("કરપાત્ર રકમ: ${_currency.format(_displayRatePerUnit.toInt())}"),
+                _buildGstPill("કરપાત્ર રકમ: ${_currency.format(_displayRatePerUnit.toInt())}".tr),
                 _buildGstPill("CGST (9%): ${_currency.format(((_displayRatePerUnit * 9) / 100).toInt())}"),
                 _buildGstPill("SGST (9%): ${_currency.format(((_displayRatePerUnit * 9) / 100).toInt())}"),
               ],
@@ -1749,7 +1757,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
               Expanded(
                 child: _cardHeaderIconTitle(
                   icon: Icons.event_available_rounded,
-                  title: "૪. છેલ્લી તારીખ (Due Date)",
+                  title: "૪. છેલ્લી તારીખ (Due Date)".tr,
                 ),
               ),
               const SizedBox(width: 8),
@@ -1762,7 +1770,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  isPast ? "મુદત વીતી ગઈ છે" : "બાકી: $daysRemaining દિવસ",
+                  isPast ? "મુદત વીતી ગઈ છે".tr : "બાકી: $daysRemaining દિવસ".tr,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
@@ -1810,8 +1818,8 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        const Text(
-                          "તારીખ બદલવા માટે ટેપ કરો",
+                        Text(
+                          "તારીખ બદલવા માટે ટેપ કરો".tr,
                           style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                         ),
                       ],
@@ -1829,9 +1837,9 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _buildDueDatePresetChip("+૭ દિવસ", 7),
-              _buildDueDatePresetChip("+૧૦ દિવસ", 10),
-              _buildDueDatePresetChip("+૧૫ દિવસ", 15),
+              _buildDueDatePresetChip("+૭ દિવસ".tr, 7),
+              _buildDueDatePresetChip("+૧૦ દિવસ".tr, 10),
+              _buildDueDatePresetChip("+૧૫ દિવસ".tr, 15),
               _buildDueDateMonthEndChip(),
             ],
           ),
@@ -1881,8 +1889,8 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: const Color(0xFFCBD5E1)),
         ),
-        child: const Text(
-          "મહિનાનો અંત",
+        child: Text(
+          "મહિનાનો અંત".tr,
           style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
         ),
       ),
@@ -1915,12 +1923,12 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                   children: [
                     Text(
                       _premiseType == 'Commercial'
-                          ? "૫. વિશેષ સુરક્ષા / ડેકોરેશન ફાળો"
-                          : "૫. તહેવાર / વિશેષ ફાળો ઉમેરો",
+                          ? "૫. વિશેષ સુરક્ષા / ડેકોરેશન ફાળો".tr
+                          : "૫. તહેવાર / વિશેષ ફાળો ઉમેરો".tr,
                       style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5, color: Color(0xFF0F172A)),
                     ),
-                    const Text(
-                      "મેન્ટેનન્સ રસીદમાં ઉત્સવ/વિશેષ ફાળો અલગથી ઉમેરવા માટે",
+                    Text(
+                      "મેન્ટેનન્સ રસીદમાં ઉત્સવ/વિશેષ ફાળો અલગથી ઉમેરવા માટે".tr,
                       style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                     ),
                   ],
@@ -1939,7 +1947,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
             TextField(
               controller: _festivalTitleController,
               decoration: InputDecoration(
-                labelText: 'ફાળો / પ્રસંગનું નામ',
+                labelText: 'ફાળો / પ્રસંગનું નામ'.tr,
                 hintText: _defaultFestivalTitle(),
                 prefixIcon: _inputIcon(Icons.festival_rounded),
                 filled: true,
@@ -1954,8 +1962,8 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
               runSpacing: 8,
               children: [
                 _buildFestivalTitleChip(_defaultFestivalTitle()),
-                _buildFestivalTitleChip('ગણેશ મહોત્સવ ફાળો'),
-                _buildFestivalTitleChip('દિવાળી લાઈટિંગ ફાળો'),
+                _buildFestivalTitleChip('ગણેશ મહોત્સવ ફાળો'.tr),
+                _buildFestivalTitleChip('દિવાળી લાઈટિંગ ફાળો'.tr),
               ],
             ),
             const SizedBox(height: 14),
@@ -1965,7 +1973,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
               keyboardType: TextInputType.number,
               style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFFD97706)),
               decoration: InputDecoration(
-                labelText: 'ફાળો રકમ (પ્રતિ $_targetUnitSingular)',
+                labelText: 'ફાળો રકમ (પ્રતિ $_targetUnitSingular)'.tr,
                 prefixIcon: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 14),
                   child: Center(
@@ -2023,14 +2031,14 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Row(
                   children: [
                     Icon(Icons.receipt_rounded, size: 20, color: Color(0xFF14B8A6)),
                     SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        "ડિજિટલ ઇનવોઇસ પ્રીવ્યૂ",
+                        "ડિજિટલ ઇનવોઇસ પ્રીવ્યૂ".tr,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -2052,10 +2060,10 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                 ),
                 child: Text(
                   _premiseType == 'Commercial'
-                      ? (_billingMode == 'sqft' ? "Sq.Ft બેઝ્ડ રસીદ" : "શોપ ફિક્સ રસીદ")
+                      ? (_billingMode == 'sqft' ? "Sq.Ft બેઝ્ડ રસીદ".tr : "શોપ ફિક્સ રસીદ".tr)
                       : (_premiseType == 'Mixed'
-                          ? "હાઇબ્રિડ સ્પ્લિટ રસીદ"
-                          : "માસિક ડિજિટલ રસીદ"),
+                          ? "હાઇબ્રિડ સ્પ્લિટ રસીદ".tr
+                          : "માસિક ડિજિટલ રસીદ".tr),
                   style: const TextStyle(fontSize: 10.5, color: Color(0xFF14B8A6), fontWeight: FontWeight.bold),
                 ),
               ),
@@ -2066,8 +2074,8 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
           // નિયમિત દર
           _receiptRow(
             _premiseType == 'Commercial' && _billingMode == 'sqft'
-                ? "નિયમિત દર (દા.ત. 400 Sq.Ft × ₹ ${_sqftRate.toStringAsFixed(rateHasFraction(_sqftRate) ? 2 : 1)}):"
-                : "નિયમિત માસિક મેન્ટેનન્સ:",
+                ? "નિયમિત દર (દા.ત. 400 Sq.Ft × ₹ ${_sqftRate.toStringAsFixed(rateHasFraction(_sqftRate) ? 2 : 1)}):".tr
+                : "નિયમિત માસિક મેન્ટેનન્સ:".tr,
             _currency.format(_displayRatePerUnit.toInt()),
           ),
 
@@ -2075,7 +2083,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
           if (_applyGst) ...[
             const SizedBox(height: 6),
             _receiptRow(
-              "૧૮% GST (9% CGST + 9% SGST):",
+              "૧૮% GST (9% CGST + 9% SGST):".tr,
               "+ ${_currency.format(_gstAmountPerUnit.toInt())}",
               isHighlight: true,
             ),
@@ -2085,7 +2093,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
           if (_addFestivalCharge) ...[
             const SizedBox(height: 6),
             _receiptRow(
-              "${_festivalTitleController.text.trim().isEmpty ? 'તહેવાર ફાળો' : _festivalTitleController.text.trim()}:",
+              "${_festivalTitleController.text.trim().isEmpty ? 'તહેવાર ફાળો' : _festivalTitleController.text.trim()}:".tr,
               "+ ${_currency.format(_festivalAmount.toInt())}",
               isHighlight: true,
             ),
@@ -2096,7 +2104,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
             children: [
               Expanded(
                 child: Text(
-                  "કુલ રકમ (પ્રતિ $_targetUnitSingular):",
+                  "કુલ રકમ (પ્રતિ $_targetUnitSingular):".tr,
                   style: const TextStyle(color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -2126,7 +2134,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    "અંદાજિત કુલ કલેક્શન ($_targetedUnitsCount $_targetUnitPlural):",
+                    "અંદાજિત કુલ કલેક્શન ($_targetedUnitsCount $_targetUnitPlural):".tr,
                     style: const TextStyle(color: Colors.white70, fontSize: 11.5),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -2173,7 +2181,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "પ્રતિ $_targetUnitSingular:",
+                    "પ્રતિ $_targetUnitSingular:".tr,
                     style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                   ),
                   Text(
@@ -2231,7 +2239,7 @@ class _AdminBulkBillScreenState extends State<AdminBulkBillScreen> {
                                   const Icon(Icons.bolt_rounded, size: 20, color: Colors.amber),
                                   const SizedBox(width: 6),
                                   Text(
-                                    "$_targetedUnitsCount $_targetUnitPlural માટે જનરેટ કરો",
+                                    "$_targetedUnitsCount $_targetUnitPlural માટે જનરેટ કરો".tr,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w900,
                                       fontSize: 15,

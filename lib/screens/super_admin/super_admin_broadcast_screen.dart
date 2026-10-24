@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/super_admin_service.dart';
+import '../../services/localization_service.dart';
+import '../../l10n/app_strings.dart';
 
 class SuperAdminBroadcastScreen extends StatefulWidget {
   final VoidCallback? onSuccess;
@@ -22,20 +24,20 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
   final List<Map<String, dynamic>> _targetOptions = [
     {
       'id': 'all',
-      'title': 'તમામ યુઝર્સ (All Users)',
-      'subtitle': 'બધા પરિસરોના સભ્યો, દુકાનદારો & એડમિન્સ',
+      'title': 'તમામ યુઝર્સ (All Users)'.tr,
+      'subtitle': 'બધા પરિસરોના સભ્યો, દુકાનદારો & એડમિન્સ'.tr,
       'icon': Icons.groups_rounded,
     },
     {
       'id': 'admins_only',
-      'title': 'માત્ર એડમિનો (Admins Only)',
-      'subtitle': 'તમામ સોસાયટી કમિટી & સેક્રેટરીઓ',
+      'title': 'માત્ર એડમિનો (Admins Only)'.tr,
+      'subtitle': 'તમામ સોસાયટી કમિટી & સેક્રેટરીઓ'.tr,
       'icon': Icons.admin_panel_settings_rounded,
     },
     {
       'id': 'commercial',
-      'title': 'માત્ર કોમર્શિયલ સંકુલો',
-      'subtitle': 'શોપિંગ મોલ અને બિઝનેસ હબના યુઝર્સ',
+      'title': 'માત્ર કોમર્શિયલ સંકુલો'.tr,
+      'subtitle': 'શોપિંગ મોલ અને બિઝનેસ હબના યુઝર્સ'.tr,
       'icon': Icons.storefront_rounded,
     },
   ];
@@ -72,7 +74,7 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
       widget.onSuccess?.call();
 
       messenger.showSnackBar(
-        const SnackBar(
+        SnackBar(
           backgroundColor: Color(0xFF0284C7),
           behavior: SnackBarBehavior.floating,
           content: Row(
@@ -81,7 +83,7 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
               SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'ગ્લોબલ સિસ્ટમ બ્રોડકાસ્ટ સફળતાપૂર્વક મોકલાઈ ગયું!',
+                  'ગ્લોબલ સિસ્ટમ બ્રોડકાસ્ટ સફળતાપૂર્વક મોકલાઈ ગયું!'.tr,
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
@@ -96,7 +98,7 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
         SnackBar(
           backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
-          content: Text('બ્રોડકાસ્ટ મોકલવામાં ભૂલ: $e'),
+          content: Text('બ્રોડકાસ્ટ મોકલવામાં ભૂલ: $e'.tr),
         ),
       );
     } finally {
@@ -163,23 +165,23 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
                           _buildNoticeBanner(accentColor),
                           const SizedBox(height: 22),
 
-                          _buildSectionTitle('કોને મોકલવું? (Target Audience)', Icons.hub_rounded, accentColor),
+                          _buildSectionTitle('કોને મોકલવું? (Target Audience)'.tr, Icons.hub_rounded, accentColor),
                           const SizedBox(height: 12),
                           _buildTargetAudienceSelector(accentColor),
                           const SizedBox(height: 22),
 
-                          _buildSectionTitle('સૂચનાની વિગત (Notice Details)', Icons.edit_note_rounded, accentColor),
+                          _buildSectionTitle('સૂચનાની વિગત (Notice Details)'.tr, Icons.edit_note_rounded, accentColor),
                           const SizedBox(height: 12),
 
                           _buildInputField(
                             controller: _titleCtrl,
-                            label: 'સૂચના શીર્ષક (Notice Title)',
-                            hint: 'દા.ત. સિસ્ટમ મેઈન્ટેનન્સ અથવા અગત્યની જાહેરાત',
+                            label: 'સૂચના શીર્ષક (Notice Title)'.tr,
+                            hint: 'દા.ત. સિસ્ટમ મેઈન્ટેનન્સ અથવા અગત્યની જાહેરાત'.tr,
                             icon: Icons.title_rounded,
                             accentColor: accentColor,
                             cardBg: cardBg,
                             validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'કૃપા કરીને સૂચના શીર્ષક દાખલ કરો';
+                              if (v == null || v.trim().isEmpty) return 'કૃપા કરીને સૂચના શીર્ષક દાખલ કરો'.tr;
                               return null;
                             },
                           ),
@@ -187,25 +189,25 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
 
                           _buildInputField(
                             controller: _msgCtrl,
-                            label: 'સંદેશો / નોટિસ વિગત (Message Body)',
-                            hint: 'બધા યુઝર્સ સુધી પહોંચાડવાનો સંદેશો અહીં વિગતવાર લખો...',
+                            label: 'સંદેશો / નોટિસ વિગત (Message Body)'.tr,
+                            hint: 'બધા યુઝર્સ સુધી પહોંચાડવાનો સંદેશો અહીં વિગતવાર લખો...'.tr,
                             icon: Icons.article_rounded,
                             accentColor: accentColor,
                             cardBg: cardBg,
                             maxLines: 4,
                             validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'કૃપા કરીને સંદેશો દાખલ કરો';
+                              if (v == null || v.trim().isEmpty) return 'કૃપા કરીને સંદેશો દાખલ કરો'.tr;
                               return null;
                             },
                           ),
                           const SizedBox(height: 22),
 
-                          _buildSectionTitle('પ્રાથમિકતા (Priority)', Icons.bolt_rounded, accentColor),
+                          _buildSectionTitle('પ્રાથમિકતા (Priority)'.tr, Icons.bolt_rounded, accentColor),
                           const SizedBox(height: 12),
                           _buildPrioritySelector(accentColor),
                           const SizedBox(height: 24),
 
-                          _buildSectionTitle('લાઈવ નોટિફિકેશન પ્રીવ્યૂ (Live Preview)', Icons.visibility_rounded, accentColor),
+                          _buildSectionTitle('લાઈવ નોટિફિકેશન પ્રીવ્યૂ (Live Preview)'.tr, Icons.visibility_rounded, accentColor),
                           const SizedBox(height: 12),
                           _buildLivePreviewCard(accentColor),
                           const SizedBox(height: 30),
@@ -253,31 +255,36 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   children: [
-                    Text(
-                      'ગ્લોબલ સિસ્ટમ બ્રોડકાસ્ટ',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.2,
+                    Flexible(
+                      child: Text(
+                        'ગ્લોબલ સિસ્ટમ બ્રોડકાસ્ટ'.tr,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.2,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: accentColor.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(5),
                         border: Border.all(color: accentColor.withValues(alpha: 0.4)),
                       ),
                       child: Text(
                         'LIVE PUSH',
                         style: TextStyle(
                           color: accentColor,
-                          fontSize: 9,
+                          fontSize: 8.5,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 0.8,
                         ),
@@ -286,13 +293,17 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
                   ],
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                  'તમામ સોસાયટી અને સભ્યો સુધી ઓફિશિયલ નોટિસ મોકલો',
-                  style: TextStyle(color: Colors.white54, fontSize: 11.5),
+                Text(
+                  'તમામ સોસાયટી અને સભ્યો સુધી ઓફિશિયલ નોટિસ મોકલો'.tr,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white54, fontSize: 11),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 6),
+          const LanguageSwitchButton(isDark: true),
         ],
       ),
     );
@@ -318,17 +329,17 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
             child: Icon(Icons.campaign_rounded, color: accentColor, size: 20),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'સુપર એડમિન સેન્ટ્રલ બ્રોડકાસ્ટ સુવિધા',
+                  'સુપર એડમિન સેન્ટ્રલ બ્રોડકાસ્ટ સુવિધા'.tr,
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
                 ),
                 SizedBox(height: 3),
                 Text(
-                  'આ બ્રોડકાસ્ટ પસંદ કરેલા વર્ગના તમામ યુઝર્સને તાત્કાલિક એપ્લિકેશન નોટિફિકેશન તથા એલર્ટ સ્વરૂપે પ્રાપ્ત થશે.',
+                  'આ બ્રોડકાસ્ટ પસંદ કરેલા વર્ગના તમામ યુઝર્સને તાત્કાલિક એપ્લિકેશન નોટિફિકેશન તથા એલર્ટ સ્વરૂપે પ્રાપ્ત થશે.'.tr,
                   style: TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.35),
                 ),
               ],
@@ -445,7 +456,7 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
         Expanded(
           child: _buildPriorityChip(
             id: 'normal',
-            label: 'સામાન્ય (Normal)',
+            label: 'સામાન્ય (Normal)'.tr,
             icon: Icons.notifications_active_rounded,
             color: const Color(0xFF38BDF8),
           ),
@@ -454,7 +465,7 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
         Expanded(
           child: _buildPriorityChip(
             id: 'urgent',
-            label: 'તાકીદનું (Urgent)',
+            label: 'તાકીદનું (Urgent)'.tr,
             icon: Icons.warning_amber_rounded,
             color: const Color(0xFFEF4444),
           ),
@@ -507,9 +518,9 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
   }
 
   Widget _buildLivePreviewCard(Color accentColor) {
-    final title = _titleCtrl.text.trim().isEmpty ? 'સૂચના શીર્ષક અહીં દેખાશે' : _titleCtrl.text.trim();
+    final title = _titleCtrl.text.trim().isEmpty ? 'સૂચના શીર્ષક અહીં દેખાશે'.tr : _titleCtrl.text.trim();
     final message = _msgCtrl.text.trim().isEmpty
-        ? 'તમે જે સંદેશો ટાઇપ કરશો તેનું પ્રીવ્યૂ યુઝર્સના ફોનમાં આ રીતે નજરે પડશે...'
+        ? 'તમે જે સંદેશો ટાઇપ કરશો તેનું પ્રીવ્યૂ યુઝર્સના ફોનમાં આ રીતે નજરે પડશે...'.tr
         : _msgCtrl.text.trim();
 
     return Container(
@@ -542,7 +553,7 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
                 child: const Icon(Icons.shield_rounded, size: 14, color: Colors.white),
               ),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 'BUILDING GUARD • SYSTEM BROADCAST',
                 style: TextStyle(
                   color: Colors.white70,
@@ -553,7 +564,7 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
               ),
               const Spacer(),
               Text(
-                'હમણાં જ',
+                'હમણાં જ'.tr,
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 10),
               ),
             ],
@@ -587,8 +598,8 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
                 ),
                 child: Text(
                   _selectedTarget == 'all'
-                      ? '👥 તમામ યુઝર્સ'
-                      : (_selectedTarget == 'admins_only' ? '🛡️ માત્ર એડમિન્સ' : '🛍️ કોમર્શિયલ'),
+                      ? '👥 તમામ યુઝર્સ'.tr
+                      : (_selectedTarget == 'admins_only' ? '🛡️ માત્ર એડમિન્સ'.tr : '🛍️ કોમર્શિયલ'.tr),
                   style: TextStyle(color: accentColor, fontSize: 10.5, fontWeight: FontWeight.w700),
                 ),
               ),
@@ -600,7 +611,7 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
                     color: const Color(0xFFEF4444).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Text(
+                  child: Text(
                     '⚠️ URGENT',
                     style: TextStyle(color: Color(0xFFEF4444), fontSize: 10, fontWeight: FontWeight.w900),
                   ),
@@ -726,14 +737,14 @@ class _SuperAdminBroadcastScreenState extends State<SuperAdminBroadcastScreen> {
                 height: 22,
                 child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
               )
-            : const Row(
+            : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.send_rounded, color: Colors.black, size: 20),
-                  SizedBox(width: 8),
+                  const Icon(Icons.send_rounded, color: Colors.black, size: 20),
+                  const SizedBox(width: 8),
                   Text(
-                    'ગ્લોબલ બ્રોડકાસ્ટ મોકલો',
-                    style: TextStyle(
+                    'ગ્લોબલ બ્રોડકાસ્ટ મોકલો'.tr,
+                    style: const TextStyle(
                       color: Colors.black,
                       fontWeight: FontWeight.w900,
                       fontSize: 15,

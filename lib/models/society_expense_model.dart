@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../l10n/app_strings.dart';
 
 class SocietyExpenseCategory {
   final String key;
@@ -15,6 +16,9 @@ class SocietyExpenseCategory {
     required this.icon,
     required this.color,
   });
+
+  /// Dynamically returns title based on active language (gu, hi, en)
+  String get title => titleGujarati.tr;
 
   static const List<SocietyExpenseCategory> all = [
     SocietyExpenseCategory(

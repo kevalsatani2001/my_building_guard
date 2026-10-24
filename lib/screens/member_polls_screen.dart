@@ -6,6 +6,8 @@ import '../models/user_model.dart';
 import '../services/society_poll_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:building_guard/core/app_firestore.dart';
+import '../services/localization_service.dart';
+import '../l10n/app_strings.dart';
 
 class MemberPollsScreen extends StatefulWidget {
   const MemberPollsScreen({super.key});
@@ -78,12 +80,12 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF0F172A), size: 19),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'સોસાયટી નિર્ણય મતદાન',
-              style: TextStyle(
+              AppStrings.get('polls_title'),
+              style: const TextStyle(
                 fontSize: 17.5,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF0F172A),
@@ -91,11 +93,17 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
               ),
             ),
             Text(
-              'આપનો કિંમતી મત સોસાયટીના વિકાસ માટે',
-              style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+              AppStrings.get('polls_subtitle'),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
             ),
           ],
         ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 14),
+            child: LanguageSwitchButton(),
+          ),
+        ],
       ),
       body: StreamBuilder<List<PollModel>>(
         stream: _pollsStream,
@@ -161,7 +169,7 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
                         children: [
                           const Icon(Icons.how_to_vote_rounded, size: 16),
                           const SizedBox(width: 6),
-                          Text('સક્રિય પોલ (${activePolls.length})'),
+                          Text('${'active_polls_capsule'.tr} (${activePolls.length})'),
                         ],
                       ),
                     ),
@@ -171,7 +179,7 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
                         children: [
                           const Icon(Icons.history_edu_rounded, size: 16),
                           const SizedBox(width: 6),
-                          Text('ભૂતકાળના નિર્ણયો (${closedPolls.length})'),
+                          Text('${'past_decisions_capsule'.tr} (${closedPolls.length})'),
                         ],
                       ),
                     ),
@@ -271,13 +279,13 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: const Color(0xFF2DD4BF).withValues(alpha: 0.4)),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.shield_outlined, size: 11, color: Color(0xFF2DD4BF)),
                           SizedBox(width: 4),
                           Text(
-                            'ડિજિટલ લોકશાહી',
+                            'ડિજિટલ લોકશાહી'.tr,
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
@@ -307,8 +315,8 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
                   ],
                 ),
                 const SizedBox(height: 5),
-                const Text(
-                  'સોસાયટી નિર્ણયોમાં આપનો અવાજ',
+                Text(
+                  'સોસાયટી નિર્ણયોમાં આપનો અવાજ'.tr,
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w800,
@@ -329,8 +337,8 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
                     const SizedBox(width: 5),
                     Text(
                       activeCount > 0
-                          ? '$activeCount નવો નિર્ણય મતદાન માટે ઉપલબ્ધ છે'
-                          : 'હાલ કોઈ સક્રિય મતદાન બાકી નથી',
+                          ? '$activeCount ${activeCount > 1 ? 'new_polls_available'.tr : 'new_poll_available'.tr}'
+                          : 'there_are_currently_no_active_polls'.tr,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -387,7 +395,7 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
               ),
               const SizedBox(height: 18),
               Text(
-                isActiveTab ? 'અત્યારે કોઈ નવું મતદાન ચાલુ નથી.' : 'કોઈ અગાઉના નિર્ણયો નોંધાયેલા નથી.',
+                isActiveTab ? 'અત્યારે કોઈ નવું મતદાન ચાલુ નથી.'.tr : 'કોઈ અગાઉના નિર્ણયો નોંધાયેલા નથી.'.tr,
                 style: const TextStyle(
                   fontSize: 15.5,
                   fontWeight: FontWeight.w900,
@@ -397,8 +405,8 @@ class _MemberPollsScreenState extends State<MemberPollsScreen> with SingleTicker
               const SizedBox(height: 6),
               Text(
                 isActiveTab
-                    ? 'જ્યારે પણ કમિટી તરફથી સોસાયટીના ખર્ચ, સુવિધા કે નિયમો અંગે નવો નિર્ણય લેવાશે ત્યારે આપ અહીંથી મત આપી શકશો.'
-                    : 'સમાપ્ત થયેલા તમામ પોલ અને પસાર થયેલા ઠરાવો અહીં સંગ્રહિત થશે.',
+                    ? 'જ્યારે પણ કમિટી તરફથી સોસાયટીના ખર્ચ, સુવિધા કે નિયમો અંગે નવો નિર્ણય લેવાશે ત્યારે આપ અહીંથી મત આપી શકશો.'.tr
+                    : 'સમાપ્ત થયેલા તમામ પોલ અને પસાર થયેલા ઠરાવો અહીં સંગ્રહિત થશે.'.tr,
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.45),
               ),
@@ -506,8 +514,8 @@ class _MemberPollCardItemState extends State<_MemberPollCardItem> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('🎉 આપનો મત સફળતાપૂર્વક નોંધાઈ ગયો છે! આભાર.'),
+          SnackBar(
+            content: Text('🎉 આપનો મત સફળતાપૂર્વક નોંધાઈ ગયો છે! આભાર.'.tr),
             backgroundColor: Color(0xFF059669),
             behavior: SnackBarBehavior.floating,
           ),
@@ -518,7 +526,7 @@ class _MemberPollCardItemState extends State<_MemberPollCardItem> {
         setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('ક્ષતિ: $e'),
+            content: Text('ક્ષતિ: $e'.tr),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -549,13 +557,13 @@ class _MemberPollCardItemState extends State<_MemberPollCardItem> {
 
     String deadlineText;
     if (isExpired || !poll.isLive) {
-      deadlineText = "મતદાન પૂર્ણ";
+      deadlineText = "મતદાન પૂર્ણ".tr;
     } else if (remaining.inDays > 0) {
-      deadlineText = "બાકી: ${remaining.inDays} દિવસ";
+      deadlineText = "${'remaining'.tr}: ${remaining.inDays} ${'days_label'.tr}";
     } else if (remaining.inHours > 0) {
-      deadlineText = "બાકી: ${remaining.inHours} કલાક";
+      deadlineText = "${'remaining'.tr}: ${remaining.inHours} ${'hours_label'.tr}";
     } else {
-      deadlineText = "અંતિમ ઘડીઓ";
+      deadlineText = "અંતિમ ઘડીઓ".tr;
     }
 
     return Container(
@@ -615,8 +623,8 @@ class _MemberPollCardItemState extends State<_MemberPollCardItem> {
                       const SizedBox(width: 4.5),
                       Text(
                         hasVoted
-                            ? 'આપે મત આપી દીધો છે'
-                            : (poll.isLive ? 'મતદાન બાકી છે' : 'મતદાન પૂર્ણ થયું'),
+                            ? 'આપે મત આપી દીધો છે'.tr
+                            : (poll.isLive ? 'મતદાન બાકી છે'.tr : 'મતદાન પૂર્ણ થયું'.tr),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
@@ -640,7 +648,7 @@ class _MemberPollCardItemState extends State<_MemberPollCardItem> {
                     ),
                   ),
                   child: Text(
-                    poll.targetScope == 'all' ? 'સમગ્ર સોસાયટી' : 'વિંગ ${poll.targetScope}',
+                    poll.targetScope == 'all' ? 'સમગ્ર સોસાયટી'.tr : 'વિંગ ${poll.targetScope}'.tr,
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w800,
@@ -735,12 +743,12 @@ class _MemberPollCardItemState extends State<_MemberPollCardItem> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
+                  Row(
                     children: [
                       Icon(Icons.leaderboard_rounded, size: 16, color: Color(0xFF0F766E)),
                       SizedBox(width: 6),
                       Text(
-                        'મતદાન પરિણામ:',
+                        'મતદાન પરિણામ:'.tr,
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
@@ -756,7 +764,7 @@ class _MemberPollCardItemState extends State<_MemberPollCardItem> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      'કુલ $totalVotes મત',
+                      '${'total_label'.tr} $totalVotes ${'votes_label'.tr}',
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
@@ -798,7 +806,7 @@ class _MemberPollCardItemState extends State<_MemberPollCardItem> {
                               runSpacing: 4,
                               children: [
                                 Text(
-                                  opt.text,
+                                  opt.text.tr,
                                   style: TextStyle(
                                     fontSize: 13.5,
                                     fontWeight: isMyVote ? FontWeight.w900 : FontWeight.w700,
@@ -812,8 +820,8 @@ class _MemberPollCardItemState extends State<_MemberPollCardItem> {
                                       color: const Color(0xFF059669),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
-                                    child: const Text(
-                                      'આપનો મત',
+                                    child: Text(
+                                      'આપનો મત'.tr,
                                       style: TextStyle(
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.w800,
@@ -876,7 +884,7 @@ class _MemberPollCardItemState extends State<_MemberPollCardItem> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    poll.isLive ? 'મતદાન પ્રક્રિયા ચાલુ છે' : 'મતદાન પૂર્ણ થયેલ છે',
+                    poll.isLive ? 'મતદાન પ્રક્રિયા ચાલુ છે'.tr : 'મતદાન પૂર્ણ થયેલ છે'.tr,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -884,7 +892,7 @@ class _MemberPollCardItemState extends State<_MemberPollCardItem> {
                     ),
                   ),
                   Text(
-                    'અંતિમ: ${dateFormat.format(poll.endDate)}',
+                    '${'deadline_label'.tr}: ${dateFormat.format(poll.endDate)}',
                     style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
                   ),
                 ],
@@ -910,8 +918,8 @@ class _MemberPollCardItemState extends State<_MemberPollCardItem> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'સોસાયટી સત્તાવાર ઠરાવ:',
+                            Text(
+                              'સોસાયટી સત્તાવાર ઠરાવ:'.tr,
                               style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF14532D)),
                             ),
                             const SizedBox(height: 3),
@@ -932,12 +940,12 @@ class _MemberPollCardItemState extends State<_MemberPollCardItem> {
             // CASE 2: IF USER HAS NOT VOTED YET: INTERACTIVE DECISION CARDS
             // =================================================================
             else ...[
-              const Row(
+              Row(
                 children: [
                   Icon(Icons.touch_app_rounded, size: 16, color: Color(0xFF0F766E)),
                   SizedBox(width: 6),
                   Text(
-                    'આપનો વિકલ્પ પસંદ કરો:',
+                    'આપનો વિકલ્પ પસંદ કરો:'.tr,
                     style: TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w800,
@@ -946,7 +954,7 @@ class _MemberPollCardItemState extends State<_MemberPollCardItem> {
                   ),
                   Spacer(),
                   Text(
-                    '(૧ મત પ્રતિ ફ્લેટ)',
+                    '(૧ મત પ્રતિ ફ્લેટ)'.tr,
                     style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                   ),
                 ],
@@ -1013,7 +1021,7 @@ class _MemberPollCardItemState extends State<_MemberPollCardItem> {
                             // Option Text
                             Expanded(
                               child: Text(
-                                opt.text,
+                                opt.text.tr,
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
@@ -1046,10 +1054,10 @@ class _MemberPollCardItemState extends State<_MemberPollCardItem> {
                       : const Icon(Icons.how_to_vote_rounded, size: 18),
                   label: Text(
                     _isSubmitting
-                        ? 'મત નોંધાઈ રહ્યો છે...'
+                        ? 'મત નોંધાઈ રહ્યો છે...'.tr
                         : (_selectedOptionId == null
-                            ? 'પહેલાં વિકલ્પ પસંદ કરો'
-                            : 'મત આપો (Submit Vote)'),
+                            ? 'પહેલાં વિકલ્પ પસંદ કરો'.tr
+                            : 'મત આપો (Submit Vote)'.tr),
                     style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
                   ),
                   style: ElevatedButton.styleFrom(

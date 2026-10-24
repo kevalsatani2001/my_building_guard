@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../models/poll_model.dart';
 import 'firebase_app_guard.dart';
 import 'society_service.dart';
+import 'package:building_guard/l10n/app_strings.dart';
 
 class SocietyPollService {
   SocietyPollService._();
@@ -31,7 +32,7 @@ class SocietyPollService {
     String createdByName = '',
   }) async {
     final societyId = _currentSocietyId;
-    if (societyId.isEmpty) throw Exception('સોસાયટી ID ઉપલબ્ધ નથી.');
+    if (societyId.isEmpty) throw Exception('સોસાયટી ID ઉપલબ્ધ નથી.'.tr);
 
     final effectiveStartDate = startDate ?? DateTime.now();
 
@@ -48,7 +49,7 @@ class SocietyPollService {
     }
 
     if (options.length < 2) {
-      throw Exception('ઓછામાં ઓછા ૨ વિકલ્પો હોવા જરૂરી છે.');
+      throw Exception('ઓછામાં ઓછા ૨ વિકલ્પો હોવા જરૂરી છે.'.tr);
     }
 
     final docRef = await _pollsRef.add({
@@ -92,8 +93,8 @@ class SocietyPollService {
 
       // 1. In-App Notification
       await _firestore.collection('notifications').add({
-        'title': '🗳️ સોસાયટી નિર્ણય મતદાન',
-        'body': 'નવા નિર્ણય માટે તમારો કિંમતી મત આપો: "$title"',
+        'title': '🗳️ સોસાયટી નિર્ણય મતદાન'.tr,
+        'body': 'નવા નિર્ણય માટે તમારો કિંમતી મત આપો: "$title"'.tr,
         'societyId': societyId,
         'type': 'new_poll',
         'pollId': pollId,
@@ -113,8 +114,8 @@ class SocietyPollService {
       );
       await callable.call<Map<String, dynamic>>({
         'topicKind': topicKind,
-        'title': '🗳️ સોસાયટી નિર્ણય મતદાન',
-        'body': 'નવા નિર્ણય માટે તમારો કિંમતી મત આપો: "$title"',
+        'title': '🗳️ સોસાયટી નિર્ણય મતદાન'.tr,
+        'body': 'નવા નિર્ણય માટે તમારો કિંમતી મત આપો: "$title"'.tr,
         'type': 'new_poll',
       });
     } catch (e) {
@@ -129,13 +130,13 @@ class SocietyPollService {
     required String flatDisplay,
   }) async {
     final uid = _currentUserId;
-    if (uid == null) throw Exception('કૃપા કરીને પહેલા લોગિન કરો.');
+    if (uid == null) throw Exception('કૃપા કરીને પહેલા લોગિન કરો.'.tr);
 
     final pollDocRef = _pollsRef.doc(pollId);
 
     await _firestore.runTransaction((transaction) async {
       final snap = await transaction.get(pollDocRef);
-      if (!snap.exists) throw Exception('મતદાન/પોલ અસ્તિત્વમાં નથી.');
+      if (!snap.exists) throw Exception('મતદાન/પોલ અસ્તિત્વમાં નથી.'.tr);
 
       final data = snap.data() as Map<String, dynamic>;
       final statusActive = data['statusActive'] == true;
@@ -145,18 +146,18 @@ class SocietyPollService {
       if (rawEnd is Timestamp) endDate = rawEnd.toDate();
 
       if (!statusActive || DateTime.now().isAfter(endDate)) {
-        throw Exception('આ મતદાનની મુદત સમાપ્ત થઈ ગઈ છે.');
+        throw Exception('આ મતદાનની મુદત સમાપ્ત થઈ ગઈ છે.'.tr);
       }
 
       final List votedUids = (data['votedMemberUids'] as List?) ?? [];
       final List votedFlats = (data['votedFlats'] as List?) ?? [];
 
       if (votedUids.contains(uid)) {
-        throw Exception('આપ દ્વારા પહેલેથી જ મત આપવામાં આવેલ છે.');
+        throw Exception('આપ દ્વારા પહેલેથી જ મત આપવામાં આવેલ છે.'.tr);
       }
 
       if (flatDisplay.isNotEmpty && votedFlats.contains(flatDisplay)) {
-        throw Exception('આપના ફ્લેટ ($flatDisplay) તરફથી પહેલેથી જ મત નોંધાઈ ચૂક્યો છે.');
+        throw Exception('આપના ફ્લેટ ($flatDisplay) તરફથી પહેલેથી જ મત નોંધાઈ ચૂક્યો છે.'.tr);
       }
 
       final rawOptions = data['options'] as List? ?? [];
@@ -175,7 +176,7 @@ class SocietyPollService {
       }
 
       if (!foundOption) {
-        throw Exception('અમાન્ય વિકલ્પ પસંદ કર્યો છે.');
+        throw Exception('અમાન્ય વિકલ્પ પસંદ કર્યો છે.'.tr);
       }
 
       final currentTotal = (data['totalVotes'] as num?)?.toInt() ?? 0;

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+export '../l10n/app_strings.dart';
+export '../services/localization_service.dart';
+import '../l10n/app_strings.dart';
+import '../services/localization_service.dart';
 import 'app_back_button.dart';
 
 /// An ultra-premium, distinctive AppBar crafted specifically for the Building Guard app.
@@ -19,6 +23,7 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Color backgroundColor;
   final PreferredSizeWidget? bottom;
   final double bottomHeight;
+  final bool showLanguageSwitch;
 
   const PremiumAppBar({
     super.key,
@@ -34,6 +39,7 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.backgroundColor = Colors.white,
     this.bottom,
     this.bottomHeight = 0.0,
+    this.showLanguageSwitch = true,
   });
 
   @override
@@ -46,70 +52,84 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canPop = Navigator.canPop(context);
-    final themeAccent = accentColor ?? Theme.of(context).colorScheme.primary;
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LocalizationService.instance.currentLocale,
+      builder: (context, _, child) {
+        final canPop = Navigator.canPop(context);
+        final themeAccent = accentColor ?? Theme.of(context).colorScheme.primary;
 
-    Widget? effectiveLeading = leading;
-    if (effectiveLeading == null && showBackButton && canPop) {
-      effectiveLeading = AppBackButton(onPressed: onBackPressed);
-    }
+        Widget? effectiveLeading = leading;
+        if (effectiveLeading == null && showBackButton && canPop) {
+          effectiveLeading = AppBackButton(onPressed: onBackPressed);
+        }
 
-    return AppBar(
-      toolbarHeight: height,
-      backgroundColor: backgroundColor,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      surfaceTintColor: Colors.transparent,
-      centerTitle: false,
-      leading: effectiveLeading != null ? Center(child: effectiveLeading) : null,
-      leadingWidth: effectiveLeading != null ? 54 : null,
-      titleSpacing: effectiveLeading != null ? 8 : 16,
-      title: (effectiveLeading == null && icon != null)
-          ? Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: themeAccent.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(11),
-                    border: Border.all(
-                      color: themeAccent.withValues(alpha: 0.22),
-                      width: 1.2,
+        final effectiveActions = <Widget>[
+          ...?actions,
+          if (showLanguageSwitch)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4),
+              child: Center(child: LanguageSwitchButton()),
+            ),
+        ];
+
+        return AppBar(
+          toolbarHeight: height,
+          backgroundColor: backgroundColor,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          surfaceTintColor: Colors.transparent,
+          centerTitle: false,
+          leading: effectiveLeading != null ? Center(child: effectiveLeading) : null,
+          leadingWidth: effectiveLeading != null ? 54 : null,
+          titleSpacing: effectiveLeading != null ? 8 : 16,
+          title: (effectiveLeading == null && icon != null)
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: themeAccent.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(11),
+                        border: Border.all(
+                          color: themeAccent.withValues(alpha: 0.22),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Icon(
+                        icon,
+                        size: 19,
+                        color: themeAccent,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(child: _buildTitleSection()),
+                  ],
+                )
+              : _buildTitleSection(),
+          actions: effectiveActions.isNotEmpty
+              ? [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: effectiveActions,
                     ),
                   ),
-                  child: Icon(
-                    icon,
-                    size: 19,
-                    color: themeAccent,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(child: _buildTitleSection()),
-              ],
-            )
-          : _buildTitleSection(),
-      actions: actions != null && actions!.isNotEmpty
-          ? [
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: actions!,
+                ]
+              : null,
+          bottom: bottom ??
+              const PreferredSize(
+                preferredSize: Size.fromHeight(1.0),
+                child: Divider(
+                  height: 1.0,
+                  thickness: 1.0,
+                  color: Color(0xFFE2E8F0),
                 ),
               ),
-            ]
-          : null,
-      bottom: bottom ??
-          const PreferredSize(
-            preferredSize: Size.fromHeight(1.0),
-            child: Divider(
-              height: 1.0,
-              thickness: 1.0,
-              color: Color(0xFFE2E8F0),
-            ),
-          ),
+        );
+      },
     );
   }
 
@@ -120,7 +140,7 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          title,
+          title.tr,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
@@ -133,7 +153,7 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
         if (subtitle != null && subtitle!.isNotEmpty) ...[
           const SizedBox(height: 1.5),
           Text(
-            subtitle!,
+            subtitle!.tr,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -212,7 +232,7 @@ class PremiumAppBarAction extends StatelessWidget {
     );
 
     if (tooltip != null) {
-      return Tooltip(message: tooltip!, child: button);
+      return Tooltip(message: tooltip!.tr, child: button);
     }
     return button;
   }

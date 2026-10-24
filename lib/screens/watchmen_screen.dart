@@ -77,16 +77,16 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   bool _isLoadingMembers = false;
   bool _isUploading = false;
 
-  static const UserModel kAllMembersPseudo = UserModel(
+  static UserModel kAllMembersPseudo = UserModel(
     uid: '__all_society__',
-    name: 'આખી સોસાયટી (All Society)',
+    name: 'આખી સોસાયટી (All Society)'.tr,
     email: '',
     role: 'member',
     unitNumber: 'All Flats',
     blockName: 'All Blocks',
   );
 
-  static const List<Map<String, dynamic>> _kQuickPartners = [
+  static final List<Map<String, dynamic>> _kQuickPartners = [
     {
       'name': 'Zomato',
       'icon': Icons.lunch_dining_rounded,
@@ -130,42 +130,42 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       'category': 'parcel',
     },
     {
-      'name': 'કુરિયર',
+      'name': 'કુરિયર'.tr,
       'icon': Icons.local_shipping_rounded,
       'color': Color(0xFF475569),
       'label': 'Courier / Parcel',
       'category': 'parcel',
     },
     {
-      'name': 'કેબ / ટેક્સી',
+      'name': 'કેબ / ટેક્સી'.tr,
       'icon': Icons.local_taxi_rounded,
       'color': Color(0xFF059669),
       'label': 'Ola / Uber Cab',
       'category': 'other',
     },
     {
-      'name': 'સર્વિસ / રિપેર',
+      'name': 'સર્વિસ / રિપેર'.tr,
       'icon': Icons.handyman_rounded,
       'color': Color(0xFF6366F1),
       'label': 'Service / Repair',
       'category': 'other',
     },
     {
-      'name': 'મહેમાન (Guest)',
+      'name': 'મહેમાન (Guest)'.tr,
       'icon': Icons.people_alt_rounded,
       'color': Color(0xFF0284C7),
       'label': 'Guest Visit',
       'category': 'other',
     },
     {
-      'name': 'માલ-સામાન / ટેમ્પો',
+      'name': 'માલ-સામાન / ટેમ્પો'.tr,
       'icon': Icons.local_shipping_rounded,
       'color': Color(0xFF0F766E),
       'label': 'Cargo / Goods Delivery',
       'category': 'cargo',
     },
     {
-      'name': 'વેપારી / શોપ સ્ટાફ',
+      'name': 'વેપારી / શોપ સ્ટાફ'.tr,
       'icon': Icons.store_rounded,
       'color': Color(0xFF7C3AED),
       'label': 'Merchant / Shop Staff',
@@ -221,11 +221,11 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         builder: (ctx, setDialogState) {
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Row(
+            title: Row(
               children: [
                 Icon(Icons.add_business_rounded, color: Color(0xFF4F46E5)),
                 SizedBox(width: 8),
-                Text('નવો વિઝિટર પ્રકાર / પાર્ટનર', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text('નવો વિઝિટર પ્રકાર / પાર્ટનર'.tr, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ],
             ),
             content: Column(
@@ -235,24 +235,24 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                 TextField(
                   controller: nameCtrl,
                   autofocus: true,
-                  decoration: const InputDecoration(
-                    labelText: 'પાર્ટનર અથવા વિઝિટરનું નામ *',
-                    hintText: 'દા.ત. JioMart, દૂધવાળા, ગેસ સર્વિસ',
+                  decoration: InputDecoration(
+                    labelText: 'પાર્ટનર અથવા વિઝિટરનું નામ *'.tr,
+                    hintText: 'દા.ત. JioMart, દૂધવાળા, ગેસ સર્વિસ'.tr,
                     border: OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: labelCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'લેબલ / હેતુ (Purpose)',
-                    hintText: 'દા.ત. JioMart Delivery',
+                  decoration: InputDecoration(
+                    labelText: 'લેબલ / હેતુ (Purpose)'.tr,
+                    hintText: 'દા.ત. JioMart Delivery'.tr,
                     border: OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'કેટેગરી પસંદ કરો:',
+                Text(
+                  'કેટેગરી પસંદ કરો:'.tr,
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
                 ),
                 const SizedBox(height: 8),
@@ -260,21 +260,21 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                   spacing: 6,
                   children: [
                     ChoiceChip(
-                      label: const Text('ફૂડ / ગ્રોસરી'),
+                      label: Text('ફૂડ / ગ્રોસરી'.tr),
                       selected: selectedCategory == 'food',
                       onSelected: (val) {
                         if (val) setDialogState(() => selectedCategory = 'food');
                       },
                     ),
                     ChoiceChip(
-                      label: const Text('પાર્સલ'),
+                      label: Text('પાર્સલ'.tr),
                       selected: selectedCategory == 'parcel',
                       onSelected: (val) {
                         if (val) setDialogState(() => selectedCategory = 'parcel');
                       },
                     ),
                     ChoiceChip(
-                      label: const Text('સર્વિસ / અન્ય'),
+                      label: Text('સર્વિસ / અન્ય'.tr),
                       selected: selectedCategory == 'other',
                       onSelected: (val) {
                         if (val) setDialogState(() => selectedCategory = 'other');
@@ -287,7 +287,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('રદ કરો'),
+                child: Text('રદ કરો'.tr),
               ),
               FilledButton(
                 onPressed: () {
@@ -296,7 +296,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                   }
                 },
                 style: FilledButton.styleFrom(backgroundColor: const Color(0xFF4F46E5)),
-                child: const Text('ઉમેરો'),
+                child: Text('ઉમેરો'.tr),
               ),
             ],
           );
@@ -423,7 +423,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       debugPrint("Camera capture error: $e");
       if (mounted) {
         _showSnackBar(
-          'કેમેરા શરૂ કરવામાં મુશ્કેલી આવી. કૃપા કરીને ફરી પ્રયાસ કરો.',
+          'કેમેરા શરૂ કરવામાં મુશ્કેલી આવી. કૃપા કરીને ફરી પ્રયાસ કરો.'.tr,
           Colors.orange,
         );
       }
@@ -584,7 +584,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       _applyMemberFilter();
     });
 
-    _showSnackBar("${member.name} ના મહેમાન મળ્યા!", Colors.blue);
+    _showSnackBar("${member.name} ના મહેમાન મળ્યા!".tr, Colors.blue);
   }
 
   // ૩. એન્ટ્રી સબમિટ અને નોટિફિકેશન ટ્રિગર
@@ -594,11 +594,11 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         _nameController.text.trim().isEmpty ||
         (!isAllSociety && _selectedMembers.isEmpty)) {
       if (_nameController.text.trim().isEmpty) {
-        _showSnackBar('કૃપા કરીને મુલાકાતીનું નામ દાખલ કરો.', Colors.orange);
+        _showSnackBar('કૃપા કરીને મુલાકાતીનું નામ દાખલ કરો.'.tr, Colors.orange);
       } else if (_image == null) {
-        _showSnackBar('કૃપા કરીને મુલાકાતીનો ફોટો લો.', Colors.orange);
+        _showSnackBar('કૃપા કરીને મુલાકાતીનો ફોટો લો.'.tr, Colors.orange);
       } else {
-        _showSnackBar('કૃપા કરીને મુલાકાત માટે ફ્લેટ પસંદ કરો.', Colors.orange);
+        _showSnackBar('કૃપા કરીને મુલાકાત માટે ફ્લેટ પસંદ કરો.'.tr, Colors.orange);
       }
       return;
     }
@@ -630,7 +630,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
           'watchmanId': FirebaseAuth.instance.currentUser!.uid,
           'photoUrl': photoUrl,
           'memberId': 'all_society',
-          'memberName': 'આખી સોસાયટી (All Society)',
+          'memberName': 'આખી સોસાયટી (All Society)'.tr,
           'blockName': _selectedBlock ?? 'All',
           'unitNumber': 'All',
           'status': 'approved',
@@ -641,7 +641,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         _clearForm();
         if (!mounted) return;
         _showSnackBar(
-          'એન્ટ્રી સફળ. આખી સોસાયટી માટે વિઝિટર એન્ટ્રી નોંધાઈ ગઈ છે.',
+          'એન્ટ્રી સફળ. આખી સોસાયટી માટે વિઝિટર એન્ટ્રી નોંધાઈ ગઈ છે.'.tr,
           Colors.green,
         );
         _tabController.animateTo(1);
@@ -665,14 +665,32 @@ class _WatchmanScreenState extends State<WatchmanScreen>
             'societyId': SocietyService.instance.societyId,
             'multiFlatCount': _selectedMembers.length,
           });
+
+          // Save notification in Firestore so member immediately sees it in app
+          final notifRef = AppFirestore.instance.collection('notifications').doc();
+          batch.set(notifRef, {
+            'title': 'નવા મુલાકાતી (Gate Alert)'.tr,
+            'body': '$guestName તમને મળવા આવ્યા છે (${m.blockName ?? ''}-${m.unitNumber ?? ''}).'.tr,
+            'targetUID': m.uid,
+            'targetBlock': m.blockName,
+            'societyId': SocietyService.instance.societyId,
+            'type': 'visitor_alert',
+            'visitorDocId': docRef.id,
+            'visitorName': guestName,
+            'visitorPhone': _phoneController.text.trim(),
+            'visitorPurpose': _purposeController.text.trim(),
+            'visitorPhotoUrl': photoUrl,
+            'status': isPreApproved ? 'approved' : 'pending',
+            'createdAt': FieldValue.serverTimestamp(),
+          });
         }
         await batch.commit();
 
         for (final m in _selectedMembers) {
           unawaited(_notifyMemberPush(
             memberUid: m.uid,
-            title: 'નવા મુલાકાતી (Gate Alert)',
-            body: '$guestName તમને મળવા આવ્યા છે.',
+            title: 'નવા મુલાકાતી (Gate Alert)'.tr,
+            body: '$guestName તમને મળવા આવ્યા છે.'.tr,
             type: 'visitor_alert',
           ));
         }
@@ -680,13 +698,13 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         _clearForm();
         if (!mounted) return;
         _showSnackBar(
-          'એન્ટ્રી સફળ. ${_selectedMembers.length} ફ્લેટના સભ્યોને જાણ કરવામાં આવી છે.',
+          'એન્ટ્રી સફળ. ${_selectedMembers.length} ફ્લેટના સભ્યોને જાણ કરવામાં આવી છે.'.tr,
           Colors.green,
         );
         _tabController.animateTo(1);
       }
     } catch (e) {
-      _showSnackBar('ભૂલ આવી: $e', Colors.red);
+      _showSnackBar('ભૂલ આવી: $e'.tr, Colors.red);
     } finally {
       setState(() => _isUploading = false);
     }
@@ -695,8 +713,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   // ૪. ઇમરજન્સી SOS એલર્ટ (એડમિનને જાણ કરવા)
   Future<void> _sendSOS() async {
     bool confirm = await _showConfirmDialog(
-      "SOS એલર્ટ!",
-      "શું તમે એડમિનને મદદ માટે જાણ કરવા માંગો છો?",
+      "SOS એલર્ટ!".tr,
+      "શું તમે એડમિનને મદદ માટે જાણ કરવા માંગો છો?".tr,
     );
     if (!confirm) return;
 
@@ -712,22 +730,22 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       );
       await callable.call<Map<String, dynamic>>({
         'topicKind': 'admins',
-        'title': '🚨 ઇમરજન્સી એલર્ટ (GATE)',
-        'body': 'ગેટ પર વોચમેનને મદદની જરૂર છે!',
+        'title': '🚨 ઇમરજન્સી એલર્ટ (GATE)'.tr,
+        'body': 'ગેટ પર વોચમેનને મદદની જરૂર છે!'.tr,
         'type': 'sos',
       });
       if (!mounted) return;
-      _showSnackBar('એડમિનને SOS પુશ મોકલાયો.', Colors.red);
+      _showSnackBar('એડમિનને SOS પુશ મોકલાયો.'.tr, Colors.red);
     } on FirebaseFunctionsException catch (e) {
       if (mounted) {
         _showSnackBar(
-          'SOS નિષ્ફળ (${e.code}): ${e.message ?? ""}',
+          'SOS નિષ્ફળ (${e.code}): ${e.message ?? ""}'.tr,
           Colors.deepOrange,
         );
       }
     } catch (e) {
       if (mounted) {
-        _showSnackBar('SOS ભૂલ: $e', Colors.red);
+        _showSnackBar('SOS ભૂલ: $e'.tr, Colors.red);
       }
     }
   }
@@ -753,11 +771,11 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   }
 
   String _lineForMemberPush(_MemberPushResult r) {
-    if (r.sentDirect) return 'મેમ્બરને પુશ મોકલાયો.';
+    if (r.sentDirect) return 'મેમ્બરને પુશ મોકલાયો.'.tr;
     if (r.noToken) {
-      return 'મેમ્બર પાસે ફોન ટોકન નથી — એક વાર એપ ખોલવા કહો.';
+      return 'મેમ્બર પાસે ફોન ટોકન નથી — એક વાર એપ ખોલવા કહો.'.tr;
     }
-    return r.failureMessage ?? 'પુશ મોકલાઈ શક્યો નહીં.';
+    return r.failureMessage ?? 'પુશ મોકલાઈ શક્યો નહીં.'.tr;
   }
 
   Color _colorForMemberPush(_MemberPushResult r) {
@@ -814,20 +832,20 @@ class _WatchmanScreenState extends State<WatchmanScreen>
           return _MemberPushResult.failed(
             kDebugMode
                 ? '${e.code}: ${e.message}'
-                : 'સર્વર ભૂલ — ઇન્ટરનેટ/ફંક્શન તપાસો (${e.code})',
+                : 'સર્વર ભૂલ — ઇન્ટરનેટ/ફંક્શન તપાસો (${e.code})'.tr,
           );
         }
       } catch (e) {
         lastError = e;
         if (i == delays.length - 1) {
           return _MemberPushResult.failed(
-            kDebugMode ? e.toString() : 'પુશ મોકલાઈ શક્યો નહીં.',
+            kDebugMode ? e.toString() : 'પુશ મોકલાઈ શક્યો નહીં.'.tr,
           );
         }
       }
     }
     return _MemberPushResult.failed(
-      kDebugMode ? '$lastError' : 'પુશ મોકલાઈ શક્યો નહીં.',
+      kDebugMode ? '$lastError' : 'પુશ મોકલાઈ શક્યો નહીં.'.tr,
     );
   }
 
@@ -887,12 +905,12 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "ડિરેક્ટરી & સોસાયટી સ્ટાફ",
+                                "ડિરેક્ટરી & સોસાયટી સ્ટાફ".tr,
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
@@ -901,7 +919,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                               ),
                               SizedBox(height: 1),
                               Text(
-                                "ઇમરજન્સી હેલ્પલાઇન અને દૈનિક સ્ટાફ સંપર્ક",
+                                "ઇમરજન્સી હેલ્પલાઇન અને દૈનિક સ્ટાફ સંપર્ક".tr,
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   color: Color(0xFF64748B),
@@ -950,8 +968,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Text(
-                          'ઈમરજન્સી કોન્ટેક્ટ્સ',
+                        Text(
+                          'ઈમરજન્સી કોન્ટેક્ટ્સ'.tr,
                           style: TextStyle(
                             fontWeight: FontWeight.w800,
                             fontSize: 14.5,
@@ -968,8 +986,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                             color: const Color(0xFFFEE2E2),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text(
-                            "તાત્કાલિક મદદ",
+                          child: Text(
+                            "તાત્કાલિક મદદ".tr,
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -987,9 +1005,9 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         if (!snap.hasData || !snap.data!.exists) {
                           return _buildEmptyContactNotice(
                             icon: Icons.contact_phone_outlined,
-                            title: 'હજુ સુધી કોઈ ઈમરજન્સી નંબર ઉમેરાયા નથી',
+                            title: 'હજુ સુધી કોઈ ઈમરજન્સી નંબર ઉમેરાયા નથી'.tr,
                             subtitle:
-                                'એડમિન દ્વારા પોલીસ, ફાયર, એમ્બ્યુલન્સ અથવા સિક્યુરિટી હેલ્પલાઇન નંબર ઉમેરવામાં આવશે.',
+                                'એડમિન દ્વારા પોલીસ, ફાયર, એમ્બ્યુલન્સ અથવા સિક્યુરિટી હેલ્પલાઇન નંબર ઉમેરવામાં આવશે.'.tr,
                             isEmergency: true,
                           );
                         }
@@ -997,9 +1015,9 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         if (rawData == null) {
                           return _buildEmptyContactNotice(
                             icon: Icons.contact_phone_outlined,
-                            title: 'હજુ સુધી કોઈ ઈમરજન્સી નંબર ઉમેરાયા નથી',
+                            title: 'હજુ સુધી કોઈ ઈમરજન્સી નંબર ઉમેરાયા નથી'.tr,
                             subtitle:
-                                'એડમિન દ્વારા પોલીસ, ફાયર, એમ્બ્યુલન્સ અથવા સિક્યુરિટી હેલ્પલાઇન નંબર ઉમેરવામાં આવશે.',
+                                'એડમિન દ્વારા પોલીસ, ફાયર, એમ્બ્યુલન્સ અથવા સિક્યુરિટી હેલ્પલાઇન નંબર ઉમેરવામાં આવશે.'.tr,
                             isEmergency: true,
                           );
                         }
@@ -1009,9 +1027,9 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         if (raw is! List || raw.isEmpty) {
                           return _buildEmptyContactNotice(
                             icon: Icons.contact_phone_outlined,
-                            title: 'હજુ સુધી કોઈ ઈમરજન્સી નંબર ઉમેરાયા નથી',
+                            title: 'હજુ સુધી કોઈ ઈમરજન્સી નંબર ઉમેરાયા નથી'.tr,
                             subtitle:
-                                'એડમિન દ્વારા પોલીસ, ફાયર, એમ્બ્યુલન્સ અથવા સિક્યુરિટી હેલ્પલાઇન નંબર ઉમેરવામાં આવશે.',
+                                'એડમિન દ્વારા પોલીસ, ફાયર, એમ્બ્યુલન્સ અથવા સિક્યુરિટી હેલ્પલાઇન નંબર ઉમેરવામાં આવશે.'.tr,
                             isEmergency: true,
                           );
                         }
@@ -1097,8 +1115,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                         Icons.call_rounded,
                                         size: 14,
                                       ),
-                                      label: const Text(
-                                        'કૉલ',
+                                      label: Text(
+                                        'કૉલ'.tr,
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w700,
@@ -1133,8 +1151,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Text(
-                          'મેમ્બર્સનો કાયમી સ્ટાફ',
+                        Text(
+                          'મેમ્બર્સનો કાયમી સ્ટાફ'.tr,
                           style: TextStyle(
                             fontWeight: FontWeight.w800,
                             fontSize: 14.5,
@@ -1151,8 +1169,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                             color: const Color(0xFFEEF2FF),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text(
-                            "દૈનિક સ્ટાફ",
+                          child: Text(
+                            "દૈનિક સ્ટાફ".tr,
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -1193,9 +1211,9 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         if (docs.isEmpty) {
                           return _buildEmptyContactNotice(
                             icon: Icons.badge_outlined,
-                            title: 'કોઈ કાયમી સ્ટાફ નોંધાયો નથી',
+                            title: 'કોઈ કાયમી સ્ટાફ નોંધાયો નથી'.tr,
                             subtitle:
-                                'સોસાયટી મેઇડ, ડ્રાઇવર, સિક્યુરિટી કે માળીની નોંધણી સભ્યો દ્વારા ઉમેર્યા પછી અહીં જોવા મળશે.',
+                                'સોસાયટી મેઇડ, ડ્રાઇવર, સિક્યુરિટી કે માળીની નોંધણી સભ્યો દ્વારા ઉમેર્યા પછી અહીં જોવા મળશે.'.tr,
                             isEmergency: false,
                           );
                         }
@@ -1471,8 +1489,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                           ),
                         ),
                         const SizedBox(height: 6),
-                        const Text(
-                          "⚠️ તમામ સોસાયટી એડમિનના ફોનમાં તાત્કાલિક સાયરન એલર્ટ વાગશે.",
+                        Text(
+                          "⚠️ તમામ સોસાયટી એડમિનના ફોનમાં તાત્કાલિક સાયરન એલર્ટ વાગશે.".tr,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 11,
@@ -1496,8 +1514,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                             ),
                           ),
                           onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text(
-                            "ના, રદ કરો",
+                          child: Text(
+                            "ના, રદ કરો".tr,
                             style: TextStyle(
                               color: Color(0xFF64748B),
                               fontWeight: FontWeight.w700,
@@ -1517,8 +1535,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                           ),
                           onPressed: () => Navigator.pop(ctx, true),
                           icon: const Icon(Icons.emergency_rounded, size: 16),
-                          label: const Text(
-                            "હા, SOS મોકલો",
+                          label: Text(
+                            "હા, SOS મોકલો".tr,
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 13,
@@ -1600,9 +1618,9 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    "ગેટ કન્ટ્રોલ",
-                    style: TextStyle(
+                  Text(
+                    "ગેટ કન્ટ્રોલ".tr,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
@@ -1642,34 +1660,36 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               const Spacer(),
               _buildHeaderCircleAction(
                 icon: Icons.directions_car_filled_rounded,
-                tooltip: 'વાહન સર્ચ (Vehicle Search)',
+                tooltip: 'વાહન સર્ચ (Vehicle Search)'.tr,
                 onTap: _openVehicleLookupDialog,
               ),
               const SizedBox(width: 6),
               _buildHeaderCircleAction(
                 icon: Icons.contact_phone_rounded,
-                tooltip: 'ઈમરજન્સી & સ્ટાફ',
+                tooltip: 'ઈમરજન્સી & સ્ટાફ'.tr,
                 onTap: _openContactsAndStaffSheet,
               ),
               const SizedBox(width: 6),
               _buildHeaderCircleAction(
                 icon: Icons.warning_amber_rounded,
-                tooltip: 'ઇમરજન્સી SOS એલર્ટ',
+                tooltip: 'ઇમરજન્સી SOS એલર્ટ'.tr,
                 color: const Color(0xFFF59E0B),
                 onTap: _sendSOS,
               ),
               const SizedBox(width: 6),
+              // Multi-language switcher button (GU / HI / EN)
+              const LanguageSwitchButton(isDark: true),
+              const SizedBox(width: 6),
               _buildHeaderCircleAction(
                 icon: Icons.logout_rounded,
-                tooltip: 'લોગઆઉટ',
+                tooltip: 'લોગઆઉટ'.tr,
                 onTap: () async {
                   final confirm = await PremiumLogoutDialog.show(
                     context,
-                    roleName: 'વોચમેન ગેટ સિસ્ટમ',
+                    roleName: 'વોચમેન ગેટ સિસ્ટમ'.tr,
                   );
-                  if (confirm) {
-                    await SessionGuardService.instance.clearSession();
-                    await FirebaseAuth.instance.signOut();
+                  if (confirm && mounted) {
+                    await SessionGuardService.performAppLogout(context);
                   }
                 },
               ),
@@ -1694,7 +1714,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                     index: 0,
                     isActive: activeIndex == 0,
                     icon: Icons.person_add_rounded,
-                    label: "નવી એન્ટ્રી (New Entry)",
+                    label: "નવી એન્ટ્રી (New Entry)".tr,
                   ),
                 ),
                 Expanded(
@@ -1702,7 +1722,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                     index: 1,
                     isActive: activeIndex == 1,
                     icon: Icons.history_rounded,
-                    label: "મુલાકાત હિસ્ટ્રી (Logs)",
+                    label: "મુલાકાત હિસ્ટ્રી (Logs)".tr,
                   ),
                 ),
               ],
@@ -1792,7 +1812,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
             ),
             const SizedBox(width: 7),
             Text(
-              label,
+              label.tr,
               style: TextStyle(
                 color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.7),
                 fontSize: 12.5,
@@ -1846,13 +1866,13 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: Colors.amberAccent),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.celebration_rounded, color: Colors.amberAccent, size: 12),
                         SizedBox(width: 4),
                         Text(
-                          'આજનો પ્રસંગ (Today Event)',
+                          'આજનો પ્રસંગ (Today Event)'.tr,
                           style: TextStyle(
                             color: Colors.amberAccent,
                             fontSize: 10.5,
@@ -1871,7 +1891,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'પાસકોડ: ${event.eventPassCode}',
+                        'પાસકોડ: ${event.eventPassCode}'.tr,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 11,
@@ -1893,7 +1913,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               ),
               const SizedBox(height: 2),
               Text(
-                'આયોજક: ${event.memberName} (ફ્લેટ ${event.unitDisplay}) • ${event.slotName}',
+                'આયોજક: ${event.memberName} (ફ્લેટ ${event.unitDisplay}) • ${event.slotName}'.tr,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.8),
                   fontSize: 11.5,
@@ -1907,19 +1927,19 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                     HapticFeedback.lightImpact();
                     setState(() {
                       _purposeController.text = '${event.amenityName} - ${event.purpose}';
-                      _nameController.text = 'ઇવેન્ટ મહેમાન (Guest)';
+                      _nameController.text = 'ઇવેન્ટ મહેમાન (Guest)'.tr;
                       _selectedBlock = SocietyService.instance.logicalBlockName(event.unitDisplay.split('-').first);
                     });
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('✅ ${event.amenityName} ના મહેમાન માટે ફોર્મ ઓટો-સેટ થઈ ગયું.'),
+                        content: Text('✅ ${event.amenityName} ના મહેમાન માટે ફોર્મ ઓટો-સેટ થઈ ગયું.'.tr),
                         backgroundColor: const Color(0xFF0F766E),
                       ),
                     );
                   },
                   icon: const Icon(Icons.flash_on_rounded, size: 15, color: Colors.amberAccent),
-                  label: const Text(
-                    'ઇવેન્ટ મહેમાન ત્વરિત એન્ટ્રી (Quick Entry)',
+                  label: Text(
+                    'ઇવેન્ટ મહેમાન ત્વરિત એન્ટ્રી (Quick Entry)'.tr,
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -1941,7 +1961,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     final sid = SocietyService.instance.societyId;
     final user = FirebaseAuth.instance.currentUser;
     final guardUid = user?.uid ?? '';
-    final guardName = user?.displayName ?? 'સુરક્ષા ગાર્ડ';
+    final guardName = user?.displayName ?? 'સુરક્ષા ગાર્ડ'.tr;
     final guardPhone = user?.phoneNumber ?? '';
 
     return StreamBuilder<PatrolShiftSession?>(
@@ -2019,8 +2039,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                             children: [
                               Text(
                                 active != null
-                                    ? '🚨 પેટ્રોલિંગ રાઉન્ડ ચાલુ છે'
-                                    : 'રાત્રિ સુરક્ષા પેટ્રોલિંગ (Night Patrol)',
+                                    ? '🚨 પેટ્રોલિંગ રાઉન્ડ ચાલુ છે'.tr
+                                    : 'રાત્રિ સુરક્ષા પેટ્રોલિંગ (Night Patrol)'.tr,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -2052,8 +2072,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                           const SizedBox(height: 3),
                           Text(
                             active != null
-                                ? '${active.roundLabel}: ${active.scannedCount}/${active.totalCheckpoints} ચેકપોઇન્ટ્સ સ્કેન થયા'
-                                : 'QR સ્કેન રાઉન્ડ શરૂ કરો અને ચેકપોઇન્ટ્સ ઓડિટ કરો',
+                                ? '${active.roundLabel}: ${active.scannedCount}/${active.totalCheckpoints} ચેકપોઇન્ટ્સ સ્કેન થયા'.tr
+                                : 'QR સ્કેન રાઉન્ડ શરૂ કરો અને ચેકપોઇન્ટ્સ ઓડિટ કરો'.tr,
                             style: const TextStyle(
                               color: Color(0xFF94A3B8),
                               fontSize: 11,
@@ -2132,8 +2152,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
-                      "મુલાકાતીની વિગત (Visitor Details)",
+                    Text(
+                      "મુલાકાતીની વિગત (Visitor Details)".tr,
                       style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w800,
@@ -2181,7 +2201,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                       height: 58,
                                     ),
                                   )
-                                : const Column(
+                                : Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(
@@ -2191,7 +2211,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                       ),
                                       SizedBox(height: 2),
                                       Text(
-                                        "ફોટો",
+                                        "ફોટો".tr,
                                         style: TextStyle(
                                           fontSize: 9.5,
                                           fontWeight: FontWeight.w700,
@@ -2233,8 +2253,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                           }
                         },
                         decoration: InputDecoration(
-                          labelText: "મુલાકાતીનું નામ *",
-                          hintText: "નામ લખો...",
+                          labelText: "મુલાકાતીનું નામ *".tr,
+                          hintText: "નામ લખો...".tr,
                           hintStyle: TextStyle(
                             fontSize: 12.5,
                             color: Colors.grey.shade400,
@@ -2350,7 +2370,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              "${_preApprovedResults.length} પ્રી-એપ્રુવ્ડ મહેમાન મળ્યા (Tap to select)",
+                              "${_preApprovedResults.length} પ્રી-એપ્રુવ્ડ મહેમાન મળ્યા (Tap to select)".tr,
                               style: const TextStyle(
                                 color: Color(0xFF1D4ED8),
                                 fontSize: 11.5,
@@ -2415,8 +2435,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   decoration: InputDecoration(
-                    labelText: "મોબાઇલ નંબર (Mobile No)",
-                    hintText: "10 અંકનો મોબાઈલ નંબર દાખલ કરો...",
+                    labelText: "મોબાઇલ નંબર (Mobile No)".tr,
+                    hintText: "10 અંકનો મોબાઈલ નંબર દાખલ કરો...".tr,
                     hintStyle: TextStyle(
                       fontSize: 12.5,
                       color: Colors.grey.shade400,
@@ -2463,8 +2483,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                     setState(() {});
                   },
                   decoration: InputDecoration(
-                    labelText: "મુલાકાતનું કારણ (Purpose)",
-                    hintText: "દા.ત. ડિલિવરી, મહેમાન, સર્વિસ, કુરિયર...",
+                    labelText: "મુલાકાતનું કારણ (Purpose)".tr,
+                    hintText: "દા.ત. ડિલિવરી, મહેમાન, સર્વિસ, કુરિયર...".tr,
                     hintStyle: TextStyle(
                       fontSize: 12.5,
                       color: Colors.grey.shade400,
@@ -2549,12 +2569,12 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "કોના ઘરે મુલાકાત છે? (Destination)",
+                            "કોના ઘરે મુલાકાત છે? (Destination)".tr,
                             style: TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w800,
@@ -2563,7 +2583,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                             ),
                           ),
                           Text(
-                            "ફ્લેટ અથવા આખી સોસાયટી પસંદ કરો",
+                            "ફ્લેટ અથવા આખી સોસાયટી પસંદ કરો".tr,
                             style: TextStyle(
                               fontSize: 10.5,
                               color: Color(0xFF64748B),
@@ -2586,7 +2606,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                           size: 19,
                           color: Color(0xFF4F46E5),
                         ),
-                        tooltip: "સભ્યો ફરી લોડ કરો",
+                        tooltip: "સભ્યો ફરી લોડ કરો".tr,
                         onPressed: _loadAllSocietyMembers,
                         visualDensity: VisualDensity.compact,
                       ),
@@ -2644,7 +2664,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  "ફ્લેટ પસંદ કરો",
+                                  "ફ્લેટ પસંદ કરો".tr,
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     fontWeight: !isAllSocietyActive
@@ -2701,7 +2721,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  "આખી સોસાયટી",
+                                  "આખી સોસાયટી".tr,
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     fontWeight: isAllSocietyActive
@@ -2751,12 +2771,12 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                           ),
                         ),
                         const SizedBox(width: 10),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "આખી સોસાયટી (બધા બ્લોક & ફ્લેટ)",
+                                "આખી સોસાયટી (બધા બ્લોક & ફ્લેટ)".tr,
                                 style: TextStyle(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w800,
@@ -2765,7 +2785,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                               ),
                               SizedBox(height: 1),
                               Text(
-                                "સરકારી, સર્વે, સોસાયટી જનરલ મુલાકાતી માટે",
+                                "સરકારી, સર્વે, સોસાયટી જનરલ મુલાકાતી માટે".tr,
                                 style: TextStyle(
                                   fontSize: 10.5,
                                   color: Color(0xFF047857),
@@ -2835,8 +2855,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                 color: Color(0xFF4F46E5),
                               ),
                               const SizedBox(width: 5),
-                              const Text(
-                                "બ્લોક પસંદગી:",
+                              Text(
+                                "બ્લોક પસંદગી:".tr,
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w700,
@@ -2852,8 +2872,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                       _applyMemberFilter();
                                     });
                                   },
-                                  child: const Text(
-                                    "બધા બ્લોક જુઓ",
+                                  child: Text(
+                                    "બધા બ્લોક જુઓ".tr,
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
@@ -2871,7 +2891,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                               children: [
                                 _buildBlockPill(
                                   '__all__',
-                                  '🏢 બધા બ્લોક',
+                                  '🏢 બધા બ્લોક'.tr,
                                   isAllBlocks,
                                   () {
                                     setState(() {
@@ -2883,7 +2903,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                 ...sortedBlocks.map(
                                   (b) => _buildBlockPill(
                                     b,
-                                    'બ્લોક $b',
+                                    'બ્લોક $b'.tr,
                                     cleanSelected == b,
                                     () {
                                       setState(() {
@@ -2941,8 +2961,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                           Text(
                                             (cleanSelected != null &&
                                                     cleanSelected.isNotEmpty)
-                                                ? "બ્લોક $cleanSelected નો ફ્લેટ પસંદ કરો *"
-                                                : "ફ્લેટ પસંદ કરો (Search Flat) *",
+                                                ? "બ્લોક $cleanSelected નો ફ્લેટ પસંદ કરો *".tr
+                                                : "ફ્લેટ પસંદ કરો (Search Flat) *".tr,
                                             style: const TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w700,
@@ -2952,10 +2972,10 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                           const SizedBox(height: 2),
                                           Text(
                                             _isLoadingMembers
-                                                ? "સભ્યો લોડ થઈ રહ્યા છે..."
+                                                ? "સભ્યો લોડ થઈ રહ્યા છે...".tr
                                                 : (_filteredMembers.isEmpty
-                                                    ? "આ બ્લોકમાં કોઈ ફ્લેટ નથી"
-                                                    : "ટૅપ કરીને ફ્લેટ નંબર અથવા નામ શોધો..."),
+                                                    ? "આ બ્લોકમાં કોઈ ફ્લેટ નથી".tr
+                                                    : "ટૅપ કરીને ફ્લેટ નંબર અથવા નામ શોધો...".tr),
                                             style: TextStyle(
                                               fontSize: 11,
                                               color: _filteredMembers.isEmpty
@@ -2975,11 +2995,11 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                         color: const Color(0xFF4F46E5),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: const Row(
+                                      child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Text(
-                                            "શોધો",
+                                            "શોધો".tr,
                                             style: TextStyle(
                                               color: Colors.white,
                                               fontSize: 11.5,
@@ -3005,8 +3025,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                               const SizedBox(height: 10),
                               Row(
                                 children: [
-                                  const Text(
-                                    "ઝડપી પસંદગી:",
+                                  Text(
+                                    "ઝડપી પસંદગી:".tr,
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
@@ -3017,8 +3037,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                   InkWell(
                                     onTap: () =>
                                         _openFlatPickerSheet(sortedBlocks),
-                                    child: const Text(
-                                      "બધા જુઓ >",
+                                    child: Text(
+                                      "બધા જુઓ >".tr,
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
@@ -3051,7 +3071,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                         : '';
                                     final label = b.isNotEmpty
                                         ? '$b-$u'
-                                        : (u.isNotEmpty ? 'ફ્લેટ $u' : m.name);
+                                        : (u.isNotEmpty ? 'ફ્લેટ $u'.tr : m.name);
 
                                     return InkWell(
                                       onTap: () {
@@ -3104,8 +3124,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                               children: [
                                 Text(
                                   _selectedMembers.length == 1
-                                      ? "પસંદ કરેલ ફ્લેટ:"
-                                      : "પસંદ કરેલ ફ્લેટ (${_selectedMembers.length}):",
+                                      ? "પસંદ કરેલ ફ્લેટ:".tr
+                                      : "પસંદ કરેલ ફ્લેટ (${_selectedMembers.length}):".tr,
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w800,
@@ -3132,7 +3152,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                         color: const Color(0xFFC7D2FE),
                                       ),
                                     ),
-                                    child: const Row(
+                                    child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Icon(
@@ -3142,7 +3162,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                         ),
                                         SizedBox(width: 3),
                                         Text(
-                                          "+ બીજો ફ્લેટ",
+                                          "+ બીજો ફ્લેટ".tr,
                                           style: TextStyle(
                                             fontSize: 10.5,
                                             fontWeight: FontWeight.w700,
@@ -3161,13 +3181,13 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                       _allowMultipleFlats = false;
                                     });
                                   },
-                                  child: const Padding(
+                                  child: Padding(
                                     padding: EdgeInsets.symmetric(
                                       horizontal: 4,
                                       vertical: 2,
                                     ),
                                     child: Text(
-                                      "બધા હટાવો",
+                                      "બધા હટાવો".tr,
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
@@ -3193,7 +3213,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                   : '';
                               final badgeLabel = b.isNotEmpty
                                   ? '$b - $u'
-                                  : (u.isNotEmpty ? 'ફ્લેટ $u' : 'ઘર');
+                                  : (u.isNotEmpty ? 'ફ્લેટ $u'.tr : 'ઘર'.tr);
 
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 8),
@@ -3261,7 +3281,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                             (m.phone != null &&
                                                     m.phone!.isNotEmpty)
                                                 ? "📞 ${m.phone}"
-                                                : "🏡 સોસાયટી રહેવાસી",
+                                                : "🏡 સોસાયટી રહેવાસી".tr,
                                             style: const TextStyle(
                                               fontSize: 11,
                                               color: Color(0xFF64748B),
@@ -3316,7 +3336,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                                     const SizedBox(width: 6),
                                     Expanded(
                                       child: Text(
-                                        "મલ્ટિ-ફ્લેટ વિઝિટ: તમામ ${_selectedMembers.length} સભ્યોને એકસાથે ગેટ એલર્ટ નોટિફિકેશન જશે.",
+                                        "મલ્ટિ-ફ્લેટ વિઝિટ: તમામ ${_selectedMembers.length} સભ્યોને એકસાથે ગેટ એલર્ટ નોટિફિકેશન જશે.".tr,
                                         style: const TextStyle(
                                           fontSize: 11,
                                           color: Color(0xFFB45309),
@@ -3351,7 +3371,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                     color: const Color(0xFF4F46E5).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -3362,7 +3382,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         ),
                         SizedBox(width: 12),
                         Text(
-                          "એન્ટ્રી સેવ અને નોટિફિકેશન મોકલાઈ રહ્યું છે...",
+                          "એન્ટ્રી સેવ અને નોટિફિકેશન મોકલાઈ રહ્યું છે...".tr,
                           style: TextStyle(
                             color: Color(0xFF4F46E5),
                             fontWeight: FontWeight.bold,
@@ -3396,7 +3416,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                     child: InkWell(
                       borderRadius: BorderRadius.circular(16),
                       onTap: _submitEntry,
-                      child: const Center(
+                      child: Center(
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -3407,7 +3427,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                             ),
                             SizedBox(width: 8),
                             Text(
-                              "એન્ટ્રી કરો અને મેમ્બરને જાણ કરો",
+                              "એન્ટ્રી કરો અને મેમ્બરને જાણ કરો".tr,
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 15,
@@ -3476,12 +3496,12 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                 ),
               ),
               const SizedBox(width: 9),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "ઝડપી સિલેક્શન (1-Tap Quick Fill)",
+                      "ઝડપી સિલેક્શન (1-Tap Quick Fill)".tr,
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,
@@ -3490,7 +3510,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                       ),
                     ),
                     Text(
-                      "એક જ ટૅપમાં ડિલિવરી કે મુલાકાત પ્રકાર સેટ કરો",
+                      "એક જ ટૅપમાં ડિલિવરી કે મુલાકાત પ્રકાર સેટ કરો".tr,
                       style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w500,
@@ -3521,7 +3541,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         width: 0.8,
                       ),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
@@ -3531,7 +3551,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         ),
                         SizedBox(width: 3),
                         Text(
-                          "સાફ કરો",
+                          "સાફ કરો".tr,
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
@@ -3554,25 +3574,25 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               children: [
                 _buildQuickCategoryTab(
                   id: 'all',
-                  label: 'બધા (${_allPartners.length})',
+                  label: 'બધા (${_allPartners.length})'.tr,
                   icon: Icons.grid_view_rounded,
                 ),
                 const SizedBox(width: 6),
                 _buildQuickCategoryTab(
                   id: 'food',
-                  label: 'ફૂડ & ગ્રોસરી',
+                  label: 'ફૂડ & ગ્રોસરી'.tr,
                   icon: Icons.fastfood_rounded,
                 ),
                 const SizedBox(width: 6),
                 _buildQuickCategoryTab(
                   id: 'parcel',
-                  label: 'પાર્સલ & કુરિયર',
+                  label: 'પાર્સલ & કુરિયર'.tr,
                   icon: Icons.inventory_2_rounded,
                 ),
                 const SizedBox(width: 6),
                 _buildQuickCategoryTab(
                   id: 'other',
-                  label: 'સર્વિસ & મુલાકાત',
+                  label: 'સર્વિસ & મુલાકાત'.tr,
                   icon: Icons.people_alt_rounded,
                 ),
               ],
@@ -3612,7 +3632,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               width: 1.1,
             ),
           ),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
@@ -3622,7 +3642,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               ),
               SizedBox(width: 4),
               Text(
-                "+ નવો પ્રકાર",
+                "+ નવો પ્રકાર".tr,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -3712,12 +3732,12 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                 if (partner['category'] == 'food' ||
                     partner['category'] == 'parcel') {
                   _nameController.text = "$name Delivery";
-                } else if (name.contains('કેબ')) {
-                  _nameController.text = "કેબ ડ્રાઇવર (Cab)";
-                } else if (name.contains('સર્વિસ')) {
-                  _nameController.text = "સર્વિસ પર્સન (Service)";
-                } else if (name.contains('મહેમાન')) {
-                  _nameController.text = "મહેમાન (Guest)";
+                } else if (name.contains('કેબ'.tr)) {
+                  _nameController.text = "કેબ ડ્રાઇવર (Cab)".tr;
+                } else if (name.contains('સર્વિસ'.tr)) {
+                  _nameController.text = "સર્વિસ પર્સન (Service)".tr;
+                } else if (name.contains('મહેમાન'.tr)) {
+                  _nameController.text = "મહેમાન (Guest)".tr;
                 }
               }
             }
@@ -3829,7 +3849,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
           child: Row(
             children: [
               _buildModernStatTile(
-                title: 'આજે',
+                title: 'આજે'.tr,
                 subtitle: 'Today',
                 count: total,
                 icon: Icons.groups_rounded,
@@ -3845,7 +3865,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               ),
               const SizedBox(width: 8),
               _buildModernStatTile(
-                title: 'પેન્ડિંગ',
+                title: 'પેન્ડિંગ'.tr,
                 subtitle: 'Pending',
                 count: pending,
                 icon: Icons.hourglass_top_rounded,
@@ -3861,7 +3881,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               ),
               const SizedBox(width: 8),
               _buildModernStatTile(
-                title: 'અંદર',
+                title: 'અંદર'.tr,
                 subtitle: 'Inside',
                 count: approved,
                 icon: Icons.login_rounded,
@@ -3877,7 +3897,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               ),
               const SizedBox(width: 8),
               _buildModernStatTile(
-                title: 'બહાર',
+                title: 'બહાર'.tr,
                 subtitle: 'Out',
                 count: checkedOut,
                 icon: Icons.logout_rounded,
@@ -3996,7 +4016,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   Future<void> _callPhone(String phone) async {
     final cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
     if (cleanPhone.isEmpty) {
-      _showSnackBar('ફોન નંબર ઉપલબ્ધ નથી', Colors.orange);
+      _showSnackBar('ફોન નંબર ઉપલબ્ધ નથી'.tr, Colors.orange);
       return;
     }
     final uri = Uri.parse('tel:$cleanPhone');
@@ -4004,16 +4024,16 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
       } else {
-        _showSnackBar('કૉલ શરૂ કરી શકાયો નહીં', Colors.red);
+        _showSnackBar('કૉલ શરૂ કરી શકાયો નહીં'.tr, Colors.red);
       }
     } catch (e) {
-      _showSnackBar('કૉલ શરૂ કરવામાં ભૂલ: $e', Colors.red);
+      _showSnackBar('કૉલ શરૂ કરવામાં ભૂલ: $e'.tr, Colors.red);
     }
   }
 
   Widget _buildTimeFilterMenu() {
     final Map<String, String> shortLabels = {
-      'today': 'આજે',
+      'today': 'આજે'.tr,
       '7d': '7 Days',
       '30d': '30 Days',
     };
@@ -4035,26 +4055,26 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       ),
       child: PopupMenuButton<String>(
         initialValue: _historyTimeFilter,
-        tooltip: 'સમયગાળો પસંદ કરો',
+        tooltip: 'સમયગાળો પસંદ કરો'.tr,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         onSelected: (val) {
           setState(() => _historyTimeFilter = val);
         },
         itemBuilder: (context) => [
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'today',
             child: Row(
               children: [
                 Icon(Icons.today_rounded, size: 18, color: Color(0xFF4F46E5)),
                 SizedBox(width: 8),
                 Text(
-                  'આજની એન્ટ્રી (Today)',
+                  'આજની એન્ટ્રી (Today)'.tr,
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
           ),
-          const PopupMenuItem(
+          PopupMenuItem(
             value: '7d',
             child: Row(
               children: [
@@ -4065,13 +4085,13 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                 ),
                 SizedBox(width: 8),
                 Text(
-                  'છેલ્લા ૭ દિવસ (7 Days)',
+                  'છેલ્લા ૭ દિવસ (7 Days)'.tr,
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
           ),
-          const PopupMenuItem(
+          PopupMenuItem(
             value: '30d',
             child: Row(
               children: [
@@ -4082,7 +4102,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                 ),
                 SizedBox(width: 8),
                 Text(
-                  'છેલ્લા ૩૦ દિવસ (30 Days)',
+                  'છેલ્લા ૩૦ દિવસ (30 Days)'.tr,
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
               ],
@@ -4101,7 +4121,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
               ),
               const SizedBox(width: 6),
               Text(
-                shortLabels[_historyTimeFilter] ?? 'આજે',
+                shortLabels[_historyTimeFilter] ?? 'આજે'.tr,
                 style: const TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
@@ -4189,12 +4209,12 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   void _showCheckOutConfirmation(String docId, String visitorName) async {
     final confirmed = await PremiumConfirmationDialog.show(
       context,
-      title: 'ચેક-આઉટ કન્ફર્મેશન',
-      message: '$visitorName સોસાયટીની બહાર નીકળી ગયા છે તે કન્ફર્મ કરો છો?',
+      title: 'ચેક-આઉટ કન્ફર્મેશન'.tr,
+      message: '$visitorName સોસાયટીની બહાર નીકળી ગયા છે તે કન્ફર્મ કરો છો?'.tr,
       icon: Icons.output_rounded,
       gradientColors: const [Color(0xFF475569), Color(0xFF334155)],
-      cancelText: 'ના, રદ કરો',
-      confirmText: 'હા, બહાર ગયા (OUT)',
+      cancelText: 'ના, રદ કરો'.tr,
+      confirmText: 'હા, બહાર ગયા (OUT)'.tr,
       confirmColor: const Color(0xFFDC2626),
       confirmGradient: const [Color(0xFFEF4444), Color(0xFFDC2626)],
       confirmIcon: Icons.check_circle_rounded,
@@ -4207,12 +4227,12 @@ class _WatchmanScreenState extends State<WatchmanScreen>
 
   void _showVisitorDetailSheet(Map<String, dynamic> m, String docId) {
     final status = (m['status'] ?? 'pending').toString();
-    final name = (m['name'] ?? 'મહેમાન').toString().trim();
+    final name = (m['name'] ?? 'મહેમાન'.tr).toString().trim();
     final phone = (m['phone'] ?? '').toString().trim();
     final block = (m['blockName'] ?? '').toString().trim();
     final unit = (m['unitNumber'] ?? '').toString().trim();
     final memberName = (m['memberName'] ?? '').toString().trim();
-    final purpose = (m['purpose'] ?? 'મુલાકાત').toString().trim();
+    final purpose = (m['purpose'] ?? 'મુલાકાત'.tr).toString().trim();
     final photoUrl = (m['photoUrl'] ?? '').toString().trim();
     final vehicle = (m['vehicleNumber'] ?? m['vehicle'] ?? '').toString().trim();
     final entryTime = m['entryTime'] is Timestamp
@@ -4292,7 +4312,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          'હેતુ: $purpose',
+                          'હેતુ: $purpose'.tr,
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.grey.shade600,
@@ -4309,30 +4329,30 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         color: Color(0xFF059669),
                       ),
                       onPressed: () => _callPhone(phone),
-                      tooltip: 'કૉલ કરો',
+                      tooltip: 'કૉલ કરો'.tr,
                     ),
                 ],
               ),
               const Divider(height: 28),
               _detailRow(
                 Icons.apartment_rounded,
-                'ફ્લેટ / યુનિટ',
+                'ફ્લેટ / યુનિટ'.tr,
                 '$block - $unit ${memberName.isNotEmpty ? "($memberName)" : ""}',
               ),
               if (phone.isNotEmpty)
-                _detailRow(Icons.phone_android_rounded, 'મોબાઈલ નંબર', phone),
+                _detailRow(Icons.phone_android_rounded, 'મોબાઈલ નંબર'.tr, phone),
               if (vehicle.isNotEmpty)
-                _detailRow(Icons.directions_car_rounded, 'વાહન નંબર', vehicle),
+                _detailRow(Icons.directions_car_rounded, 'વાહન નંબર'.tr, vehicle),
               if (entryTime != null)
                 _detailRow(
                   Icons.login_rounded,
-                  'એન્ટ્રી સમય',
+                  'એન્ટ્રી સમય'.tr,
                   DateFormat('dd MMM yyyy, hh:mm a').format(entryTime),
                 ),
               if (exitTime != null)
                 _detailRow(
                   Icons.logout_rounded,
-                  'એક્ઝિટ સમય',
+                  'એક્ઝિટ સમય'.tr,
                   DateFormat('dd MMM yyyy, hh:mm a').format(exitTime),
                 ),
               const SizedBox(height: 20),
@@ -4343,8 +4363,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                     _showCheckOutConfirmation(docId, name);
                   },
                   icon: const Icon(Icons.logout_rounded),
-                  label: const Text(
-                    'મહેમાન બહાર ગયા (Mark Out)',
+                  label: Text(
+                    'મહેમાન બહાર ગયા (Mark Out)'.tr,
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   style: FilledButton.styleFrom(
@@ -4400,10 +4420,10 @@ class _WatchmanScreenState extends State<WatchmanScreen>
   Widget _buildVisitorCard(QueryDocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
     final status = (d['status'] ?? 'pending').toString();
-    final name = (d['name'] ?? 'મહેમાન').toString().trim();
+    final name = (d['name'] ?? 'મહેમાન'.tr).toString().trim();
     final block = (d['blockName'] ?? '').toString().trim();
     final unit = (d['unitNumber'] ?? '').toString().trim();
-    final purpose = (d['purpose'] ?? 'મુલાકાત').toString().trim();
+    final purpose = (d['purpose'] ?? 'મુલાકાત'.tr).toString().trim();
     final phone = (d['phone'] ?? '').toString().trim();
     final photoUrl = (d['photoUrl'] ?? '').toString().trim();
     final vehicle = (d['vehicleNumber'] ?? d['vehicle'] ?? '').toString().trim();
@@ -4422,22 +4442,22 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     if (status == 'approved') {
       accentColor = const Color(0xFF10B981);
       lightBg = const Color(0xFFECFDF5);
-      statusText = "અંદર છે";
+      statusText = "અંદર છે".tr;
       statusIcon = Icons.door_front_door_rounded;
     } else if (status == 'rejected') {
       accentColor = const Color(0xFFEF4444);
       lightBg = const Color(0xFFFEF2F2);
-      statusText = "ના પાડી";
+      statusText = "ના પાડી".tr;
       statusIcon = Icons.cancel_rounded;
     } else if (status == 'checked_out') {
       accentColor = const Color(0xFF64748B);
       lightBg = const Color(0xFFF1F5F9);
-      statusText = "બહાર ગયા";
+      statusText = "બહાર ગયા".tr;
       statusIcon = Icons.exit_to_app_rounded;
     } else {
       accentColor = const Color(0xFFF59E0B);
       lightBg = const Color(0xFFFFFBEB);
-      statusText = "રાહ જુઓ";
+      statusText = "રાહ જુઓ".tr;
       statusIcon = Icons.hourglass_top_rounded;
     }
 
@@ -4671,7 +4691,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         size: 13,
                         color: Colors.white,
                       ),
-                      label: const Text(
+                      label: Text(
                         'OUT',
                         style: TextStyle(
                           color: Colors.white,
@@ -4737,7 +4757,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
+                          children: [
                             Icon(
                               Icons.phone_rounded,
                               size: 12,
@@ -4745,7 +4765,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                             ),
                             SizedBox(width: 2),
                             Text(
-                              'કૉલ',
+                              'કૉલ'.tr,
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -4800,7 +4820,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                       });
                     },
                     decoration: InputDecoration(
-                      hintText: "નામ, ફ્લેટ કે વાહન નંબર શોધો...",
+                      hintText: "નામ, ફ્લેટ કે વાહન નંબર શોધો...".tr,
                       hintStyle: TextStyle(
                         color: Colors.grey.shade400,
                         fontSize: 13,
@@ -4841,31 +4861,31 @@ class _WatchmanScreenState extends State<WatchmanScreen>
             children: [
               _buildHistoryStatusPill(
                 value: 'all',
-                label: 'બધા (All)',
+                label: 'બધા (All)'.tr,
                 icon: Icons.grid_view_rounded,
                 color: const Color(0xFF4F46E5),
               ),
               _buildHistoryStatusPill(
                 value: 'pending',
-                label: 'પેન્ડિંગ',
+                label: 'પેન્ડિંગ'.tr,
                 icon: Icons.hourglass_top_rounded,
                 color: const Color(0xFFF59E0B),
               ),
               _buildHistoryStatusPill(
                 value: 'approved',
-                label: 'અંદર છે',
+                label: 'અંદર છે'.tr,
                 icon: Icons.door_front_door_rounded,
                 color: const Color(0xFF10B981),
               ),
               _buildHistoryStatusPill(
                 value: 'rejected',
-                label: 'ના પાડી',
+                label: 'ના પાડી'.tr,
                 icon: Icons.cancel_outlined,
                 color: const Color(0xFFEF4444),
               ),
               _buildHistoryStatusPill(
                 value: 'checked_out',
-                label: 'બહાર ગયા',
+                label: 'બહાર ગયા'.tr,
                 icon: Icons.logout_rounded,
                 color: const Color(0xFF64748B),
               ),
@@ -4893,7 +4913,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Text('હિસ્ટ્રી લોડ કરવામાં ભૂલ: ${snap.error}'),
+                    child: Text('હિસ્ટ્રી લોડ કરવામાં ભૂલ: ${snap.error}'.tr),
                   ),
                 );
               }
@@ -4973,10 +4993,10 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         const SizedBox(height: 16),
                         Text(
                           _searchQuery.isNotEmpty
-                              ? 'સર્ચ મુજબ કોઈ મહેમાન મળ્યા નથી.'
+                              ? 'સર્ચ મુજબ કોઈ મહેમાન મળ્યા નથી.'.tr
                               : (_historyStatusFilter != 'all'
-                                  ? 'પસંદ કરેલ ફિલ્ટરમાં કોઈ મહેમાન નથી.'
-                                  : 'હાલ કોઈ મુલાકાતીની નોંધ નથી.'),
+                                  ? 'પસંદ કરેલ ફિલ્ટરમાં કોઈ મહેમાન નથી.'.tr
+                                  : 'હાલ કોઈ મુલાકાતીની નોંધ નથી.'.tr),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 15,
@@ -4987,8 +5007,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         const SizedBox(height: 6),
                         Text(
                           _searchQuery.isNotEmpty
-                              ? 'સર્ચ અથવા સ્ટેટસ ફિલ્ટર બદલીને ફરી તપાસો.'
-                              : 'નવી એન્ટ્રી ટેબમાંથી મુલાકાતી નોંધી શકાય છે.',
+                              ? 'સર્ચ અથવા સ્ટેટસ ફિલ્ટર બદલીને ફરી તપાસો.'.tr
+                              : 'નવી એન્ટ્રી ટેબમાંથી મુલાકાતી નોંધી શકાય છે.'.tr,
                           style: const TextStyle(
                             fontSize: 12.5,
                             color: Color(0xFF64748B),
@@ -5016,8 +5036,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                               Icons.person_add_rounded,
                               size: 16,
                             ),
-                            label: const Text(
-                              'નવી એન્ટ્રી નોંધો',
+                            label: Text(
+                              'નવી એન્ટ્રી નોંધો'.tr,
                               style: TextStyle(fontWeight: FontWeight.w700),
                             ),
                           ),
@@ -5050,7 +5070,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     final rawName = m?['name'] as String?;
     final guestName = (rawName != null && rawName.trim().isNotEmpty)
         ? rawName.trim()
-        : 'મહેમાન';
+        : 'મહેમાન'.tr;
 
     await ref.update({
       'status': 'checked_out',
@@ -5058,19 +5078,30 @@ class _WatchmanScreenState extends State<WatchmanScreen>
     });
 
     if (memberUid != null && memberUid.isNotEmpty) {
+      try {
+        await AppFirestore.instance.collection('notifications').add({
+          'title': 'મહેમાન બહાર ગયા 🚪'.tr,
+          'body': '$guestName સોસાયટીની બહાર નીકળી ગયા છે.'.tr,
+          'targetUID': memberUid,
+          'societyId': SocietyService.instance.societyId,
+          'type': 'visitor_checked_out',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      } catch (_) {}
+
       final push = await _notifyMemberPush(
         memberUid: memberUid,
-        title: 'મહેમાન બહાર ગયા 🚪',
-        body: '$guestName સોસાયટીની બહાર નીકળી ગયા છે.',
+        title: 'મહેમાન બહાર ગયા 🚪'.tr,
+        body: '$guestName સોસાયટીની બહાર નીકળી ગયા છે.'.tr,
         type: 'visitor_checked_out',
       );
       if (!mounted) return;
       _showSnackBar(
-        'મહેમાન ચેક-આઉટ થઈ ગયા છે. ${_lineForMemberPush(push)}',
+        'મહેમાન ચેક-આઉટ થઈ ગયા છે. ${_lineForMemberPush(push)}'.tr,
         _colorForMemberPush(push),
       );
     } else {
-      _showSnackBar("મહેમાન ચેક-આઉટ થઈ ગયા છે", Colors.blue);
+      _showSnackBar("મહેમાન ચેક-આઉટ થઈ ગયા છે".tr, Colors.blue);
     }
   }
 
@@ -5115,8 +5146,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
-                'પાસ કોડ દાખલ કરો',
+              Text(
+                'પાસ કોડ દાખલ કરો'.tr,
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -5124,8 +5155,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'મહેમાનના WhatsApp અથવા SMS માં આવેલો પ્રી-અપ્રૂવલ ID લખો',
+              Text(
+                'મહેમાનના WhatsApp અથવા SMS માં આવેલો પ્રી-અપ્રૂવલ ID લખો'.tr,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
@@ -5143,7 +5174,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                   letterSpacing: 0.5,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'દા.ત. PASS-1234 અથવા ID',
+                  hintText: 'દા.ત. PASS-1234 અથવા ID'.tr,
                   hintStyle: const TextStyle(
                     fontSize: 12.5,
                     color: Color(0xFF94A3B8),
@@ -5188,8 +5219,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         ),
                       ),
                       onPressed: () => Navigator.pop(ctx),
-                      child: const Text(
-                        'રદ કરો',
+                      child: Text(
+                        'રદ કરો'.tr,
                         style: TextStyle(
                           color: Color(0xFF64748B),
                           fontWeight: FontWeight.w700,
@@ -5215,8 +5246,8 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                         }
                       },
                       icon: const Icon(Icons.check_circle_rounded, size: 16),
-                      label: const Text(
-                        'ચકાસો',
+                      label: Text(
+                        'ચકાસો'.tr,
                         style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
@@ -5245,7 +5276,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         if (!SocietyService.instance.documentBelongsToCurrentTenant(
           Map<String, dynamic>.from(data as Map),
         )) {
-          _showSnackBar('આ QR આ સોસાયટી માટે માન્ય નથી.', Colors.orange);
+          _showSnackBar('આ QR આ સોસાયટી માટે માન્ય નથી.'.tr, Colors.orange);
           return;
         }
 
@@ -5273,10 +5304,10 @@ class _WatchmanScreenState extends State<WatchmanScreen>
           _purposeController.text = "Pre-Approved Guest";
         });
 
-        _showSnackBar("QR સ્કેન સફળ!", Colors.green);
+        _showSnackBar("QR સ્કેન સફળ!".tr, Colors.green);
       }
     } catch (e) {
-      _showSnackBar("ભૂલ આવી: $e", Colors.red);
+      _showSnackBar("ભૂલ આવી: $e".tr, Colors.red);
     } finally {
       setState(() => _isUploading = false);
     }
@@ -5454,12 +5485,12 @@ class _QRScannerSheetState extends State<_QRScannerSheet>
                     ),
                   ),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'QR કોડ સ્કેનર',
+                          'QR કોડ સ્કેનર'.tr,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
@@ -5467,7 +5498,7 @@ class _QRScannerSheetState extends State<_QRScannerSheet>
                           ),
                         ),
                         Text(
-                          'મહેમાન પાસ અથવા પ્રી-અપ્રૂવ્ડ QR સ્કેન કરો',
+                          'મહેમાન પાસ અથવા પ્રી-અપ્રૂવ્ડ QR સ્કેન કરો'.tr,
                           style: TextStyle(
                             fontSize: 11,
                             color: Color(0xFF94A3B8),
@@ -5496,7 +5527,7 @@ class _QRScannerSheetState extends State<_QRScannerSheet>
                       _controller.toggleTorch();
                       setState(() => _isTorchOn = !_isTorchOn);
                     },
-                    tooltip: 'ટોર્ચ (Flash)',
+                    tooltip: 'ટોર્ચ (Flash)'.tr,
                   ),
                   const SizedBox(width: 4),
                   // Camera switch button
@@ -5510,7 +5541,7 @@ class _QRScannerSheetState extends State<_QRScannerSheet>
                       size: 19,
                     ),
                     onPressed: () => _controller.switchCamera(),
-                    tooltip: 'કેમેરા બદલો',
+                    tooltip: 'કેમેરા બદલો'.tr,
                   ),
                   const SizedBox(width: 4),
                   // Close button
@@ -5557,8 +5588,8 @@ class _QRScannerSheetState extends State<_QRScannerSheet>
                                 ),
                               ),
                               const SizedBox(height: 14),
-                              const Text(
-                                'કેમેરા અથવા QR સ્કેનર શરૂ થઈ શક્યું નથી.',
+                              Text(
+                                'કેમેરા અથવા QR સ્કેનર શરૂ થઈ શક્યું નથી.'.tr,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w800,
@@ -5569,7 +5600,7 @@ class _QRScannerSheetState extends State<_QRScannerSheet>
                               const SizedBox(height: 6),
                               Text(
                                 error.errorDetails?.message ??
-                                    'કૃપા કરીને કેમેરા પરમિશન આપો અથવા નીચેથી કોડ મેન્યુઅલી દાખલ કરો.',
+                                    'કૃપા કરીને કેમેરા પરમિશન આપો અથવા નીચેથી કોડ મેન્યુઅલી દાખલ કરો.'.tr,
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   fontSize: 12,
@@ -5594,7 +5625,7 @@ class _QRScannerSheetState extends State<_QRScannerSheet>
                                 },
                                 icon:
                                     const Icon(Icons.dialpad_rounded, size: 16),
-                                label: const Text('મેન્યુઅલી કોડ દાખલ કરો'),
+                                label: Text('મેન્યુઅલી કોડ દાખલ કરો'.tr),
                               ),
                             ],
                           ),
@@ -5689,7 +5720,7 @@ class _QRScannerSheetState extends State<_QRScannerSheet>
                             color: Colors.white.withValues(alpha: 0.15),
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
@@ -5699,7 +5730,7 @@ class _QRScannerSheetState extends State<_QRScannerSheet>
                             ),
                             SizedBox(width: 6),
                             Text(
-                              'કેમેરા સામે ચોરસમાં QR કોડ રાખો',
+                              'કેમેરા સામે ચોરસમાં QR કોડ રાખો'.tr,
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 11.5,
@@ -5762,8 +5793,8 @@ class _QRScannerSheetState extends State<_QRScannerSheet>
                         size: 18,
                         color: Color(0xFF818CF8),
                       ),
-                      label: const Text(
-                        'સ્કેન નથી થતું? મેન્યુઅલી કોડ લખો',
+                      label: Text(
+                        'સ્કેન નથી થતું? મેન્યુઅલી કોડ લખો'.tr,
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -5771,8 +5802,8 @@ class _QRScannerSheetState extends State<_QRScannerSheet>
                       ),
                     ),
                     const SizedBox(height: 6),
-                    const Text(
-                      '🔒 સભ્યો દ્વારા બનાવેલ ડિજિટલ ગેસ્ટ પાસ QR સ્કેન કરો',
+                    Text(
+                      '🔒 સભ્યો દ્વારા બનાવેલ ડિજિટલ ગેસ્ટ પાસ QR સ્કેન કરો'.tr,
                       style: TextStyle(
                         fontSize: 10.5,
                         color: Color(0xFF64748B),
@@ -6036,12 +6067,12 @@ class _FlatPickerSheetState extends State<_FlatPickerSheet> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "ફ્લેટ પસંદ કરો",
+                          "ફ્લેટ પસંદ કરો".tr,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
@@ -6049,7 +6080,7 @@ class _FlatPickerSheetState extends State<_FlatPickerSheet> {
                           ),
                         ),
                         Text(
-                          "નામ અથવા ફ્લેટ નંબરથી શોધો",
+                          "નામ અથવા ફ્લેટ નંબરથી શોધો".tr,
                           style: TextStyle(
                             fontSize: 11.5,
                             color: Color(0xFF64748B),
@@ -6101,7 +6132,7 @@ class _FlatPickerSheetState extends State<_FlatPickerSheet> {
                           ),
                           const SizedBox(width: 5),
                           Text(
-                            "મલ્ટિ-ફ્લેટ",
+                            "મલ્ટિ-ફ્લેટ".tr,
                             style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w700,
@@ -6137,7 +6168,7 @@ class _FlatPickerSheetState extends State<_FlatPickerSheet> {
                   color: Color(0xFF0F172A),
                 ),
                 decoration: InputDecoration(
-                  hintText: "ફ્લેટ નં. (દા.ત. 101) અથવા સભ્યનું નામ...",
+                  hintText: "ફ્લેટ નં. (દા.ત. 101) અથવા સભ્યનું નામ...".tr,
                   hintStyle: const TextStyle(
                     fontSize: 12.5,
                     color: Color(0xFF94A3B8),
@@ -6189,14 +6220,14 @@ class _FlatPickerSheetState extends State<_FlatPickerSheet> {
                 children: [
                   _buildSheetBlockPill(
                     id: '__all__',
-                    label: '🏢 બધા બ્લોક',
+                    label: '🏢 બધા બ્લોક'.tr,
                     isSelected: _activeBlock == '__all__',
                     onTap: () => setState(() => _activeBlock = '__all__'),
                   ),
                   ...widget.sortedBlocks.map(
                     (b) => _buildSheetBlockPill(
                       id: b,
-                      label: 'બ્લોક $b',
+                      label: 'બ્લોક $b'.tr,
                       isSelected: _activeBlock == b,
                       onTap: () => setState(() => _activeBlock = b),
                     ),
@@ -6212,7 +6243,7 @@ class _FlatPickerSheetState extends State<_FlatPickerSheet> {
               child: Row(
                 children: [
                   Text(
-                    "${filtered.length} ફ્લેટ ઉપલબ્ધ",
+                    "${filtered.length} ફ્લેટ ઉપલબ્ધ".tr,
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -6222,7 +6253,7 @@ class _FlatPickerSheetState extends State<_FlatPickerSheet> {
                   const Spacer(),
                   if (_selectedList.isNotEmpty)
                     Text(
-                      "${_selectedList.length} પસંદ કરેલ",
+                      "${_selectedList.length} પસંદ કરેલ".tr,
                       style: const TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
@@ -6261,8 +6292,8 @@ class _FlatPickerSheetState extends State<_FlatPickerSheet> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            const Text(
-                              "કોઈ ફ્લેટ મળ્યો નથી",
+                            Text(
+                              "કોઈ ફ્લેટ મળ્યો નથી".tr,
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -6272,8 +6303,8 @@ class _FlatPickerSheetState extends State<_FlatPickerSheet> {
                             const SizedBox(height: 4),
                             Text(
                               _searchQuery.isNotEmpty
-                                   ? "'$_searchQuery' માટે કોઈ પરિણામ મળ્યું નથી."
-                                  : "આ બ્લોકમાં કોઈ ફ્લેટ ઉપલબ્ધ નથી.",
+                                   ? "'$_searchQuery' માટે કોઈ પરિણામ મળ્યું નથી.".tr
+                                  : "આ બ્લોકમાં કોઈ ફ્લેટ ઉપલબ્ધ નથી.".tr,
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: Color(0xFF64748B),
@@ -6311,7 +6342,7 @@ class _FlatPickerSheetState extends State<_FlatPickerSheet> {
                             : '';
                         final fullFlatLabel = blockName.isNotEmpty
                             ? '$blockName - $unit'
-                            : (unit.isNotEmpty ? 'ફ્લેટ $unit' : 'ઘર');
+                            : (unit.isNotEmpty ? 'ફ્લેટ $unit'.tr : 'ઘર'.tr);
 
                         return InkWell(
                           onTap: () => _onMemberTapped(m),
@@ -6403,7 +6434,7 @@ class _FlatPickerSheetState extends State<_FlatPickerSheet> {
                                             (m.phone != null &&
                                                     m.phone!.isNotEmpty)
                                                 ? m.phone!
-                                                : "રહેવાસી",
+                                                : "રહેવાસી".tr,
                                             style: TextStyle(
                                               fontSize: 11,
                                               color: Colors.grey.shade600,
@@ -6480,8 +6511,8 @@ class _FlatPickerSheetState extends State<_FlatPickerSheet> {
                             size: 16,
                             color: Colors.red,
                           ),
-                          label: const Text(
-                            "સાફ કરો",
+                          label: Text(
+                            "સાફ કરો".tr,
                             style: TextStyle(
                               color: Colors.red,
                               fontSize: 12,
@@ -6498,8 +6529,8 @@ class _FlatPickerSheetState extends State<_FlatPickerSheet> {
                         icon: const Icon(Icons.check_rounded, size: 18),
                         label: Text(
                           _selectedList.isEmpty
-                              ? "બંધ કરો"
-                              : "પસંદગી સાચવો (${_selectedList.length})",
+                              ? "બંધ કરો".tr
+                              : "પસંદગી સાચવો (${_selectedList.length})".tr,
                           style: const TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w700,

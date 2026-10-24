@@ -21,9 +21,9 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: const PremiumAppBar(
-        title: "ફરિયાદ નિવારણ ડેસ્ક",
-        subtitle: "સભ્યોની સમસ્યાઓ અને રિઝોલ્યુશન સ્ટેટસ",
+      appBar: PremiumAppBar(
+        title: "ફરિયાદ નિવારણ ડેસ્ક".tr,
+        subtitle: "સભ્યોની સમસ્યાઓ અને રિઝોલ્યુશન સ્ટેટસ".tr,
         icon: Icons.support_agent_rounded,
         accentColor: Color(0xFF6D28D9),
       ),
@@ -38,7 +38,7 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('ડેટા લોડ કરવામાં ભૂલ: ${snap.error}', style: const TextStyle(color: Colors.red)),
+                child: Text('ડેટા લોડ કરવામાં ભૂલ: ${snap.error}'.tr, style: const TextStyle(color: Colors.red)),
               ),
             );
           }
@@ -69,11 +69,11 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 child: Row(
                   children: [
-                    _buildFilterChip('બધા (${allDocs.length})', 'all'),
+                    _buildFilterChip('બધા (${allDocs.length})'.tr, 'all'),
                     const SizedBox(width: 8),
-                    _buildFilterChip('બાકી (${pendingDocs.length})', 'pending', badgeColor: Colors.amber.shade700),
+                    _buildFilterChip('બાકી (${pendingDocs.length})'.tr, 'pending', badgeColor: Colors.amber.shade700),
                     const SizedBox(width: 8),
-                    _buildFilterChip('ઉકેલાઈ (${resolvedDocs.length})', 'resolved', badgeColor: Colors.green.shade700),
+                    _buildFilterChip('ઉકેલાઈ (${resolvedDocs.length})'.tr, 'resolved', badgeColor: Colors.green.shade700),
                   ],
                 ),
               ),
@@ -102,8 +102,8 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
                                   const SizedBox(height: 14),
                                   Text(
                                     _selectedFilter == 'pending'
-                                        ? 'કોઈ બાકી ફરિયાદ નથી!'
-                                        : 'હજી સુધી કોઈ ફરિયાદ નોંધાયેલ નથી.',
+                                        ? 'કોઈ બાકી ફરિયાદ નથી!'.tr
+                                        : 'હજી સુધી કોઈ ફરિયાદ નોંધાયેલ નથી.'.tr,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 16,
@@ -113,8 +113,8 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
                                   const SizedBox(height: 4),
                                   Text(
                                     _selectedFilter == 'pending'
-                                        ? 'બધા પ્રશ્નો ઉકેલાઈ ગયા છે. બધું સરસ ચાલે છે!'
-                                        : 'જ્યારે કોઈ સભ્ય ફરિયાદ નોંધાવશે ત્યારે અહીં દેખાશે.',
+                                        ? 'બધા પ્રશ્નો ઉકેલાઈ ગયા છે. બધું સરસ ચાલે છે!'.tr
+                                        : 'જ્યારે કોઈ સભ્ય ફરિયાદ નોંધાવશે ત્યારે અહીં દેખાશે.'.tr,
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Color(0xFF64748B),
@@ -169,7 +169,7 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
     final isResolved = status == 'resolved';
     final title = (m['title'] as String? ?? '').trim();
     final desc = (m['description'] as String? ?? '').trim();
-    final memberName = (m['memberName'] as String? ?? 'મેમ્બર').trim();
+    final memberName = (m['memberName'] as String? ?? 'મેમ્બર'.tr).trim();
     final photoUrl = (m['photoUrl'] as String? ?? '').trim();
 
     DateTime? createdAt;
@@ -206,7 +206,7 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    title.isNotEmpty ? title : 'ફરિયાદ',
+                    title.isNotEmpty ? title : 'ફરિયાદ'.tr,
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 15,
@@ -234,7 +234,7 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        isResolved ? 'ઉકેલાઈ ગઈ' : 'બાકી (Pending)',
+                        isResolved ? 'ઉકેલાઈ ગઈ'.tr : 'બાકી (Pending)'.tr,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -263,7 +263,7 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade800),
                 ),
                 if (createdAt != null) ...[
-                  const Text(' • ', style: TextStyle(color: Colors.grey)),
+                  Text(' • ', style: TextStyle(color: Colors.grey)),
                   Icon(Icons.access_time_rounded, size: 12, color: Colors.grey.shade600),
                   const SizedBox(width: 4),
                   Text(
@@ -321,12 +321,12 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
                           color: Colors.black.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.zoom_in_rounded, size: 14, color: Colors.white),
                             SizedBox(width: 4),
-                            Text('ઝૂમ કરો', style: TextStyle(color: Colors.white, fontSize: 11)),
+                            Text('ઝૂમ કરો'.tr, style: TextStyle(color: Colors.white, fontSize: 11)),
                           ],
                         ),
                       ),
@@ -349,15 +349,15 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
                     });
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('ફરિયાદ ઉકેલાઈ ગઈ તરીકે નોંધાઈ ગઈ!'),
+                        SnackBar(
+                          content: Text('ફરિયાદ ઉકેલાઈ ગઈ તરીકે નોંધાઈ ગઈ!'.tr),
                           backgroundColor: Colors.green,
                         ),
                       );
                     }
                   },
                   icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
-                  label: const Text('ઉકેલાઈ તરીકે માર્ક કરો'),
+                  label: Text('ઉકેલાઈ તરીકે માર્ક કરો'.tr),
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.green.shade50,
                     foregroundColor: Colors.green.shade900,
@@ -441,21 +441,21 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.shield_outlined, size: 12, color: Colors.white),
                               SizedBox(width: 4),
                               Text(
-                                'એડમિન કંટ્રોલ પેનલ',
+                                'એડમિન કંટ્રોલ પેનલ'.tr,
                                 style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 6),
-                        const Text(
-                          'ફરિયાદ નિવારણ સેન્ટર',
+                        Text(
+                          'ફરિયાદ નિવારણ સેન્ટર'.tr,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 17,
@@ -473,7 +473,7 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                '$pending બાકી',
+                                '$pending બાકી'.tr,
                                 style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -485,7 +485,7 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                '$resolved ઉકેલાયેલ',
+                                '$resolved ઉકેલાયેલ'.tr,
                                 style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
                               ),
                             ),

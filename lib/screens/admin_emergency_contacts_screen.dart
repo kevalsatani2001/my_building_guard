@@ -18,12 +18,12 @@ class _AdminEmergencyContactsScreenState extends State<AdminEmergencyContactsScr
   bool _isAdding = false;
 
   final List<(String, String, IconData, Color)> _quickPresets = [
-    ('પોલીસ', '100', Icons.local_police_rounded, Colors.blue),
-    ('એમ્બ્યુલન્સ', '108', Icons.medical_services_rounded, Colors.red),
-    ('ફાયર બ્રિગેડ', '101', Icons.fire_truck_rounded, Colors.deepOrange),
-    ('ઇલેક્ટ્રિશિયન', '', Icons.bolt_rounded, Colors.amber),
-    ('પ્લમ્બર', '', Icons.plumbing_rounded, Colors.teal),
-    ('લિફ્ટ સર્વિસ', '', Icons.elevator_rounded, Colors.indigo),
+    ('પોલીસ'.tr, '100', Icons.local_police_rounded, Colors.blue),
+    ('એમ્બ્યુલન્સ'.tr, '108', Icons.medical_services_rounded, Colors.red),
+    ('ફાયર બ્રિગેડ'.tr, '101', Icons.fire_truck_rounded, Colors.deepOrange),
+    ('ઇલેક્ટ્રિશિયન'.tr, '', Icons.bolt_rounded, Colors.amber),
+    ('પ્લમ્બર'.tr, '', Icons.plumbing_rounded, Colors.teal),
+    ('લિફ્ટ સર્વિસ'.tr, '', Icons.elevator_rounded, Colors.indigo),
   ];
 
   @override
@@ -48,8 +48,8 @@ class _AdminEmergencyContactsScreenState extends State<AdminEmergencyContactsScr
 
     if (title.isEmpty || phone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("કૃપા કરીને સેવાનું નામ અને નંબર બંને દાખલ કરો."),
+        SnackBar(
+          content: Text("કૃપા કરીને સેવાનું નામ અને નંબર બંને દાખલ કરો.".tr),
           backgroundColor: Colors.red,
         ),
       );
@@ -73,7 +73,7 @@ class _AdminEmergencyContactsScreenState extends State<AdminEmergencyContactsScr
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("'$title' ઈમરજન્સી ડિરેક્ટરીમાં ઉમેરાઈ ગયું!"),
+          content: Text("'$title' ઈમરજન્સી ડિરેક્ટરીમાં ઉમેરાઈ ગયું!".tr),
           backgroundColor: const Color(0xFF047857),
           behavior: SnackBarBehavior.floating,
         ),
@@ -81,7 +81,7 @@ class _AdminEmergencyContactsScreenState extends State<AdminEmergencyContactsScr
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("ભૂલ: $e"), backgroundColor: Colors.red.shade800),
+        SnackBar(content: Text("ભૂલ: $e".tr), backgroundColor: Colors.red.shade800),
       );
     } finally {
       if (mounted) setState(() => _isAdding = false);
@@ -92,9 +92,9 @@ class _AdminEmergencyContactsScreenState extends State<AdminEmergencyContactsScr
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: const PremiumAppBar(
-        title: "ઈમરજન્સી હેલ્પલાઇન ડિરેક્ટરી",
-        subtitle: "પોલીસ, ૧૦૮, ફાયર અને તાત્કાલિક સેવાઓ",
+      appBar: PremiumAppBar(
+        title: "ઈમરજન્સી હેલ્પલાઇન ડિરેક્ટરી".tr,
+        subtitle: "પોલીસ, ૧૦૮, ફાયર અને તાત્કાલિક સેવાઓ".tr,
         icon: Icons.emergency_rounded,
         accentColor: Color(0xFFDC2626),
       ),
@@ -145,21 +145,21 @@ class _AdminEmergencyContactsScreenState extends State<AdminEmergencyContactsScr
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(Icons.shield_rounded, size: 12, color: Colors.white),
                                       SizedBox(width: 4),
                                       Text(
-                                        '૨૪x૭ તાત્કાલિક સેવાઓ',
+                                        '૨૪x૭ તાત્કાલિક સેવાઓ'.tr,
                                         style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                                       ),
                                     ],
                                   ),
                                 ),
                                 const SizedBox(height: 7),
-                                const Text(
-                                  "ઇમરજન્સી હેલ્પલાઇન",
+                                Text(
+                                  "ઇમરજન્સી હેલ્પલાઇન".tr,
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w900,
@@ -169,7 +169,7 @@ class _AdminEmergencyContactsScreenState extends State<AdminEmergencyContactsScr
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  "તમામ સભ્યો અને વોચમેન આ નંબરો પર ૧-ટેપથી કૉલ કરી શકશે.",
+                                  "તમામ સભ્યો અને વોચમેન આ નંબરો પર ૧-ટેપથી કૉલ કરી શકશે.".tr,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -196,8 +196,8 @@ class _AdminEmergencyContactsScreenState extends State<AdminEmergencyContactsScr
             const SizedBox(height: 22),
 
             // 1-Tap Presets
-            const Text(
-              "ઝડપી પ્રીસેટ્સ (૧-ટેપથી ઉમેરો):",
+            Text(
+              "ઝડપી પ્રીસેટ્સ (૧-ટેપથી ઉમેરો):".tr,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
@@ -254,8 +254,8 @@ class _AdminEmergencyContactsScreenState extends State<AdminEmergencyContactsScr
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "નવો ઈમરજન્સી સંપર્ક ઉમેરો:",
+                  Text(
+                    "નવો ઈમરજન્સી સંપર્ક ઉમેરો:".tr,
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 14,
@@ -266,8 +266,8 @@ class _AdminEmergencyContactsScreenState extends State<AdminEmergencyContactsScr
                   TextField(
                     controller: _titleC,
                     decoration: InputDecoration(
-                      labelText: "સેવા / વ્યક્તિનું નામ *",
-                      hintText: "દા.ત. સુરત ફાયર કંટ્રોલ, ડૉ. પટેલ",
+                      labelText: "સેવા / વ્યક્તિનું નામ *".tr,
+                      hintText: "દા.ત. સુરત ફાયર કંટ્રોલ, ડૉ. પટેલ".tr,
                       prefixIcon: const Icon(Icons.badge_rounded, size: 20, color: Color(0xFFDC2626)),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                     ),
@@ -277,8 +277,8 @@ class _AdminEmergencyContactsScreenState extends State<AdminEmergencyContactsScr
                     controller: _phoneC,
                     keyboardType: TextInputType.phone,
                     decoration: InputDecoration(
-                      labelText: "સંપર્ક નંબર (Phone Number) *",
-                      hintText: "દા.ત. 101 અથવા 9876543210",
+                      labelText: "સંપર્ક નંબર (Phone Number) *".tr,
+                      hintText: "દા.ત. 101 અથવા 9876543210".tr,
                       prefixIcon: const Icon(Icons.phone_rounded, size: 20, color: Color(0xFFDC2626)),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                     ),
@@ -294,7 +294,7 @@ class _AdminEmergencyContactsScreenState extends State<AdminEmergencyContactsScr
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       icon: const Icon(Icons.add_rounded, size: 18),
-                      label: const Text("સંપર્ક સેવ કરો", style: TextStyle(fontWeight: FontWeight.w800)),
+                      label: Text("સંપર્ક સેવ કરો".tr, style: TextStyle(fontWeight: FontWeight.w800)),
                     ),
                   ),
                 ],
@@ -303,8 +303,8 @@ class _AdminEmergencyContactsScreenState extends State<AdminEmergencyContactsScr
             const SizedBox(height: 24),
 
             // Active Contacts List
-            const Text(
-              "હાલની ઈમરજન્સી હેલ્પલાઇન લિસ્ટ:",
+            Text(
+              "હાલની ઈમરજન્સી હેલ્પલાઇન લિસ્ટ:".tr,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
@@ -335,9 +335,9 @@ class _AdminEmergencyContactsScreenState extends State<AdminEmergencyContactsScr
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Text(
-                        "હજુ સુધી કોઈ ઈમરજન્સી નંબર ઉમેરાયો નથી.\nઉપરના પ્રીસેટ પર ટેપ કરીને નંબર ઉમેરો.",
+                        "હજુ સુધી કોઈ ઈમરજન્સી નંબર ઉમેરાયો નથી.\nઉપરના પ્રીસેટ પર ટેપ કરીને નંબર ઉમેરો.".tr,
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Colors.grey, fontSize: 13),
                       ),
@@ -416,13 +416,13 @@ class _AdminEmergencyContactsScreenState extends State<AdminEmergencyContactsScr
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: const Color(0xFFA7F3D0)),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.call_rounded, size: 16, color: Color(0xFF047857)),
                                   SizedBox(width: 4),
                                   Text(
-                                    "કૉલ",
+                                    "કૉલ".tr,
                                     style: TextStyle(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 12,

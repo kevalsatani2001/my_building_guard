@@ -35,7 +35,7 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
   final _titleC = TextEditingController();
   final _descC = TextEditingController();
 
-  String _selectedCategory = 'પાણી પુરવઠો';
+  String _selectedCategory = 'પાણી પુરવઠો'.tr;
   bool _isUrgent = false;
   bool _isSubmitting = false;
   XFile? _pickedImage;
@@ -44,13 +44,13 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
   String _resolvedFlat = '';
 
   final List<(String, IconData, Color)> _categories = [
-    ('પાણી પુરવઠો', Icons.water_drop_rounded, Color(0xFF0284C7)),
-    ('લાઈટ / વીજળી', Icons.bolt_rounded, Color(0xFFD97706)),
-    ('લિફ્ટ સમસ્યા', Icons.elevator_rounded, Color(0xFF4F46E5)),
-    ('સફાઈ / કચરો', Icons.cleaning_services_rounded, Color(0xFF0D9488)),
-    ('પાર્કિંગ વિવાદ', Icons.local_parking_rounded, Color(0xFF7C3AED)),
-    ('સિક્યોરિટી', Icons.shield_rounded, Color(0xFFDC2626)),
-    ('અન્ય સામાન્ય', Icons.more_horiz_rounded, Color(0xFF64748B)),
+    ('પાણી પુરવઠો'.tr, Icons.water_drop_rounded, Color(0xFF0284C7)),
+    ('લાઈટ / વીજળી'.tr, Icons.bolt_rounded, Color(0xFFD97706)),
+    ('લિફ્ટ સમસ્યા'.tr, Icons.elevator_rounded, Color(0xFF4F46E5)),
+    ('સફાઈ / કચરો'.tr, Icons.cleaning_services_rounded, Color(0xFF0D9488)),
+    ('પાર્કિંગ વિવાદ'.tr, Icons.local_parking_rounded, Color(0xFF7C3AED)),
+    ('સિક્યોરિટી'.tr, Icons.shield_rounded, Color(0xFFDC2626)),
+    ('અન્ય સામાન્ય'.tr, Icons.more_horiz_rounded, Color(0xFF64748B)),
   ];
 
   @override
@@ -84,7 +84,7 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
         if (mounted) {
           setState(() {
             if (_resolvedName.isEmpty) {
-              _resolvedName = (d['name'] ?? d['fullName'] ?? 'મેમ્બર').toString();
+              _resolvedName = (d['name'] ?? d['fullName'] ?? 'મેમ્બર'.tr).toString();
             }
             if (_resolvedFlat.isEmpty) {
               final b = (d['block'] ?? d['wing'] ?? '').toString();
@@ -116,7 +116,7 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('ફોટો પસંદ કરવામાં ભૂલ: $e'),
+          content: Text('ફોટો પસંદ કરવામાં ભૂલ: $e'.tr),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -152,7 +152,7 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
         'description': _descC.text.trim(),
         'photoUrl': photoUrl,
         'memberId': currentUserId,
-        'memberName': _resolvedName.isNotEmpty ? _resolvedName : 'મેમ્બર',
+        'memberName': _resolvedName.isNotEmpty ? _resolvedName : 'મેમ્બર'.tr,
         'memberFlat': _resolvedFlat,
         'isUrgent': _isUrgent,
         'status': 'pending',
@@ -166,12 +166,12 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
-            children: const [
+            children: [
               Icon(Icons.check_circle_rounded, color: Color(0xFF4ADE80), size: 20),
               SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'ફરિયાદ સફળતાપૂર્વક નોંધાઈ ગઈ છે!',
+                  'ફરિયાદ સફળતાપૂર્વક નોંધાઈ ગઈ છે!'.tr,
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
@@ -188,7 +188,7 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('ભૂલ આવી: $e'),
+          content: Text('ભૂલ આવી: $e'.tr),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -240,9 +240,9 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: const PremiumAppBar(
-        title: 'સોસાયટી ફરિયાદ નિવારણ',
-        subtitle: 'સમસ્યા નોંધાવો & સ્ટેટસ ટ્રેક કરો',
+      appBar: PremiumAppBar(
+        title: 'સોસાયટી ફરિયાદ નિવારણ'.tr,
+        subtitle: 'સમસ્યા નોંધાવો & સ્ટેટસ ટ્રેક કરો'.tr,
         icon: Icons.support_agent_rounded,
         accentColor: Color(0xFF6D28D9),
       ),
@@ -313,19 +313,19 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
+                            children: [
                               Icon(Icons.support_agent_rounded, size: 13, color: Colors.white),
                               SizedBox(width: 5),
                               Text(
-                                'સોસાયટી સપોર્ટ ડેસ્ક',
+                                'સોસાયટી સપોર્ટ ડેસ્ક'.tr,
                                 style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'સમસ્યા કે ફરિયાદ નોંધો',
+                        Text(
+                          'સમસ્યા કે ફરિયાદ નોંધો'.tr,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 18,
@@ -334,8 +334,8 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'કમિટી અને એડમિન દ્વારા ત્વરિત નિરાકરણ કરવામાં આવશે.',
+                        Text(
+                          'કમિટી અને એડમિન દ્વારા ત્વરિત નિરાકરણ કરવામાં આવશે.'.tr,
                           style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 11, height: 1.35, fontWeight: FontWeight.w500),
                         ),
                       ],
@@ -377,11 +377,11 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
           children: [
             // Category Section Header
             Row(
-              children: const [
+              children: [
                 Icon(Icons.category_rounded, size: 18, color: Color(0xFF7C3AED)),
                 SizedBox(width: 8),
                 Text(
-                  'સમસ્યાનો પ્રકાર પસંદ કરો:',
+                  'સમસ્યાનો પ્રકાર પસંદ કરો:'.tr,
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                 ),
               ],
@@ -463,8 +463,8 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
               controller: _titleC,
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF0F172A)),
               decoration: InputDecoration(
-                labelText: 'વિષય / ટૂંકી વિગત *',
-                hintText: 'દા.ત. ૩જા માળે લાઈટ બંધ છે / સ્લોટ સમસ્યા',
+                labelText: 'વિષય / ટૂંકી વિગત *'.tr,
+                hintText: 'દા.ત. ૩જા માળે લાઈટ બંધ છે / સ્લોટ સમસ્યા'.tr,
                 labelStyle: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                 floatingLabelStyle: const TextStyle(color: Color(0xFF7C3AED), fontWeight: FontWeight.bold),
                 prefixIcon: Container(
@@ -492,7 +492,7 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
                   borderSide: const BorderSide(color: Color(0xFF7C3AED), width: 1.8),
                 ),
               ),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'કૃપા કરીને વિષય લખો' : null,
+              validator: (v) => (v == null || v.trim().isEmpty) ? 'કૃપા કરીને વિષય લખો'.tr : null,
             ),
 
             const SizedBox(height: 16),
@@ -503,8 +503,8 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
               maxLines: 4,
               style: const TextStyle(fontSize: 13.5, height: 1.45, color: Color(0xFF0F172A)),
               decoration: InputDecoration(
-                labelText: 'સંપૂર્ણ વિગત (Description)',
-                hintText: 'સમસ્યા વિશે વિગતવાર લખો જેથી કમિટી સરળતાથી ઝડપી ઉકેલ લાવી શકે...',
+                labelText: 'સંપૂર્ણ વિગત (Description)'.tr,
+                hintText: 'સમસ્યા વિશે વિગતવાર લખો જેથી કમિટી સરળતાથી ઝડપી ઉકેલ લાવી શકે...'.tr,
                 labelStyle: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                 floatingLabelStyle: const TextStyle(color: Color(0xFF7C3AED), fontWeight: FontWeight.bold),
                 alignLabelWithHint: true,
@@ -567,7 +567,7 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
                       )
                     : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
                 label: Text(
-                  _isSubmitting ? 'ફરિયાદ મોકલાઈ રહી છે...' : 'ફરિયાદ સબમિટ કરો',
+                  _isSubmitting ? 'ફરિયાદ મોકલાઈ રહી છે...'.tr : 'ફરિયાદ સબમિટ કરો'.tr,
                   style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 15,
@@ -615,9 +615,9 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
                 child: const Icon(Icons.photo_camera_rounded, size: 16, color: Color(0xFF7C3AED)),
               ),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'સમસ્યાનો ફોટો (વૈકલ્પિક)',
+                  'સમસ્યાનો ફોટો (વૈકલ્પિક)'.tr,
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
                 ),
               ),
@@ -628,8 +628,8 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
                     color: const Color(0xFFDCFCE7),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
-                    '૧ ફોટો પસંદ થયો',
+                  child: Text(
+                    '૧ ફોટો પસંદ થયો'.tr,
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
                   ),
                 ),
@@ -644,7 +644,7 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
                 child: OutlinedButton.icon(
                   onPressed: () => _pickPhoto(ImageSource.camera),
                   icon: const Icon(Icons.camera_alt_rounded, size: 17, color: Color(0xFF7C3AED)),
-                  label: const Text('કેમેરાથી લો', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF7C3AED))),
+                  label: Text('કેમેરાથી લો'.tr, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF7C3AED))),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 11),
                     backgroundColor: const Color(0xFFF5F3FF),
@@ -658,7 +658,7 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
                 child: OutlinedButton.icon(
                   onPressed: () => _pickPhoto(ImageSource.gallery),
                   icon: const Icon(Icons.photo_library_rounded, size: 17, color: Color(0xFF0284C7)),
-                  label: const Text('ગેલેરીમાંથી પસંદ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0284C7))),
+                  label: Text('ગેલેરીમાંથી પસંદ'.tr, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0284C7))),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 11),
                     backgroundColor: const Color(0xFFF0F9FF),
@@ -743,8 +743,8 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
               children: [
                 Row(
                   children: [
-                    const Text(
-                      'તાત્કાલિક ધ્યાન જરૂરી (Urgent)',
+                    Text(
+                      'તાત્કાલિક ધ્યાન જરૂરી (Urgent)'.tr,
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
                     ),
                     if (_isUrgent) ...[
@@ -755,14 +755,14 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
                           color: const Color(0xFFDC2626),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text('ઇમરજન્સી', style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold)),
+                        child: Text('ઇમરજન્સી'.tr, style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ],
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                  'જો પાણી લીકેજ, મેઈન લાઈન કે લિફ્ટ બ્રેકડાઉન હોય તો ચાલુ કરો.',
+                Text(
+                  'જો પાણી લીકેજ, મેઈન લાઈન કે લિફ્ટ બ્રેકડાઉન હોય તો ચાલુ કરો.'.tr,
                   style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                 ),
               ],
@@ -801,13 +801,13 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
                 child: const Icon(Icons.history_rounded, size: 16, color: Color(0xFF7C3AED)),
               ),
               const SizedBox(width: 8),
-              const Text(
-                'મારી અગાઉની ફરિયાદો',
+              Text(
+                'મારી અગાઉની ફરિયાદો'.tr,
                 style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
               ),
               const Spacer(),
-              const Text(
-                'રીયલટાઇમ સ્ટેટસ',
+              Text(
+                'રીયલટાઇમ સ્ટેટસ'.tr,
                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8)),
               ),
             ],
@@ -850,20 +850,20 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
                   Color statusBg = const Color(0xFFFFFBEB);
                   Color statusBorder = const Color(0xFFFDE68A);
                   IconData statusIcon = Icons.hourglass_top_rounded;
-                  String statusLabel = 'પેન્ડિંગ';
+                  String statusLabel = 'પેન્ડિંગ'.tr;
 
                   if (status == 'resolved' || status == 'completed') {
                     statusColor = const Color(0xFF16A34A);
                     statusBg = const Color(0xFFF0FDF4);
                     statusBorder = const Color(0xFFBBF7D0);
                     statusIcon = Icons.check_circle_rounded;
-                    statusLabel = 'ઉકેલાઈ ગયેલ';
+                    statusLabel = 'ઉકેલાઈ ગયેલ'.tr;
                   } else if (status == 'in_progress') {
                     statusColor = const Color(0xFF0284C7);
                     statusBg = const Color(0xFFF0F9FF);
                     statusBorder = const Color(0xFFBAE6FD);
                     statusIcon = Icons.engineering_rounded;
-                    statusLabel = 'કામ ચાલુ છે';
+                    statusLabel = 'કામ ચાલુ છે'.tr;
                   }
 
                   return Container(
@@ -959,11 +959,11 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
-                                    children: const [
+                                    children: [
                                       Icon(Icons.image_rounded, size: 13, color: Color(0xFF7C3AED)),
                                       SizedBox(width: 4),
                                       Text(
-                                        'ફોટો જુઓ',
+                                        'ફોટો જુઓ'.tr,
                                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF7C3AED)),
                                       ),
                                     ],
@@ -1013,13 +1013,13 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
-            'કોઈ પેન્ડિંગ ફરિયાદ નથી!',
+          Text(
+            'કોઈ પેન્ડિંગ ફરિયાદ નથી!'.tr,
             style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15.5, color: Color(0xFF0F172A)),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'તમારી સોસાયટી શાંતિપૂર્ણ અને સુવ્યવસ્થિત છે.\nજો કોઈ પ્રશ્ન જણાય તો ઉપરથી સરળતાથી નોંધાવો.',
+          Text(
+            'તમારી સોસાયટી શાંતિપૂર્ણ અને સુવ્યવસ્થિત છે.\nજો કોઈ પ્રશ્ન જણાય તો ઉપરથી સરળતાથી નોંધાવો.'.tr,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
           ),

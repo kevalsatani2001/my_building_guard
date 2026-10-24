@@ -7,6 +7,7 @@ import '../models/super_admin_models.dart';
 import '../services/society_service.dart';
 import '../services/firebase_app_guard.dart';
 import '../services/admin_credential_dispatcher_service.dart';
+import '../l10n/app_strings.dart';
 
 class SuperAdminService {
   SuperAdminService._();
@@ -379,19 +380,61 @@ class SuperAdminService {
 
   /// સોસાયટી ફ્રીઝ / સસ્પેન્ડ કિલ-સ્વિચ (Freeze / Suspend Society)
   Future<void> toggleSocietyStatus(String societyId, bool isActive) async {
-    await _firestore.collection('society_settings').doc(societyId).set({
+    final effectiveSocietyId = societyId.trim().isEmpty ? SocietyService.kDefaultSocietyId : societyId.trim();
+    final updateData = <String, dynamic>{
       'isActive': isActive,
       'isSuspendedBySuperAdmin': !isActive,
+      'isAdminBlocked': !isActive,
       'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    };
+    if (isActive) {
+      updateData['unblockedAt'] = FieldValue.serverTimestamp();
+      updateData['lastUnblockedAt'] = FieldValue.serverTimestamp();
+    } else {
+      updateData['suspendedAt'] = FieldValue.serverTimestamp();
+      updateData['lastSuspendedAt'] = FieldValue.serverTimestamp();
+    }
+
+    await _firestore.collection('society_settings').doc(effectiveSocietyId).set(updateData, SetOptions(merge: true));
+
+    // જ્યારે અનબ્લોક કરવામાં આવે, ત્યારે તે સોસાયટીની અગાઉની પેન્ડિંગ અપીલ્સ આપોઆપ ક્લોઝ/રિઝોલ્વ કરો
+    if (isActive) {
+      try {
+        final pending = await _firestore
+            .collection('society_appeals')
+            .where('societyId', isEqualTo: effectiveSocietyId)
+            .where('status', isEqualTo: 'pending')
+            .get();
+        for (final doc in pending.docs) {
+          await doc.reference.update({
+            'status': 'resolved',
+            'superAdminReply': 'સોસાયટી પુનઃસક્રિય (Unblocked) કરવામાં આવી છે.'.tr,
+            'resolvedAt': FieldValue.serverTimestamp(),
+            'replyMethod': 'system',
+            'isArchived': true,
+          });
+        }
+      } catch (e) {
+        debugPrint('Error auto-resolving appeals on society unblock: $e');
+      }
+    }
   }
 
   /// યુઝર બ્લોક / અનબ્લોક (એડમિન બ્લોક થાય તો સોસાયટીના તમામ યુઝર્સ પણ આપોઆપ સ્થગિત થશે)
   Future<void> toggleUserStatus(String uid, bool isActive) async {
-    await _firestore.collection('users').doc(uid).set({
+    final updateData = <String, dynamic>{
       'isActive': isActive,
       'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    };
+    if (isActive) {
+      updateData['unblockedAt'] = FieldValue.serverTimestamp();
+      updateData['lastUnblockedAt'] = FieldValue.serverTimestamp();
+    } else {
+      updateData['suspendedAt'] = FieldValue.serverTimestamp();
+      updateData['lastSuspendedAt'] = FieldValue.serverTimestamp();
+    }
+
+    await _firestore.collection('users').doc(uid).set(updateData, SetOptions(merge: true));
 
     // જો આ યુઝર સોસાયટીનો એડમિન/પ્રમુખ હોય તો સોસાયટી સેટિંગ્સમાં isAdminBlocked અપડેટ કરો
     try {
@@ -405,11 +448,44 @@ class SuperAdminService {
             rawRole == 'president' ||
             uData?['isAdmin'] == true;
 
-        if (isAdminUser && societyId.isNotEmpty && societyId != 'default') {
-          await _firestore.collection('society_settings').doc(societyId).set({
+        if (isAdminUser) {
+          final effectiveSocietyId = societyId.isEmpty ? SocietyService.kDefaultSocietyId : societyId;
+          final socUpdate = <String, dynamic>{
             'isAdminBlocked': !isActive,
+            'isSuspendedBySuperAdmin': !isActive,
             'updatedAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
+          };
+          if (isActive) {
+            socUpdate['lastUnblockedAt'] = FieldValue.serverTimestamp();
+          } else {
+            socUpdate['lastSuspendedAt'] = FieldValue.serverTimestamp();
+          }
+
+          await _firestore.collection('society_settings').doc(effectiveSocietyId).set(socUpdate, SetOptions(merge: true));
+
+          // જો આ એડમિનના UID સાથે જોડાયેલ અન્ય કોઈ society_settings હોય તો તે પણ અપડેટ કરો
+          final q = await _firestore.collection('society_settings').where('adminUid', isEqualTo: uid).get();
+          for (final doc in q.docs) {
+            await doc.reference.set(socUpdate, SetOptions(merge: true));
+          }
+
+          // એડમિન અનબ્લોક થાય ત્યારે પેન્ડિંગ અપીલ્સ ક્લોઝ કરો
+          if (isActive) {
+            final pending = await _firestore
+                .collection('society_appeals')
+                .where('adminUid', isEqualTo: uid)
+                .where('status', isEqualTo: 'pending')
+                .get();
+            for (final doc in pending.docs) {
+              await doc.reference.update({
+                'status': 'resolved',
+                'superAdminReply': 'એડમિન એકાઉન્ટ પુનઃસક્રિય (Unblocked) કરવામાં આવ્યું છે.'.tr,
+                'resolvedAt': FieldValue.serverTimestamp(),
+                'replyMethod': 'system',
+                'isArchived': true,
+              });
+            }
+          }
         }
       }
     } catch (e) {

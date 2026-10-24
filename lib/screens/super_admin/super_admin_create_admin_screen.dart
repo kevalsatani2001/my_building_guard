@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../services/super_admin_service.dart';
 import '../../models/super_admin_models.dart';
 import '../../widgets/admin_credentials_modal.dart';
+import '../../services/localization_service.dart';
+import '../../l10n/app_strings.dart';
 
 class SuperAdminCreateAdminScreen extends StatefulWidget {
   final VoidCallback? onSuccess;
@@ -62,7 +64,7 @@ class _SuperAdminCreateAdminScreenState extends State<SuperAdminCreateAdminScree
           adminUid: 'superadmin_${DateTime.now().millisecondsSinceEpoch}',
           societyName: 'MyBuildingGuard Global Platform',
           architectureType: 'Global Enterprise Master',
-          city: 'હેડક્વાર્ટર',
+          city: 'હેડક્વાર્ટર'.tr,
           adminName: name,
           adminEmail: email,
           adminPassword: pass,
@@ -75,7 +77,7 @@ class _SuperAdminCreateAdminScreenState extends State<SuperAdminCreateAdminScree
       messenger.showSnackBar(
         SnackBar(
           backgroundColor: Colors.redAccent,
-          content: Text('એરર આવી: $e'),
+          content: Text('એરર આવી: $e'.tr),
         ),
       );
     } finally {
@@ -143,18 +145,18 @@ class _SuperAdminCreateAdminScreenState extends State<SuperAdminCreateAdminScree
                           _buildSecurityNotice(accentColor),
                           const SizedBox(height: 20),
 
-                          _buildSectionTitle('વ્યક્તિગત & સિક્યોરિટી વિગતો', Icons.badge_rounded, accentColor),
+                          _buildSectionTitle('વ્યક્તિગત & સિક્યોરિટી વિગતો'.tr, Icons.badge_rounded, accentColor),
                           const SizedBox(height: 12),
 
                           _buildInputField(
                             controller: _nameCtrl,
-                            label: 'પૂરું નામ (Full Name)',
-                            hint: 'દા.ત. રાજેશભાઈ પટેલ',
+                            label: 'પૂરું નામ (Full Name)'.tr,
+                            hint: 'દા.ત. રાજેશભાઈ પટેલ'.tr,
                             icon: Icons.person_rounded,
                             accentColor: accentColor,
                             cardBg: cardBg,
                             validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'કૃપા કરીને પૂરું નામ દાખલ કરો';
+                              if (v == null || v.trim().isEmpty) return 'કૃપા કરીને પૂરું નામ દાખલ કરો'.tr;
                               return null;
                             },
                           ),
@@ -162,15 +164,15 @@ class _SuperAdminCreateAdminScreenState extends State<SuperAdminCreateAdminScree
 
                           _buildInputField(
                             controller: _phoneCtrl,
-                            label: 'મોબાઈલ નંબર (Phone Number)',
-                            hint: 'દા.ત. 9876543210',
+                            label: 'મોબાઈલ નંબર (Phone Number)'.tr,
+                            hint: 'દા.ત. 9876543210'.tr,
                             icon: Icons.phone_iphone_rounded,
                             keyboardType: TextInputType.phone,
                             accentColor: accentColor,
                             cardBg: cardBg,
                             validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'કૃપા કરીને ફોન નંબર દાખલ કરો';
-                              if (v.trim().length < 10) return 'માન્ય 10 અંકનો નંબર દાખલ કરો';
+                              if (v == null || v.trim().isEmpty) return 'કૃપા કરીને ફોન નંબર દાખલ કરો'.tr;
+                              if (v.trim().length < 10) return 'માન્ય 10 અંકનો નંબર દાખલ કરો'.tr;
                               return null;
                             },
                           ),
@@ -178,15 +180,15 @@ class _SuperAdminCreateAdminScreenState extends State<SuperAdminCreateAdminScree
 
                           _buildInputField(
                             controller: _emailCtrl,
-                            label: 'ઓફિશિયલ ઈમેલ આઈડી (Email)',
+                            label: 'ઓફિશિયલ ઈમેલ આઈડી (Email)'.tr,
                             hint: 'superadmin@domain.com',
                             icon: Icons.alternate_email_rounded,
                             keyboardType: TextInputType.emailAddress,
                             accentColor: accentColor,
                             cardBg: cardBg,
                             validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'કૃપા કરીને ઈમેલ દાખલ કરો';
-                              if (!v.contains('@') || !v.contains('.')) return 'માન્ય ઈમેલ આઈડી દાખલ કરો';
+                              if (v == null || v.trim().isEmpty) return 'કૃપા કરીને ઈમેલ દાખલ કરો'.tr;
+                              if (!v.contains('@') || !v.contains('.')) return 'માન્ય ઈમેલ આઈડી દાખલ કરો'.tr;
                               return null;
                             },
                           ),
@@ -215,51 +217,56 @@ class _SuperAdminCreateAdminScreenState extends State<SuperAdminCreateAdminScree
 
   Widget _buildAppBar(BuildContext context, Color accentColor) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
         children: [
           InkWell(
             onTap: () => Navigator.pop(context),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             child: Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(9),
               decoration: BoxDecoration(
                 color: const Color(0xFF111827),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+              child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 16),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   children: [
-                    Text(
-                      'નવા કો-સુપર એડમિન',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.2,
+                    Flexible(
+                      child: Text(
+                        'નવા કો-સુપર એડમિન'.tr,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.2,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: accentColor.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(5),
                         border: Border.all(color: accentColor.withValues(alpha: 0.4)),
                       ),
                       child: Text(
                         'MASTER ACCESS',
                         style: TextStyle(
                           color: accentColor,
-                          fontSize: 9.5,
+                          fontSize: 8.5,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
@@ -267,13 +274,18 @@ class _SuperAdminCreateAdminScreenState extends State<SuperAdminCreateAdminScree
                   ],
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                  'Super Admin Command Center • સત્તા સોંપણી',
-                  style: TextStyle(color: Colors.white54, fontSize: 11.5, fontWeight: FontWeight.w500),
+                Text(
+                  'Super Admin Command Center • સત્તા સોંપણી'.tr,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 6),
+          const LanguageSwitchButton(isDark: true),
+          const SizedBox(width: 6),
           Container(
             padding: const EdgeInsets.all(9),
             decoration: BoxDecoration(
@@ -321,7 +333,7 @@ class _SuperAdminCreateAdminScreenState extends State<SuperAdminCreateAdminScree
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'સંપૂર્ણ કમાન્ડ અધિકાર ચેતવણી',
+                  'સંપૂર્ણ કમાન્ડ અધિકાર ચેતવણી'.tr,
                   style: TextStyle(
                     color: accentColor,
                     fontWeight: FontWeight.w800,
@@ -329,8 +341,8 @@ class _SuperAdminCreateAdminScreenState extends State<SuperAdminCreateAdminScree
                   ),
                 ),
                 const SizedBox(height: 3),
-                const Text(
-                  'કો-સુપર એડમિન પાસે તમામ સોસાયટીઓ, આર્થિક હિસાબો, સભ્યો અને ગ્લોબલ કિલ-સ્વિચનું પૂર્ણ નિયંત્રણ હશે. માત્ર વિશ્વાસુ વ્યક્તિને જ આ રોલ આપો.',
+                Text(
+                  'કો-સુપર એડમિન પાસે તમામ સોસાયટીઓ, આર્થિક હિસાબો, સભ્યો અને ગ્લોબલ કિલ-સ્વિચનું પૂર્ણ નિયંત્રણ હશે. માત્ર વિશ્વાસુ વ્યક્તિને જ આ રોલ આપો.'.tr,
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 12,
@@ -446,8 +458,8 @@ class _SuperAdminCreateAdminScreenState extends State<SuperAdminCreateAdminScree
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'સુરક્ષા પાસવર્ડ (Password)',
+        Text(
+          'સુરક્ષા પાસવર્ડ (Password)'.tr,
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,
@@ -466,15 +478,15 @@ class _SuperAdminCreateAdminScreenState extends State<SuperAdminCreateAdminScree
           ),
           cursorColor: accentColor,
           validator: (v) {
-            if (v == null || v.trim().isEmpty) return 'કૃપા કરીને પાસવર્ડ દાખલ કરો';
-            if (v.trim().length < 6) return 'ઓછામાં ઓછા ૬ અક્ષરનો પાસવર્ડ જરૂરી છે';
+            if (v == null || v.trim().isEmpty) return 'કૃપા કરીને પાસવર્ડ દાખલ કરો'.tr;
+            if (v.trim().length < 6) return 'ઓછામાં ઓછા ૬ અક્ષરનો પાસવર્ડ જરૂરી છે'.tr;
             return null;
           },
           decoration: InputDecoration(
             isDense: true,
             filled: true,
             fillColor: cardBg,
-            hintText: 'મજબૂત પાસવર્ડ સેટ કરો...',
+            hintText: 'મજબૂત પાસવર્ડ સેટ કરો...'.tr,
             hintStyle: TextStyle(
               color: Colors.white.withValues(alpha: 0.35),
               fontSize: 13.5,
@@ -527,10 +539,10 @@ class _SuperAdminCreateAdminScreenState extends State<SuperAdminCreateAdminScree
 
   Widget _buildPrivilegeSummary(Color accentColor, Color cardBg) {
     final permissions = [
-      'તમામ સોસાયટી પરિસરો અને ગેટ પાસવર્ડ્સનું સંચાલન',
-      'પ્લેટફોર્મ ફાઇનાન્સ, કમિશન અને કલેક્શન ઑડિટ',
-      'ગ્લોબલ સિસ્ટમ પુશ બ્રોડકાસ્ટ મોકલવાનો અધિકાર',
-      'ડિફોલ્ટ લોગિન ક્રેડેન્શિયલ્સ સાથે સીધો એડમિન એક્સેસ',
+      'તમામ સોસાયટી પરિસરો અને ગેટ પાસવર્ડ્સનું સંચાલન'.tr,
+      'પ્લેટફોર્મ ફાઇનાન્સ, કમિશન અને કલેક્શન ઑડિટ'.tr,
+      'ગ્લોબલ સિસ્ટમ પુશ બ્રોડકાસ્ટ મોકલવાનો અધિકાર'.tr,
+      'ડિફોલ્ટ લોગિન ક્રેડેન્શિયલ્સ સાથે સીધો એડમિન એક્સેસ'.tr,
     ];
 
     return Container(
@@ -547,8 +559,8 @@ class _SuperAdminCreateAdminScreenState extends State<SuperAdminCreateAdminScree
             children: [
               Icon(Icons.checklist_rtl_rounded, color: accentColor, size: 18),
               const SizedBox(width: 8),
-              const Text(
-                'મળવાપાત્ર માસ્ટર પરમિશન્સ',
+              Text(
+                'મળવાપાત્ર માસ્ટર પરમિશન્સ'.tr,
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
               ),
             ],
@@ -604,14 +616,14 @@ class _SuperAdminCreateAdminScreenState extends State<SuperAdminCreateAdminScree
                     height: 22,
                     child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                   )
-                : const Row(
+                : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 20),
-                      SizedBox(width: 8),
+                      const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
                       Text(
-                        'સુપર એડમિન સત્તા આપો',
-                        style: TextStyle(
+                        'સુપર એડમિન સત્તા આપો'.tr,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 15,
                           fontWeight: FontWeight.w900,

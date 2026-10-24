@@ -12,6 +12,7 @@ import '../screens/watchmen_screen.dart';
 import '../widgets/member_maintenance_sheet.dart';
 import '../screens/super_admin/super_admin_appeal_detail_screen.dart';
 import 'session_guard_service.dart';
+import 'package:building_guard/l10n/app_strings.dart';
 
 /// સેન્ટ્રલ નોટિફિકેશન નેવિગેશન રાઉટર
 /// FCM પુશ, લોકલ નોટિફિકેશન અથવા ઇન-એપ નોટિફિકેશન પર ટેપ કરતા જ યોગ્ય સેક્શન/સ્ક્રીન પર રીડાયરેક્ટ કરે છે.
@@ -272,7 +273,7 @@ class NotificationNavigationService {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                title.isNotEmpty ? title : 'સોસાયટી સૂચના',
+                title.isNotEmpty ? title : 'સોસાયટી સૂચના'.tr,
                 style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
               ),
             ),
@@ -289,7 +290,7 @@ class NotificationNavigationService {
               backgroundColor: const Color(0xFF4338CA),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('સમજાઈ ગયું'),
+            child: Text('સમજાઈ ગયું'.tr),
           ),
         ],
       ),
@@ -319,7 +320,7 @@ class NotificationNavigationService {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                title.isNotEmpty ? title : 'પાર્કિંગ સ્લોટ એલર્ટ',
+                title.isNotEmpty ? title : 'પાર્કિંગ સ્લોટ એલર્ટ'.tr,
                 style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF0F172A)),
               ),
             ),
@@ -333,7 +334,7 @@ class NotificationNavigationService {
           FilledButton.icon(
             onPressed: () => Navigator.pop(dialogCtx),
             icon: const Icon(Icons.check_circle_rounded, size: 16),
-            label: const Text('હું ગાડી હટાવી લઉં છું'),
+            label: Text('હું ગાડી હટાવી લઉં છું'.tr),
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFDC2626),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -369,7 +370,7 @@ class NotificationNavigationService {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                title.isNotEmpty ? title : '🚨 ગેટ ઇમરજન્સી SOS એલર્ટ!',
+                title.isNotEmpty ? title : '🚨 ગેટ ઇમરજન્સી SOS એલર્ટ!'.tr,
                 style: const TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 16,
@@ -384,7 +385,7 @@ class NotificationNavigationService {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              body.isNotEmpty ? body : 'ગેટ પર સુરક્ષા સહાયતાની તાત્કાલિક જરૂર છે.',
+              body.isNotEmpty ? body : 'ગેટ પર સુરક્ષા સહાયતાની તાત્કાલિક જરૂર છે.'.tr,
               style: const TextStyle(fontSize: 14, height: 1.5, color: Color(0xFF1E293B), fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
@@ -395,13 +396,13 @@ class NotificationNavigationService {
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: const Color(0xFFFECACA)),
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.shield_rounded, color: Color(0xFFDC2626), size: 18),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'વોચમેન અથવા સિક્યોરિટી કેબિનનો તાત્કાલિક સંપર્ક કરો.',
+                      'વોચમેન અથવા સિક્યોરિટી કેબિનનો તાત્કાલિક સંપર્ક કરો.'.tr,
                       style: TextStyle(fontSize: 12, color: Color(0xFF7F1D1D)),
                     ),
                   ),
@@ -414,7 +415,7 @@ class NotificationNavigationService {
           FilledButton.icon(
             onPressed: () => Navigator.pop(dialogCtx),
             icon: const Icon(Icons.check_rounded, size: 18),
-            label: const Text('મેં એલર્ટ જોયો (Dismiss)'),
+            label: Text('મેં એલર્ટ જોયો (Dismiss)'.tr),
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFDC2626),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -452,8 +453,8 @@ class NotificationNavigationService {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'સત્તાવાર હેડ ઓફિસ નોટિસ',
+                  Text(
+                    'સત્તાવાર હેડ ઓફિસ નોટિસ'.tr,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -462,7 +463,7 @@ class NotificationNavigationService {
                     ),
                   ),
                   Text(
-                    title.isNotEmpty ? title : 'સુપર એડમિન સૂચના',
+                    title.isNotEmpty ? title : 'સુપર એડમિન સૂચના'.tr,
                     style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F172A)),
                   ),
                 ],
@@ -483,7 +484,7 @@ class NotificationNavigationService {
                 border: Border.all(color: const Color(0xFFBAE6FD)),
               ),
               child: Text(
-                body.isNotEmpty ? body : 'હેડ ઓફિસ તરફથી અગત્યની સૂચના આપવામાં આવી છે.',
+                body.isNotEmpty ? body : 'હેડ ઓફિસ તરફથી અગત્યની સૂચના આપવામાં આવી છે.'.tr,
                 style: const TextStyle(fontSize: 14, height: 1.5, color: Color(0xFF0C4A6E)),
               ),
             ),
@@ -497,7 +498,7 @@ class NotificationNavigationService {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
-            child: const Text('સમજાઈ ગયું (Acknowledge)'),
+            child: Text('સમજાઈ ગયું (Acknowledge)'.tr),
           ),
         ],
       ),
@@ -537,7 +538,7 @@ class NotificationNavigationService {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                title.isNotEmpty ? title : 'સુપર એડમિન તરફથી જવાબ',
+                title.isNotEmpty ? title : 'સુપર એડમિન તરફથી જવાબ'.tr,
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
               ),
             ),
@@ -552,7 +553,7 @@ class NotificationNavigationService {
             border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
           child: Text(
-            body.isNotEmpty ? body : 'તમારી સોસાયટીની અપીલ અંગે સુપર એડમિન દ્વારા પ્રત્યુત્તર આપવામાં આવ્યો છે.',
+            body.isNotEmpty ? body : 'તમારી સોસાયટીની અપીલ અંગે સુપર એડમિન દ્વારા પ્રત્યુત્તર આપવામાં આવ્યો છે.'.tr,
             style: const TextStyle(fontSize: 13.5, height: 1.45, color: Color(0xFF334155)),
           ),
         ),
@@ -563,7 +564,7 @@ class NotificationNavigationService {
               backgroundColor: const Color(0xFF0F172A),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('સમજાઈ ગયું (OK)'),
+            child: Text('સમજાઈ ગયું (OK)'.tr),
           ),
         ],
       ),

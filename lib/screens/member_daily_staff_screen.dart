@@ -19,17 +19,17 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
   final _nameC = TextEditingController();
   final _phoneC = TextEditingController();
 
-  String _selectedRole = 'કામવાળા (Maid)';
+  String _selectedRole = 'કામવાળા (Maid)'.tr;
   bool _isAdding = false;
   bool _showAddForm = false;
 
   final List<String> _roles = [
-    'કામવાળા (Maid)',
-    'ડ્રાઈવર (Driver)',
-    'રસોઈયા (Cook)',
-    'માળી (Gardener)',
-    'ટ્યુટર (Tutor)',
-    'અન્ય હેલ્પર',
+    'કામવાળા (Maid)'.tr,
+    'ડ્રાઈવર (Driver)'.tr,
+    'રસોઈયા (Cook)'.tr,
+    'માળી (Gardener)'.tr,
+    'ટ્યુટર (Tutor)'.tr,
+    'અન્ય હેલ્પર'.tr,
   ];
 
   @override
@@ -76,7 +76,7 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('સ્ટાફ સફળતાપૂર્વક ઉમેરાઈ ગયો.'),
+          content: Text('સ્ટાફ સફળતાપૂર્વક ઉમેરાઈ ગયો.'.tr),
           backgroundColor: Colors.green.shade700,
           behavior: SnackBarBehavior.floating,
         ),
@@ -85,7 +85,7 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
       setState(() => _isAdding = false);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('સ્ટાફ ઉમેરવામાં ભૂલ: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('સ્ટાફ ઉમેરવામાં ભૂલ: $e'.tr), backgroundColor: Colors.red),
       );
     }
   }
@@ -96,7 +96,7 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$name કાઢી નાખવામાં આવ્યા.'),
+          content: Text('$name કાઢી નાખવામાં આવ્યા.'.tr),
           backgroundColor: Colors.green.shade700,
           behavior: SnackBarBehavior.floating,
         ),
@@ -104,7 +104,7 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ભૂલ આવી: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('ભૂલ આવી: $e'.tr), backgroundColor: Colors.red),
       );
     }
   }
@@ -115,9 +115,9 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: const PremiumAppBar(
-        title: 'કાયમી સ્ટાફ & હેલ્પર્સ',
-        subtitle: 'કામવાળા, ડ્રાઈવર & રસોઈયા ગેટ પાસ',
+      appBar: PremiumAppBar(
+        title: 'કાયમી સ્ટાફ & હેલ્પર્સ'.tr,
+        subtitle: 'કામવાળા, ડ્રાઈવર & રસોઈયા ગેટ પાસ'.tr,
         icon: Icons.badge_rounded,
         accentColor: Color(0xFF0D9488),
       ),
@@ -147,8 +147,8 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                     borderRadius: BorderRadius.circular(12),
                     child: Row(
                       children: [
-                        const Text(
-                          'નવા સ્ટાફ / હેલ્પર ઉમેરો',
+                        Text(
+                          'નવા સ્ટાફ / હેલ્પર ઉમેરો'.tr,
                           style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15.5, color: Color(0xFF0F172A)),
                         ),
                         const Spacer(),
@@ -174,8 +174,8 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'કામગીરી / ભૂમિકા:',
+                          Text(
+                            'કામગીરી / ભૂમિકા:'.tr,
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
                           ),
                           const SizedBox(height: 8),
@@ -204,14 +204,14 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                             controller: _nameC,
                             textCapitalization: TextCapitalization.words,
                             decoration: InputDecoration(
-                              labelText: 'સ્ટાફનું નામ *',
-                              hintText: 'દા.ત. મીનાબેન',
+                              labelText: 'સ્ટાફનું નામ *'.tr,
+                              hintText: 'દા.ત. મીનાબેન'.tr,
                               prefixIcon: const Icon(Icons.person_rounded, color: Color(0xFF0D9488)),
                               filled: true,
                               fillColor: const Color(0xFFF8FAFC),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                             ),
-                            validator: (v) => (v == null || v.trim().isEmpty) ? 'નામ દાખલ કરો' : null,
+                            validator: (v) => (v == null || v.trim().isEmpty) ? 'નામ દાખલ કરો'.tr : null,
                           ),
                           const SizedBox(height: 12),
                           TextFormField(
@@ -222,8 +222,8 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                               LengthLimitingTextInputFormatter(10),
                             ],
                             decoration: InputDecoration(
-                              labelText: 'મોબાઈલ નંબર *',
-                              hintText: '૧૦ આંકડાનો નંબર',
+                              labelText: 'મોબાઈલ નંબર *'.tr,
+                              hintText: '૧૦ આંકડાનો નંબર'.tr,
                               prefixIcon: const Icon(Icons.phone_rounded, color: Color(0xFF0D9488)),
                               prefixText: '+91 ',
                               filled: true,
@@ -232,7 +232,7 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                             ),
                             validator: (v) {
                               if (v == null || v.trim().length != 10) {
-                                return 'સાચો ૧૦ અંકનો નંબર દાખલ કરો';
+                                return 'સાચો ૧૦ અંકનો નંબર દાખલ કરો'.tr;
                               }
                               return null;
                             },
@@ -251,7 +251,7 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                                     )
                                   : const Icon(Icons.add_rounded, color: Colors.white),
                               label: Text(
-                                _isAdding ? 'ઉમેરાઈ રહ્યું છે...' : 'સ્ટાફ સાચવો',
+                                _isAdding ? 'ઉમેરાઈ રહ્યું છે...'.tr : 'સ્ટાફ સાચવો'.tr,
                                 style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                               ),
                               style: ElevatedButton.styleFrom(
@@ -312,13 +312,13 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                             ),
                           ),
                           const SizedBox(height: 14),
-                          const Text(
-                            'હજુ કોઈ સ્ટાફ નોંધાયેલ નથી!',
+                          Text(
+                            'હજુ કોઈ સ્ટાફ નોંધાયેલ નથી!'.tr,
                             style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F172A)),
                           ),
                           const SizedBox(height: 5),
-                          const Text(
-                            'ઉપરના બટન પર ક્લિક કરીને કામવાળા કે ડ્રાઈવર ઉમેરો, જેથી તેઓને ગેટ પર ડિજિટલ સિક્યોરિટી પાસ મળે.',
+                          Text(
+                            'ઉપરના બટન પર ક્લિક કરીને કામવાળા કે ડ્રાઈવર ઉમેરો, જેથી તેઓને ગેટ પર ડિજિટલ સિક્યોરિટી પાસ મળે.'.tr,
                             textAlign: TextAlign.center,
                             style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
                           ),
@@ -335,7 +335,7 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                         child: Text(
-                          'નોંધાયેલ સ્ટાફ (${docs.length})',
+                          'નોંધાયેલ સ્ટાફ (${docs.length})'.tr,
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                         ),
                       ),
@@ -347,9 +347,9 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                         itemBuilder: (context, index) {
                           final doc = docs[index];
                           final d = doc.data() as Map<String, dynamic>;
-                          final name = (d['staffName'] ?? 'અનામી').toString();
+                          final name = (d['staffName'] ?? 'અનામી'.tr).toString();
                           final phone = (d['staffPhone'] ?? '').toString();
-                          final role = (d['staffRole'] ?? 'હેલ્પર').toString();
+                          final role = (d['staffRole'] ?? 'હેલ્પર'.tr).toString();
 
                           return Container(
                             padding: const EdgeInsets.all(16),
@@ -445,7 +445,7 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                                       ),
                                       child: const Icon(Icons.phone_rounded, color: Color(0xFF16A34A), size: 18),
                                     ),
-                                    tooltip: 'કોલ કરો',
+                                    tooltip: 'કોલ કરો'.tr,
                                     onPressed: () {
                                       HapticFeedback.lightImpact();
                                       _makeCall(phone);
@@ -460,7 +460,7 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                                     ),
                                     child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
                                   ),
-                                  tooltip: 'સ્ટાફ કાઢી નાખો',
+                                  tooltip: 'સ્ટાફ કાઢી નાખો'.tr,
                                   onPressed: () {
                                     HapticFeedback.lightImpact();
                                     _deleteStaff(doc.id, name);
@@ -526,21 +526,21 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.badge_rounded, size: 13, color: Colors.white),
                               SizedBox(width: 5),
                               Text(
-                                'ડેઇલી સ્ટાફ & હેલ્પર્સ',
+                                'ડેઇલી સ્ટાફ & હેલ્પર્સ'.tr,
                                 style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'કાયમી સ્ટાફ મેનેજમેન્ટ',
+                        Text(
+                          'કાયમી સ્ટાફ મેનેજમેન્ટ'.tr,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 17.5,
@@ -550,7 +550,7 @@ class _MemberDailyStaffScreenState extends State<MemberDailyStaffScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'કામવાળા, ડ્રાઈવર કે રસોઈયા ગેટ પર સરળતાથી પ્રવેશી શકે અને ડિજિટલ સિક્યોરિટી પાસ વેરિફાય થાય.',
+                          'કામવાળા, ડ્રાઈવર કે રસોઈયા ગેટ પર સરળતાથી પ્રવેશી શકે અને ડિજિટલ સિક્યોરિટી પાસ વેરિફાય થાય.'.tr,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(

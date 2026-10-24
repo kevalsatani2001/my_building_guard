@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/amenity_model.dart';
 import '../services/amenity_booking_service.dart';
+import '../services/localization_service.dart';
+import '../l10n/app_strings.dart';
 
 class AdminAmenitiesScreen extends StatefulWidget {
   const AdminAmenitiesScreen({super.key});
@@ -58,9 +60,9 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'એમેનિટીઝ & હોલ મેનેજર',
-              style: TextStyle(
+            Text(
+              AppStrings.get('amenities_title'),
+              style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF0F172A),
@@ -68,11 +70,17 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
               ),
             ),
             Text(
-              'વાડી, ક્લબહાઉસ, ટેરેસ & સ્લોટ બુકિંગ',
+              AppStrings.get('amenities_subtitle'),
               style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
             ),
           ],
         ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 14),
+            child: LanguageSwitchButton(),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -105,13 +113,13 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                       child: const Icon(Icons.visibility_off_rounded, size: 44, color: Color(0xFF94A3B8)),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'એમેનિટીઝ મોડ્યુલ અક્ષમ (Disabled) છે',
+                    Text(
+                      'એમેનિટીઝ મોડ્યુલ અક્ષમ (Disabled) છે'.tr,
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF334155)),
                     ),
                     const SizedBox(height: 6),
-                    const Text(
-                      'જો તમારી સોસાયટીમાં વાડી, ક્લબહાઉસ કે કોમન હોલ ન હોય, તો આ ફીચર બંધ રાખવાથી સભ્યો અને વોચમેનને એપમાં કોઈ વધારાની ખાલી સ્ક્રીન જોવા નહીં મળે.',
+                    Text(
+                      'જો તમારી સોસાયટીમાં વાડી, ક્લબહાઉસ કે કોમન હોલ ન હોય, તો આ ફીચર બંધ રાખવાથી સભ્યો અને વોચમેનને એપમાં કોઈ વધારાની ખાલી સ્ક્રીન જોવા નહીં મળે.'.tr,
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.4),
                     ),
@@ -155,9 +163,9 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
         labelColor: Colors.white,
         unselectedLabelColor: const Color(0xFF64748B),
         labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
         dividerColor: Colors.transparent,
-        tabs: const [
+        tabs: [
           Tab(
             height: 38,
             child: FittedBox(
@@ -168,7 +176,7 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                 children: [
                   Icon(Icons.calendar_month_rounded, size: 16),
                   SizedBox(width: 6),
-                  Text('બુકિંગ્સ'),
+                  Text('બુકિંગ્સ'.tr),
                 ],
               ),
             ),
@@ -183,7 +191,7 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                 children: [
                   Icon(Icons.apartment_rounded, size: 16),
                   SizedBox(width: 6),
-                  Text('સુવિધાઓ (Setup)'),
+                  Text('સુવિધાઓ (Setup)'.tr),
                 ],
               ),
             ),
@@ -232,8 +240,8 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'સોસાયટીમાં એમેનિટીઝ / વાડી છે?',
+                Text(
+                  'સોસાયટીમાં એમેનિટીઝ / વાડી છે?'.tr,
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
                 ),
                 const SizedBox(height: 3),
@@ -249,7 +257,7 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      _hasAmenities ? 'સક્રિય • સમગ્ર એપમાં બુકિંગ ઉપલબ્ધ' : 'અદ્રશ્ય • બુકિંગ મોડ્યુલ છુપાયેલું છે',
+                      _hasAmenities ? 'સક્રિય • સમગ્ર એપમાં બુકિંગ ઉપલબ્ધ'.tr : 'અદ્રશ્ય • બુકિંગ મોડ્યુલ છુપાયેલું છે'.tr,
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
@@ -273,8 +281,8 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                   SnackBar(
                     content: Text(
                       val
-                          ? '✅ એમેનિટીઝ મોડ્યુલ સક્ષમ થયું. હવે સભ્યો અને ગેટ પર ઉપલબ્ધ રહેશે.'
-                          : 'એમેનિટીઝ મોડ્યુલ બંધ કરવામાં આવ્યું છે.',
+                          ? '✅ એમેનિટીઝ મોડ્યુલ સક્ષમ થયું. હવે સભ્યો અને ગેટ પર ઉપલબ્ધ રહેશે.'.tr
+                          : 'એમેનિટીઝ મોડ્યુલ બંધ કરવામાં આવ્યું છે.'.tr,
                     ),
                     backgroundColor: val ? const Color(0xFF0F766E) : Colors.blueGrey,
                   ),
@@ -333,8 +341,8 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'હજુ કોઈ બુકિંગ રિક્વેસ્ટ આવેલ નથી',
+                    Text(
+                      'હજુ કોઈ બુકિંગ રિક્વેસ્ટ આવેલ નથી'.tr,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
@@ -342,8 +350,8 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'જ્યારે સોસાયટીના સભ્યો વાડી, ક્લબહાઉસ કે ટેરેસ માટે સ્લોટ બુક કરશે ત્યારે તેમની મંજૂરી માટેની વિનંતી અહીં દર્શાવવામાં આવશે.',
+                    Text(
+                      'જ્યારે સોસાયટીના સભ્યો વાડી, ક્લબહાઉસ કે ટેરેસ માટે સ્લોટ બુક કરશે ત્યારે તેમની મંજૂરી માટેની વિનંતી અહીં દર્શાવવામાં આવશે.'.tr,
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.45),
                     ),
@@ -360,12 +368,12 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.holiday_village_rounded, size: 13, color: Color(0xFF0F766E)),
                               SizedBox(width: 4),
-                              Text('વાડી / હોલ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                              Text('વાડી / હોલ'.tr, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
                             ],
                           ),
                         ),
@@ -376,12 +384,12 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.apartment_rounded, size: 13, color: Color(0xFF0F766E)),
                               SizedBox(width: 4),
-                              Text('ક્લબહાઉસ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                              Text('ક્લબહાઉસ'.tr, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
                             ],
                           ),
                         ),
@@ -392,12 +400,12 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.deck_rounded, size: 13, color: Color(0xFF0F766E)),
                               SizedBox(width: 4),
-                              Text('ટેરેસ ગાર્ડન', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                              Text('ટેરેસ ગાર્ડન'.tr, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
                             ],
                           ),
                         ),
@@ -428,15 +436,15 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
     switch (b.status) {
       case 'approved':
         statusColor = const Color(0xFF16A34A);
-        statusLabel = 'મંજૂર થયેલ (Approved)';
+        statusLabel = 'મંજૂર થયેલ (Approved)'.tr;
         break;
       case 'rejected':
         statusColor = Colors.red;
-        statusLabel = 'નામંજૂર (Rejected)';
+        statusLabel = 'નામંજૂર (Rejected)'.tr;
         break;
       default:
         statusColor = const Color(0xFFD97706);
-        statusLabel = 'પેન્ડિંગ મંજૂરી (Pending)';
+        statusLabel = 'પેન્ડિંગ મંજૂરી (Pending)'.tr;
     }
 
     return Container(
@@ -468,7 +476,7 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'ફ્લેટ: ${b.unitDisplay}',
+                  'ફ્લેટ: ${b.unitDisplay}'.tr,
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11),
                 ),
               ),
@@ -494,7 +502,7 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
           ),
           const SizedBox(height: 4),
           Text(
-            'હેતુ: ${b.purpose} • ${b.expectedGuests} અંદાજિત મહેમાનો',
+            'હેતુ: ${b.purpose} • ${b.expectedGuests} અંદાજિત મહેમાનો'.tr,
             style: const TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
           ),
           const SizedBox(height: 6),
@@ -512,7 +520,7 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
           if (b.rentAmount > 0 || b.securityDeposit > 0) ...[
             const SizedBox(height: 8),
             Text(
-              'ભાડું: ₹${b.rentAmount.toStringAsFixed(0)} | ડિપોઝિટ: ₹${b.securityDeposit.toStringAsFixed(0)} (સ્ટેટસ: ${b.depositStatus})',
+              'ભાડું: ₹${b.rentAmount.toStringAsFixed(0)} | ડિપોઝિટ: ₹${b.securityDeposit.toStringAsFixed(0)} (સ્ટેટસ: ${b.depositStatus})'.tr,
               style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
             ),
           ],
@@ -532,7 +540,7 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                   const Icon(Icons.qr_code_rounded, size: 15, color: Color(0xFF16A34A)),
                   const SizedBox(width: 6),
                   Text(
-                    'ગેટ પાસકોડ: ${b.eventPassCode}',
+                    'ગેટ પાસકોડ: ${b.eventPassCode}'.tr,
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF16A34A)),
                   ),
                 ],
@@ -553,7 +561,7 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                       foregroundColor: Colors.red,
                       side: const BorderSide(color: Colors.red),
                     ),
-                    child: const Text('નામંજૂર (Reject)'),
+                    child: Text('નામંજૂર (Reject)'.tr),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -564,7 +572,7 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                       backgroundColor: const Color(0xFF0F766E),
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text('મંજૂર કરો (Approve)'),
+                    child: Text('મંજૂર કરો (Approve)'.tr),
                   ),
                 ),
               ],
@@ -576,7 +584,7 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
               child: OutlinedButton.icon(
                 onPressed: () => _showDepositInspectionDialog(b),
                 icon: const Icon(Icons.fact_check_rounded, size: 16),
-                label: const Text('ઇવેન્ટ નિરીક્ષણ & ડિપોઝિટ રીફંડ નોંધ'),
+                label: Text('ઇવેન્ટ નિરીક્ષણ & ડિપોઝિટ રીફંડ નોંધ'.tr),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF0F766E),
                   side: const BorderSide(color: Color(0xFF0F766E)),
@@ -595,22 +603,22 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(isApprove ? 'બુકિંગ મંજૂર કરવું છે?' : 'બુકિંગ નામંજૂર કરવું છે?'),
+        title: Text(isApprove ? 'બુકિંગ મંજૂર કરવું છે?'.tr : 'બુકિંગ નામંજૂર કરવું છે?'.tr),
         content: TextField(
           controller: remarkCtrl,
           decoration: InputDecoration(
-            labelText: isApprove ? 'ખાસ સૂચના (વૈકલ્પિક)' : 'નામંજૂર કરવાનું કારણ *',
+            labelText: isApprove ? 'ખાસ સૂચના (વૈકલ્પિક)'.tr : 'નામંજૂર કરવાનું કારણ *'.tr,
             border: const OutlineInputBorder(),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('રદ કરો')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('રદ કરો'.tr)),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
               backgroundColor: isApprove ? const Color(0xFF0F766E) : Colors.red,
             ),
-            child: Text(isApprove ? 'મંજૂર કરો' : 'નામંજૂર કરો'),
+            child: Text(isApprove ? 'મંજૂર કરો'.tr : 'નામંજૂર કરો'.tr),
           ),
         ],
       ),
@@ -626,7 +634,7 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
   }
 
   void _showDepositInspectionDialog(AmenityBookingModel b) {
-    final noteCtrl = TextEditingController(text: 'કોઈ નુકસાન નથી, હોલ સાફ છે.');
+    final noteCtrl = TextEditingController(text: 'કોઈ નુકસાન નથી, હોલ સાફ છે.'.tr);
     String depositStatus = 'refunded';
 
     showDialog(
@@ -635,26 +643,26 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
         builder: (ctx, setDialogState) {
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Text('ઇવેન્ટ પછીનું નિરીક્ષણ (Inspection)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            title: Text('ઇવેન્ટ પછીનું નિરીક્ષણ (Inspection)'.tr, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('સુવિધા: ${b.amenityName} (${b.unitDisplay})', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text('સુવિધા: ${b.amenityName} (${b.unitDisplay})'.tr, style: const TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
-                const Text('ડિપોઝિટ સ્ટેટસ:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
+                Text('ડિપોઝિટ સ્ટેટસ:'.tr, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                SizedBox(height: 6),
                 SegmentedButton<String>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: 'refunded',
                       icon: Icon(Icons.check_circle, size: 16),
-                      label: Text('રીફંડ (Refunded)'),
+                      label: Text('રીફંડ (Refunded)'.tr),
                     ),
                     ButtonSegment(
                       value: 'deducted',
                       icon: Icon(Icons.money_off, size: 16),
-                      label: Text('જપ્ત (Deducted)'),
+                      label: Text('જપ્ત (Deducted)'.tr),
                     ),
                   ],
                   selected: {depositStatus},
@@ -663,15 +671,15 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                 const SizedBox(height: 12),
                 TextField(
                   controller: noteCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'નિરીક્ષણ નોંધ (Inspection Note)',
+                  decoration: InputDecoration(
+                    labelText: 'નિરીક્ષણ નોંધ (Inspection Note)'.tr,
                     border: OutlineInputBorder(),
                   ),
                 ),
               ],
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('રદ કરો')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('રદ કરો'.tr)),
               FilledButton(
                 onPressed: () async {
                   Navigator.pop(ctx);
@@ -682,7 +690,7 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                   );
                 },
                 style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0F766E)),
-                child: const Text('સેવ કરો'),
+                child: Text('સેવ કરો'.tr),
               ),
             ],
           );
@@ -700,7 +708,7 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
         backgroundColor: const Color(0xFF0F766E),
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('નવી સુવિધા ઉમેરો', style: TextStyle(fontWeight: FontWeight.w800)),
+        label: Text('નવી સુવિધા ઉમેરો'.tr, style: TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: StreamBuilder<List<AmenityModel>>(
         stream: _service.getAllAmenitiesAdminStream(),
@@ -732,13 +740,13 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'કોઈ સુવિધા ઉમેરેલ નથી',
+                    Text(
+                      'કોઈ સુવિધા ઉમેરેલ નથી'.tr,
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
                     ),
                     const SizedBox(height: 6),
-                    const Text(
-                      'સોસાયટીમાં ઉપલબ્ધ વાડી, પાર્ટી પ્લોટ, ક્લબહાઉસ કે ટેરેસ જેવી સુવિધાઓ અહીં ઉમેરો.',
+                    Text(
+                      'સોસાયટીમાં ઉપલબ્ધ વાડી, પાર્ટી પ્લોટ, ક્લબહાઉસ કે ટેરેસ જેવી સુવિધાઓ અહીં ઉમેરો.'.tr,
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.4),
                     ),
@@ -751,7 +759,7 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                       ),
                       onPressed: () => _addDefaultAmenities(),
                       icon: const Icon(Icons.playlist_add_rounded, size: 18),
-                      label: const Text('ડિફૉલ્ટ સુવિધાઓ ઉમેરો (વાડી & હોલ)', style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: Text('ડિફૉલ્ટ સુવિધાઓ ઉમેરો (વાડી & હોલ)'.tr, style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -806,18 +814,18 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
-                                child: Text('ક્ષમતા: ${a.capacity}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF475569))),
+                                child: Text('ક્ષમતા: ${a.capacity}'.tr, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF475569))),
                               ),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(color: const Color(0xFFF0FDF4), borderRadius: BorderRadius.circular(6)),
-                                child: Text('ભાડું: ₹${a.rentAmount.toStringAsFixed(0)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF16A34A))),
+                                child: Text('ભાડું: ₹${a.rentAmount.toStringAsFixed(0)}'.tr, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF16A34A))),
                               ),
                               if (a.securityDeposit > 0)
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(color: const Color(0xFFFFFBEB), borderRadius: BorderRadius.circular(6)),
-                                  child: Text('ડિપોઝિટ: ₹${a.securityDeposit.toStringAsFixed(0)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFFD97706))),
+                                  child: Text('ડિપોઝિટ: ₹${a.securityDeposit.toStringAsFixed(0)}'.tr, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFFD97706))),
                                 ),
                             ],
                           ),
@@ -840,16 +848,16 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
 
   void _addDefaultAmenities() async {
     await _service.saveAmenity(
-      name: 'કોમ્યુનિટી હોલ / વાડી (Community Hall)',
+      name: 'કોમ્યુનિટી હોલ / વાડી (Community Hall)'.tr,
       category: 'hall',
       capacity: 250,
-      description: 'લગ્ન, સગાઈ, બર્થડે પાર્ટી કે સામાજિક પ્રસંગો માટે મોટો હોલ.',
+      description: 'લગ્ન, સગાઈ, બર્થડે પાર્ટી કે સામાજિક પ્રસંગો માટે મોટો હોલ.'.tr,
       isPaid: true,
       rentAmount: 2000,
       securityDeposit: 1000,
       slotType: 'time_slots',
-      availableSlots: ['આખો દિવસ (Full Day)', 'સવાર (Day: 9 AM - 4 PM)', 'સાંજ (Evening: 5 PM - 11 PM)'],
-      rulesAndTerms: 'રાત્રે ૧૦ વાગ્યા પછી ડીજે/લાઉડસ્પીકર બંધ. સાફ-સફાઈ સભ્યની રહેશે.',
+      availableSlots: ['આખો દિવસ (Full Day)'.tr, 'સવાર (Day: 9 AM - 4 PM)'.tr, 'સાંજ (Evening: 5 PM - 11 PM)'.tr],
+      rulesAndTerms: 'રાત્રે ૧૦ વાગ્યા પછી ડીજે/લાઉડસ્પીકર બંધ. સાફ-સફાઈ સભ્યની રહેશે.'.tr,
     );
   }
 
@@ -859,7 +867,7 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
     final rentCtrl = TextEditingController(text: '0');
     final depCtrl = TextEditingController(text: '0');
     final descCtrl = TextEditingController();
-    final rulesCtrl = TextEditingController(text: 'રાત્રે ૧૦ વાગ્યા પછી લાઉડસ્પીકર બંધ.');
+    final rulesCtrl = TextEditingController(text: 'રાત્રે ૧૦ વાગ્યા પછી લાઉડસ્પીકર બંધ.'.tr);
     bool isPaid = false;
 
     showModalBottomSheet(
@@ -879,17 +887,17 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('નવી એમેનિટી ઉમેરો', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                  Text('નવી એમેનિટી ઉમેરો'.tr, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
                   TextField(
                     controller: nameCtrl,
-                    decoration: const InputDecoration(labelText: 'સુવિધાનું નામ (દા.ત. ક્લબહાઉસ, વાડી, ટેરેસ) *', border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: 'સુવિધાનું નામ (દા.ત. ક્લબહાઉસ, વાડી, ટેરેસ) *'.tr, border: OutlineInputBorder()),
                   ),
                   const SizedBox(height: 10),
                   TextField(
                     controller: capCtrl,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'ક્ષમતા (મહેમાનો)', border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: 'ક્ષમતા (મહેમાનો)'.tr, border: OutlineInputBorder()),
                   ),
                   const SizedBox(height: 10),
                   Container(
@@ -902,8 +910,8 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'પેઇડ સુવિધા (ભાડું / ડિપોઝિટ લાગશે?)',
+                        Text(
+                          'પેઇડ સુવિધા (ભાડું / ડિપોઝિટ લાગશે?)'.tr,
                           style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
                         ),
                         Switch.adaptive(
@@ -919,24 +927,24 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                     TextField(
                       controller: rentCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'ભાડું (₹)', border: OutlineInputBorder()),
+                      decoration: InputDecoration(labelText: 'ભાડું (₹)'.tr, border: OutlineInputBorder()),
                     ),
                     const SizedBox(height: 10),
                     TextField(
                       controller: depCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'સિક્યોરિટી ડિપોઝિટ (₹ - રીફંડેબલ)', border: OutlineInputBorder()),
+                      decoration: InputDecoration(labelText: 'સિક્યોરિટી ડિપોઝિટ (₹ - રીફંડેબલ)'.tr, border: OutlineInputBorder()),
                     ),
                     const SizedBox(height: 10),
                   ],
                   TextField(
                     controller: descCtrl,
-                    decoration: const InputDecoration(labelText: 'સમજૂતી', border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: 'સમજૂતી'.tr, border: OutlineInputBorder()),
                   ),
                   const SizedBox(height: 10),
                   TextField(
                     controller: rulesCtrl,
-                    decoration: const InputDecoration(labelText: 'નિયમો અને શરતો', border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: 'નિયમો અને શરતો'.tr, border: OutlineInputBorder()),
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
@@ -954,12 +962,12 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                           rentAmount: double.tryParse(rentCtrl.text) ?? 0.0,
                           securityDeposit: double.tryParse(depCtrl.text) ?? 0.0,
                           slotType: 'full_day',
-                          availableSlots: ['આખો દિવસ (Full Day)'],
+                          availableSlots: ['આખો દિવસ (Full Day)'.tr],
                           rulesAndTerms: rulesCtrl.text.trim(),
                         );
                       },
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F766E), foregroundColor: Colors.white),
-                      child: const Text('ઉમેરો'),
+                      child: Text('ઉમેરો'.tr),
                     ),
                   ),
                 ],

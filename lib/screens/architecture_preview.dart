@@ -90,7 +90,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
             ),
             actions: [
               IconButton(
-                tooltip: "સહી પત્રક જુઓ (Signature Sheet)",
+                tooltip: "સહી પત્રક જુઓ (Signature Sheet)".tr,
                 icon: const Icon(Icons.description_outlined, color: Colors.white, size: 22),
                 onPressed: () {
                   Navigator.push(
@@ -199,7 +199,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                           icon: Icons.storefront_rounded,
                           color: const Color(0xFF0F766E),
                           value: '$totalUnits',
-                          label: 'કુલ ${vocab.unitShortLabel}',
+                          label: 'કુલ ${vocab.unitShortLabel}'.tr,
                         ),
                       ),
                       Container(width: 1, height: 42, color: const Color(0xFFE2E8F0)),
@@ -209,7 +209,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                           icon: Icons.check_circle_rounded,
                           color: const Color(0xFF10B981),
                           value: '$occupiedCount',
-                          label: 'કબજેદાર',
+                          label: 'કબજેદાર'.tr,
                         ),
                       ),
                       Container(width: 1, height: 42, color: const Color(0xFFE2E8F0)),
@@ -219,7 +219,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                           icon: Icons.meeting_room_outlined,
                           color: const Color(0xFFF59E0B),
                           value: '$vacantCount',
-                          label: 'ખાલી (ઉપલબ્ધ)',
+                          label: 'ખાલી (ઉપલબ્ધ)'.tr,
                         ),
                       ),
                       Container(width: 1, height: 42, color: const Color(0xFFE2E8F0)),
@@ -250,15 +250,15 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'ઓક્યુપન્સી ગુણોત્તર: $occupancyPct%',
+                        'ઓક્યુપન્સી ગુણોત્તર: $occupancyPct%'.tr,
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF0F172A),
                         ),
                       ),
-                      const Text(
-                        '💡 વિગતો માટે કોઈપણ એકમ પર ટૅપ કરો',
+                      Text(
+                        '💡 વિગતો માટે કોઈપણ એકમ પર ટૅપ કરો'.tr,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -289,7 +289,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                       controller: _searchC,
                       onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
                       decoration: InputDecoration(
-                        hintText: "એકમ નંબર શોધો (દા.ત. G-01, 102, Shop 4)...",
+                        hintText: "એકમ નંબર શોધો (દા.ત. G-01, 102, Shop 4)...".tr,
                         hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
                         prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF64748B), size: 20),
                         suffixIcon: _searchQuery.isNotEmpty
@@ -310,11 +310,11 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                   // Filter Chips
                   Row(
                     children: [
-                      _buildFilterChip('all', '🌟 તમામ ($totalUnits)'),
+                      _buildFilterChip('all', '🌟 તમામ ($totalUnits)'.tr),
                       const SizedBox(width: 8),
-                      _buildFilterChip('occupied', '🟢 કબજેદાર ($occupiedCount)'),
+                      _buildFilterChip('occupied', '🟢 કબજેદાર ($occupiedCount)'.tr),
                       const SizedBox(width: 8),
-                      _buildFilterChip('vacant', '⚪ ખાલી ($vacantCount)'),
+                      _buildFilterChip('vacant', '⚪ ખાલી ($vacantCount)'.tr),
                     ],
                   ),
                 ],
@@ -324,10 +324,10 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
 
           // 🌟 4. REAL BLOCK / FLOOR ELEVATION CARDS
           if (widget.tempBlocks.isEmpty)
-            const SliverFillRemaining(
+            SliverFillRemaining(
               hasScrollBody: false,
               child: PremiumEmptyState(
-                message: "કોઈ આર્કિટેક્ચર ડેટા ઉપલબ્ધ નથી.",
+                message: "કોઈ આર્કિટેક્ચર ડેટા ઉપલબ્ધ નથી.".tr,
                 icon: Icons.grid_view_rounded,
               ),
             )
@@ -425,7 +425,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
   ) {
     final rawUnits = b['units'] as List?;
     final blockName = (b['name'] ?? '').toString();
-    final displayName = (b['displayName'] ?? b['name'] ?? 'બ્લોક').toString();
+    final displayName = (b['displayName'] ?? b['name'] ?? 'બ્લોક'.tr).toString();
     final category = (b['category'] ?? '').toString().toLowerCase();
     final isCommercialBlock = category == 'commercial' || widget.architectureType == 'Commercial';
     final isGround = SocietyService.instance.isGroundBlock(blockName);
@@ -542,10 +542,10 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                       const SizedBox(height: 2),
                       Text(
                         isGround
-                            ? 'ગ્રાઉન્ડ લેવલ એકમો • $totalBlockUnits એકમો નોંધાયેલ'
+                            ? 'ગ્રાઉન્ડ લેવલ એકમો • $totalBlockUnits એકમો નોંધાયેલ'.tr
                             : (isCommercialBlock
-                                ? 'કોમર્શિયલ ફ્લોર • $totalBlockUnits એકમો નોંધાયેલ'
-                                : 'રેસિડેન્શિયલ એકમો • $totalBlockUnits ફ્લેટ્સ'),
+                                ? 'કોમર્શિયલ ફ્લોર • $totalBlockUnits એકમો નોંધાયેલ'.tr
+                                : 'રેસિડેન્શિયલ એકમો • $totalBlockUnits ફ્લેટ્સ'.tr),
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 11,
@@ -563,7 +563,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                     border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                   ),
                   child: Text(
-                    "$blockOccupied / $totalBlockUnits સક્રિય",
+                    "$blockOccupied / $totalBlockUnits સક્રિય".tr,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 11,
@@ -584,8 +584,8 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                     child: Center(
                       child: Text(
                         _searchQuery.isNotEmpty
-                            ? 'આ બ્લોકમાં "$_searchQuery" વાળો કોઈ એકમ મળ્યો નથી.'
-                            : 'પસંદ કરેલા ફિલ્ટર મુજબ કોઈ એકમ નથી.',
+                            ? 'આ બ્લોકમાં "$_searchQuery" વાળો કોઈ એકમ મળ્યો નથી.'.tr
+                            : 'પસંદ કરેલા ફિલ્ટર મુજબ કોઈ એકમ નથી.'.tr,
                         style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
                       ),
                     ),
@@ -626,8 +626,8 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
       children: sortedFloors.map((fKey) {
         final fUnits = floorGroups[fKey]!;
         final floorTitle = fKey == 0
-            ? 'ગ્રાઉન્ડ ફ્લોર (Floor 0)'
-            : (fKey < 0 ? 'બેઝમેન્ટ B${fKey.abs()}' : '$fKey મો માળ (Floor $fKey)');
+            ? 'ગ્રાઉન્ડ ફ્લોર (Floor 0)'.tr
+            : (fKey < 0 ? 'બેઝમેન્ટ B${fKey.abs()}'.tr : '$fKey મો માળ (Floor $fKey)'.tr);
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 14),
@@ -658,7 +658,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      "(${fUnits.length} એકમો)",
+                      "(${fUnits.length} એકમો)".tr,
                       style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                     ),
                   ],
@@ -808,7 +808,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  isOccupied ? "સક્રિય" : "ખાલી",
+                  isOccupied ? "સક્રિય".tr : "ખાલી".tr,
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.w800,
@@ -928,7 +928,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  isOccupied ? '🟢 કબજેદાર' : '⚪ ખાલી',
+                                  isOccupied ? '🟢 કબજેદાર'.tr : '⚪ ખાલી'.tr,
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -940,7 +940,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '$blockDisplayName • ${floorNo == 0 ? "ગ્રાઉન્ડ ફ્લોર" : "$floorNo લો માળ"}',
+                            '$blockDisplayName • ${floorNo == 0 ? "ગ્રાઉન્ડ ફ્લોર" : "$floorNo લો માળ"}'.tr,
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -961,7 +961,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                 children: [
                   Expanded(
                     child: _buildSpecCard(
-                      label: 'ક્ષેત્રફળ (Area)',
+                      label: 'ક્ષેત્રફળ (Area)'.tr,
                       value: areaSqFt != null && areaSqFt > 0 ? '${areaSqFt.toInt()} Sq.Ft.' : 'N/A',
                       icon: Icons.square_foot_rounded,
                       color: const Color(0xFF0284C7),
@@ -970,8 +970,8 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _buildSpecCard(
-                      label: 'માળ લેવલ (Floor)',
-                      value: floorNo == 0 ? 'ગ્રાઉન્ડ (0)' : (floorNo < 0 ? 'બેઝમેન્ટ B${floorNo.abs()}' : '$floorNo લો માળ'),
+                      label: 'માળ લેવલ (Floor)'.tr,
+                      value: floorNo == 0 ? 'ગ્રાઉન્ડ (0)'.tr : (floorNo < 0 ? 'બેઝમેન્ટ B${floorNo.abs()}'.tr : '$floorNo લો માળ'.tr),
                       icon: Icons.layers_rounded,
                       color: const Color(0xFFD97706),
                     ),
@@ -983,7 +983,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                 children: [
                   Expanded(
                     child: _buildSpecCard(
-                      label: 'એકમ શ્રેણી (Type)',
+                      label: 'એકમ શ્રેણી (Type)'.tr,
                       value: typeSpecs.labelGujarati,
                       icon: typeSpecs.icon,
                       color: typeSpecs.accentColor,
@@ -992,7 +992,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _buildSpecCard(
-                      label: 'બ્લોક / ફ્લોર',
+                      label: 'બ્લોક / ફ્લોર'.tr,
                       value: blockName,
                       icon: Icons.apartment_rounded,
                       color: const Color(0xFF7C3AED),
@@ -1004,8 +1004,8 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
               const SizedBox(height: 20),
 
               // 4. REAL-TIME RESIDENT DETAILS FROM DATABASE
-              const Text(
-                "કબજેદાર / સભ્ય વિગતો (Resident Info)",
+              Text(
+                "કબજેદાર / સભ્ય વિગતો (Resident Info)".tr,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
@@ -1037,7 +1037,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                   final resident = snapshot.data;
 
                   if (resident != null) {
-                    final resName = (resident['name'] ?? 'અજાણ્યો સભ્ય').toString();
+                    final resName = (resident['name'] ?? 'અજાણ્યો સભ્ય'.tr).toString();
                     final resPhone = (resident['displayPhone'] ?? resident['phone'] ?? '').toString();
                     final resEmail = (resident['email'] ?? '').toString();
                     final resRole = (resident['role'] ?? 'member').toString();
@@ -1080,7 +1080,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      resRole == 'sub_admin' ? 'સબ-એડમિન / કમિટી મેમ્બર' : 'નોંધાયેલ સભ્ય / દુકાનદાર',
+                                      resRole == 'sub_admin' ? 'સબ-એડમિન / કમિટી મેમ્બર'.tr : 'નોંધાયેલ સભ્ય / દુકાનદાર'.tr,
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
@@ -1108,7 +1108,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                                   child: FilledButton.icon(
                                     onPressed: () => launchUrl(Uri.parse('tel:$resPhone')),
                                     icon: const Icon(Icons.phone_rounded, size: 16),
-                                    label: const Text('કૉલ કરો'),
+                                    label: Text('કૉલ કરો'.tr),
                                     style: FilledButton.styleFrom(
                                       backgroundColor: const Color(0xFF0F766E),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1128,7 +1128,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                                       );
                                     },
                                     icon: const Icon(Icons.chat_bubble_rounded, size: 16, color: Color(0xFF16A34A)),
-                                    label: const Text('વોટ્સએપ'),
+                                    label: Text('વોટ્સએપ'.tr),
                                     style: OutlinedButton.styleFrom(
                                       foregroundColor: const Color(0xFF16A34A),
                                       side: const BorderSide(color: Color(0xFF16A34A), width: 1.2),
@@ -1166,12 +1166,12 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                               child: const Icon(Icons.meeting_room_outlined, color: Color(0xFF64748B), size: 22),
                             ),
                             const SizedBox(width: 12),
-                            const Expanded(
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "કોઈ સભ્ય ફાળવેલ નથી (Vacant)",
+                                    "કોઈ સભ્ય ફાળવેલ નથી (Vacant)".tr,
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w800,
@@ -1180,7 +1180,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                                   ),
                                   SizedBox(height: 2),
                                   Text(
-                                    "આ એકમ હાલમાં ખાલી છે. તમે સીધા જ નવા સભ્યને એલોટ કરી શકો છો.",
+                                    "આ એકમ હાલમાં ખાલી છે. તમે સીધા જ નવા સભ્યને એલોટ કરી શકો છો.".tr,
                                     style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                   ),
                                 ],
@@ -1206,7 +1206,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                               );
                             },
                             icon: const Icon(Icons.person_add_rounded, size: 16),
-                            label: const Text('આ યુનિટમાં સભ્ય ઉમેરો (Add Member)'),
+                            label: Text('આ યુનિટમાં સભ્ય ઉમેરો (Add Member)'.tr),
                             style: FilledButton.styleFrom(
                               backgroundColor: const Color(0xFF0F766E),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1227,7 +1227,7 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
                 width: double.infinity,
                 child: TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('બંધ કરો', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text('બંધ કરો'.tr, style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -1323,22 +1323,22 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
     switch (unitType) {
       case 'shop':
         return _UnitTypeSpecs(
-          labelGujarati: 'દુકાન (Shop)',
-          shortName: 'રીટેલ શોપ',
+          labelGujarati: 'દુકાન (Shop)'.tr,
+          shortName: 'રીટેલ શોપ'.tr,
           icon: Icons.storefront_rounded,
           accentColor: const Color(0xFFD97706), // Amber Bronze
         );
       case 'showroom':
         return _UnitTypeSpecs(
-          labelGujarati: 'શોરૂમ (Showroom)',
-          shortName: 'શોરૂમ',
+          labelGujarati: 'શોરૂમ (Showroom)'.tr,
+          shortName: 'શોરૂમ'.tr,
           icon: Icons.store_mall_directory_rounded,
           accentColor: const Color(0xFF7C3AED), // Luxury Violet
         );
       case 'office':
         return _UnitTypeSpecs(
-          labelGujarati: 'ઓફિસ (Corporate)',
-          shortName: 'ઓફિસ',
+          labelGujarati: 'ઓફિસ (Corporate)'.tr,
+          shortName: 'ઓફિસ'.tr,
           icon: Icons.business_center_rounded,
           accentColor: const Color(0xFF0284C7), // Sky Blue
         );
@@ -1346,24 +1346,24 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
       case 'villa':
       case 'rowhouse':
         return _UnitTypeSpecs(
-          labelGujarati: 'બંગલો / રો-હાઉસ',
-          shortName: 'બંગલો',
+          labelGujarati: 'બંગલો / રો-હાઉસ'.tr,
+          shortName: 'બંગલો'.tr,
           icon: Icons.holiday_village_rounded,
           accentColor: const Color(0xFF059669), // Forest Emerald
         );
       case 'godown':
       case 'warehouse':
         return _UnitTypeSpecs(
-          labelGujarati: 'ગોડાઉન / વેરહાઉસ',
-          shortName: 'ગોડાઉન',
+          labelGujarati: 'ગોડાઉન / વેરહાઉસ'.tr,
+          shortName: 'ગોડાઉન'.tr,
           icon: Icons.warehouse_rounded,
           accentColor: const Color(0xFFEA580C), // Orange
         );
       case 'flat':
       default:
         return _UnitTypeSpecs(
-          labelGujarati: 'ફ્લેટ (Apartment)',
-          shortName: 'ફ્લેટ',
+          labelGujarati: 'ફ્લેટ (Apartment)'.tr,
+          shortName: 'ફ્લેટ'.tr,
           icon: Icons.door_front_door_rounded,
           accentColor: const Color(0xFF0F766E), // Deep Teal
         );
@@ -1379,8 +1379,8 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
           gradientColors: const [Color(0xFF022C22), Color(0xFF064E3B), Color(0xFF0F766E)],
           icon: Icons.storefront_rounded,
           premiseBadge: 'COMMERCIAL PREMISE',
-          gujaratiTitle: 'કોમર્શિયલ પરિસર એકમો',
-          gujaratiSubtitle: 'એડમિન દ્વારા સેટઅપ કરેલ શોપ્સ અને ઓફિસ યુનિટ્સ',
+          gujaratiTitle: 'કોમર્શિયલ પરિસર એકમો'.tr,
+          gujaratiSubtitle: 'એડમિન દ્વારા સેટઅપ કરેલ શોપ્સ અને ઓફિસ યુનિટ્સ'.tr,
         );
       case 'mixed':
         return _ArchThemeConfig(
@@ -1388,8 +1388,8 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
           gradientColors: const [Color(0xFF020617), Color(0xFF0F172A), Color(0xFF0F766E)],
           icon: Icons.domain_verification_rounded,
           premiseBadge: 'MIXED-USE COMPLEX',
-          gujaratiTitle: 'મિક્સ્ડ સંકુલ એકમો',
-          gujaratiSubtitle: 'એડમિન દ્વારા સેટઅપ કરેલ શોપ્સ અને રેસિડેન્શિયલ ફ્લેટ્સ',
+          gujaratiTitle: 'મિક્સ્ડ સંકુલ એકમો'.tr,
+          gujaratiSubtitle: 'એડમિન દ્વારા સેટઅપ કરેલ શોપ્સ અને રેસિડેન્શિયલ ફ્લેટ્સ'.tr,
         );
       case 'street':
         return _ArchThemeConfig(
@@ -1397,8 +1397,8 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
           gradientColors: const [Color(0xFF022C22), Color(0xFF064E3B), Color(0xFF047857)],
           icon: Icons.holiday_village_rounded,
           premiseBadge: 'STREET / VILLA',
-          gujaratiTitle: 'સોસાયટી શેરી અને રો-હાઉસ',
-          gujaratiSubtitle: 'એડમિન દ્વારા સેટઅપ કરેલ બંગલો અને પ્લોટ એકમો',
+          gujaratiTitle: 'સોસાયટી શેરી અને રો-હાઉસ'.tr,
+          gujaratiSubtitle: 'એડમિન દ્વારા સેટઅપ કરેલ બંગલો અને પ્લોટ એકમો'.tr,
         );
       case 'wing':
       default:
@@ -1407,8 +1407,8 @@ class _ArchitecturePreviewScreenState extends State<ArchitecturePreviewScreen> {
           gradientColors: const [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF2563EB)],
           icon: Icons.apartment_rounded,
           premiseBadge: 'RESIDENTIAL WINGS',
-          gujaratiTitle: 'સોસાયટી વિંગ્સ અને ફ્લેટ્સ',
-          gujaratiSubtitle: 'એડમિન દ્વારા સેટઅપ કરેલ વિંગ્સ અને એપાર્ટમેન્ટ્સ',
+          gujaratiTitle: 'સોસાયટી વિંગ્સ અને ફ્લેટ્સ'.tr,
+          gujaratiSubtitle: 'એડમિન દ્વારા સેટઅપ કરેલ વિંગ્સ અને એપાર્ટમેન્ટ્સ'.tr,
         );
     }
   }

@@ -7,6 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/maintenance_service.dart';
+import '../l10n/app_strings.dart';
+import '../services/localization_service.dart';
 
 class AdminSocietyBankSettingsScreen extends StatefulWidget {
   const AdminSocietyBankSettingsScreen({super.key});
@@ -24,7 +26,7 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
   final _defaultAmtController = TextEditingController(text: '1500');
   final _dueDayController = TextEditingController(text: '10');
   final _signatoryNameController = TextEditingController();
-  final _signatoryTitleController = TextEditingController(text: 'સોસાયટી પ્રમુખ / ચેરમેન');
+  final _signatoryTitleController = TextEditingController(text: 'સોસાયટી પ્રમુખ / ચેરમેન'.tr);
   String? _signatureBase64;
 
   bool _isLoading = true;
@@ -44,7 +46,7 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
       _defaultAmtController.text = (settings['defaultAmount'] ?? 1500).toString();
       _dueDayController.text = (settings['dueDay'] ?? 10).toString();
       _signatoryNameController.text = settings['signatoryName']?.toString() ?? '';
-      _signatoryTitleController.text = settings['signatoryTitle']?.toString() ?? 'સોસાયટી પ્રમુખ / ચેરમેન';
+      _signatoryTitleController.text = settings['signatoryTitle']?.toString() ?? 'સોસાયટી પ્રમુખ / ચેરમેન'.tr;
       _signatureBase64 = settings['signatureBase64']?.toString();
     } catch (_) {}
     if (mounted) {
@@ -88,12 +90,12 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
               Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
               SizedBox(width: 10),
               Expanded(
-                child: Text('સોસાયટી બેંક & ડિજિટલ સહી સેટિંગ્સ સફળતાપૂર્વક સાચવવામાં આવ્યા!'),
+                child: Text('સોસાયટી બેંક & ડિજિટલ સહી સેટિંગ્સ સફળતાપૂર્વક સાચવવામાં આવ્યા!'.tr),
               ),
             ],
           ),
@@ -108,7 +110,7 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('સેવ કરવામાં ભૂલ: $e'),
+          content: Text('સેવ કરવામાં ભૂલ: $e'.tr),
           backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -120,38 +122,38 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
   /// ૧. કડક UPI ID ફોર્મેટ વેલિડેશન (૧૦૦% ફ્રી)
   String? _validateUpiId(String? v) {
     if (v == null || v.trim().isEmpty) {
-      return 'સોસાયટી UPI ID દાખલ કરવો ફરજિયાત છે';
+      return 'સોસાયટી UPI ID દાખલ કરવો ફરજિયાત છે'.tr;
     }
     final trimmed = v.trim();
     if (trimmed.contains(' ')) {
-      return 'UPI ID માં સ્પેસ (ખાલી જગ્યા) ન હોવી જોઈએ';
+      return 'UPI ID માં સ્પેસ (ખાલી જગ્યા) ન હોવી જોઈએ'.tr;
     }
     if (!trimmed.contains('@')) {
-      return 'સાચો UPI ID દાખલ કરો (દા.ત. yourname@bank જેમ કે @okhdfcbank, @sbi, @paytm)';
+      return 'સાચો UPI ID દાખલ કરો (દા.ત. yourname@bank જેમ કે @okhdfcbank, @sbi, @paytm)'.tr;
     }
     final parts = trimmed.split('@');
     if (parts.length != 2) {
-      return 'અમાન્ય UPI ID (માત્ર ૧ વાર @ હોવું જોઈએ)';
+      return 'અમાન્ય UPI ID (માત્ર ૧ વાર @ હોવું જોઈએ)'.tr;
     }
     final prefix = parts[0];
     final handle = parts[1].toLowerCase();
 
     if (prefix.length < 2) {
-      return 'UPI ID નું નામ બહુ નાનું છે (ઓછામાં ઓછા ૨ અક્ષર)';
+      return 'UPI ID નું નામ બહુ નાનું છે (ઓછામાં ઓછા ૨ અક્ષર)'.tr;
     }
     if (handle.isEmpty) {
-      return '@ પછી બેંક હેન્ડલ લખો (દા.ત. @sbi, @paytm, @okhdfcbank)';
+      return '@ પછી બેંક હેન્ડલ લખો (દા.ત. @sbi, @paytm, @okhdfcbank)'.tr;
     }
     if (handle == 'gmail.com' ||
         handle == 'yahoo.com' ||
         handle == 'outlook.com' ||
         handle == 'hotmail.com' ||
         handle == 'icloud.com') {
-      return '⚠️ આ ઈમેલ ID છે! બેંક UPI ID લખો (દા.ત. @okhdfcbank, @sbi, @paytm)';
+      return '⚠️ આ ઈમેલ ID છે! બેંક UPI ID લખો (દા.ત. @okhdfcbank, @sbi, @paytm)'.tr;
     }
     final upiRegex = RegExp(r'^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z0-9.\-_]{2,64}$');
     if (!upiRegex.hasMatch(trimmed)) {
-      return 'અમાન્ય UPI ID ફોર્મેટ. અયોગ્ય ચિહ્નો હટાવો.';
+      return 'અમાન્ય UPI ID ફોર્મેટ. અયોગ્ય ચિહ્નો હટાવો.'.tr;
     }
     return null;
   }
@@ -193,7 +195,7 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
     }
 
     if (RegExp(r'^[a-zA-Z0-9.\-_]{2,64}$').hasMatch(handle)) {
-      return (name: 'માન્ય UPI હેન્ડલ (@$handle)', icon: Icons.verified_rounded, color: const Color(0xFF0D9488));
+      return (name: 'માન્ય UPI હેન્ડલ (@$handle)'.tr, icon: Icons.verified_rounded, color: const Color(0xFF0D9488));
     }
     return null;
   }
@@ -230,13 +232,13 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.verified_rounded, color: Color(0xFF0D9488), size: 24),
             SizedBox(width: 10),
             Expanded(
               child: Text(
-                'UPI એપમાં બેંક નામ ચકાસો',
+                'UPI એપમાં બેંક નામ ચકાસો'.tr,
                 style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
               ),
             ),
@@ -270,12 +272,12 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                           ),
                         ),
                         const SizedBox(height: 2),
-                        const Row(
+                        Row(
                           children: [
                             Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 12),
                             SizedBox(width: 4),
                             Text(
-                              'UPI ID ક્લિપબોર્ડમાં કૉપી થઈ ગયો છે',
+                              'UPI ID ક્લિપબોર્ડમાં કૉપી થઈ ગયો છે'.tr,
                               style: TextStyle(color: Color(0xFF0D9488), fontSize: 11, fontWeight: FontWeight.w600),
                             ),
                           ],
@@ -284,13 +286,13 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.copy_rounded, color: Color(0xFF0F766E), size: 18),
-                    tooltip: 'કૉપી કરો',
+                    icon: Icon(Icons.copy_rounded, color: Color(0xFF0F766E), size: 18),
+                    tooltip: 'કૉપી કરો'.tr,
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: upi));
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('UPI ID કૉપી થઈ ગયો!'),
+                        SnackBar(
+                          content: Text('UPI ID કૉપી થઈ ગયો!'.tr),
                           duration: Duration(seconds: 1),
                         ),
                       );
@@ -299,17 +301,17 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                 ],
               ),
             ),
-            const SizedBox(height: 14),
-            const Text(
-              '💡 બેંકમાં રજીસ્ટર્ડ સાચું નામ કેવી રીતે જોવું? (૧૦૦% ફ્રી)',
+            SizedBox(height: 14),
+            Text(
+              '💡 બેંકમાં રજીસ્ટર્ડ સાચું નામ કેવી રીતે જોવું? (૧૦૦% ફ્રી)'.tr,
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              '૧. નીચે "UPI એપ ખોલો" દબાવતા Google Pay / PhonePe ખુલશે.\n'
-              '૨. એપમાં "Pay UPI ID" અથવા Search બારમાં આ કૉપી કરેલ ID Paste કરો.\n'
-              '૩. NPCI બેંક સર્વર સીધું જ રજીસ્ટર્ડ બેંક ખાતાધારકનું સાચું નામ (Verified Name) બતાવશે.\n'
-              '૪. નામ ચકાસ્યા પછી પેમેન્ટ કરવાની જરૂર નથી — સીધા પાછા આવી અહીં સેવ કરી લો.',
+            SizedBox(height: 8),
+            Text(
+              '૧. નીચે "UPI એપ ખોલો" દબાવતા Google Pay / PhonePe ખુલશે.\n'.tr +
+              '૨. એપમાં "Pay UPI ID" અથવા Search બારમાં આ કૉપી કરેલ ID Paste કરો.\n'.tr +
+              '૩. NPCI બેંક સર્વર સીધું જ રજીસ્ટર્ડ બેંક ખાતાધારકનું સાચું નામ (Verified Name) બતાવશે.\n'.tr +
+              '૪. નામ ચકાસ્યા પછી પેમેન્ટ કરવાની જરૂર નથી — સીધા પાછા આવી અહીં સેવ કરી લો.'.tr,
               style: TextStyle(fontSize: 12.5, color: Color(0xFF475569), height: 1.45),
             ),
           ],
@@ -317,12 +319,12 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('રદ કરો', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text('રદ કરો'.tr, style: TextStyle(color: Color(0xFF64748B))),
           ),
           FilledButton.icon(
             onPressed: () => Navigator.pop(ctx, true),
             icon: const Icon(Icons.open_in_new_rounded, size: 16),
-            label: const Text('UPI એપ ખોલો'),
+            label: Text('UPI એપ ખોલો'.tr),
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF0D9488),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -344,8 +346,8 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
       if (!launched && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
-              'તમારા ફોનમાં કોઈ UPI એપ (GPay/PhonePe/Paytm) ખૂલી શકી નહીં. નીચે રહેલા QR કોડને બીજા ફોનથી સ્કેન કરીને પણ ચકાસી શકો છો.',
+            content: Text(
+              'તમારા ફોનમાં કોઈ UPI એપ (GPay/PhonePe/Paytm) ખૂલી શકી નહીં. નીચે રહેલા QR કોડને બીજા ફોનથી સ્કેન કરીને પણ ચકાસી શકો છો.'.tr,
             ),
             backgroundColor: Colors.orange.shade800,
             behavior: SnackBarBehavior.floating,
@@ -357,7 +359,7 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('UPI એપ ખોલવામાં ભૂલ: $e'),
+            content: Text('UPI એપ ખોલવામાં ભૂલ: $e'.tr),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -421,14 +423,20 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        title: const Text(
-          'સોસાયટી બેંક & UPI સેટિંગ્સ',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+        title: Text(
+          'સોસાયટી બેંક & UPI સેટિંગ્સ'.tr,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
         ),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF0F172A),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Center(child: LanguageSwitchButton()),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(color: const Color(0xFFE2E8F0), height: 1),
@@ -476,11 +484,11 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                '🏦 અધિકૃત બેંક ખાતું',
+                                '🏦 અધિકૃત બેંક ખાતું'.tr,
                                 style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                               ),
                             ],
@@ -491,7 +499,7 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      payeeText.isNotEmpty ? payeeText : 'સોસાયટી ખાતાધારકનું નામ',
+                      payeeText.isNotEmpty ? payeeText : 'સોસાયટી ખાતાધારકનું નામ'.tr,
                       style: TextStyle(
                         color: payeeText.isNotEmpty ? Colors.white : Colors.white70,
                         fontSize: 17,
@@ -522,13 +530,13 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'માસિક મેન્ટેનન્સ',
+                            Text(
+                              'માસિક મેન્ટેનન્સ'.tr,
                               style: TextStyle(color: Colors.white60, fontSize: 11),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '₹ ${amtText.isNotEmpty ? amtText : '1500'} / મહિનો',
+                              '₹ ${amtText.isNotEmpty ? amtText : '1500'} / મહિનો'.tr,
                               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                           ],
@@ -536,13 +544,13 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            const Text(
-                              'છેલ્લી તારીખ',
+                            Text(
+                              'છેલ્લી તારીખ'.tr,
                               style: TextStyle(color: Colors.white60, fontSize: 11),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'દર મહિનાની ${_dueDayController.text.trim()} તારીખ',
+                              'દર મહિનાની ${_dueDayController.text.trim()} તારીખ'.tr,
                               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                             ),
                           ],
@@ -584,16 +592,16 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                           child: const Icon(Icons.account_balance_rounded, color: Color(0xFF4338CA), size: 20),
                         ),
                         const SizedBox(width: 10),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'બેંક & UPI વિગતો',
+                                'બેંક & UPI વિગતો'.tr,
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                               ),
                               Text(
-                                'મેમ્બર્સ આ UPI ID પર સીધું મેન્ટેનન્સ જમા કરશે',
+                                'મેમ્બર્સ આ UPI ID પર સીધું મેન્ટેનન્સ જમા કરશે'.tr,
                                 style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                               ),
                             ],
@@ -607,8 +615,8 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                       controller: _upiIdController,
                       onChanged: (_) => setState(() {}),
                       decoration: _inputDeco(
-                        labelText: 'સોસાયટી UPI ID (VPA) *',
-                        hintText: 'દા.ત. yourname@bank (જેમ કે @okhdfcbank, @sbi, @paytm)',
+                        labelText: 'સોસાયટી UPI ID (VPA) *'.tr,
+                        hintText: 'દા.ત. yourname@bank (જેમ કે @okhdfcbank, @sbi, @paytm)'.tr,
                         prefixIcon: const Icon(Icons.qr_code_2_rounded, color: Color(0xFF4338CA), size: 20),
                       ),
                       validator: _validateUpiId,
@@ -626,7 +634,7 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
-                                    'ઉદાહરણ ફોર્મેટ: societyname@bank, secretary@paytm, name@okhdfcbank',
+                                    'ઉદાહરણ ફોર્મેટ: societyname@bank, secretary@paytm, name@okhdfcbank'.tr,
                                     style: TextStyle(fontSize: 11.5, color: Colors.blueGrey.shade600),
                                   ),
                                 ),
@@ -679,7 +687,7 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  '✓ માન્ય UPI ફોર્મેટ • ${bankInfo?.name ?? "માન્ય બેંક VPA"}',
+                                  '✓ માન્ય UPI ફોર્મેટ • ${bankInfo?.name ?? "માન્ય બેંક VPA"}'.tr,
                                   style: const TextStyle(
                                     fontSize: 11.5,
                                     color: Color(0xFF15803D),
@@ -700,8 +708,8 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                       child: OutlinedButton.icon(
                         onPressed: _testUpiInApp,
                         icon: const Icon(Icons.verified_outlined, size: 17, color: Color(0xFF0F766E)),
-                        label: const Text(
-                          'UPI એપમાં ખાતું ચકાસો (Test VPA — ૧૦૦% ફ્રી)',
+                        label: Text(
+                          'UPI એપમાં ખાતું ચકાસો (Test VPA — ૧૦૦% ફ્રી)'.tr,
                           style: TextStyle(
                             color: Color(0xFF0F766E),
                             fontWeight: FontWeight.bold,
@@ -723,8 +731,8 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                       onChanged: (_) => setState(() {}),
                       textCapitalization: TextCapitalization.words,
                       decoration: _inputDeco(
-                        labelText: 'ખાતાધારકનું નામ (Payee Name)',
-                        hintText: 'દા.ત. સોસાયટીનું નામ / ખાતાધારકનું નામ',
+                        labelText: 'ખાતાધારકનું નામ (Payee Name)'.tr,
+                        hintText: 'દા.ત. સોસાયટીનું નામ / ખાતાધારકનું નામ'.tr,
                         prefixIcon: const Icon(Icons.badge_outlined, color: Color(0xFF4338CA), size: 20),
                       ),
                     ),
@@ -739,7 +747,7 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                             keyboardType: TextInputType.number,
                             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                             decoration: _inputDeco(
-                              labelText: 'ડિફૉલ્ટ માસિક રકમ',
+                              labelText: 'ડિફૉલ્ટ માસિક રકમ'.tr,
                               prefixText: '₹ ',
                             ),
                           ),
@@ -755,8 +763,8 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                               LengthLimitingTextInputFormatter(2),
                             ],
                             decoration: _inputDeco(
-                              labelText: 'છેલ્લી તારીખ (Day)',
-                              hintText: 'દા.ત. 10',
+                              labelText: 'છેલ્લી તારીખ (Day)'.tr,
+                              hintText: 'દા.ત. 10'.tr,
                               prefixIcon: const Icon(Icons.calendar_today_rounded, color: Color(0xFF4338CA), size: 18),
                             ),
                           ),
@@ -810,15 +818,15 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                                         ),
                                       ),
                                       const SizedBox(width: 6),
-                                      const Text(
-                                        'લાઈવ UPI QR ચકાસણી',
+                                      Text(
+                                        'લાઈવ UPI QR ચકાસણી'.tr,
                                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 4),
-                                  const Text(
-                                    'આ QR કોડ દરેક મેમ્બરના મેન્ટેનન્સ પેજ પર ઓટોમેટિક દેખાશે જેથી સીધું પેમેન્ટ કરી શકાય.',
+                                  Text(
+                                    'આ QR કોડ દરેક મેમ્બરના મેન્ટેનન્સ પેજ પર ઓટોમેટિક દેખાશે જેથી સીધું પેમેન્ટ કરી શકાય.'.tr,
                                     style: TextStyle(color: Color(0xFF64748B), fontSize: 11.5, height: 1.3),
                                   ),
                                 ],
@@ -863,16 +871,16 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                           child: const Icon(Icons.draw_rounded, color: Color(0xFF0D9488), size: 20),
                         ),
                         const SizedBox(width: 10),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'અધિકૃત ડિજિટલ સહી & સ્ટેમ્પ',
+                                'અધિકૃત ડિજિટલ સહી & સ્ટેમ્પ'.tr,
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                               ),
                               Text(
-                                'PDF મેન્ટેનન્સ રસીદ પર આ અસલ સહી અને સીલ છપાશે',
+                                'PDF મેન્ટેનન્સ રસીદ પર આ અસલ સહી અને સીલ છપાશે'.tr,
                                 style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                               ),
                             ],
@@ -886,8 +894,8 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                       controller: _signatoryNameController,
                       textCapitalization: TextCapitalization.words,
                       decoration: _inputDeco(
-                        labelText: 'અધિકૃત વ્યક્તિનું પૂરું નામ',
-                        hintText: 'દા.ત. શ્રી હિતેશભાઈ પટેલ',
+                        labelText: 'અધિકૃત વ્યક્તિનું પૂરું નામ'.tr,
+                        hintText: 'દા.ત. શ્રી હિતેશભાઈ પટેલ'.tr,
                         prefixIcon: const Icon(Icons.person_pin_rounded, color: Color(0xFF0D9488), size: 20),
                       ),
                     ),
@@ -897,8 +905,8 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                       controller: _signatoryTitleController,
                       textCapitalization: TextCapitalization.words,
                       decoration: _inputDeco(
-                        labelText: 'હોદ્દો / ડેઝિગ્રેશન',
-                        hintText: 'દા.ત. સોસાયટી પ્રમુખ / ચેરમેન',
+                        labelText: 'હોદ્દો / ડેઝિગ્રેશન'.tr,
+                        hintText: 'દા.ત. સોસાયટી પ્રમુખ / ચેરમેન'.tr,
                         prefixIcon: const Icon(Icons.workspace_premium_rounded, color: Color(0xFF0D9488), size: 20),
                       ),
                     ),
@@ -928,13 +936,13 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(color: const Color(0xFFA7F3D0)),
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(Icons.verified_rounded, color: Color(0xFF059669), size: 14),
                                       SizedBox(width: 5),
                                       Text(
-                                        'સહી સેટ થયેલી છે (Active)',
+                                        'સહી સેટ થયેલી છે (Active)'.tr,
                                         style: TextStyle(
                                           fontSize: 11.5,
                                           color: Color(0xFF059669),
@@ -956,13 +964,13 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                                         borderRadius: BorderRadius.circular(8),
                                         border: Border.all(color: const Color(0xFFFECACA)),
                                       ),
-                                      child: const Row(
+                                      child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 15),
                                           SizedBox(width: 4),
                                           Text(
-                                            'સહી હટાવો',
+                                            'સહી હટાવો'.tr,
                                             style: TextStyle(
                                               fontSize: 11.5,
                                               fontWeight: FontWeight.bold,
@@ -1025,7 +1033,7 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
-                                      'હજુ સુધી કોઈ સહી ઉમેરેલ નથી',
+                                      'હજુ સુધી કોઈ સહી ઉમેરેલ નથી'.tr,
                                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade600),
                                     ),
                                   ],
@@ -1045,7 +1053,7 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                                     onPressed: _openSignaturePad,
                                     icon: const Icon(Icons.draw_rounded, size: 17),
                                     label: Text(
-                                      hasSignature ? 'સહી ફરી દોરો' : 'સહી દોરો',
+                                      hasSignature ? 'સહી ફરી દોરો'.tr : 'સહી દોરો'.tr,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
@@ -1067,7 +1075,7 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                                     onPressed: _pickSignatureImage,
                                     icon: const Icon(Icons.photo_library_outlined, size: 17),
                                     label: Text(
-                                      hasSignature ? 'ફોટો બદલો' : 'ફોટો અપલોડ',
+                                      hasSignature ? 'ફોટો બદલો'.tr : 'ફોટો અપલોડ'.tr,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
@@ -1136,7 +1144,7 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                     )
                   : const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
               label: Text(
-                _isSaving ? 'સાચવી રહ્યા છીએ...' : 'સેટિંગ્સ સાચવો (Save Settings)',
+                _isSaving ? 'સાચવી રહ્યા છીએ...'.tr : 'સેટિંગ્સ સાચવો (Save Settings)'.tr,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
               ),
               style: ElevatedButton.styleFrom(
@@ -1181,7 +1189,7 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('ફોટો પસંદ કરવામાં ભૂલ: $e'),
+            content: Text('ફોટો પસંદ કરવામાં ભૂલ: $e'.tr),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
           ),
@@ -1226,16 +1234,16 @@ class _SignatureDrawDialogState extends State<SignatureDrawDialog> {
                   child: const Icon(Icons.draw_rounded, color: Color(0xFF0D9488), size: 22),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'અધિકૃત સહી દોરો (Signature)',
+                        'અધિકૃત સહી દોરો (Signature)'.tr,
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                       Text(
-                        'બોક્સમાં તમારી સહી આંગળીથી દોરો',
+                        'બોક્સમાં તમારી સહી આંગળીથી દોરો'.tr,
                         style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                       ),
                     ],
@@ -1271,11 +1279,11 @@ class _SignatureDrawDialogState extends State<SignatureDrawDialog> {
                         color: const Color(0xFFE2E8F0),
                       ),
                     ),
-                    const Positioned(
+                    Positioned(
                       left: 20,
                       bottom: 16,
                       child: Text(
-                        '✕ સહી અહીં કરો (Sign here)',
+                        '✕ સહી અહીં કરો (Sign here)'.tr,
                         style: TextStyle(
                           color: Color(0xFF94A3B8),
                           fontSize: 11,
@@ -1318,7 +1326,7 @@ class _SignatureDrawDialogState extends State<SignatureDrawDialog> {
                   child: OutlinedButton.icon(
                     onPressed: _lines.isEmpty ? null : () => setState(() => _lines.clear()),
                     icon: const Icon(Icons.refresh_rounded, size: 16),
-                    label: const Text('સાફ કરો'),
+                    label: Text('સાફ કરો'.tr),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF64748B),
                       side: const BorderSide(color: Color(0xFFCBD5E1)),
@@ -1332,7 +1340,7 @@ class _SignatureDrawDialogState extends State<SignatureDrawDialog> {
                   child: FilledButton.icon(
                     onPressed: _lines.isEmpty ? null : _saveSignature,
                     icon: const Icon(Icons.check_rounded, size: 16),
-                    label: const Text('સહી સાચવો'),
+                    label: Text('સહી સાચવો'.tr),
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFF0D9488),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

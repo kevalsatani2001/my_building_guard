@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_strings.dart';
+export '../l10n/app_strings.dart';
+export '../services/localization_service.dart';
 export 'premium_app_bar.dart';
 export 'app_back_button.dart';
 
@@ -22,7 +25,7 @@ class PremiumSectionHeader extends StatelessWidget {
           const SizedBox(width: 8),
         ],
         Text(
-          title,
+          title.tr,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: cs.primary,
@@ -66,7 +69,7 @@ class PremiumEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              message,
+              message.tr,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: cs.onSurface.withValues(alpha: 0.75),
@@ -77,7 +80,7 @@ class PremiumEmptyState extends StatelessWidget {
               const SizedBox(height: 14),
               FilledButton.tonal(
                 onPressed: onAction,
-                child: Text(actionLabel!),
+                child: Text(actionLabel!.tr),
               ),
             ],
           ],
@@ -125,7 +128,7 @@ class PremiumDialogHeader extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                title,
+                title.tr,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -135,7 +138,7 @@ class PremiumDialogHeader extends StatelessWidget {
               if (subtitle != null) ...[
                 const SizedBox(height: 2),
                 Text(
-                  subtitle!,
+                  subtitle!.tr,
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade600,
@@ -192,7 +195,7 @@ class PremiumStatCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                title,
+                title.tr,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -212,9 +215,9 @@ class PremiumStatCard extends StatelessWidget {
             ),
           ),
           if (subtitle != null) ...[
-            const SizedBox(height: 2),
+            SizedBox(height: 2),
             Text(
-              subtitle!,
+              subtitle!.tr,
               style: TextStyle(
                 fontSize: 11,
                 color: Colors.grey.shade600,
@@ -229,7 +232,7 @@ class PremiumStatCard extends StatelessWidget {
 
 /// A luxury, unified confirmation dialog
 class PremiumConfirmationDialog extends StatelessWidget {
-  const PremiumConfirmationDialog({
+  PremiumConfirmationDialog({
     super.key,
     required this.title,
     required this.message,
@@ -345,7 +348,7 @@ class PremiumConfirmationDialog extends StatelessWidget {
             const SizedBox(height: 16),
             // Title
             Text(
-              title,
+              title.tr,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 18.5,
@@ -357,7 +360,7 @@ class PremiumConfirmationDialog extends StatelessWidget {
             const SizedBox(height: 8),
             // Message
             Text(
-              message,
+              message.tr,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 13,
@@ -385,7 +388,7 @@ class PremiumConfirmationDialog extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      cancelText,
+                      cancelText.tr,
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -426,7 +429,7 @@ class PremiumConfirmationDialog extends StatelessWidget {
                           ],
                           Flexible(
                             child: Text(
-                              confirmText,
+                              confirmText.tr,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -496,10 +499,10 @@ class PremiumLogoutDialog {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'લૉગઆઉટ કન્ફર્મેશન',
+              Text(
+                'લૉગઆઉટ કન્ફર્મેશન'.tr,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18.5,
                   fontWeight: FontWeight.w900,
                   color: Color(0xFF0F172A),
@@ -508,7 +511,7 @@ class PremiumLogoutDialog {
               ),
               const SizedBox(height: 8),
               Text(
-                'શું તમે ખરેખર $roleNameમાંથી લોગઆઉટ કરવા માંગો છો?',
+                'શું તમે ખરેખર $roleNameમાંથી લોગઆઉટ કરવા માંગો છો?'.tr,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 13.5,
@@ -526,14 +529,14 @@ class PremiumLogoutDialog {
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.shield_outlined, size: 14, color: Color(0xFF64748B)),
-                    SizedBox(width: 6),
+                    const Icon(Icons.shield_outlined, size: 14, color: Color(0xFF64748B)),
+                    const SizedBox(width: 6),
                     Text(
-                      'તમારું સત્ર સુરક્ષિત રીતે સમાપ્ત થશે',
-                      style: TextStyle(
+                      'તમારું સત્ર સુરક્ષિત રીતે સમાપ્ત થશે'.tr,
+                      style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFF475569),
                         fontWeight: FontWeight.w600,
@@ -556,9 +559,9 @@ class PremiumLogoutDialog {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        'ના, રદ કરો',
-                        style: TextStyle(
+                      child: Text(
+                        'ના, રદ કરો'.tr,
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF64748B),
@@ -588,14 +591,14 @@ class PremiumLogoutDialog {
                             ),
                           ],
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.logout_rounded, color: Colors.white, size: 16),
-                            SizedBox(width: 5),
+                            const Icon(Icons.logout_rounded, color: Colors.white, size: 16),
+                            const SizedBox(width: 5),
                             Text(
-                              'હા, લૉગઆઉટ',
-                              style: TextStyle(
+                              'હા, લૉગઆઉટ'.tr,
+                              style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
                                 color: Colors.white,

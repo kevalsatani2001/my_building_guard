@@ -55,8 +55,8 @@ class AdminUserManageDialog {
             contentPadding: const EdgeInsets.symmetric(horizontal: 20),
             actionsPadding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
             title: PremiumDialogHeader(
-              title: "નવું યુઝર રજીસ્ટ્રેશન",
-              subtitle: "મેમ્બર, સબ-એડમિન કે વોચમેન એકાઉન્ટ બનાવો",
+              title: "નવું યુઝર રજીસ્ટ્રેશન".tr,
+              subtitle: "મેમ્બર, સબ-એડમિન કે વોચમેન એકાઉન્ટ બનાવો".tr,
               icon: Icons.person_add_alt_1_rounded,
               accentColor: cs.primary,
               onClose: isSubmitting ? null : () => Navigator.pop(ctx),
@@ -70,15 +70,15 @@ class AdminUserManageDialog {
                   children: [
                     const SizedBox(height: 8),
                     // Role Selector Cards
-                    const Text(
-                      'યુઝર રોલ પસંદ કરો:',
+                    Text(
+                      'યુઝર રોલ પસંદ કરો:'.tr,
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         _buildRoleCard(
-                          label: 'મેમ્બર',
+                          label: 'મેમ્બર'.tr,
                           role: 'member',
                           icon: Icons.apartment_rounded,
                           selected: selectedRole == 'member',
@@ -86,7 +86,7 @@ class AdminUserManageDialog {
                         ),
                         const SizedBox(width: 8),
                         _buildRoleCard(
-                          label: 'સબ-એડમિન',
+                          label: 'સબ-એડમિન'.tr,
                           role: 'sub_admin',
                           icon: Icons.shield_rounded,
                           selected: selectedRole == 'sub_admin',
@@ -94,7 +94,7 @@ class AdminUserManageDialog {
                         ),
                         const SizedBox(width: 8),
                         _buildRoleCard(
-                          label: 'વોચમેન',
+                          label: 'વોચમેન'.tr,
                           role: 'watchman',
                           icon: Icons.security_rounded,
                           selected: selectedRole == 'watchman',
@@ -109,8 +109,8 @@ class AdminUserManageDialog {
                       controller: nC,
                       textCapitalization: TextCapitalization.words,
                       decoration: InputDecoration(
-                        labelText: "પૂરું નામ *",
-                        hintText: "દા.ત. રમેશભાઈ પટેલ",
+                        labelText: "પૂરું નામ *".tr,
+                        hintText: "દા.ત. રમેશભાઈ પટેલ".tr,
                         prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         filled: true,
@@ -125,8 +125,8 @@ class AdminUserManageDialog {
                       controller: eC,
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
-                        labelText: "ઇમેઇલ એડ્રેસ *",
-                        hintText: "દા.ત. ramesh@gmail.com",
+                        labelText: "ઇમેઇલ એડ્રેસ *".tr,
+                        hintText: "દા.ત. ramesh@gmail.com".tr,
                         prefixIcon: const Icon(Icons.alternate_email_rounded, size: 20),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         filled: true,
@@ -141,8 +141,8 @@ class AdminUserManageDialog {
                       controller: pC,
                       obscureText: obscurePassword,
                       decoration: InputDecoration(
-                        labelText: "પાસવર્ડ *",
-                        hintText: "ઓછામાં ઓછા ૬ અક્ષર",
+                        labelText: "પાસવર્ડ *".tr,
+                        hintText: "ઓછામાં ઓછા ૬ અક્ષર".tr,
                         prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -166,8 +166,8 @@ class AdminUserManageDialog {
                         controller: phoneC,
                         keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
-                          labelText: "મોબાઈલ નંબર (વૈકલ્પિક)",
-                          hintText: "૧૦ અંકનો નંબર",
+                          labelText: "મોબાઈલ નંબર (વૈકલ્પિક)".tr,
+                          hintText: "૧૦ અંકનો નંબર".tr,
                           prefixIcon: const Icon(Icons.phone_outlined, size: 20),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                           filled: true,
@@ -188,12 +188,12 @@ class AdminUserManageDialog {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Row(
+                            Row(
                               children: [
                                 Icon(Icons.location_city_rounded, size: 16, color: Colors.teal),
                                 SizedBox(width: 6),
                                 Text(
-                                  "બ્લોક & ઘરની વિગત પસંદ કરો *",
+                                  "બ્લોક & ઘરની વિગત પસંદ કરો *".tr,
                                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal),
                                 ),
                               ],
@@ -240,13 +240,13 @@ class AdminUserManageDialog {
                                   key: ValueKey('dialog_block_$effectiveSB'),
                                   initialValue: effectiveSB,
                                   decoration: InputDecoration(
-                                    labelText: "વિંગ / બ્લોક / ફ્લોર",
+                                    labelText: "વિંગ / બ્લોક / ફ્લોર".tr,
                                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                     isDense: true,
                                     filled: true,
                                     fillColor: Colors.white,
                                   ),
-                                  hint: const Text("બ્લોક પસંદ કરો"),
+                                  hint: Text("બ્લોક પસંદ કરો".tr),
                                   items: sortedKeys.map((k) {
                                     final item = uniqueBlocks[k]!;
                                     final label = SocietyService.instance.formatBlockDisplayName(
@@ -291,8 +291,8 @@ class AdminUserManageDialog {
                                     return TextField(
                                       controller: uC,
                                       decoration: InputDecoration(
-                                        labelText: "ઘર / ફ્લેટ નંબર *",
-                                        hintText: "દા.ત. 101, A-202",
+                                        labelText: "ઘર / ફ્લેટ નંબર *".tr,
+                                        hintText: "દા.ત. 101, A-202".tr,
                                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                         isDense: true,
                                         filled: true,
@@ -313,19 +313,19 @@ class AdminUserManageDialog {
                                     key: ValueKey('dialog_unit_$sU'),
                                     initialValue: sU,
                                     decoration: InputDecoration(
-                                      labelText: "ઘર / ફ્લેટ નંબર *",
+                                      labelText: "ઘર / ફ્લેટ નંબર *".tr,
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                       isDense: true,
                                       filled: true,
                                       fillColor: Colors.white,
                                     ),
-                                    hint: const Text("ઘર પસંદ કરો"),
+                                    hint: Text("ઘર પસંદ કરો".tr),
                                     items: unitDocs.map((d) {
                                       String val = d.get('unitNumber').toString();
                                       final cnt = _unitMemberCount(
                                         d.data() as Map<String, dynamic>?,
                                       );
-                                      final label = cnt > 0 ? '$val ($cnt મેમ્બર)' : val;
+                                      final label = cnt > 0 ? '$val ($cnt મેમ્બર)'.tr : val;
                                       return DropdownMenuItem<String>(
                                         value: val,
                                         child: Text(label),
@@ -344,8 +344,8 @@ class AdminUserManageDialog {
                               TextField(
                                 controller: uC,
                                 decoration: InputDecoration(
-                                  labelText: "ઘર / ફ્લેટ નંબર *",
-                                  hintText: "પહેલા બ્લોક પસંદ કરો અથવા સીધો ફ્લેટ નંબર લખો",
+                                  labelText: "ઘર / ફ્લેટ નંબર *".tr,
+                                  hintText: "પહેલા બ્લોક પસંદ કરો અથવા સીધો ફ્લેટ નંબર લખો".tr,
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                   isDense: true,
                                   filled: true,
@@ -365,7 +365,7 @@ class AdminUserManageDialog {
             actions: [
               TextButton(
                 onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
-                child: const Text("રદ કરો"),
+                child: Text("રદ કરો".tr),
               ),
               FilledButton.icon(
                 onPressed: isSubmitting
@@ -373,26 +373,26 @@ class AdminUserManageDialog {
                     : () async {
                         if (nC.text.trim().isEmpty || eC.text.trim().isEmpty || pC.text.trim().isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("કૃપા કરીને બધી જરૂરી વિગતો ભરો!")),
+                            SnackBar(content: Text("કૃપા કરીને બધી જરૂરી વિગતો ભરો!".tr)),
                           );
                           return;
                         }
                         if (!_isValidEmail(eC.text.trim())) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("માન્ય ઇમેઇલ એડ્રેસ દાખલ કરો!")),
+                            SnackBar(content: Text("માન્ય ઇમેઇલ એડ્રેસ દાખલ કરો!".tr)),
                           );
                           return;
                         }
                         if (pC.text.trim().length < 6) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("પાસવર્ડ ઓછામાં ઓછો ૬ અક્ષરનો હોવો જોઈએ!")),
+                            SnackBar(content: Text("પાસવર્ડ ઓછામાં ઓછો ૬ અક્ષરનો હોવો જોઈએ!".tr)),
                           );
                           return;
                         }
                         final effectiveU = uC.text.trim().isNotEmpty ? uC.text.trim() : sU;
                         if (selectedRole == 'member' && (sB == null || effectiveU == null || effectiveU.isEmpty)) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("કૃપા કરીને બ્લોક અને ઘર નંબર પસંદ/લખો!")),
+                            SnackBar(content: Text("કૃપા કરીને બ્લોક અને ઘર નંબર પસંદ/લખો!".tr)),
                           );
                           return;
                         }
@@ -418,7 +418,7 @@ class AdminUserManageDialog {
                 icon: isSubmitting
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.check_rounded, size: 18),
-                label: Text(isSubmitting ? "નોંધાઈ રહ્યું છે..." : "એકાઉન્ટ બનાવો"),
+                label: Text(isSubmitting ? "નોંધાઈ રહ્યું છે...".tr : "એકાઉન્ટ બનાવો".tr),
               ),
             ],
           );
@@ -580,24 +580,24 @@ class AdminUserManageDialog {
       if (dialogContext.mounted) Navigator.pop(dialogContext);
       if (parentContext.mounted) {
         final label = role == 'sub_admin'
-            ? 'સબ-એડમિન'
-            : (role == 'watchman' ? 'વોચમેન' : 'મેમ્બર');
+            ? 'સબ-એડમિન'.tr
+            : (role == 'watchman' ? 'વોચમેન'.tr : 'મેમ્બર'.tr);
         ScaffoldMessenger.of(parentContext).showSnackBar(
           SnackBar(
-            content: Text("$label સફળતાપૂર્વક ઉમેરાયો!"),
+            content: Text("$label સફળતાપૂર્વક ઉમેરાયો!".tr),
             backgroundColor: Colors.green,
           ),
         );
       }
     } on FirebaseAuthException catch (authErr) {
       if (parentContext.mounted) {
-        String msg = 'ભૂલ: ${authErr.message ?? authErr.code}';
+        String msg = 'ભૂલ: ${authErr.message ?? authErr.code}'.tr;
         if (authErr.code == 'email-already-in-use') {
-          msg = 'આ ઇમેઇલ ($cleanEmail) પહેલેથી જ રજીસ્ટર થયેલો છે. કૃપા કરીને અન્ય ઇમેઇલ વાપરો.';
+          msg = 'આ ઇમેઇલ ($cleanEmail) પહેલેથી જ રજીસ્ટર થયેલો છે. કૃપા કરીને અન્ય ઇમેઇલ વાપરો.'.tr;
         } else if (authErr.code == 'weak-password') {
-          msg = 'પાસવર્ડ ઓછામાં ઓછો 6 અક્ષરનો હોવો જોઈએ.';
+          msg = 'પાસવર્ડ ઓછામાં ઓછો 6 અક્ષરનો હોવો જોઈએ.'.tr;
         } else if (authErr.code == 'invalid-email') {
-          msg = 'અમાન્ય ઈમેલ એડ્રેસ: $cleanEmail';
+          msg = 'અમાન્ય ઈમેલ એડ્રેસ: $cleanEmail'.tr;
         }
         ScaffoldMessenger.of(parentContext).showSnackBar(
           SnackBar(content: Text(msg), backgroundColor: Colors.red),
@@ -606,7 +606,7 @@ class AdminUserManageDialog {
     } catch (e) {
       if (parentContext.mounted) {
         ScaffoldMessenger.of(parentContext).showSnackBar(
-          SnackBar(content: Text("ભૂલ આવી: $e"), backgroundColor: Colors.red),
+          SnackBar(content: Text("ભૂલ આવી: $e".tr), backgroundColor: Colors.red),
         );
       }
     }
@@ -624,8 +624,8 @@ class AdminWatchmanManageDialog {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
         actionsPadding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
         title: PremiumDialogHeader(
-          title: 'વોચમેન મેનેજમેન્ટ',
-          subtitle: 'સુરક્ષા ગેટ સ્ટાફ અને એક્ટિવ સ્ટેટસ',
+          title: 'વોચમેન મેનેજમેન્ટ'.tr,
+          subtitle: 'સુરક્ષા ગેટ સ્ટાફ અને એક્ટિવ સ્ટેટસ'.tr,
           icon: Icons.security_rounded,
           accentColor: Colors.indigo,
           onClose: () => Navigator.pop(ctx),
@@ -649,9 +649,9 @@ class AdminWatchmanManageDialog {
               final docs = snap.data!.docs;
               if (docs.isEmpty) {
                 return PremiumEmptyState(
-                  message: 'કોઈ વોચમેન નોંધાયેલ નથી.',
+                  message: 'કોઈ વોચમેન નોંધાયેલ નથી.'.tr,
                   icon: Icons.shield_outlined,
-                  actionLabel: '+ નવો વોચમેન ઉમેરો',
+                  actionLabel: '+ નવો વોચમેન ઉમેરો'.tr,
                   onAction: () {
                     Navigator.pop(ctx);
                     AdminUserManageDialog.showAddUserDialog(context);
@@ -719,7 +719,7 @@ class AdminWatchmanManageDialog {
                                         ),
                                       ),
                                       child: Text(
-                                        active ? 'ફરજ પર' : 'નિષ્ક્રિય',
+                                        active ? 'ફરજ પર'.tr : 'નિષ્ક્રિય'.tr,
                                         style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
@@ -765,11 +765,11 @@ class AdminWatchmanManageDialog {
               AdminUserManageDialog.showAddUserDialog(context);
             },
             icon: const Icon(Icons.person_add_alt_1_rounded, size: 16),
-            label: const Text('નવો વોચમેન'),
+            label: Text('નવો વોચમેન'.tr),
           ),
           FilledButton.tonal(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('બંધ કરો'),
+            child: Text('બંધ કરો'.tr),
           ),
         ],
       ),
@@ -802,8 +802,8 @@ class AdminVisitorReportDialog {
     int out = docs.where((d) => d['status'] == 'checked_out').length;
 
     final monthNames = [
-      'જાન્યુઆરી', 'ફેબ્રુઆરી', 'માર્ચ', 'એપ્રિલ', 'મે', 'જૂન',
-      'જુલાઈ', 'ઓગસ્ટ', 'સપ્ટેમ્બર', 'ઓક્ટોબર', 'નવેમ્બર', 'ડિસેમ્બર'
+      'જાન્યુઆરી'.tr, 'ફેબ્રુઆરી'.tr, 'માર્ચ'.tr, 'એપ્રિલ'.tr, 'મે'.tr, 'જૂન'.tr,
+      'જુલાઈ'.tr, 'ઓગસ્ટ'.tr, 'સપ્ટેમ્બર'.tr, 'ઓક્ટોબર'.tr, 'નવેમ્બર'.tr, 'ડિસેમ્બર'.tr
     ];
     final monthLabel = '${monthNames[start.month - 1]} ${start.year}';
 
@@ -816,8 +816,8 @@ class AdminVisitorReportDialog {
         contentPadding: const EdgeInsets.symmetric(horizontal: 20),
         actionsPadding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
         title: PremiumDialogHeader(
-          title: 'વિઝિટર રિપોર્ટ',
-          subtitle: '$monthLabel — મુલાકાતી વિશ્લેષણ',
+          title: 'વિઝિટર રિપોર્ટ'.tr,
+          subtitle: '$monthLabel — મુલાકાતી વિશ્લેષણ'.tr,
           icon: Icons.analytics_rounded,
           accentColor: Colors.teal,
           onClose: () => Navigator.pop(ctx),
@@ -861,8 +861,8 @@ class AdminVisitorReportDialog {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'કુલ નોંધાયેલ મુલાકાતીઓ',
+                          Text(
+                            'કુલ નોંધાયેલ મુલાકાતીઓ'.tr,
                             style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
                           ),
                           Text(
@@ -881,21 +881,21 @@ class AdminVisitorReportDialog {
                   children: [
                     Expanded(
                       child: PremiumStatCard(
-                        title: 'મંજૂર (Approved)',
+                        title: 'મંજૂર (Approved)'.tr,
                         value: '$approved',
                         icon: Icons.check_circle_rounded,
                         color: Colors.green.shade700,
-                        subtitle: total > 0 ? '${((approved / total) * 100).toStringAsFixed(0)}% મંજૂરી' : null,
+                        subtitle: total > 0 ? '${((approved / total) * 100).toStringAsFixed(0)}% મંજૂરી'.tr : null,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: PremiumStatCard(
-                        title: 'પેન્ડિંગ (Pending)',
+                        title: 'પેન્ડિંગ (Pending)'.tr,
                         value: '$pending',
                         icon: Icons.hourglass_top_rounded,
                         color: Colors.amber.shade800,
-                        subtitle: 'ચકાસણી હેઠળ',
+                        subtitle: 'ચકાસણી હેઠળ'.tr,
                       ),
                     ),
                   ],
@@ -905,21 +905,21 @@ class AdminVisitorReportDialog {
                   children: [
                     Expanded(
                       child: PremiumStatCard(
-                        title: 'નકાર્યું (Rejected)',
+                        title: 'નકાર્યું (Rejected)'.tr,
                         value: '$rejected',
                         icon: Icons.cancel_rounded,
                         color: Colors.red.shade700,
-                        subtitle: 'પ્રવેશ રોકેલ',
+                        subtitle: 'પ્રવેશ રોકેલ'.tr,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: PremiumStatCard(
-                        title: 'ચેક-આઉટ થયેલ',
+                        title: 'ચેક-આઉટ થયેલ'.tr,
                         value: '$out',
                         icon: Icons.exit_to_app_rounded,
                         color: Colors.purple.shade700,
-                        subtitle: 'પરત ગયા',
+                        subtitle: 'પરત ગયા'.tr,
                       ),
                     ),
                   ],
@@ -927,8 +927,8 @@ class AdminVisitorReportDialog {
 
                 if (total > 0) ...[
                   const SizedBox(height: 16),
-                  const Text(
-                    'સ્ટેટસ પ્રમાણ વિશ્લેષણ:',
+                  Text(
+                    'સ્ટેટસ પ્રમાણ વિશ્લેષણ:'.tr,
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
                   ),
                   const SizedBox(height: 6),
@@ -973,7 +973,7 @@ class AdminVisitorReportDialog {
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
-            child: const Text('સમજાઈ ગયું (બંધ કરો)'),
+            child: Text('સમજાઈ ગયું (બંધ કરો)'.tr),
           ),
         ],
       ),

@@ -4,6 +4,8 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:intl/intl.dart';
 import '../models/patrol_model.dart';
 import '../services/guard_patrol_service.dart';
+import '../l10n/app_strings.dart';
+import '../services/localization_service.dart';
 
 class WatchmanPatrolScreen extends StatefulWidget {
   final String societyId;
@@ -35,20 +37,20 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
         backgroundColor: const Color(0xFF0F172A),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'રાત્રિ સુરક્ષા પેટ્રોલિંગ',
-              style: TextStyle(
+              'રાત્રિ સુરક્ષા પેટ્રોલિંગ'.tr,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
               ),
             ),
             Text(
-              'ચેકપોઇન્ટ QR સ્કેન અને રાઉન્ડ મેનેજર',
-              style: TextStyle(
+              'ચેકપોઇન્ટ QR સ્કેન અને રાઉન્ડ મેનેજર'.tr,
+              style: const TextStyle(
                 fontSize: 11,
                 color: Color(0xFF94A3B8),
                 fontWeight: FontWeight.w500,
@@ -56,6 +58,12 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
             ),
           ],
         ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Center(child: LanguageSwitchButton(isDark: true)),
+          ),
+        ],
       ),
       body: StreamBuilder<PatrolShiftSession?>(
         stream: _service.streamActiveSession(widget.societyId, widget.guardUid),
@@ -114,8 +122,8 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
-            'નવો પેટ્રોલિંગ રાઉન્ડ શરૂ કરો',
+          Text(
+            'નવો પેટ્રોલિંગ રાઉન્ડ શરૂ કરો'.tr,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -124,7 +132,7 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'સોસાયટીમાં કુલ ${checkpoints.length} સુરક્ષા ચેકપોઇન્ટ્સ સેટ કરેલ છે. પેટ્રોલિંગ શરૂ કરવા માટે નીચે આપેલ બટન દબાવો.',
+            'સોસાયટીમાં કુલ ${checkpoints.length} સુરક્ષા ચેકપોઇન્ટ્સ સેટ કરેલ છે. પેટ્રોલિંગ શરૂ કરવા માટે નીચે આપેલ બટન દબાવો.'.tr,
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
           ),
@@ -142,15 +150,15 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
               onPressed: checkpoints.isEmpty
                   ? () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('સોસાયટી એડમિન દ્વારા હજુ ચેકપોઇન્ટ્સ ઉમેરેલ નથી!'),
+                        SnackBar(
+                          content: Text('સોસાયટી એડમિન દ્વારા હજુ ચેકપોઇન્ટ્સ ઉમેરેલ નથી!'.tr),
                         ),
                       );
                     }
                   : () => _showStartRoundModal(checkpoints.length),
               icon: const Icon(Icons.play_arrow_rounded, size: 24),
-              label: const Text(
-                'પેટ્રોલિંગ રાઉન્ડ શરૂ કરો',
+              label: Text(
+                'પેટ્રોલિંગ રાઉન્ડ શરૂ કરો'.tr,
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
@@ -163,10 +171,10 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
   void _showStartRoundModal(int totalCheckpoints) {
     int selectedRound = 1;
     final rounds = [
-      {'num': 1, 'label': 'રાઉન્ડ ૧ (૧૧:૦૦ PM - ૧૨:૩૦ AM)'},
-      {'num': 2, 'label': 'રાઉન્ડ ૨ (૦૧:૦૦ AM - ૦૨:૩૦ AM)'},
-      {'num': 3, 'label': 'રાઉન્ડ ૩ (૦૩:૦૦ AM - ૦૪:૩૦ AM)'},
-      {'num': 4, 'label': 'રાઉન્ડ ૪ (૦૫:૦૦ AM - ૦૬:૩૦ AM)'},
+      {'num': 1, 'label': 'રાઉન્ડ ૧ (૧૧:૦૦ PM - ૧૨:૩૦ AM)'.tr},
+      {'num': 2, 'label': 'રાઉન્ડ ૨ (૦૧:૦૦ AM - ૦૨:૩૦ AM)'.tr},
+      {'num': 3, 'label': 'રાઉન્ડ ૩ (૦૩:૦૦ AM - ૦૪:૩૦ AM)'.tr},
+      {'num': 4, 'label': 'રાઉન્ડ ૪ (૦૫:૦૦ AM - ૦૬:૩૦ AM)'.tr},
     ];
 
     showModalBottomSheet(
@@ -184,8 +192,8 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'રાઉન્ડ પસંદ કરો:',
+                  Text(
+                    'રાઉન્ડ પસંદ કરો:'.tr,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -265,8 +273,8 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
                           setState(() => _isLoading = false);
                         }
                       },
-                      child: const Text(
-                        'શરૂ કરો',
+                      child: Text(
+                        'શરૂ કરો'.tr,
                         style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -326,7 +334,7 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
                       Text(
                         session.roundLabel.isNotEmpty
                             ? session.roundLabel
-                            : 'રાઉન્ડ ${session.roundNumber}',
+                            : 'રાઉન્ડ ${session.roundNumber}'.tr,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 15,
@@ -344,7 +352,7 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      isDone ? '૧૦૦% પૂર્ણ' : 'પ્રગતિમાં',
+                      isDone ? '૧૦૦% પૂર્ણ'.tr : 'પ્રગતિમાં'.tr,
                       style: TextStyle(
                         color: isDone ? const Color(0xFF34D399) : const Color(0xFF60A5FA),
                         fontWeight: FontWeight.bold,
@@ -359,7 +367,7 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'ચેકપોઇન્ટ સ્કેન: ${session.scannedCount} / ${session.totalCheckpoints}',
+                    'ચેકપોઇન્ટ સ્કેન: ${session.scannedCount} / ${session.totalCheckpoints}'.tr,
                     style: const TextStyle(
                       color: Color(0xFFCBD5E1),
                       fontSize: 13,
@@ -367,7 +375,7 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
                     ),
                   ),
                   Text(
-                    '${session.progressPercent}% પૂર્ણ',
+                    '${session.progressPercent}% પૂર્ણ'.tr,
                     style: const TextStyle(
                       color: Color(0xFF818CF8),
                       fontSize: 13,
@@ -397,8 +405,8 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           child: Row(
             children: [
-              const Text(
-                'પેટ્રોલિંગ ચેકપોઇન્ટ્સ યાદી:',
+              Text(
+                'પેટ્રોલિંગ ચેકપોઇન્ટ્સ યાદી:'.tr,
                 style: TextStyle(
                   color: Color(0xFF94A3B8),
                   fontSize: 13,
@@ -407,7 +415,7 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
               ),
               const Spacer(),
               Text(
-                'બાકી: ${(session.totalCheckpoints - session.scannedCount).clamp(0, 99)}',
+                'બાકી: ${(session.totalCheckpoints - session.scannedCount).clamp(0, 99)}'.tr,
                 style: const TextStyle(
                   color: Color(0xFFFBBF24),
                   fontSize: 12,
@@ -541,8 +549,8 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
                   ),
                   onPressed: () => _openScanner(session),
                   icon: const Icon(Icons.qr_code_scanner_rounded, size: 22),
-                  label: const Text(
-                    'QR સ્કેન કરો',
+                  label: Text(
+                    'QR સ્કેન કરો'.tr,
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -561,7 +569,7 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
                   ),
                   onPressed: () => _confirmCompleteRound(session),
                   child: Text(
-                    isDone ? 'પૂર્ણ કરો ✅' : 'સમાપ્ત',
+                    isDone ? 'પૂર્ણ કરો ✅'.tr : 'સમાપ્ત'.tr,
                     style: TextStyle(
                       color: isDone ? const Color(0xFF34D399) : Colors.white,
                       fontWeight: FontWeight.bold,
@@ -607,17 +615,17 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: const Text('પેટ્રોલિંગ રાઉન્ડ પૂર્ણ કરવો છે?', style: TextStyle(color: Colors.white)),
+        title: Text('પેટ્રોલિંગ રાઉન્ડ પૂર્ણ કરવો છે?'.tr, style: TextStyle(color: Colors.white)),
         content: Text(
           remaining > 0
-              ? 'હજુ $remaining ચેકપોઇન્ટ્સ સ્કેન કરવાના બાકી છે. શું તમે ખરેખર રાઉન્ડ અત્યારે જ પૂર્ણ કરવા માંગો છો?'
-              : 'બધા ચેકપોઇન્ટ્સ સફળતાપૂર્વક સ્કેન થઈ ગયા છે. રાઉન્ડ પૂર્ણ કરવો છે?',
+              ? 'હજુ $remaining ચેકપોઇન્ટ્સ સ્કેન કરવાના બાકી છે. શું તમે ખરેખર રાઉન્ડ અત્યારે જ પૂર્ણ કરવા માંગો છો?'.tr
+              : 'બધા ચેકપોઇન્ટ્સ સફળતાપૂર્વક સ્કેન થઈ ગયા છે. રાઉન્ડ પૂર્ણ કરવો છે?'.tr,
           style: const TextStyle(color: Color(0xFFCBD5E1)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('ના, ચાલુ રાખો', style: TextStyle(color: Color(0xFF94A3B8))),
+            child: Text('ના, ચાલુ રાખો'.tr, style: TextStyle(color: Color(0xFF94A3B8))),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
@@ -629,14 +637,14 @@ class _WatchmanPatrolScreenState extends State<WatchmanPatrolScreen> {
               );
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('પેટ્રોલિંગ રાઉન્ડ સફળતાપૂર્વક પૂર્ણ થયો! 🎉'),
+                  SnackBar(
+                    content: Text('પેટ્રોલિંગ રાઉન્ડ સફળતાપૂર્વક પૂર્ણ થયો! 🎉'.tr),
                     backgroundColor: Color(0xFF10B981),
                   ),
                 );
               }
             },
-            child: const Text('હા, પૂર્ણ કરો'),
+            child: Text('હા, પૂર્ણ કરો'.tr),
           ),
         ],
       ),
@@ -729,29 +737,29 @@ class _PatrolScannerSheetState extends State<_PatrolScannerSheet> {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.shield_outlined, color: Color(0xFF818CF8)),
             SizedBox(width: 8),
-            Text('ચેકપોઇન્ટ નિરીક્ષણ', style: TextStyle(color: Colors.white, fontSize: 16)),
+            Text('ચેકપોઇન્ટ નિરીક્ષણ'.tr, style: TextStyle(color: Colors.white, fontSize: 16)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'શું આ ચેકપોઇન્ટ પર બધું સલામત અને સામાન્ય છે?',
+            Text(
+              'શું આ ચેકપોઇન્ટ પર બધું સલામત અને સામાન્ય છે?'.tr,
               style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: noteCtrl,
               style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: 'કોઈ સમસ્યા / નોંધ? (વૈકલ્પિક)',
+              decoration: InputDecoration(
+                labelText: 'કોઈ સમસ્યા / નોંધ? (વૈકલ્પિક)'.tr,
                 labelStyle: TextStyle(color: Color(0xFF94A3B8)),
-                hintText: 'દા.ત. લાઈટ બંધ છે, દરવાજો ખુલ્લો હતો...',
+                hintText: 'દા.ત. લાઈટ બંધ છે, દરવાજો ખુલ્લો હતો...'.tr,
                 hintStyle: TextStyle(color: Color(0xFF64748B)),
                 border: OutlineInputBorder(),
               ),
@@ -761,12 +769,12 @@ class _PatrolScannerSheetState extends State<_PatrolScannerSheet> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, null),
-            child: const Text('બધું બરાબર છે ✅', style: TextStyle(color: Color(0xFF34D399))),
+            child: Text('બધું બરાબર છે ✅'.tr, style: TextStyle(color: Color(0xFF34D399))),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFF4F46E5)),
             onPressed: () => Navigator.pop(ctx, noteCtrl.text.trim()),
-            child: const Text('નોંધ સાથે સાચવો'),
+            child: Text('નોંધ સાથે સાચવો'.tr),
           ),
         ],
       ),
@@ -798,12 +806,12 @@ class _PatrolScannerSheetState extends State<_PatrolScannerSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'ચેકપોઇન્ટ QR સ્કેનર',
+                        'ચેકપોઇન્ટ QR સ્કેનર'.tr,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -811,7 +819,7 @@ class _PatrolScannerSheetState extends State<_PatrolScannerSheet> {
                         ),
                       ),
                       Text(
-                        'દિવાલ પર લગાવેલ QR કોડ સામે કેમેરા રાખો',
+                        'દિવાલ પર લગાવેલ QR કોડ સામે કેમેરા રાખો'.tr,
                         style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
                       ),
                     ],

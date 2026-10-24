@@ -77,12 +77,12 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: PremiumAppBar(
-        title: 'સોસાયટી હિસાબ & ફંડ',
-        subtitle: 'પારદર્શક તિજોરી બચત & ખર્ચ વિગત',
+        title: 'સોસાયટી હિસાબ & ફંડ'.tr,
+        subtitle: 'પારદર્શક તિજોરી બચત & ખર્ચ વિગત'.tr,
         actions: [
           PremiumAppBarAction(
             icon: Icons.picture_as_pdf_rounded,
-            tooltip: 'PDF હિસાબ જુઓ',
+            tooltip: 'PDF હિસાબ જુઓ'.tr,
             color: const Color(0xFF0F766E),
             backgroundColor: const Color(0xFFCCFBF1),
             onTap: _openPdfStatement,
@@ -93,9 +93,9 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openPdfStatement,
         icon: const Icon(Icons.download_rounded, size: 20),
-        label: const Text(
-          'હિસાબ સ્ટેટમેન્ટ PDF',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+        label: Text(
+          'હિસાબ સ્ટેટમેન્ટ PDF'.tr,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
         ),
         backgroundColor: const Color(0xFF0F766E),
         foregroundColor: Colors.white,
@@ -175,7 +175,7 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
               size: 15,
               color: _selectedBlockFilter == 'ALL' ? Colors.white : const Color(0xFF0F766E),
             ),
-            label: const Text('સમગ્ર પરિસર (All)'),
+            label: Text('સમગ્ર પરિસર (All)'.tr),
             selected: _selectedBlockFilter == 'ALL',
             selectedColor: const Color(0xFF0F766E),
             labelStyle: TextStyle(
@@ -287,14 +287,14 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.verified_user_rounded, color: Color(0xFF5EEAD4), size: 14),
-                            SizedBox(width: 6),
+                            const Icon(Icons.verified_user_rounded, color: Color(0xFF5EEAD4), size: 14),
+                            const SizedBox(width: 6),
                             Text(
-                              "સોસાયટી જાહેર નાણાકીય હિસાબ",
-                              style: TextStyle(
+                              "સોસાયટી જાહેર નાણાકીય હિસાબ".tr,
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 11.5,
@@ -312,9 +312,9 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  const Text(
-                    "સોસાયટીની કુલ બચત (Treasury Fund)",
-                    style: TextStyle(color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.w600),
+                  Text(
+                    "સોસાયટીની કુલ બચત (Treasury Fund)".tr,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -340,13 +340,13 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Row(
+                              Row(
                                 children: [
-                                  Icon(Icons.arrow_downward_rounded, size: 13, color: Color(0xFF34D399)),
-                                  SizedBox(width: 4),
+                                  const Icon(Icons.arrow_downward_rounded, size: 13, color: Color(0xFF34D399)),
+                                  const SizedBox(width: 4),
                                   Text(
-                                    "કુલ મેન્ટેનન્સ જમા",
-                                    style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700),
+                                    "કુલ મેન્ટેનન્સ જમા".tr,
+                                    style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700),
                                   ),
                                 ],
                               ),
@@ -368,13 +368,13 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Row(
+                              Row(
                                 children: [
-                                  Icon(Icons.arrow_upward_rounded, size: 13, color: Color(0xFFF87171)),
-                                  SizedBox(width: 4),
+                                  const Icon(Icons.arrow_upward_rounded, size: 13, color: Color(0xFFF87171)),
+                                  const SizedBox(width: 4),
                                   Text(
-                                    "કુલ થયેલ ખર્ચ",
-                                    style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700),
+                                    "કુલ થયેલ ખર્ચ".tr,
+                                    style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700),
                                   ),
                                 ],
                               ),
@@ -411,12 +411,12 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
             Icon(Icons.pie_chart_rounded, size: 16, color: Color(0xFF0F766E)),
             SizedBox(width: 6),
             Text(
-              "મુખ્ય ખર્ચાઓની વહેંચણી (Where Money Goes)",
+              "મુખ્ય ખર્ચાઓની વહેંચણી (Where Money Goes)".tr,
               style: TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w800,
@@ -485,7 +485,7 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      cat.titleGujarati,
+                      cat.title,
                       style: const TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
@@ -517,13 +517,13 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Row(
+        Row(
           children: [
-            Icon(Icons.list_alt_rounded, size: 16, color: Color(0xFF475569)),
-            SizedBox(width: 6),
+            const Icon(Icons.list_alt_rounded, size: 16, color: Color(0xFF475569)),
+            const SizedBox(width: 6),
             Text(
-              "વિગતવાર ખર્ચ યાદી (Ledger)",
-              style: TextStyle(
+              "વિગતવાર ખર્ચ યાદી (Ledger)".tr,
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
                 color: Color(0xFF334155),
@@ -532,7 +532,7 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
           ],
         ),
         Text(
-          "$totalCount ખર્ચાઓ",
+          "$totalCount ખર્ચાઓ".tr,
           style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
         ),
       ],
@@ -541,10 +541,10 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
 
   Widget _buildFilterChips(List<SocietyExpense> allExpenses) {
     final categories = [
-      ('all', 'બધા ખર્ચ', Icons.grid_view_rounded, const Color(0xFF0F172A), const Color(0xFFF1F5F9), allExpenses.length),
+      ('all', 'બધા ખર્ચ'.tr, Icons.grid_view_rounded, const Color(0xFF0F172A), const Color(0xFFF1F5F9), allExpenses.length),
       ...SocietyExpenseCategory.all.map((c) {
         final count = allExpenses.where((e) => e.categoryKey == c.key).length;
-        return (c.key, c.titleGujarati, c.icon, c.color, c.color.withValues(alpha: 0.1), count);
+        return (c.key, c.title, c.icon, c.color, c.color.withValues(alpha: 0.1), count);
       }),
     ];
 
@@ -692,7 +692,7 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                             color: Color(0xFF475569),
                           ),
                         ),
-                        const Text(" • ", style: TextStyle(color: Color(0xFF94A3B8))),
+                        Text(" • ", style: TextStyle(color: Color(0xFF94A3B8))),
                       ],
                       Text(
                         dateFmt.format(exp.expenseDate),
@@ -752,8 +752,8 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
             child: const Icon(Icons.receipt_long_rounded, size: 36, color: Color(0xFF94A3B8)),
           ),
           const SizedBox(height: 12),
-          const Text(
-            "કોઈ ખર્ચ નોંધાયેલ નથી",
+          Text(
+            "કોઈ ખર્ચ નોંધાયેલ નથી".tr,
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF334155)),
           ),
         ],
@@ -802,7 +802,7 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'તારીખવાર ખાતાવહી',
+                      'તારીખવાર ખાતાવહી'.tr,
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: _selectedViewTab == 0 ? FontWeight.w800 : FontWeight.w600,
@@ -864,7 +864,7 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'ખર્ચ કેટેગરી',
+                      'ખર્ચ કેટેગરી'.tr,
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: _selectedViewTab == 1 ? FontWeight.w800 : FontWeight.w600,
@@ -912,13 +912,13 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
               child: const Icon(Icons.receipt_long_rounded, color: Color(0xFF0F766E), size: 28),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'કોઈ નાણાકીય એન્ટ્રી ઉપલબ્ધ નથી',
+            Text(
+              'કોઈ નાણાકીય એન્ટ્રી ઉપલબ્ધ નથી'.tr,
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'સોસાયટીની તમામ આવક અને ખર્ચની તારીખવાર પાસબુક અહીં પારદર્શક રીતે દેખાશે.',
+            Text(
+              'સોસાયટીની તમામ આવક અને ખર્ચની તારીખવાર પાસબુક અહીં પારદર્શક રીતે દેખાશે.'.tr,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
             ),
@@ -947,16 +947,16 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('શરૂઆતની સિલક', style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                  Text('શરૂઆતની સિલક'.tr, style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
                   const SizedBox(height: 2),
-                  const Text('₹ 0', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                  Text('₹ 0', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
                 ],
               ),
               Container(width: 1, height: 28, color: const Color(0xFFCBD5E1)),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Text('કુલ જમા / ખર્ચ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                  Text('કુલ જમા / ખર્ચ'.tr, style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
                   const SizedBox(height: 2),
                   Text(
                     '+${currencyFmt.format(_summary.totalIncome)} / -${currencyFmt.format(_summary.totalExpenses)}',
@@ -968,7 +968,7 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text('વર્તમાન આખર સિલક', style: TextStyle(fontSize: 11, color: Color(0xFF0F766E), fontWeight: FontWeight.w700)),
+                  Text('વર્તમાન આખર સિલક'.tr, style: TextStyle(fontSize: 11, color: Color(0xFF0F766E), fontWeight: FontWeight.w700)),
                   const SizedBox(height: 2),
                   Text(
                     currencyFmt.format(_summary.currentSavings),
@@ -989,11 +989,11 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'પાસબુક એન્ટ્રીઓ (${reversedList.length})',
+              '${'passbook_entries_label'.tr} (${reversedList.length})',
               style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
             ),
-            const Text(
-              'નવીનતમ તારીખ પ્રથમ',
+            Text(
+              'નવીનતમ તારીખ પ્રથમ'.tr,
               style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
             ),
           ],
@@ -1083,7 +1083,7 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  entry.title,
+                  entry.title.tr,
                   style: const TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
@@ -1092,9 +1092,17 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                 ),
                 if (entry.subtitle.isNotEmpty && entry.subtitle != '-') ...[
                   const SizedBox(height: 2),
-                  Text(
-                    entry.subtitle,
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  Builder(
+                    builder: (context) {
+                      String sub = entry.subtitle;
+                      if (sub.startsWith('ચૂકવ્યા: ')) {
+                        sub = '${'paid_to_label'.tr}: ${sub.substring(9)}';
+                      }
+                      return Text(
+                        sub,
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      );
+                    },
                   ),
                 ],
                 const SizedBox(height: 8),
@@ -1106,7 +1114,7 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                     border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
                   child: Text(
-                    entry.categoryLabel,
+                    entry.categoryLabel.tr,
                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                   ),
                 ),
@@ -1130,8 +1138,8 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
               children: [
                 const Icon(Icons.account_balance_wallet_rounded, size: 14, color: Color(0xFF059669)),
                 const SizedBox(width: 6),
-                const Text(
-                  'તે તારીખે તિજોરી સિલક (Balance):',
+                Text(
+                  'તે તારીખે તિજોરી સિલક (Balance):'.tr,
                   style: TextStyle(
                     fontSize: 11.5,
                     color: Color(0xFF065F46),
@@ -1159,7 +1167,7 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(
+      builder: (_) => Center(
         child: Card(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -1172,7 +1180,7 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                   child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF0F766E)),
                 ),
                 SizedBox(width: 16),
-                Text('હિસાબ & પાસબુક લોડ થઈ રહી છે...', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
+                Text('હિસાબ & પાસબુક લોડ થઈ રહી છે...'.tr, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
               ],
             ),
           ),

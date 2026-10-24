@@ -47,7 +47,7 @@ class AdminEmergencyContactsDialog extends StatefulWidget {
 
   final List<Map<String, dynamic>> initialContacts;
 
-  const AdminEmergencyContactsDialog._({
+  AdminEmergencyContactsDialog._({
     required this.initialContacts,
   });
 
@@ -62,13 +62,13 @@ class _AdminEmergencyContactsDialogState
   final TextEditingController _nameC = TextEditingController();
   final TextEditingController _phoneC = TextEditingController();
 
-  final List<(String, String)> _presets = const [
-    ('પોલીસ', '100'),
-    ('એમ્બ્યુલન્સ', '108'),
-    ('ફાયર બ્રિગેડ', '101'),
-    ('ઇલેક્ટ્રિશિયન', ''),
-    ('પ્લમ્બર', ''),
-    ('લિફ્ટ સર્વિસ', ''),
+  final List<(String, String)> _presets = [
+    ('પોલીસ'.tr, '100'),
+    ('એમ્બ્યુલન્સ'.tr, '108'),
+    ('ફાયર બ્રિગેડ'.tr, '101'),
+    ('ઇલેક્ટ્રિશિયન'.tr, ''),
+    ('પ્લમ્બર'.tr, ''),
+    ('લિફ્ટ સર્વિસ'.tr, ''),
   ];
 
   @override
@@ -104,8 +104,8 @@ class _AdminEmergencyContactsDialogState
       contentPadding: const EdgeInsets.symmetric(horizontal: 20),
       actionsPadding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
       title: PremiumDialogHeader(
-        title: 'ઈમરજન્સી કોન્ટેક્ટ્સ',
-        subtitle: 'સોસાયટી સભ્યો માટે તાત્કાલિક હેલ્પલાઇન',
+        title: 'ઈમરજન્સી કોન્ટેક્ટ્સ'.tr,
+        subtitle: 'સોસાયટી સભ્યો માટે તાત્કાલિક હેલ્પલાઇન'.tr,
         icon: Icons.phone_in_talk_rounded,
         accentColor: Colors.red.shade700,
         onClose: () => Navigator.pop(context),
@@ -160,7 +160,7 @@ class _AdminEmergencyContactsDialogState
                         child: TextField(
                           controller: _nameC,
                           decoration: InputDecoration(
-                            hintText: 'સેવાનું નામ (દા.ત. લિફ્ટ)',
+                            hintText: 'સેવાનું નામ (દા.ત. લિફ્ટ)'.tr,
                             prefixIcon: const Icon(Icons.badge_outlined, size: 18),
                             isDense: true,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -177,7 +177,7 @@ class _AdminEmergencyContactsDialogState
                           controller: _phoneC,
                           keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
-                            hintText: 'ફોન નંબર',
+                            hintText: 'ફોન નંબર'.tr,
                             prefixIcon: const Icon(Icons.phone_outlined, size: 18),
                             isDense: true,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -196,7 +196,7 @@ class _AdminEmergencyContactsDialogState
                     child: FilledButton.tonalIcon(
                       onPressed: _addContact,
                       icon: const Icon(Icons.add_rounded, size: 16),
-                      label: const Text('લિસ્ટમાં ઉમેરો', style: TextStyle(fontSize: 12)),
+                      label: Text('લિસ્ટમાં ઉમેરો'.tr, style: TextStyle(fontSize: 12)),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                       ),
@@ -217,7 +217,7 @@ class _AdminEmergencyContactsDialogState
                           Icon(Icons.contact_phone_outlined, size: 36, color: Colors.grey.shade400),
                           const SizedBox(height: 8),
                           Text(
-                            'હજુ કોઈ ઈમરજન્સી નંબર ઉમેરાયો નથી.\nઉપરના સૂચન બટન પર ક્લિક કરીને ઉમેરો.',
+                            'હજુ કોઈ ઈમરજન્સી નંબર ઉમેરાયો નથી.\nઉપરના સૂચન બટન પર ક્લિક કરીને ઉમેરો.'.tr,
                             textAlign: TextAlign.center,
                             style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                           ),
@@ -286,7 +286,7 @@ class _AdminEmergencyContactsDialogState
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('રદ'),
+          child: Text('રદ'.tr),
         ),
         FilledButton.icon(
           onPressed: () async {
@@ -301,15 +301,15 @@ class _AdminEmergencyContactsDialogState
             if (context.mounted) {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('ઈમરજન્સી કોન્ટેક્ટ્સ સેવ થઈ ગયા!'),
+                SnackBar(
+                  content: Text('ઈમરજન્સી કોન્ટેક્ટ્સ સેવ થઈ ગયા!'.tr),
                   backgroundColor: Colors.green,
                 ),
               );
             }
           },
           icon: const Icon(Icons.save_rounded, size: 18),
-          label: const Text('સાચવો'),
+          label: Text('સાચવો'.tr),
           style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
         ),
       ],

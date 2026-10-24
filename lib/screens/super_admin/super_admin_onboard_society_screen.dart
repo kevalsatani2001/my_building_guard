@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../services/super_admin_service.dart';
 import '../../models/super_admin_models.dart';
 import '../../widgets/admin_credentials_modal.dart';
+import '../../services/localization_service.dart';
+import '../../l10n/app_strings.dart';
 
 class SuperAdminOnboardSocietyScreen extends StatefulWidget {
   final VoidCallback? onSuccess;
@@ -15,7 +17,7 @@ class SuperAdminOnboardSocietyScreen extends StatefulWidget {
 class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSocietyScreen> {
   final _formKey = GlobalKey<FormState>();
   final _socNameCtrl = TextEditingController();
-  final _cityCtrl = TextEditingController(text: 'સુરત');
+  final _cityCtrl = TextEditingController(text: 'સુરત'.tr);
   final _adminNameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
@@ -30,26 +32,26 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
   final List<Map<String, dynamic>> _archTypes = [
     {
       'id': 'Commercial',
-      'title': 'કોમર્શિયલ મોલ',
-      'subtitle': 'ઓફિસ, દુકાનો અને મોલ',
+      'title': 'કોમર્શિયલ મોલ'.tr,
+      'subtitle': 'ઓફિસ, દુકાનો અને મોલ'.tr,
       'icon': Icons.shopping_bag_rounded,
     },
     {
       'id': 'Wing',
-      'title': 'રેસિડેન્શિયલ ટાવર',
-      'subtitle': 'હાઇરાઇઝ ફ્લેટ્સ અને એપાર્ટમેન્ટ',
+      'title': 'રેસિડેન્શિયલ ટાવર'.tr,
+      'subtitle': 'હાઇરાઇઝ ફ્લેટ્સ અને એપાર્ટમેન્ટ'.tr,
       'icon': Icons.apartment_rounded,
     },
     {
       'id': 'Street',
-      'title': 'બંગલો / સોસાયટી',
-      'subtitle': 'રો-હાઉસ, ટેનામેન્ટ્સ અને પ્લોટ',
+      'title': 'બંગલો / સોસાયટી'.tr,
+      'subtitle': 'રો-હાઉસ, ટેનામેન્ટ્સ અને પ્લોટ'.tr,
       'icon': Icons.home_work_rounded,
     },
     {
       'id': 'Mixed',
-      'title': 'મિક્સ્ડ પરિસર',
-      'subtitle': 'રેસિડેન્શિયલ + શોપ્સ કોમ્પ્લેક્સ',
+      'title': 'મિક્સ્ડ પરિસર'.tr,
+      'subtitle': 'રેસિડેન્શિયલ + શોપ્સ કોમ્પ્લેક્સ'.tr,
       'icon': Icons.location_city_rounded,
     },
   ];
@@ -112,7 +114,7 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    "'$socName' સફળતાપૂર્વક ઓનબોર્ડ થઈ ગયું છે!",
+                    "'$socName' સફળતાપૂર્વક ઓનબોર્ડ થઈ ગયું છે!".tr,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -127,7 +129,7 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
       messenger.showSnackBar(
         SnackBar(
           backgroundColor: Colors.redAccent,
-          content: Text('ઓનબોર્ડિંગ એરર: $e'),
+          content: Text('ઓનબોર્ડિંગ એરર: $e'.tr),
         ),
       );
     } finally {
@@ -195,18 +197,18 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
                           _buildQuickSetupBanner(accentColor),
                           const SizedBox(height: 20),
 
-                          _buildSectionHeader('૧. પરિસરની મુખ્ય વિગતો', Icons.apartment_rounded, accentColor),
+                          _buildSectionHeader('૧. પરિસરની મુખ્ય વિગતો'.tr, Icons.apartment_rounded, accentColor),
                           const SizedBox(height: 12),
 
                           _buildInputField(
                             controller: _socNameCtrl,
-                            label: 'સોસાયટી / મોલ / સંકુલનું નામ',
-                            hint: 'દા.ત. સિલ્વર હાઇટ્સ રેસિડેન્સી',
+                            label: 'સોસાયટી / મોલ / સંકુલનું નામ'.tr,
+                            hint: 'દા.ત. સિલ્વર હાઇટ્સ રેસિડેન્સી'.tr,
                             icon: Icons.business_rounded,
                             accentColor: accentColor,
                             cardBg: cardBg,
                             validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'સોસાયટીનું નામ દાખલ કરવું જરૂરી છે';
+                              if (v == null || v.trim().isEmpty) return 'સોસાયટીનું નામ દાખલ કરવું જરૂરી છે'.tr;
                               return null;
                             },
                           ),
@@ -218,13 +220,13 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
                                 flex: 3,
                                 child: _buildInputField(
                                   controller: _cityCtrl,
-                                  label: 'શહેર / જિલ્લો',
-                                  hint: 'દા.ત. સુરત',
+                                  label: 'શહેર / જિલ્લો'.tr,
+                                  hint: 'દા.ત. સુરત'.tr,
                                   icon: Icons.location_on_rounded,
                                   accentColor: accentColor,
                                   cardBg: cardBg,
                                   validator: (v) {
-                                    if (v == null || v.trim().isEmpty) return 'શહેર દાખલ કરો';
+                                    if (v == null || v.trim().isEmpty) return 'શહેર દાખલ કરો'.tr;
                                     return null;
                                   },
                                 ),
@@ -234,8 +236,8 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
                                 flex: 2,
                                 child: _buildInputField(
                                   controller: _unitsCtrl,
-                                  label: 'અંદાજિત એકમો (Units)',
-                                  hint: 'દા.ત. 120',
+                                  label: 'અંદાજિત એકમો (Units)'.tr,
+                                  hint: 'દા.ત. 120'.tr,
                                   icon: Icons.tag_rounded,
                                   keyboardType: TextInputType.number,
                                   accentColor: accentColor,
@@ -249,18 +251,18 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
                           _buildArchSelector(accentColor, cardBg),
                           const SizedBox(height: 24),
 
-                          _buildSectionHeader('૨. પ્રથમ એડમિન / સેક્રેટરી એકાઉન્ટ', Icons.admin_panel_settings_rounded, accentColor),
+                          _buildSectionHeader('૨. પ્રથમ એડમિન / સેક્રેટરી એકાઉન્ટ'.tr, Icons.admin_panel_settings_rounded, accentColor),
                           const SizedBox(height: 12),
 
                           _buildInputField(
                             controller: _adminNameCtrl,
-                            label: 'સેક્રેટરી / એડમિનનું પૂરું નામ',
-                            hint: 'દા.ત. મહેશભાઈ શાહ',
+                            label: 'સેક્રેટરી / એડમિનનું પૂરું નામ'.tr,
+                            hint: 'દા.ત. મહેશભાઈ શાહ'.tr,
                             icon: Icons.badge_rounded,
                             accentColor: accentColor,
                             cardBg: cardBg,
                             validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'એડમિનનું નામ દાખલ કરો';
+                              if (v == null || v.trim().isEmpty) return 'એડમિનનું નામ દાખલ કરો'.tr;
                               return null;
                             },
                           ),
@@ -268,15 +270,15 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
 
                           _buildInputField(
                             controller: _phoneCtrl,
-                            label: 'મોબાઈલ નંબર (Phone)',
-                            hint: 'દા.ત. 98250 12345',
+                            label: 'મોબાઈલ નંબર (Phone)'.tr,
+                            hint: 'દા.ત. 98250 12345'.tr,
                             icon: Icons.phone_iphone_rounded,
                             keyboardType: TextInputType.phone,
                             accentColor: accentColor,
                             cardBg: cardBg,
                             validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'મોબાઈલ નંબર દાખલ કરો';
-                              if (v.trim().length < 10) return 'માન્ય 10 અંકનો નંબર દાખલ કરો';
+                              if (v == null || v.trim().isEmpty) return 'મોબાઈલ નંબર દાખલ કરો'.tr;
+                              if (v.trim().length < 10) return 'માન્ય 10 અંકનો નંબર દાખલ કરો'.tr;
                               return null;
                             },
                           ),
@@ -284,15 +286,15 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
 
                           _buildInputField(
                             controller: _emailCtrl,
-                            label: 'એડમિન ઈમેલ આઈડી (Email)',
+                            label: 'એડમિન ઈમેલ આઈડી (Email)'.tr,
                             hint: 'admin@society.com',
                             icon: Icons.alternate_email_rounded,
                             keyboardType: TextInputType.emailAddress,
                             accentColor: accentColor,
                             cardBg: cardBg,
                             validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'ઈમેલ આઈડી દાખલ કરો';
-                              if (!v.contains('@')) return 'માન્ય ઈમેલ આઈડી આપો';
+                              if (v == null || v.trim().isEmpty) return 'ઈમેલ આઈડી દાખલ કરો'.tr;
+                              if (!v.contains('@')) return 'માન્ય ઈમેલ આઈડી આપો'.tr;
                               return null;
                             },
                           ),
@@ -321,51 +323,56 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
 
   Widget _buildAppBar(BuildContext context, Color accentColor) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
         children: [
           InkWell(
             onTap: () => Navigator.pop(context),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             child: Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(9),
               decoration: BoxDecoration(
                 color: const Color(0xFF111827),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+              child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 16),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   children: [
-                    const Text(
-                      'નવી સોસાયટી ઓનબોર્ડ',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.2,
+                    Flexible(
+                      child: Text(
+                        'નવી સોસાયટી ઓનબોર્ડ'.tr,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.2,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: accentColor.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(5),
                         border: Border.all(color: accentColor.withValues(alpha: 0.4)),
                       ),
                       child: Text(
                         '1-CLICK SETUP',
                         style: TextStyle(
                           color: accentColor,
-                          fontSize: 9.5,
+                          fontSize: 8.5,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
@@ -373,13 +380,18 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
                   ],
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                  'પરિસર રજીસ્ટ્રેશન અને પ્રથમ એડમિન ક્રિએશન',
-                  style: TextStyle(color: Colors.white54, fontSize: 11.5, fontWeight: FontWeight.w500),
+                Text(
+                  'પરિસર રજીસ્ટ્રેશન અને પ્રથમ એડમિન ક્રિએશન'.tr,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 6),
+          const LanguageSwitchButton(isDark: true),
+          const SizedBox(width: 6),
           Container(
             padding: const EdgeInsets.all(9),
             decoration: BoxDecoration(
@@ -421,17 +433,17 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
             child: Icon(Icons.bolt_rounded, color: accentColor, size: 20),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'ઇન્સ્ટન્ટ ક્લાઉડ સિંક',
+                  'ઇન્સ્ટન્ટ ક્લાઉડ સિંક'.tr,
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'ઓનબોર્ડ થતાં જ સોસાયટી લાઈવ થઈ જશે અને એડમિન આપેલા પાસવર્ડથી સીધા લોગિન થઈ શકશે.',
+                  'ઓનબોર્ડ થતાં જ સોસાયટી લાઈવ થઈ જશે અને એડમિન આપેલા પાસવર્ડથી સીધા લોગિન થઈ શકશે.'.tr,
                   style: TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.3),
                 ),
               ],
@@ -459,8 +471,8 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'પરિસર આર્કિટેક્ચર પ્રકાર (Architecture Type)',
+        Text(
+          'પરિસર આર્કિટેક્ચર પ્રકાર (Architecture Type)'.tr,
           style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600, fontSize: 12.5),
         ),
         const SizedBox(height: 8),
@@ -627,8 +639,8 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'પ્રારંભિક એડમિન પાસવર્ડ (Default Password)',
+        Text(
+          'પ્રારંભિક એડમિન પાસવર્ડ (Default Password)'.tr,
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,
@@ -647,15 +659,15 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
           ),
           cursorColor: accentColor,
           validator: (v) {
-            if (v == null || v.trim().isEmpty) return 'પાસવર્ડ આપવો જરૂરી છે';
-            if (v.trim().length < 6) return 'ઓછામાં ઓછા ૬ અક્ષર જરૂરી';
+            if (v == null || v.trim().isEmpty) return 'પાસવર્ડ આપવો જરૂરી છે'.tr;
+            if (v.trim().length < 6) return 'ઓછામાં ઓછા ૬ અક્ષર જરૂરી'.tr;
             return null;
           },
           decoration: InputDecoration(
             isDense: true,
             filled: true,
             fillColor: cardBg,
-            hintText: 'ડિફોલ્ટ પાસવર્ડ દાખલ કરો...',
+            hintText: 'ડિફોલ્ટ પાસવર્ડ દાખલ કરો...'.tr,
             hintStyle: TextStyle(
               color: Colors.white.withValues(alpha: 0.35),
               fontSize: 13.5,
@@ -740,8 +752,8 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'એડમિનને લૉગિન વિગતો મોકલો',
+                Text(
+                  'એડમિનને લૉગિન વિગતો મોકલો'.tr,
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
@@ -750,7 +762,7 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'ઓનબોર્ડ થતાં જ ઈમેલ & WhatsApp પર ક્રેડેન્શિયલ્સ ડિસ્પેચ કરો',
+                  'ઓનબોર્ડ થતાં જ ઈમેલ & WhatsApp પર ક્રેડેન્શિયલ્સ ડિસ્પેચ કરો'.tr,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.5),
                     fontSize: 11,
@@ -799,14 +811,14 @@ class _SuperAdminOnboardSocietyScreenState extends State<SuperAdminOnboardSociet
                     height: 22,
                     child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                   )
-                : const Row(
+                : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 20),
-                      SizedBox(width: 8),
+                      const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
                       Text(
-                        'સોસાયટી ઓનબોર્ડ & એડમિન બનાવો',
-                        style: TextStyle(
+                        'સોસાયટી ઓનબોર્ડ & એડમિન બનાવો'.tr,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 15,
                           fontWeight: FontWeight.w900,

@@ -2,6 +2,8 @@ import 'package:building_guard/core/app_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/society_service.dart';
+import '../l10n/app_strings.dart';
+import '../services/localization_service.dart';
 
 class AdminAddBlockScreen extends StatefulWidget {
   final String architectureType;
@@ -107,7 +109,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
         unitType = _cSingleUnitType;
 
         if (cleanBlockName.isEmpty || count <= 0) {
-          _showSnackBar("ફ્લોરનું નામ અને દુકાનોની માન્ય સંખ્યા દાખલ કરો!");
+          _showSnackBar("ફ્લોરનું નામ અને દુકાનોની માન્ય સંખ્યા દાખલ કરો!".tr);
           return;
         }
 
@@ -116,7 +118,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
           architectureType: 'Commercial',
           category: category,
         );
-        displayName = "$displayLabel ($count એકમો)";
+        displayName = "$displayLabel ($count એકમો)".tr;
         final isGround = SocietyService.instance.isGroundBlock(cleanBlockName);
         final isBasement = cleanBlockName.startsWith('B') || cleanBlockName.contains('BASEMENT');
         int floorNo = isGround ? 0 : (isBasement ? -1 : (int.tryParse(cleanBlockName) ?? 1));
@@ -147,12 +149,12 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
         unitType = _cRangeUnitType;
 
         if (fromF <= 0 || toF < fromF || perFloor <= 0) {
-          _showSnackBar("માન્ય ફ્લોર રેન્જ (દા.ત. 2 થી 10) અને માળ દીઠ સંખ્યા લખો!");
+          _showSnackBar("માન્ય ફ્લોર રેન્જ (દા.ત. 2 થી 10) અને માળ દીઠ સંખ્યા લખો!".tr);
           return;
         }
 
         if (cleanBlockName.isEmpty) cleanBlockName = "F$fromF-F$toF";
-        displayName = "ફ્લોર $fromF થી $toF ($cleanBlockName)";
+        displayName = "ફ્લોર $fromF થી $toF ($cleanBlockName)".tr;
 
         for (int f = fromF; f <= toF; f++) {
           for (int u = 1; u <= perFloor; u++) {
@@ -176,7 +178,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
         final area = double.tryParse(_mCommAreaC.text.trim()) ?? 350.0;
 
         if (cleanBlockName.isEmpty || count <= 0) {
-          _showSnackBar("શોપિંગ ઝોન નામ અને દુકાનોની સંખ્યા લખો!");
+          _showSnackBar("શોપિંગ ઝોન નામ અને દુકાનોની સંખ્યા લખો!".tr);
           return;
         }
 
@@ -185,7 +187,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
           architectureType: 'Mixed',
           category: 'commercial',
         );
-        displayName = "$displayLabel ($count દુકાનો)";
+        displayName = "$displayLabel ($count દુકાનો)".tr;
         final isGround = SocietyService.instance.isGroundBlock(cleanBlockName);
 
         for (int i = 1; i <= count; i++) {
@@ -209,11 +211,11 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
         final area = double.tryParse(_mResAreaC.text.trim()) ?? 1000.0;
 
         if (cleanBlockName.isEmpty || floors <= 0 || perFloor <= 0) {
-          _showSnackBar("વિંગ નામ, કુલ માળ અને ફ્લેટ્સ/માળ દાખલ કરો!");
+          _showSnackBar("વિંગ નામ, કુલ માળ અને ફ્લેટ્સ/માળ દાખલ કરો!".tr);
           return;
         }
 
-        displayName = "🏢 વિંગ $cleanBlockName ($floors માળ)";
+        displayName = "🏢 વિંગ $cleanBlockName ($floors માળ)".tr;
         for (int f = 1; f <= floors; f++) {
           for (int u = 1; u <= perFloor; u++) {
             final uID = '$cleanBlockName-$f${u.toString().padLeft(2, '0')}';
@@ -235,11 +237,11 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
       final area = double.tryParse(_wAreaC.text.trim()) ?? 1000.0;
 
       if (cleanBlockName.isEmpty || floors <= 0 || perFloor <= 0) {
-        _showSnackBar("વિંગ નામ, કુલ માળ અને ફ્લેટ્સ/માળ દાખલ કરો!");
+        _showSnackBar("વિંગ નામ, કુલ માળ અને ફ્લેટ્સ/માળ દાખલ કરો!".tr);
         return;
       }
 
-      displayName = "વિંગ $cleanBlockName";
+      displayName = "વિંગ $cleanBlockName".tr;
       for (int f = 1; f <= floors; f++) {
         for (int u = 1; u <= perFloor; u++) {
           final uID = '$f${u.toString().padLeft(2, '0')}';
@@ -261,11 +263,11 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
       final area = double.tryParse(_sAreaC.text.trim()) ?? 1200.0;
 
       if (cleanBlockName.isEmpty || start <= 0 || end < start) {
-        _showSnackBar("શેરી નામ અને શરૂઆત/અંતિમ ઘર નંબર સાચા લખો!");
+        _showSnackBar("શેરી નામ અને શરૂઆત/અંતિમ ઘર નંબર સાચા લખો!".tr);
         return;
       }
 
-      displayName = "શેરી નં. $cleanBlockName";
+      displayName = "શેરી નં. $cleanBlockName".tr;
       for (int i = start; i <= end; i++) {
         generatedUnits.add({
           'unitNumber': i.toString(),
@@ -293,7 +295,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
       });
 
       if (alreadyExists) {
-        _showSnackBar("આ બ્લોક/ફ્લોર '$cleanBlockName' સોસાયટીમાં પહેલેથી જ હાજર છે!", Colors.orange);
+        _showSnackBar("આ બ્લોક/ફ્લોર '$cleanBlockName' સોસાયટીમાં પહેલેથી જ હાજર છે!".tr, Colors.orange);
         return;
       }
 
@@ -345,7 +347,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("નવો બ્લોક '$cleanBlockName' અને તેના ${generatedUnits.length} એકમો સફળતાપૂર્વક બની ગયા!"),
+          content: Text("નવો બ્લોક '$cleanBlockName' અને તેના ${generatedUnits.length} એકમો સફળતાપૂર્વક બની ગયા!".tr),
           backgroundColor: const Color(0xFF047857),
           behavior: SnackBarBehavior.floating,
         ),
@@ -353,7 +355,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
       Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        _showSnackBar("ભૂલ આવી: $e", Colors.red.shade800);
+        _showSnackBar("ભૂલ આવી: $e".tr, Colors.red.shade800);
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -376,15 +378,21 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "નવો બ્લોક / ફ્લોર ઉમેરો",
+              "નવો બ્લોક / ફ્લોર ઉમેરો".tr,
               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF0F172A)),
             ),
             Text(
-              "${widget.architectureType} આર્કિટેક્ચર અંતર્ગત નવો એકમ",
+              "${widget.architectureType} આર્કિટેક્ચર અંતર્ગત નવો એકમ".tr,
               style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
             ),
           ],
         ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Center(child: LanguageSwitchButton()),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -427,12 +435,12 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "નવો ${widget.architectureType} એકમ ઉમેરો",
+                          "નવો ${widget.architectureType} એકમ ઉમેરો".tr,
                           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
                         ),
                         const SizedBox(height: 2),
-                        const Text(
-                          "તમામ એકમો અને સ્ક્વેર ફીટ સાઈઝ આપમેળે સિસ્ટમમાં જોડાઈ જશે",
+                        Text(
+                          "તમામ એકમો અને સ્ક્વેર ફીટ સાઈઝ આપમેળે સિસ્ટમમાં જોડાઈ જશે".tr,
                           style: TextStyle(color: Colors.white70, fontSize: 11),
                         ),
                       ],
@@ -464,8 +472,8 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
                         width: 22,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                       )
-                    : const Text(
-                        "નવો બ્લોક સેવ કરો (Generate Units)",
+                    : Text(
+                        "નવો બ્લોક સેવ કરો (Generate Units)".tr,
                         style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                       ),
               ),
@@ -495,15 +503,15 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SegmentedButton<int>(
-            segments: const [
-              ButtonSegment(value: 0, label: Text("સિંગલ ફ્લોર (Single)")),
-              ButtonSegment(value: 1, label: Text("ફ્લોર રેન્જ (Range)")),
+            segments: [
+              ButtonSegment(value: 0, label: Text("સિંગલ ફ્લોર (Single)".tr)),
+              ButtonSegment(value: 1, label: Text("ફ્લોર રેન્જ (Range)".tr)),
             ],
             selected: {_commercialMode},
             onSelectionChanged: (s) => setState(() => _commercialMode = s.first),
@@ -512,58 +520,58 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
           if (_commercialMode == 0) ...[
             TextField(
               controller: _cSingleFloorNameC,
-              decoration: const InputDecoration(
-                labelText: "ફ્લોર કોડ / નામ *",
-                hintText: "દા.ત. G, 1, 2, B1",
+              decoration: InputDecoration(
+                labelText: "ફ્લોર કોડ / નામ *".tr,
+                hintText: "દા.ત. G, 1, 2, B1".tr,
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _cSingleUnitsCountC,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: "દુકાન/ઓફિસ સંખ્યા *",
-                      hintText: "દા.ત. 20",
+                    decoration: InputDecoration(
+                      labelText: "દુકાન/ઓફિસ સંખ્યા *".tr,
+                      hintText: "દા.ત. 20".tr,
                       border: OutlineInputBorder(),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Expanded(
                   child: TextField(
                     controller: _cSingleAreaC,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: "સરેરાશ Sq.Ft",
-                      hintText: "દા.ત. 350",
+                    decoration: InputDecoration(
+                      labelText: "સરેરાશ Sq.Ft".tr,
+                      hintText: "દા.ત. 350".tr,
                       border: OutlineInputBorder(),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: _cSingleUnitType,
-              items: const [
-                DropdownMenuItem(value: 'shop', child: Text("🏪 દુકાન (Shop)")),
-                DropdownMenuItem(value: 'office', child: Text("💼 ઓફિસ (Office)")),
-                DropdownMenuItem(value: 'showroom', child: Text("🏬 શો-રૂમ (Showroom)")),
-                DropdownMenuItem(value: 'godown', child: Text("📦 ગોડાઉન (Godown)")),
+              items: [
+                DropdownMenuItem(value: 'shop', child: Text("🏪 દુકાન (Shop)".tr)),
+                DropdownMenuItem(value: 'office', child: Text("💼 ઓફિસ (Office)".tr)),
+                DropdownMenuItem(value: 'showroom', child: Text("🏬 શો-રૂમ (Showroom)".tr)),
+                DropdownMenuItem(value: 'godown', child: Text("📦 ગોડાઉન (Godown)".tr)),
               ],
               onChanged: (v) => setState(() => _cSingleUnitType = v!),
-              decoration: const InputDecoration(labelText: "એકમ પ્રકાર", border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: "એકમ પ્રકાર".tr, border: OutlineInputBorder()),
             ),
           ] else ...[
             TextField(
               controller: _cRangeBlockNameC,
-              decoration: const InputDecoration(
-                labelText: "બ્લોક નામ (વૈકલ્પિક)",
-                hintText: "દા.ત. Corporate Floors",
+              decoration: InputDecoration(
+                labelText: "બ્લોક નામ (વૈકલ્પિક)".tr,
+                hintText: "દા.ત. Corporate Floors".tr,
                 border: OutlineInputBorder(),
               ),
             ),
@@ -574,7 +582,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
                   child: TextField(
                     controller: _cRangeFromFloorC,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: "ક્યાંથી માળ *", hintText: "દા.ત. 2", border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: "ક્યાંથી માળ *".tr, hintText: "દા.ત. 2".tr, border: OutlineInputBorder()),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -582,7 +590,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
                   child: TextField(
                     controller: _cRangeToFloorC,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: "ક્યાં સુધી *", hintText: "દા.ત. 10", border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: "ક્યાં સુધી *".tr, hintText: "દા.ત. 10".tr, border: OutlineInputBorder()),
                   ),
                 ),
               ],
@@ -594,7 +602,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
                   child: TextField(
                     controller: _cRangeUnitsPerFloorC,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: "માળ દીઠ એકમો *", hintText: "દા.ત. 8", border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: "માળ દીઠ એકમો *".tr, hintText: "દા.ત. 8".tr, border: OutlineInputBorder()),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -602,20 +610,20 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
                   child: TextField(
                     controller: _cRangeAreaC,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: "સરેરાશ Sq.Ft", hintText: "દા.ત. 500", border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: "સરેરાશ Sq.Ft".tr, hintText: "દા.ત. 500".tr, border: OutlineInputBorder()),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: _cRangeUnitType,
-              items: const [
-                DropdownMenuItem(value: 'office', child: Text("💼 ઓફિસ (Office)")),
-                DropdownMenuItem(value: 'shop', child: Text("🏪 દુકાન (Shop)")),
+              items: [
+                DropdownMenuItem(value: 'office', child: Text("💼 ઓફિસ (Office)".tr)),
+                DropdownMenuItem(value: 'shop', child: Text("🏪 દુકાન (Shop)".tr)),
               ],
               onChanged: (v) => setState(() => _cRangeUnitType = v!),
-              decoration: const InputDecoration(labelText: "એકમ પ્રકાર", border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: "એકમ પ્રકાર".tr, border: OutlineInputBorder()),
             ),
           ],
         ],
@@ -630,15 +638,15 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SegmentedButton<int>(
-            segments: const [
-              ButtonSegment(value: 0, label: Text("🏬 કોમર્શિયલ શોપ્સ")),
-              ButtonSegment(value: 1, label: Text("🏢 રેસિડેન્શિયલ વિંગ")),
+            segments: [
+              ButtonSegment(value: 0, label: Text("🏬 કોમર્શિયલ શોપ્સ".tr)),
+              ButtonSegment(value: 1, label: Text("🏢 રેસિડેન્શિયલ વિંગ".tr)),
             ],
             selected: {_mixedCategory},
             onSelectionChanged: (s) => setState(() => _mixedCategory = s.first),
@@ -647,7 +655,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
           if (_mixedCategory == 0) ...[
             TextField(
               controller: _mCommFloorNameC,
-              decoration: const InputDecoration(labelText: "શોપિંગ ઝોન / ફ્લોર *", hintText: "દા.ત. G", border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: "શોપિંગ ઝોન / ફ્લોર *".tr, hintText: "દા.ત. G".tr, border: OutlineInputBorder()),
             ),
             const SizedBox(height: 12),
             Row(
@@ -656,7 +664,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
                   child: TextField(
                     controller: _mCommUnitsCountC,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: "દુકાનો સંખ્યા *", hintText: "દા.ત. 18", border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: "દુકાનો સંખ્યા *".tr, hintText: "દા.ત. 18".tr, border: OutlineInputBorder()),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -664,7 +672,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
                   child: TextField(
                     controller: _mCommAreaC,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: "સરેરાશ Sq.Ft", hintText: "દા.ત. 350", border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: "સરેરાશ Sq.Ft".tr, hintText: "દા.ત. 350".tr, border: OutlineInputBorder()),
                   ),
                 ),
               ],
@@ -672,7 +680,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
           ] else ...[
             TextField(
               controller: _mResWingNameC,
-              decoration: const InputDecoration(labelText: "વિંગ નામ *", hintText: "દા.ત. A", border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: "વિંગ નામ *".tr, hintText: "દા.ત. A".tr, border: OutlineInputBorder()),
             ),
             const SizedBox(height: 12),
             Row(
@@ -681,7 +689,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
                   child: TextField(
                     controller: _mResFloorsC,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: "કુલ માળ *", hintText: "દા.ત. 10", border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: "કુલ માળ *".tr, hintText: "દા.ત. 10".tr, border: OutlineInputBorder()),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -689,7 +697,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
                   child: TextField(
                     controller: _mResUnitsPerFloorC,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: "માળ દીઠ ફ્લેટ્સ *", hintText: "દા.ત. 4", border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: "માળ દીઠ ફ્લેટ્સ *".tr, hintText: "દા.ત. 4".tr, border: OutlineInputBorder()),
                   ),
                 ),
               ],
@@ -698,7 +706,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
             TextField(
               controller: _mResAreaC,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "સરેરાશ ફ્લેટ સાઈઝ (Sq.Ft)", hintText: "દા.ત. 1000", border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: "સરેરાશ ફ્લેટ સાઈઝ (Sq.Ft)".tr, hintText: "દા.ત. 1000".tr, border: OutlineInputBorder()),
             ),
           ],
         ],
@@ -719,7 +727,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
         children: [
           TextField(
             controller: _wNameC,
-            decoration: const InputDecoration(labelText: "વિંગ નામ *", hintText: "દા.ત. A", border: OutlineInputBorder()),
+            decoration: InputDecoration(labelText: "વિંગ નામ *".tr, hintText: "દા.ત. A".tr, border: OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           Row(
@@ -728,7 +736,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
                 child: TextField(
                   controller: _wFloorsC,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: "કુલ માળ *", hintText: "દા.ત. 5", border: OutlineInputBorder()),
+                  decoration: InputDecoration(labelText: "કુલ માળ *".tr, hintText: "દા.ત. 5".tr, border: OutlineInputBorder()),
                 ),
               ),
               const SizedBox(width: 10),
@@ -736,7 +744,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
                 child: TextField(
                   controller: _wUnitsPerFloorC,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: "માળ દીઠ ફ્લેટ *", hintText: "દા.ત. 4", border: OutlineInputBorder()),
+                  decoration: InputDecoration(labelText: "માળ દીઠ ફ્લેટ *".tr, hintText: "દા.ત. 4".tr, border: OutlineInputBorder()),
                 ),
               ),
             ],
@@ -745,7 +753,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
           TextField(
             controller: _wAreaC,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: "સરેરાશ ફ્લેટ સાઈઝ (Sq.Ft)", hintText: "દા.ત. 1000", border: OutlineInputBorder()),
+            decoration: InputDecoration(labelText: "સરેરાશ ફ્લેટ સાઈઝ (Sq.Ft)".tr, hintText: "દા.ત. 1000".tr, border: OutlineInputBorder()),
           ),
         ],
       ),
@@ -765,7 +773,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
         children: [
           TextField(
             controller: _sStreetNameC,
-            decoration: const InputDecoration(labelText: "શેરી નંબર / નામ *", hintText: "દા.ત. 1", border: OutlineInputBorder()),
+            decoration: InputDecoration(labelText: "શેરી નંબર / નામ *".tr, hintText: "દા.ત. 1".tr, border: OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           Row(
@@ -774,7 +782,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
                 child: TextField(
                   controller: _sStartUnitC,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: "શરૂઆત ઘર નં. *", hintText: "દા.ત. 1", border: OutlineInputBorder()),
+                  decoration: InputDecoration(labelText: "શરૂઆત ઘર નં. *".tr, hintText: "દા.ત. 1".tr, border: OutlineInputBorder()),
                 ),
               ),
               const SizedBox(width: 10),
@@ -782,7 +790,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
                 child: TextField(
                   controller: _sEndUnitC,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: "છેલ્લો ઘર નં. *", hintText: "દા.ત. 25", border: OutlineInputBorder()),
+                  decoration: InputDecoration(labelText: "છેલ્લો ઘર નં. *".tr, hintText: "દા.ત. 25".tr, border: OutlineInputBorder()),
                 ),
               ),
             ],
@@ -791,7 +799,7 @@ class _AdminAddBlockScreenState extends State<AdminAddBlockScreen> {
           TextField(
             controller: _sAreaC,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: "સરેરાશ સાઈઝ (Sq.Ft)", hintText: "દા.ત. 1200", border: OutlineInputBorder()),
+            decoration: InputDecoration(labelText: "સરેરાશ સાઈઝ (Sq.Ft)".tr, hintText: "દા.ત. 1200".tr, border: OutlineInputBorder()),
           ),
         ],
       ),

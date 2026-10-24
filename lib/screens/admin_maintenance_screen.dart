@@ -17,6 +17,8 @@ import 'admin_broadcast_screen.dart';
 import 'admin_society_bank_settings_screen.dart';
 import 'admin_bulk_bill_screen.dart';
 import '../widgets/smart_maintenance_reminder_sheet.dart';
+import '../l10n/app_strings.dart';
+import '../services/localization_service.dart';
 
 class AdminMaintenanceScreen extends StatefulWidget {
   const AdminMaintenanceScreen({super.key});
@@ -83,7 +85,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
-      _showSnackBar('કૉલ શરૂ કરી શકાયો નહીં: $phone', Colors.red);
+      _showSnackBar('કૉલ શરૂ કરી શકાયો નહીં: $phone'.tr, Colors.red);
     }
   }
 
@@ -120,13 +122,13 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
   // --- ડાયલોગ ૩: પેન્ડિંગ રીમાઇન્ડર મોકલવું ---
   Future<void> _sendReminders() async {
     if (_latestBills.isEmpty) {
-      _showSnackBar('આ મહિના માટે કોઈ બિલ ઉપલબ્ધ નથી.', Colors.blueGrey);
+      _showSnackBar('આ મહિના માટે કોઈ બિલ ઉપલબ્ધ નથી.'.tr, Colors.blueGrey);
       return;
     }
     await SmartMaintenanceReminderSheet.showBatchQueue(
       context: context,
       billingMonth: _selectedMonth,
-      monthTitle: '${_formatMonthDisplay(_selectedMonth)} મેન્ટેનન્સ',
+      monthTitle: '${_formatMonthDisplay(_selectedMonth)} મેન્ટેનન્સ'.tr,
       allBills: _latestBills,
     );
   }
@@ -176,11 +178,11 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'ફ્લેટ ${bill.cleanFlatDisplay} પેમેન્ટ QR',
+                        'ફ્લેટ ${bill.cleanFlatDisplay} પેમેન્ટ QR'.tr,
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        bill.memberName.isNotEmpty ? bill.memberName : 'માસિક મેન્ટેનન્સ',
+                        bill.memberName.isNotEmpty ? bill.memberName : 'માસિક મેન્ટેનન્સ'.tr,
                         style: const TextStyle(fontSize: 12, color: Colors.black54),
                       ),
                     ],
@@ -220,10 +222,10 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                                 size: 200,
                                 backgroundColor: Colors.white,
                                 errorStateBuilder: (cxt, err) {
-                                  return const Padding(
+                                  return Padding(
                                     padding: EdgeInsets.all(16.0),
                                     child: Text(
-                                      'QR કોડ લોડ કરવામાં ભૂલ આવી',
+                                      'QR કોડ લોડ કરવામાં ભૂલ આવી'.tr,
                                       style: TextStyle(color: Colors.red, fontSize: 12),
                                     ),
                                   );
@@ -241,14 +243,14 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                                 children: [
                                   Icon(Icons.qr_code_2_rounded, size: 54, color: Colors.grey.shade400),
                                   const SizedBox(height: 8),
-                                  const Text(
-                                    'સોસાયટી UPI ID સેટ કરેલ નથી',
+                                  Text(
+                                    'સોસાયટી UPI ID સેટ કરેલ નથી'.tr,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.black87),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'QR જોવા માટે નીચે UPI ID લખી સેવ કરો',
+                                    'QR જોવા માટે નીચે UPI ID લખી સેવ કરો'.tr,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                                   ),
@@ -263,7 +265,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            'રકમ: ${_currencyFormat.format(bill.totalPayable)}',
+                            'રકમ: ${_currencyFormat.format(bill.totalPayable)}'.tr,
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w900,
@@ -275,8 +277,8 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'મેમ્બર તેમના મોબાઈલની કોઈપણ UPI એપ\n(Google Pay, PhonePe, Paytm, BHIM)\nથી આ QR સ્કેન કરી શકે છે.',
+                  Text(
+                    'મેમ્બર તેમના મોબાઈલની કોઈપણ UPI એપ\n(Google Pay, PhonePe, Paytm, BHIM)\nથી આ QR સ્કેન કરી શકે છે.'.tr,
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 12, color: Colors.black87),
                   ),
@@ -300,7 +302,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                           InkWell(
                             onTap: () {
                               Clipboard.setData(ClipboardData(text: currentUpiId));
-                              _showSnackBar('UPI ID કૉપી થઈ ગયો!', Colors.green);
+                              _showSnackBar('UPI ID કૉપી થઈ ગયો!'.tr, Colors.green);
                             },
                             child: const Icon(Icons.copy_rounded, size: 16, color: Colors.teal),
                           ),
@@ -333,8 +335,8 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                               const SizedBox(width: 4),
                               Text(
                                 currentUpiId.isEmpty
-                                    ? 'સોસાયટી UPI ID સેટ કરો:'
-                                    : 'UPI ID બદલો:',
+                                    ? 'સોસાયટી UPI ID સેટ કરો:'.tr
+                                    : 'UPI ID બદલો:'.tr,
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -346,8 +348,8 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                           const SizedBox(height: 6),
                           TextField(
                             controller: upiInputController,
-                            decoration: const InputDecoration(
-                              hintText: 'દા.ત. yourname@bank (જેમ કે @okhdfcbank, @sbi)',
+                            decoration: InputDecoration(
+                              hintText: 'દા.ત. yourname@bank (જેમ કે @okhdfcbank, @sbi)'.tr,
                               isDense: true,
                               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                               border: OutlineInputBorder(),
@@ -362,7 +364,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                                 final entered = upiInputController.text.trim();
                                 if (entered.isNotEmpty) {
                                   if (!entered.contains('@') || entered.contains(' ') || entered.startsWith('@') || entered.endsWith('@')) {
-                                    _showSnackBar('સાચો UPI ID દાખલ કરો (દા.ત. yourname@bank)', Colors.orange);
+                                    _showSnackBar('સાચો UPI ID દાખલ કરો (દા.ત. yourname@bank)'.tr, Colors.orange);
                                     return;
                                   }
                                   setDialogState(() {
@@ -374,13 +376,13 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                                     upiPayeeName: currentPayeeName,
                                     defaultAmount: bill.amount,
                                   );
-                                  _showSnackBar('સોસાયટી UPI ID કાયમી સેવ થઈ ગયો!', Colors.green);
+                                  _showSnackBar('સોસાયટી UPI ID કાયમી સેવ થઈ ગયો!'.tr, Colors.green);
                                 }
                               },
                               style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               ),
-                              child: const Text('સેવ & QR અપડેટ કરો', style: TextStyle(fontSize: 11)),
+                              child: Text('સેવ & QR અપડેટ કરો'.tr, style: TextStyle(fontSize: 11)),
                             ),
                           ),
                         ],
@@ -395,18 +397,18 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                 onPressed: () {
                   SharePlus.instance.share(
                     ShareParams(
-                      text: 'નમસ્તે ${bill.memberName.isNotEmpty ? bill.memberName : 'સભ્ય'},\n'
+                      text: 'નમસ્તે ${bill.memberName.isNotEmpty ? bill.memberName : 'સભ્ય'.tr},\n'
                           'તમારું ફ્લેટ ${bill.cleanFlatDisplay} નું ${bill.billTitle} નું મેન્ટેનન્સ બિલ ${_currencyFormat.format(bill.totalPayable)} બાકી છે.\n\n'
                           'ઓનલાઇન UPI થી ચૂકવવા નીચેની લિંક પર ક્લિક કરો:\n'
                           '${uri.toString()}\n\n'
                           'અથવા UPI ID પર પે કરો: $currentUpiId\n'
                           '- સોસાયટી મેનેજમેન્ટ',
-                      subject: 'મેન્ટેનન્સ બિલ UPI પેમેન્ટ - ${bill.cleanFlatDisplay}',
+                      subject: 'મેન્ટેનન્સ બિલ UPI પેમેન્ટ - ${bill.cleanFlatDisplay}'.tr,
                     ),
                   );
                 },
                 icon: const Icon(Icons.share_rounded, size: 16),
-                label: const Text('શેર કરો'),
+                label: Text('શેર કરો'.tr),
               ),
               if (bill.status != MaintenanceStatus.paid)
                 FilledButton.icon(
@@ -415,13 +417,13 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                     _showOfflinePaymentDialog(bill, initialMode: 'upi');
                   },
                   icon: const Icon(Icons.check_circle_outline, size: 18),
-                  label: const Text('પેમેન્ટ મળ્યું'),
+                  label: Text('પેમેન્ટ મળ્યું'.tr),
                   style: FilledButton.styleFrom(backgroundColor: Colors.green.shade700),
                 )
               else
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('બંધ કરો'),
+                  child: Text('બંધ કરો'.tr),
                 ),
             ],
           );
@@ -430,7 +432,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
     );
     } catch (e, stack) {
       debugPrint('Error showing bill QR dialog: $e\n$stack');
-      _showSnackBar('QR કોડ ખૂલવામાં સમસ્યા આવી: $e', Colors.red);
+      _showSnackBar('QR કોડ ખૂલવામાં સમસ્યા આવી: $e'.tr, Colors.red);
     }
   }
 
@@ -462,11 +464,11 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
 
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Row(
+            title: Row(
               children: [
                 Icon(Icons.qr_code_2_rounded, color: Colors.teal, size: 26),
                 SizedBox(width: 8),
-                Text('સોસાયટી પેમેન્ટ QR'),
+                Text('સોસાયટી પેમેન્ટ QR'.tr),
               ],
             ),
             content: SizedBox(
@@ -497,10 +499,10 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                                 size: 200,
                                 backgroundColor: Colors.white,
                                 errorStateBuilder: (cxt, err) {
-                                  return const Padding(
+                                  return Padding(
                                     padding: EdgeInsets.all(16.0),
                                     child: Text(
-                                      'QR કોડ લોડ કરવામાં ભૂલ આવી',
+                                      'QR કોડ લોડ કરવામાં ભૂલ આવી'.tr,
                                       style: TextStyle(color: Colors.red, fontSize: 12),
                                     ),
                                   );
@@ -517,14 +519,14 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                                 children: [
                                   Icon(Icons.qr_code_2_rounded, size: 54, color: Colors.grey.shade400),
                                   const SizedBox(height: 8),
-                                  const Text(
-                                    'સોસાયટી UPI ID સેટ કરેલ નથી',
+                                  Text(
+                                    'સોસાયટી UPI ID સેટ કરેલ નથી'.tr,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.black87),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'QR જોવા માટે નીચે UPI ID લખી સેવ કરો',
+                                    'QR જોવા માટે નીચે UPI ID લખી સેવ કરો'.tr,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                                   ),
@@ -534,7 +536,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                     ),
                     const SizedBox(height: 10),
                   Text(
-                    'ડિફૉલ્ટ રકમ: ${_currencyFormat.format(defaultAmt)}',
+                    'ડિફૉલ્ટ રકમ: ${_currencyFormat.format(defaultAmt)}'.tr,
                     style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal.shade900),
                   ),
                   const SizedBox(height: 8),
@@ -554,7 +556,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                           InkWell(
                             onTap: () {
                               Clipboard.setData(ClipboardData(text: currentUpiId));
-                              _showSnackBar('UPI ID કૉપી થઈ ગયો!', Colors.green);
+                              _showSnackBar('UPI ID કૉપી થઈ ગયો!'.tr, Colors.green);
                             },
                             child: const Icon(Icons.copy_rounded, size: 16, color: Colors.teal),
                           ),
@@ -587,8 +589,8 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                               const SizedBox(width: 4),
                               Text(
                                 currentUpiId.isEmpty
-                                    ? 'સોસાયટી UPI ID સેટ કરો:'
-                                    : 'UPI ID બદલો:',
+                                    ? 'સોસાયટી UPI ID સેટ કરો:'.tr
+                                    : 'UPI ID બદલો:'.tr,
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -600,8 +602,8 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                           const SizedBox(height: 6),
                           TextField(
                             controller: upiInputController,
-                            decoration: const InputDecoration(
-                              hintText: 'દા.ત. yourname@bank (જેમ કે @okhdfcbank, @sbi)',
+                            decoration: InputDecoration(
+                              hintText: 'દા.ત. yourname@bank (જેમ કે @okhdfcbank, @sbi)'.tr,
                               isDense: true,
                               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                               border: OutlineInputBorder(),
@@ -616,7 +618,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                                 final entered = upiInputController.text.trim();
                                 if (entered.isNotEmpty) {
                                   if (!entered.contains('@') || entered.contains(' ') || entered.startsWith('@') || entered.endsWith('@')) {
-                                    _showSnackBar('સાચો UPI ID દાખલ કરો (દા.ત. yourname@bank)', Colors.orange);
+                                    _showSnackBar('સાચો UPI ID દાખલ કરો (દા.ત. yourname@bank)'.tr, Colors.orange);
                                     return;
                                   }
                                   setDialogState(() {
@@ -628,13 +630,13 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                                     upiPayeeName: currentPayeeName,
                                     defaultAmount: defaultAmt,
                                   );
-                                  _showSnackBar('સોસાયટી UPI ID કાયમી સેવ થઈ ગયો!', Colors.green);
+                                  _showSnackBar('સોસાયટી UPI ID કાયમી સેવ થઈ ગયો!'.tr, Colors.green);
                                 }
                               },
                               style: FilledButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               ),
-                              child: const Text('સેવ & QR અપડેટ કરો', style: TextStyle(fontSize: 11)),
+                              child: Text('સેવ & QR અપડેટ કરો'.tr, style: TextStyle(fontSize: 11)),
                             ),
                           ),
                         ],
@@ -647,7 +649,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
           actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('બંધ કરો'),
+                child: Text('બંધ કરો'.tr),
               ),
             ],
           );
@@ -656,7 +658,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
     );
     } catch (e, stack) {
       debugPrint('Error showing general QR dialog: $e\n$stack');
-      _showSnackBar('QR કોડ ખૂલવામાં સમસ્યા આવી: $e', Colors.red);
+      _showSnackBar('QR કોડ ખૂલવામાં સમસ્યા આવી: $e'.tr, Colors.red);
     }
   }
 
@@ -671,38 +673,38 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDlgState) => AlertDialog(
-          title: Text('પેમેન્ટ નોંધો — ફ્લેટ ${bill.cleanFlatDisplay}'),
+          title: Text('પેમેન્ટ નોંધો — ફ્લેટ ${bill.cleanFlatDisplay}'.tr),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'સભ્ય: ${bill.memberName.isNotEmpty ? bill.memberName : "માલિક"}',
+                  'સભ્ય: ${bill.memberName.isNotEmpty ? bill.memberName : "માલિક"}'.tr,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                Text('રકમ: ${_currencyFormat.format(bill.totalPayable)}'),
+                Text('રકમ: ${_currencyFormat.format(bill.totalPayable)}'.tr),
                 const Divider(height: 24),
-                const Text('ચુકવણીનો પ્રકાર (Payment Mode):',
+                Text('ચુકવણીનો પ્રકાર (Payment Mode):'.tr,
                     style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 6),
                 Wrap(
                   spacing: 6,
                   children: [
                     ChoiceChip(
-                      label: const Text('રોકડ (Cash)'),
+                      label: Text('રોકડ (Cash)'.tr),
                       selected: paymentMode == 'cash',
                       onSelected: (val) =>
                           setDlgState(() => paymentMode = 'cash'),
                     ),
                     ChoiceChip(
-                      label: const Text('UPI (QR સ્કેન)'),
+                      label: Text('UPI (QR સ્કેન)'.tr),
                       selected: paymentMode == 'upi',
                       onSelected: (val) =>
                           setDlgState(() => paymentMode = 'upi'),
                     ),
                     ChoiceChip(
-                      label: const Text('ચેક (Cheque)'),
+                      label: Text('ચેક (Cheque)'.tr),
                       selected: paymentMode == 'cheque',
                       onSelected: (val) =>
                           setDlgState(() => paymentMode = 'cheque'),
@@ -722,8 +724,8 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Text(
-                          'મેમ્બરને સ્કેન કરાવવા માટે QR કોડ:',
+                        Text(
+                          'મેમ્બરને સ્કેન કરાવવા માટે QR કોડ:'.tr,
                           style: TextStyle(fontSize: 12, color: Colors.black87),
                           textAlign: TextAlign.center,
                         ),
@@ -734,7 +736,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                             _showBillQrDialog(bill);
                           },
                           icon: const Icon(Icons.qr_code_2_rounded, size: 20),
-                          label: const Text('પેમેન્ટ QR કોડ બતાવો (Show QR)'),
+                          label: Text('પેમેન્ટ QR કોડ બતાવો (Show QR)'.tr),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.teal,
                             foregroundColor: Colors.white,
@@ -748,8 +750,8 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: utrController,
-                    decoration: const InputDecoration(
-                      labelText: 'UTR / ટ્રાન્ઝેક્શન આઈડી (વૈકલ્પિક)',
+                    decoration: InputDecoration(
+                      labelText: 'UTR / ટ્રાન્ઝેક્શન આઈડી (વૈકલ્પિક)'.tr,
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -758,8 +760,8 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: chequeController,
-                    decoration: const InputDecoration(
-                      labelText: 'ચેક નંબર (Cheque No.) *',
+                    decoration: InputDecoration(
+                      labelText: 'ચેક નંબર (Cheque No.) *'.tr,
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -767,8 +769,8 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: noteController,
-                  decoration: const InputDecoration(
-                    labelText: 'નોંધ (વૈકલ્પિક)',
+                  decoration: InputDecoration(
+                    labelText: 'નોંધ (વૈકલ્પિક)'.tr,
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -778,13 +780,13 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('રદ'),
+              child: Text('રદ'.tr),
             ),
             FilledButton(
               onPressed: () async {
                 if (paymentMode == 'cheque' &&
                     chequeController.text.trim().isEmpty) {
-                  _showSnackBar('ચેક નંબર દાખલ કરવો જરૂરી છે', Colors.orange);
+                  _showSnackBar('ચેક નંબર દાખલ કરવો જરૂરી છે'.tr, Colors.orange);
                   return;
                 }
 
@@ -800,14 +802,14 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                     utrNumber: utrController.text.trim(),
                     note: noteController.text.trim(),
                   );
-                  _showSnackBar('પેમેન્ટ સ્વીકારાઈ ગયું અને રસીદ બની ગઈ!', Colors.green);
+                  _showSnackBar('પેમેન્ટ સ્વીકારાઈ ગયું અને રસીદ બની ગઈ!'.tr, Colors.green);
                 } catch (e) {
-                  _showSnackBar('ભૂલ: $e', Colors.red);
+                  _showSnackBar('ભૂલ: $e'.tr, Colors.red);
                 } finally {
                   if (mounted) setState(() => _isLoading = false);
                 }
               },
-              child: const Text('પેઇડ માર્ક કરો'),
+              child: Text('પેઇડ માર્ક કરો'.tr),
             ),
           ],
         ),
@@ -820,20 +822,20 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.verified_rounded, color: Colors.blue),
             SizedBox(width: 8),
-            Text('UPI પેમેન્ટ વેરિફાય કરો'),
+            Text('UPI પેમેન્ટ વેરિફાય કરો'.tr),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('ફ્લેટ: ${bill.cleanFlatDisplay}',
+            Text('ફ્લેટ: ${bill.cleanFlatDisplay}'.tr,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            Text('સભ્ય: ${bill.memberName} (${bill.memberPhone})'),
+            Text('સભ્ય: ${bill.memberName} (${bill.memberPhone})'.tr),
             const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(12),
@@ -845,11 +847,11 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('સભ્ય દ્વારા દાખલ કરેલ UTR / ટ્રાન્ઝેક્શન નં:',
+                  Text('સભ્ય દ્વારા દાખલ કરેલ UTR / ટ્રાન્ઝેક્શન નં:'.tr,
                       style: TextStyle(fontSize: 12, color: Colors.black54)),
                   const SizedBox(height: 4),
                   SelectableText(
-                    bill.utrNumber.isNotEmpty ? bill.utrNumber : 'UTR દાખલ નથી થયો',
+                    bill.utrNumber.isNotEmpty ? bill.utrNumber : 'UTR દાખલ નથી થયો'.tr,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -857,7 +859,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text('રકમ: ${_currencyFormat.format(bill.totalPayable)}',
+                  Text('રકમ: ${_currencyFormat.format(bill.totalPayable)}'.tr,
                       style: const TextStyle(fontWeight: FontWeight.w600)),
                 ],
               ),
@@ -867,7 +869,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('બંધ કરો'),
+            child: Text('બંધ કરો'.tr),
           ),
           FilledButton.icon(
             onPressed: () async {
@@ -875,15 +877,15 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
               setState(() => _isLoading = true);
               try {
                 await _service.approvePayment(billId: bill.id, bill: bill);
-                _showSnackBar('UPI પેમેન્ટ સફળતાપૂર્વક મંજૂર કરવામાં આવ્યું!', Colors.green);
+                _showSnackBar('UPI પેમેન્ટ સફળતાપૂર્વક મંજૂર કરવામાં આવ્યું!'.tr, Colors.green);
               } catch (e) {
-                _showSnackBar('ભૂલ: $e', Colors.red);
+                _showSnackBar('ભૂલ: $e'.tr, Colors.red);
               } finally {
                 if (mounted) setState(() => _isLoading = false);
               }
             },
             icon: const Icon(Icons.check_circle_rounded),
-            label: const Text('એપ્રૂવ કરો (Approve)'),
+            label: Text('એપ્રૂવ કરો (Approve)'.tr),
           ),
         ],
       ),
@@ -908,7 +910,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
 રકમ: ${_currencyFormat.format(bill.totalPayable)}
 ચુકવણી પદ્ધતિ: ${bill.paymentMode.toUpperCase()}
 ${bill.utrNumber.isNotEmpty ? "UTR / Ref: ${bill.utrNumber}" : ""}
-${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
+${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}".tr : ""}
 સ્ટેટસ: પેઇડ (Paid & Verified)
 ================================
 આ ડિજિટલ રસીદ માન્ય ગણાશે.
@@ -922,7 +924,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
           children: [
             Icon(Icons.receipt_rounded, color: Colors.green.shade700),
             const SizedBox(width: 8),
-            const Text('ડિજિટલ રસીદ'),
+            Text('ડિજિટલ રસીદ'.tr),
           ],
         ),
         content: SingleChildScrollView(
@@ -951,21 +953,21 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                         ),
                       ),
                       Text(
-                        'રસીદ નં: ${bill.receiptNumber}',
+                        'રસીદ નં: ${bill.receiptNumber}'.tr,
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                     ],
                   ),
                 ),
                 const Divider(height: 24),
-                _receiptRow('બિલ', bill.billTitle),
-                _receiptRow('ફ્લેટ નં', bill.cleanFlatDisplay),
-                _receiptRow('સભ્ય', bill.memberName),
-                _receiptRow('ચુકવણી રીત', bill.paymentMode.toUpperCase()),
-                if (bill.utrNumber.isNotEmpty) _receiptRow('UTR નં', bill.utrNumber),
+                _receiptRow('બિલ'.tr, bill.billTitle),
+                _receiptRow('ફ્લેટ નં'.tr, bill.cleanFlatDisplay),
+                _receiptRow('સભ્ય'.tr, bill.memberName),
+                _receiptRow('ચુકવણી રીત'.tr, bill.paymentMode.toUpperCase()),
+                if (bill.utrNumber.isNotEmpty) _receiptRow('UTR નં'.tr, bill.utrNumber),
                 if (bill.chequeNumber.isNotEmpty)
-                  _receiptRow('ચેક નં', bill.chequeNumber),
-                _receiptRow('તારીખ', paidDate),
+                  _receiptRow('ચેક નં'.tr, bill.chequeNumber),
+                _receiptRow('તારીખ'.tr, paidDate),
               ],
             ),
           ),
@@ -976,23 +978,23 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
               MaintenanceReceiptPdfService.viewReceiptPdf(context, bill);
             },
             icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF0F766E), size: 18),
-            label: const Text('PDF જુઓ', style: TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.bold)),
+            label: Text('PDF જુઓ'.tr, style: TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.bold)),
           ),
           FilledButton.icon(
             onPressed: () {
               MaintenanceReceiptPdfService.downloadReceiptPdf(context, bill);
             },
             icon: const Icon(Icons.download_rounded, size: 18),
-            label: const Text('PDF ડાઉનલોડ'),
+            label: Text('PDF ડાઉનલોડ'.tr),
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0F766E)),
           ),
           IconButton(
-            tooltip: 'શેર કરો',
+            tooltip: 'શેર કરો'.tr,
             onPressed: () {
               SharePlus.instance.share(
                 ShareParams(
                   text: receiptText,
-                  subject: 'મેન્ટેનન્સ રસીદ - ${bill.cleanFlatDisplay}',
+                  subject: 'મેન્ટેનન્સ રસીદ - ${bill.cleanFlatDisplay}'.tr,
                 ),
               );
             },
@@ -1000,7 +1002,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('બંધ કરો'),
+            child: Text('બંધ કરો'.tr),
           ),
         ],
       ),
@@ -1014,7 +1016,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
     String phone = bill.memberPhone.trim();
     String email = '';
     String photoUrl = '';
-    String occupantType = 'માલિક (Owner)';
+    String occupantType = 'માલિક (Owner)'.tr;
 
     try {
       if (bill.memberId != null && bill.memberId!.isNotEmpty) {
@@ -1025,7 +1027,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
           if (phone.isEmpty) phone = (uData['phone'] ?? '').toString().trim();
           email = (uData['email'] ?? '').toString().trim();
           photoUrl = (uData['photoUrl'] ?? '').toString().trim();
-          occupantType = uData['occupantType'] == 'tenant' ? 'ભાડુઆત (Tenant)' : 'ફ્લેટ માલિક (Owner)';
+          occupantType = uData['occupantType'] == 'tenant' ? 'ભાડુઆત (Tenant)'.tr : 'ફ્લેટ માલિક (Owner)'.tr;
         }
       }
       if (name.isEmpty || phone.isEmpty) {
@@ -1043,7 +1045,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
       }
     } catch (_) {}
 
-    if (name.isEmpty) name = 'ફ્લેટ ${bill.cleanFlatDisplay} ના સભ્ય';
+    if (name.isEmpty) name = 'ફ્લેટ ${bill.cleanFlatDisplay} ના સભ્ય'.tr;
     final isOwner = !occupantType.contains('Tenant');
 
     // સુરક્ષિત Initials નિર્માણ
@@ -1109,13 +1111,13 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: const Color(0xFF0F766E).withValues(alpha: 0.18)),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.badge_outlined, size: 13, color: Color(0xFF0F766E)),
                           SizedBox(width: 5),
                           Text(
-                            'સભ્ય પ્રોફાઇલ & વિગતો',
+                            'સભ્ય પ્રોફાઇલ & વિગતો'.tr,
                             style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w700,
@@ -1352,13 +1354,13 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: const Color(0xFF6EE7B7)),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF047857)),
                           SizedBox(width: 4),
                           Text(
-                            'ચૂકવેલ (Paid)',
+                            'ચૂકવેલ (Paid)'.tr,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w900,
@@ -1370,7 +1372,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      'રીત: ${bill.paymentMode.toUpperCase()}${bill.paidAt != null ? ' • ${DateFormat('dd/MM/yyyy').format(bill.paidAt!)}' : ''}',
+                      'રીત: ${bill.paymentMode.toUpperCase()}${bill.paidAt != null ? '.tr • ${DateFormat('dd/MM/yyyy').format(bill.paidAt!)}' : ''}',
                       style: const TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
@@ -1382,8 +1384,8 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text(
-                      'ચૂકવેલ રકમ',
+                    Text(
+                      'ચૂકવેલ રકમ'.tr,
                       style: TextStyle(
                         fontSize: 11,
                         color: Color(0xFF059669),
@@ -1426,13 +1428,13 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                     ),
                   ],
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.picture_as_pdf_rounded, size: 16, color: Color(0xFF0F766E)),
                     SizedBox(width: 6),
                     Text(
-                      'સત્તાવાર PDF રસીદ જુઓ / ડાઉનલોડ',
+                      'સત્તાવાર PDF રસીદ જુઓ / ડાઉનલોડ'.tr,
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,
@@ -1475,13 +1477,13 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: const Color(0xFF93C5FD)),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.hourglass_top_rounded, size: 12, color: Color(0xFF1D4ED8)),
                       SizedBox(width: 4),
                       Text(
-                        'ચકાસણી હેઠળ (Review)',
+                        'ચકાસણી હેઠળ (Review)'.tr,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w900,
@@ -1493,7 +1495,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  bill.utrNumber.isNotEmpty ? 'UTR: ${bill.utrNumber}' : 'ઓનલાઇન ચુકવણી મંજૂરી બાકી',
+                  bill.utrNumber.isNotEmpty ? 'UTR: ${bill.utrNumber}' : 'ઓનલાઇન ચુકવણી મંજૂરી બાકી'.tr,
                   style: const TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
@@ -1505,8 +1507,8 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                const Text(
-                  'કુલ રકમ',
+                Text(
+                  'કુલ રકમ'.tr,
                   style: TextStyle(
                     fontSize: 11,
                     color: Color(0xFF2563EB),
@@ -1555,13 +1557,13 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: const Color(0xFFFDA4AF)),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.schedule_rounded, size: 12, color: Color(0xFFBE123C)),
                     SizedBox(width: 4),
                     Text(
-                      'ચુકવણી બાકી (Pending)',
+                      'ચુકવણી બાકી (Pending)'.tr,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w900,
@@ -1585,8 +1587,8 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Text(
-                'બાકી રકમ',
+              Text(
+                'બાકી રકમ'.tr,
                 style: TextStyle(
                   fontSize: 11,
                   color: Color(0xFFE11D48),
@@ -1640,8 +1642,8 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'મોબાઇલ નંબર',
+                      Text(
+                        'મોબાઇલ નંબર'.tr,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -1650,7 +1652,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                       ),
                       const SizedBox(height: 1),
                       Text(
-                        phone.isNotEmpty ? phone : 'નોંધાયેલ નથી',
+                        phone.isNotEmpty ? phone : 'નોંધાયેલ નથી'.tr,
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
@@ -1663,13 +1665,13 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                 ),
                 if (phone.isNotEmpty)
                   IconButton(
-                    tooltip: 'નંબર કૉપિ કરો',
+                    tooltip: 'નંબર કૉપિ કરો'.tr,
                     visualDensity: VisualDensity.compact,
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: phone));
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('મોબાઇલ નંબર ક્લિપબોર્ડમાં કૉપિ થયો'),
+                        SnackBar(
+                          content: Text('મોબાઇલ નંબર ક્લિપબોર્ડમાં કૉપિ થયો'.tr),
                           duration: Duration(seconds: 1),
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -1702,8 +1704,8 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'ઇમેઇલ એડ્રેસ',
+                        Text(
+                          'ઇમેઇલ એડ્રેસ'.tr,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -1725,13 +1727,13 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                     ),
                   ),
                   IconButton(
-                    tooltip: 'ઇમેઇલ કૉપિ કરો',
+                    tooltip: 'ઇમેઇલ કૉપિ કરો'.tr,
                     visualDensity: VisualDensity.compact,
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: email));
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('ઇમેઇલ એડ્રેસ ક્લિપબોર્ડમાં કૉપિ થયું'),
+                        SnackBar(
+                          content: Text('ઇમેઇલ એડ્રેસ ક્લિપબોર્ડમાં કૉપિ થયું'.tr),
                           duration: Duration(seconds: 1),
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -1770,8 +1772,8 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                     launchUrl(Uri.parse('tel:$clean'));
                   },
                   icon: const Icon(Icons.call_rounded, size: 17, color: Colors.white),
-                  label: const Text(
-                    'કૉલ કરો',
+                  label: Text(
+                    'કૉલ કરો'.tr,
                     maxLines: 1,
                     softWrap: false,
                     style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
@@ -1797,8 +1799,8 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                     );
                   },
                   icon: const Icon(Icons.chat_bubble_rounded, size: 17, color: Colors.white),
-                  label: const Text(
-                    'વોટ્સએપ રીમાઇન્ડર',
+                  label: Text(
+                    'વોટ્સએપ રીમાઇન્ડર'.tr,
                     maxLines: 1,
                     softWrap: false,
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13.5),
@@ -1836,8 +1838,8 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                   );
                 },
                 icon: const Icon(Icons.send_rounded, size: 16, color: Color(0xFF4338CA)),
-                label: const Text(
-                  'મેસેજ મોકલો',
+                label: Text(
+                  'મેસેજ મોકલો'.tr,
                   maxLines: 1,
                   softWrap: false,
                   style: TextStyle(color: Color(0xFF4338CA), fontWeight: FontWeight.w800, fontSize: 13),
@@ -1858,8 +1860,8 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                     _showReceiptDialog(bill);
                   },
                   icon: const Icon(Icons.receipt_long_rounded, size: 16, color: Color(0xFF0F766E)),
-                  label: const Text(
-                    'રસીદ વિગત',
+                  label: Text(
+                    'રસીદ વિગત'.tr,
                     maxLines: 1,
                     softWrap: false,
                     style: TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.w800, fontSize: 13),
@@ -1879,8 +1881,8 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                     _showVerifyUpiDialog(bill);
                   },
                   icon: const Icon(Icons.verified_rounded, size: 16, color: Color(0xFF2563EB)),
-                  label: const Text(
-                    'વેરિફાય કરો',
+                  label: Text(
+                    'વેરિફાય કરો'.tr,
                     maxLines: 1,
                     softWrap: false,
                     style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w800, fontSize: 13),
@@ -1900,8 +1902,8 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                     _showOfflinePaymentDialog(bill);
                   },
                   icon: const Icon(Icons.price_check_rounded, size: 16, color: Color(0xFF059669)),
-                  label: const Text(
-                    'રોકડ સ્વીકારો',
+                  label: Text(
+                    'રોકડ સ્વીકારો'.tr,
                     maxLines: 1,
                     softWrap: false,
                     style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.w800, fontSize: 13),
@@ -1942,9 +1944,9 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
         elevation: 0,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
-        title: const Text(
-          'મેન્ટેનન્સ & હિસાબ',
-          style: TextStyle(
+        title: Text(
+          'મેન્ટેનન્સ & હિસાબ'.tr,
+          style: const TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 18,
             color: Color(0xFF0F172A),
@@ -1960,7 +1962,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
               ),
               child: Icon(Icons.qr_code_2_rounded, color: Colors.teal.shade800, size: 20),
             ),
-            tooltip: 'સોસાયટી પેમેન્ટ QR',
+            tooltip: 'સોસાયટી પેમેન્ટ QR'.tr,
             onPressed: _showGeneralSocietyQrDialog,
           ),
           IconButton(
@@ -1972,7 +1974,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
               ),
               child: Icon(Icons.tune_rounded, color: Colors.indigo.shade800, size: 20),
             ),
-            tooltip: 'UPI સેટિંગ્સ',
+            tooltip: 'UPI સેટિંગ્સ'.tr,
             onPressed: _showPaymentSettingsDialog,
           ),
           IconButton(
@@ -1984,8 +1986,12 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
               ),
               child: Icon(Icons.campaign_rounded, color: Colors.amber.shade900, size: 20),
             ),
-            tooltip: 'ડ્યુ રીમાઇન્ડર મોકલો',
+            tooltip: 'ડ્યુ રીમાઇન્ડર મોકલો'.tr,
             onPressed: _sendReminders,
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4),
+            child: Center(child: LanguageSwitchButton()),
           ),
           const SizedBox(width: 4),
         ],
@@ -1993,7 +1999,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showBulkGenerateDialog,
         icon: const Icon(Icons.add_card_rounded),
-        label: const Text('બલ્ક બિલ જનરેટ', style: TextStyle(fontWeight: FontWeight.w800)),
+        label: Text('બલ્ક બિલ જનરેટ'.tr, style: TextStyle(fontWeight: FontWeight.w800)),
         backgroundColor: const Color(0xFF4338CA),
         foregroundColor: Colors.white,
       ),
@@ -2017,8 +2023,8 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                           Icon(Icons.lock_outline_rounded,
                               size: 54, color: Colors.red.shade700),
                           const SizedBox(height: 12),
-                          const Text(
-                            'ફાયરબેઝ સિક્યોરિટી પરમિશન એરર',
+                          Text(
+                            'ફાયરબેઝ સિક્યોરિટી પરમિશન એરર'.tr,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -2032,8 +2038,8 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                             style: const TextStyle(fontSize: 12, color: Colors.black87),
                           ),
                           const SizedBox(height: 12),
-                          const Text(
-                            'આ એરર ઉકેલવા Firebase Console -> Firestore Database -> Rules માં પરમિશન Publish કરો.',
+                          Text(
+                            'આ એરર ઉકેલવા Firebase Console -> Firestore Database -> Rules માં પરમિશન Publish કરો.'.tr,
                             textAlign: TextAlign.center,
                             style: TextStyle(fontSize: 12, color: Colors.black54),
                           ),
@@ -2123,8 +2129,8 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                             child: const Icon(Icons.calendar_month_rounded, size: 16, color: Colors.white),
                           ),
                           const SizedBox(width: 10),
-                          const Text(
-                            'મહિનો:',
+                          Text(
+                            'મહિનો:'.tr,
                             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF475569)),
                           ),
                           const SizedBox(width: 8),
@@ -2167,7 +2173,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                                 const Icon(Icons.domain_rounded, size: 12, color: Color(0xFF475569)),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'કુલ ફ્લેટ્સ: $totalBills',
+                                  'કુલ ફ્લેટ્સ: $totalBills'.tr,
                                   style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: Color(0xFF334155)),
                                 ),
                               ],
@@ -2184,9 +2190,9 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                         children: [
                           Expanded(
                             child: _buildMetricCard(
-                              title: 'કુલ જમા',
+                              title: 'કુલ જમા'.tr,
                               amount: _currencyFormat.format(totalCollected),
-                              countText: '${paidBills.length} ફ્લેટ્સ ચૂકવેલ',
+                              countText: '${paidBills.length} ફ્લેટ્સ ચૂકવેલ'.tr,
                               color: const Color(0xFF047857),
                               bgColor: const Color(0xFFECFDF5),
                               icon: Icons.check_circle_rounded,
@@ -2195,9 +2201,9 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                           const SizedBox(width: 10),
                           Expanded(
                             child: _buildMetricCard(
-                              title: 'કુલ બાકી',
+                              title: 'કુલ બાકી'.tr,
                               amount: _currencyFormat.format(totalPending),
-                              countText: '${pendingBills.length} ફ્લેટ્સ બાકી',
+                              countText: '${pendingBills.length} ફ્લેટ્સ બાકી'.tr,
                               color: const Color(0xFFBE123C),
                               bgColor: const Color(0xFFFFF1F2),
                               icon: Icons.pending_actions_rounded,
@@ -2207,9 +2213,9 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                             const SizedBox(width: 10),
                             Expanded(
                               child: _buildMetricCard(
-                                title: 'UPI વેરિફાય',
+                                title: 'UPI વેરિફાય'.tr,
                                 amount: '${reviewBills.length}',
-                                countText: 'ચકાસણી પેન્ડિંગ',
+                                countText: 'ચકાસણી પેન્ડિંગ'.tr,
                                 color: const Color(0xFF1D4ED8),
                                 bgColor: const Color(0xFFEFF6FF),
                                 icon: Icons.verified_user_rounded,
@@ -2229,16 +2235,16 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                       ),
                       child: Row(
                         children: [
-                          _filterChip('all', 'બધા ($totalBills)'),
+                          _filterChip('all', 'બધા ($totalBills)'.tr),
                           const SizedBox(width: 8),
-                          _filterChip('pending', 'બાકી (${pendingBills.length})'),
+                          _filterChip('pending', 'બાકી (${pendingBills.length})'.tr),
                           const SizedBox(width: 8),
                           _filterChip(
                             'under_review',
-                            'ચકાસણી હેઠળ (${reviewBills.length})',
+                            'ચકાસણી હેઠળ (${reviewBills.length})'.tr,
                           ),
                           const SizedBox(width: 8),
-                          _filterChip('paid', 'ચૂકવેલ (${paidBills.length})'),
+                          _filterChip('paid', 'ચૂકવેલ (${paidBills.length})'.tr),
                         ],
                       ),
                     ),
@@ -2262,8 +2268,8 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                                   const SizedBox(height: 12),
                                   Text(
                                     totalBills == 0
-                                        ? '${_formatMonthDisplay(_selectedMonth)} માટે કોઈ બિલ બન્યા નથી.\nનીચેના બટનથી બલ્ક બિલ બનાવો.'
-                                        : 'આ ફિલ્ટરમાં કોઈ બિલ નથી.',
+                                        ? '${_formatMonthDisplay(_selectedMonth)} માટે કોઈ બિલ બન્યા નથી.\nનીચેના બટનથી બલ્ક બિલ બનાવો.'.tr
+                                        : 'આ ફિલ્ટરમાં કોઈ બિલ નથી.'.tr,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(color: Colors.grey.shade600),
                                   ),
@@ -2272,7 +2278,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                                     ElevatedButton.icon(
                                       onPressed: _showBulkGenerateDialog,
                                       icon: const Icon(Icons.add),
-                                      label: const Text('બિલ જનરેટ કરો'),
+                                      label: Text('બિલ જનરેટ કરો'.tr),
                                     ),
                                   ],
                                 ],
@@ -2459,32 +2465,32 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
       case MaintenanceStatus.paid:
         statusColor = const Color(0xFF047857);
         statusBg = const Color(0xFFECFDF5);
-        statusText = 'ચૂકવેલ (Paid)';
+        statusText = 'ચૂકવેલ (Paid)'.tr;
         statusIcon = Icons.check_circle_rounded;
         break;
       case MaintenanceStatus.underReview:
         statusColor = const Color(0xFF1D4ED8);
         statusBg = const Color(0xFFEFF6FF);
-        statusText = 'UPI ચકાસણી';
+        statusText = 'UPI ચકાસણી'.tr;
         statusIcon = Icons.pending_rounded;
         break;
       case MaintenanceStatus.overdue:
         statusColor = const Color(0xFFBE123C);
         statusBg = const Color(0xFFFFF1F2);
-        statusText = 'મુદત વીતી ગઈ';
+        statusText = 'મુદત વીતી ગઈ'.tr;
         statusIcon = Icons.warning_rounded;
         break;
       case MaintenanceStatus.pending:
         statusColor = const Color(0xFFB45309);
         statusBg = const Color(0xFFFFFBEB);
-        statusText = 'બાકી (Pending)';
+        statusText = 'બાકી (Pending)'.tr;
         statusIcon = Icons.schedule_rounded;
         break;
     }
 
     final displayName = bill.memberName.trim().isNotEmpty
         ? bill.memberName
-        : 'ફ્લેટ ${bill.cleanFlatDisplay}';
+        : 'ફ્લેટ ${bill.cleanFlatDisplay}'.tr;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -2707,7 +2713,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                           child: OutlinedButton.icon(
                             onPressed: () => _showReceiptDialog(bill),
                             icon: const Icon(Icons.receipt_long_rounded, size: 14, color: Color(0xFF047857)),
-                            label: const Text('રસીદ (Receipt)', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF047857))),
+                            label: Text('રસીદ (Receipt)'.tr, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF047857))),
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(color: Color(0xFFA7F3D0)),
                               backgroundColor: const Color(0xFFF0FDF4),
@@ -2731,13 +2737,13 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(color: const Color(0xFF99F6E4)),
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(Icons.qr_code_2_rounded, size: 14, color: Color(0xFF0D9488)),
                                       SizedBox(width: 4),
                                       Text(
-                                        'QR પે',
+                                        'QR પે'.tr,
                                         style: TextStyle(
                                           color: Color(0xFF0F766E),
                                           fontWeight: FontWeight.w800,
@@ -2792,7 +2798,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                                 child: ElevatedButton.icon(
                                   onPressed: () => _showVerifyUpiDialog(bill),
                                   icon: const Icon(Icons.verified_rounded, size: 13),
-                                  label: const Text('વેરિફાય', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
+                                  label: Text('વેરિફાય'.tr, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF2563EB),
                                     foregroundColor: Colors.white,
@@ -2813,7 +2819,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}" : ""}
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                     elevation: 1,
                                   ),
-                                  child: const Text('Mark Paid', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
+                                  child: Text('Mark Paid', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
                                 ),
                               ),
                           ],

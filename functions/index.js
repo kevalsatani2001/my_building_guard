@@ -118,12 +118,16 @@ function buildFcmParts(title, body, typeStr, senderUid = "", extraData = {}) {
             }
         }
     }
+    const androidNotification = {
+        channelId: "high_importance_channel",
+        sound: "notification",
+    };
+    if (extraData && extraData.appealId) {
+        androidNotification.tag = `appeal_${extraData.appealId}`;
+    }
     const android = {
         priority: "high",
-        notification: {
-            channelId: "high_importance_channel",
-            sound: "notification",
-        },
+        notification: androidNotification,
     };
     const apns = {
         payload: {
@@ -154,7 +158,9 @@ async function collectTokensByRole(admin, societyId, allowedRole, excludeUid = "
         try {
             const db = getFirestoreDb(dbName);
             let snap;
-            if (societyId === "default") {
+            if (societyId === "all") {
+                snap = await db.collection("users").get();
+            } else if (societyId === "default") {
                 snap = await db.collection("users").get();
             } else {
                 snap = await db.collection("users").where("societyId", "==", societyId).get();
@@ -162,8 +168,12 @@ async function collectTokensByRole(admin, societyId, allowedRole, excludeUid = "
             snap.forEach((doc) => {
                 if (excludeUid && doc.id === excludeUid) return;
                 const u = doc.data();
-                if (!u || u.role !== allowedRole) return;
-                if (sidNorm(u) !== societyId) return;
+                if (!u) return;
+                const roleMatch = (allowedRole === "super_admin")
+                    ? (u.role === "super_admin" || u.role === "superadmin" || u.role === "superAdmin" || u.isSuperAdmin === true || (u.email && String(u.email).toLowerCase().trim() === "kevaladmin@gmail.com"))
+                    : (u.role === allowedRole);
+                if (!roleMatch) return;
+                if (societyId !== "all" && sidNorm(u) !== societyId) return;
                 const t = u.fcmToken;
                 if (t && typeof t === "string" && t.trim()) tokens.add(t.trim());
             });
@@ -511,6 +521,52 @@ exports.sendNotification = onDocumentCreated({
             const r = await sendTopicOrFanoutByRole(admin, societyId, "watchmen", title, body, typeStr, senderUid);
             const st = r.mode === "topic" ? "sent_topic_watchmen" : "sent_fanout_watchmen";
             await mark(st, {fcmDetail: JSON.stringify(r)});
+        } else if (targetUID === "SUPER_ADMIN" || data.targetTopic === "platform_super_admins" || typeStr === "admin_appeal_request") {
+            const topic = "platform_super_admins";
+            const extraData = {};
+            if (data.appealId) extraData.appealId = String(data.appealId);
+            if (data.societyId) extraData.societyId = String(data.societyId);
+            const parts = buildFcmParts(title, body, typeStr, senderUid, extraData);
+
+            let topicSent = false;
+            try {
+                await admin.messaging().send({
+                    topic,
+                    notification: parts.notification,
+                    data: parts.dataPayload,
+                    android: parts.android,
+                    apns: parts.apns,
+                });
+                topicSent = true;
+                console.log("sendNotification: FCM sent to topic platform_super_admins");
+            } catch (tErr) {
+                console.warn("sendNotification: topic platform_super_admins failed", tErr);
+            }
+
+            // જો ટોપિક પર સફળતાપૂર્વક મોકલાઈ ગયું હોય, તો ફરીથી ડિવાઇસ ટોકન પર ન મોકલો જેથી ડબલ નોટિફિકેશન ન આવે.
+            if (!topicSent) {
+                try {
+                    const tokens = await collectTokensByRole(admin, "all", "super_admin", senderUid);
+                    console.log(`sendNotification: fallback to ${tokens.length} super admin device tokens`);
+                    if (tokens.length) {
+                        const mc = await sendMulticastTokens(admin, tokens, parts);
+                        await mark("sent_super_admins_fallback", {
+                            deviceCount: tokens.length,
+                            successCount: mc.successCount,
+                            failureCount: mc.failureCount,
+                        });
+                    } else {
+                        await mark("error_super_admins_no_tokens");
+                    }
+                } catch (mcErr) {
+                    console.error("sendNotification: super admin fallback multicast failed", mcErr);
+                    await mark("error_super_admins", {
+                        error: formatMessagingError(mcErr),
+                    });
+                }
+            } else {
+                await mark("sent_topic_super_admins");
+            }
         } else {
             if (senderUid && targetUID === senderUid) {
                 await mark("skipped_self_sender", {fcmDetail: "targetUID matches senderUid"});

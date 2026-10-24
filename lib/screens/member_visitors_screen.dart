@@ -65,7 +65,7 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            status == 'approved' ? 'મુલાકાતીને પ્રવેશ મંજૂરી અપાઈ.' : 'મુલાકાતી પ્રવેશ નકારવામાં આવ્યો.',
+            status == 'approved' ? 'મુલાકાતીને પ્રવેશ મંજૂરી અપાઈ.'.tr : 'મુલાકાતી પ્રવેશ નકારવામાં આવ્યો.'.tr,
           ),
           backgroundColor: status == 'approved' ? const Color(0xFF059669) : const Color(0xFFDC2626),
           behavior: SnackBarBehavior.floating,
@@ -74,7 +74,7 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('સ્ટેટસ અપડેટ ભૂલ: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('સ્ટેટસ અપડેટ ભૂલ: $e'.tr), backgroundColor: Colors.red),
       );
     }
   }
@@ -101,9 +101,9 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
 
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
-          appBar: const PremiumAppBar(
-            title: 'વિઝિટર હિસ્ટ્રી & ટ્રેકિંગ',
-            subtitle: 'ગેટ એન્ટ્રી, એક્ઝિટ અને લાઈવ સ્ટેટસ',
+          appBar: PremiumAppBar(
+            title: 'વિઝિટર હિસ્ટ્રી & ટ્રેકિંગ'.tr,
+            subtitle: 'ગેટ એન્ટ્રી, એક્ઝિટ અને લાઈવ સ્ટેટસ'.tr,
             icon: Icons.shield_rounded,
             accentColor: Color(0xFF0D9488),
           ),
@@ -182,7 +182,7 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
                           child: TextField(
                             controller: _searchC,
                             decoration: InputDecoration(
-                              hintText: 'નામ, ફોન, હેતુ કે ફ્લેટ નંબર શોધો...',
+                              hintText: 'નામ, ફોન, હેતુ કે ફ્લેટ નંબર શોધો...'.tr,
                               hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                               prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0D9488)),
                               suffixIcon: _searchQuery.isNotEmpty
@@ -348,7 +348,7 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
                             const Icon(Icons.apartment_rounded, color: Color(0xFF5EEAD4), size: 14),
                             const SizedBox(width: 5),
                             Text(
-                              userFlat.isNotEmpty ? userFlat : 'માય સોસાયટી',
+                              userFlat.isNotEmpty ? userFlat : 'માય સોસાયટી'.tr,
                               style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -361,13 +361,13 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
                           color: const Color(0xFF10B981).withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.verified_user_rounded, color: Colors.white, size: 12),
                             SizedBox(width: 4),
                             Text(
-                              'લાઇવ સિક્યુરિટી ગેટ',
+                              'લાઇવ સિક્યુરિટી ગેટ'.tr,
                               style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -378,8 +378,8 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'સિક્યુરિટી વિઝિટર રજિસ્ટર',
+                      Text(
+                        'સિક્યુરિટી વિઝિટર રજિસ્ટર'.tr,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 19,
@@ -389,7 +389,7 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'મુલાકાતીઓ: $visitorCount • કેમેરા ફોટો પુરાવા અને એન્ટ્રી/એક્ઝિટ સમય',
+                        'મુલાકાતીઓ: $visitorCount • કેમેરા ફોટો પુરાવા અને એન્ટ્રી/એક્ઝિટ સમય'.tr,
                         style: const TextStyle(color: Color(0xFFCCFBF1), fontSize: 12, fontWeight: FontWeight.w500),
                       ),
                     ],
@@ -442,7 +442,7 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'મારા ફ્લેટના',
+                      'મારા ફ્લેટના'.tr,
                       style: TextStyle(
                         fontWeight: _scope == 'my_flat' ? FontWeight.w800 : FontWeight.w600,
                         fontSize: 12.5,
@@ -500,7 +500,7 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'આખી સોસાયટી ગેટ',
+                      'આખી સોસાયટી ગેટ'.tr,
                       style: TextStyle(
                         fontWeight: _scope == 'all_society' ? FontWeight.w800 : FontWeight.w600,
                         fontSize: 12.5,
@@ -536,13 +536,13 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
   Widget _buildMetricsRow({required int total, required int pending, required int inside, required int out}) {
     return Row(
       children: [
-        _metricPill('કુલ', total, const Color(0xFF0F172A), const Color(0xFFF1F5F9)),
+        _metricPill('કુલ'.tr, total, const Color(0xFF0F172A), const Color(0xFFF1F5F9)),
         const SizedBox(width: 6),
-        _metricPill('પેન્ડિંગ', pending, const Color(0xFFD97706), const Color(0xFFFFFBEB)),
+        _metricPill('પેન્ડિંગ'.tr, pending, const Color(0xFFD97706), const Color(0xFFFFFBEB)),
         const SizedBox(width: 6),
-        _metricPill('અંદર છે', inside, const Color(0xFF059669), const Color(0xFFECFDF5)),
+        _metricPill('અંદર છે'.tr, inside, const Color(0xFF059669), const Color(0xFFECFDF5)),
         const SizedBox(width: 6),
-        _metricPill('બહાર ગયા', out, const Color(0xFF64748B), const Color(0xFFF8FAFC)),
+        _metricPill('બહાર ગયા'.tr, out, const Color(0xFF64748B), const Color(0xFFF8FAFC)),
       ],
     );
   }
@@ -575,10 +575,10 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
 
   Widget _buildTimeFilterBar() {
     final opts = [
-      ('today', 'આજે'),
-      ('7d', 'છેલ્લા ૭ દિવસ'),
-      ('30d', '૩૦ દિવસ'),
-      ('all', 'બધા સમય'),
+      ('today', 'આજે'.tr),
+      ('7d', 'છેલ્લા ૭ દિવસ'.tr),
+      ('30d', '૩૦ દિવસ'.tr),
+      ('all', 'બધા સમય'.tr),
     ];
 
     return Row(
@@ -624,11 +624,11 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
     required int rejected,
   }) {
     final tabs = [
-      ('all', 'બધા', total, Icons.grid_view_rounded, const Color(0xFF0F172A), const Color(0xFFF1F5F9)),
-      ('pending', 'પેન્ડિંગ', pending, Icons.hourglass_top_rounded, const Color(0xFFD97706), const Color(0xFFFEF3C7)),
-      ('approved', 'મંજૂર', approved, Icons.check_circle_rounded, const Color(0xFF059669), const Color(0xFFD1FAE5)),
-      ('checked_out', 'બહાર ગયા', out, Icons.logout_rounded, const Color(0xFF475569), const Color(0xFFF1F5F9)),
-      ('rejected', 'અસ્વીકાર', rejected, Icons.cancel_rounded, const Color(0xFFE11D48), const Color(0xFFFFE4E6)),
+      ('all', 'બધા'.tr, total, Icons.grid_view_rounded, const Color(0xFF0F172A), const Color(0xFFF1F5F9)),
+      ('pending', 'પેન્ડિંગ'.tr, pending, Icons.hourglass_top_rounded, const Color(0xFFD97706), const Color(0xFFFEF3C7)),
+      ('approved', 'મંજૂર'.tr, approved, Icons.check_circle_rounded, const Color(0xFF059669), const Color(0xFFD1FAE5)),
+      ('checked_out', 'બહાર ગયા'.tr, out, Icons.logout_rounded, const Color(0xFF475569), const Color(0xFFF1F5F9)),
+      ('rejected', 'અસ્વીકાર'.tr, rejected, Icons.cancel_rounded, const Color(0xFFE11D48), const Color(0xFFFFE4E6)),
     ];
 
     return SingleChildScrollView(
@@ -731,10 +731,10 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
     final canAction = isPending && isMyFlat;
 
     final (statusColor, statusBg, statusText) = switch (visitor.status) {
-      'approved' => (const Color(0xFF059669), const Color(0xFFECFDF5), 'મંજૂર કરેલ'),
-      'rejected' => (const Color(0xFFDC2626), const Color(0xFFFEF2F2), 'અસ્વીકાર'),
-      'checked_out' => (const Color(0xFF475569), const Color(0xFFF1F5F9), 'બહાર ગયા'),
-      _ => (const Color(0xFFD97706), const Color(0xFFFFFBEB), 'પેન્ડિંગ'),
+      'approved' => (const Color(0xFF059669), const Color(0xFFECFDF5), 'મંજૂર કરેલ'.tr),
+      'rejected' => (const Color(0xFFDC2626), const Color(0xFFFEF2F2), 'અસ્વીકાર'.tr),
+      'checked_out' => (const Color(0xFF475569), const Color(0xFFF1F5F9), 'બહાર ગયા'.tr),
+      _ => (const Color(0xFFD97706), const Color(0xFFFFFBEB), 'પેન્ડિંગ'.tr),
     };
 
     return Container(
@@ -780,13 +780,13 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
                       topRight: Radius.circular(19),
                     ),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
                       Icon(Icons.hourglass_top_rounded, color: Color(0xFFD97706), size: 14),
                       SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          'ગેટ પર મંજૂરીની રાહ જુએ છે (Action Required)',
+                          'ગેટ પર મંજૂરીની રાહ જુએ છે (Action Required)'.tr,
                           style: TextStyle(color: Color(0xFF92400E), fontSize: 11, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -825,7 +825,7 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  visitor.name.isNotEmpty ? visitor.name : "અનામી મુલાકાતી",
+                                  visitor.name.isNotEmpty ? visitor.name : "અનામી મુલાકાતી".tr,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
@@ -898,7 +898,7 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
                               if (visitor.status == 'checked_out' && visitor.exitTime != null) ...[
                                 const SizedBox(width: 6),
                                 Text(
-                                  "• બહાર: ${DateFormat('hh:mm a').format(visitor.exitTime!)}",
+                                  "• બહાર: ${DateFormat('hh:mm a').format(visitor.exitTime!)}".tr,
                                   style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                                 ),
                               ],
@@ -936,7 +936,7 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
                           child: ElevatedButton.icon(
                             onPressed: () => _updateStatus(visitor.id, 'approved'),
                             icon: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
-                            label: const Text('પ્રવેશ મંજૂર', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                            label: Text('પ્રવેશ મંજૂર'.tr, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF059669),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -952,7 +952,7 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
                           child: OutlinedButton.icon(
                             onPressed: () => _updateStatus(visitor.id, 'rejected'),
                             icon: const Icon(Icons.close_rounded, color: Color(0xFFDC2626), size: 16),
-                            label: const Text('નકારો', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
+                            label: Text('નકારો'.tr, style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(color: Color(0xFFFECACA)),
                               backgroundColor: const Color(0xFFFEF2F2),
@@ -993,18 +993,18 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      child: const Center(
+      child: Center(
         child: Column(
           children: [
             Icon(Icons.shield_outlined, size: 48, color: Color(0xFFCBD5E1)),
             SizedBox(height: 12),
             Text(
-              'કોઈ મુલાકાતી મળ્યા નથી',
+              'કોઈ મુલાકાતી મળ્યા નથી'.tr,
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A)),
             ),
             SizedBox(height: 4),
             Text(
-              'પસંદ કરેલ ફિલ્ટર અથવા સમયગાળામાં કોઈ એન્ટ્રી નથી.',
+              'પસંદ કરેલ ફિલ્ટર અથવા સમયગાળામાં કોઈ એન્ટ્રી નથી.'.tr,
               style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
             ),
           ],

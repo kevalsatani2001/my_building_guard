@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../models/super_admin_models.dart';
 import '../services/admin_credential_dispatcher_service.dart';
 import '../services/super_admin_service.dart';
+import 'package:building_guard/l10n/app_strings.dart';
 
 class AdminCredentialsModal extends StatefulWidget {
   final OnboardSocietyResult result;
@@ -100,8 +101,8 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "એડમિન લૉગિન ક્રેડેન્શિયલ્સ",
+                        Text(
+                          "એડમિન લૉગિન ક્રેડેન્શિયલ્સ".tr,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 18,
@@ -111,7 +112,7 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          "પરિસર સફળતાપૂર્વક ઓનબોર્ડ થઈ ગયું છે!",
+                          "પરિસર સફળતાપૂર્વક ઓનબોર્ડ થઈ ગયું છે!".tr,
                           style: TextStyle(
                             color: const Color(0xFF34D399),
                             fontSize: 12.5,
@@ -145,25 +146,25 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
                     _buildInfoTile(
                       icon: Icons.domain_rounded,
                       iconColor: const Color(0xFF38BDF8),
-                      label: "પરિસર / સોસાયટી",
+                      label: "પરિસર / સોસાયટી".tr,
                       value: "${res.societyName} (${res.architectureType})",
                     ),
                     const Divider(color: Colors.white10, height: 18),
                     _buildInfoTile(
                       icon: Icons.person_rounded,
                       iconColor: const Color(0xFFF59E0B),
-                      label: "એડમિન નામ & શહેર",
+                      label: "એડમિન નામ & શહેર".tr,
                       value: "${res.adminName} • ${res.city}",
                     ),
                     const Divider(color: Colors.white10, height: 18),
                     _buildCopyableTile(
                       icon: Icons.email_rounded,
                       iconColor: const Color(0xFF60A5FA),
-                      label: "લૉગિન ઈમેલ",
+                      label: "લૉગિન ઈમેલ".tr,
                       value: res.adminEmail,
                       onCopy: () {
                         Clipboard.setData(ClipboardData(text: res.adminEmail));
-                        _showToast(context, '📧 ઈમેલ ક્લિપબોર્ડમાં કોપી થયો!');
+                        _showToast(context, '📧 ઈમેલ ક્લિપબોર્ડમાં કોપી થયો!'.tr);
                       },
                     ),
                     const Divider(color: Colors.white10, height: 18),
@@ -173,18 +174,18 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
                       isRevealed: _revealPassword,
                       onCopy: () {
                         Clipboard.setData(ClipboardData(text: res.adminPassword));
-                        _showToast(context, '🔑 પાસવર્ડ ક્લિપબોર્ડમાં કોપી થયો!');
+                        _showToast(context, '🔑 પાસવર્ડ ક્લિપબોર્ડમાં કોપી થયો!'.tr);
                       },
                     ),
                     const Divider(color: Colors.white10, height: 18),
                     _buildCopyableTile(
                       icon: Icons.phone_android_rounded,
                       iconColor: const Color(0xFF34D399),
-                      label: "રજીસ્ટર્ડ મોબાઇલ",
+                      label: "રજીસ્ટર્ડ મોબાઇલ".tr,
                       value: res.adminPhone,
                       onCopy: () {
                         Clipboard.setData(ClipboardData(text: res.adminPhone));
-                        _showToast(context, '📱 મોબાઇલ ક્લિપબોર્ડમાં કોપી થયો!');
+                        _showToast(context, '📱 મોબાઇલ ક્લિપબોર્ડમાં કોપી થયો!'.tr);
                       },
                     ),
                   ],
@@ -200,13 +201,13 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: const Color(0xFF14B8A6).withValues(alpha: 0.3)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(Icons.auto_awesome_rounded, color: Color(0xFF2DD4BF), size: 18),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        "લૉગિન વખતે એડમિનને કોઈ રોલ સિલેક્ટ કરવાનો નથી — ફક્ત ઈમેલ/મોબાઇલ અને પાસવર્ડ નાખતાં જ સિસ્ટમ ઑટોમેટિક એડમિન રોલ ફેચ કરી લેશે.",
+                        "લૉગિન વખતે એડમિનને કોઈ રોલ સિલેક્ટ કરવાનો નથી — ફક્ત ઈમેલ/મોબાઇલ અને પાસવર્ડ નાખતાં જ સિસ્ટમ ઑટોમેટિક એડમિન રોલ ફેચ કરી લેશે.".tr,
                         style: TextStyle(
                           color: Color(0xFFCCFBF1),
                           fontSize: 11.5,
@@ -274,8 +275,8 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
                                       _showToast(
                                         context,
                                         launched
-                                            ? '📧 ઈમેલ એપ ખુલી ગઈ છે! ડ્રાફ્ટ ચકાસી મોકલો.'
-                                            : '⚠️ ઈમેલ એપ ન ખુલી, વિગતો ક્લિપબોર્ડમાં કોપી કરી શકો છો.',
+                                            ? '📧 ઈમેલ એપ ખુલી ગઈ છે! ડ્રાફ્ટ ચકાસી મોકલો.'.tr
+                                            : '⚠️ ઈમેલ એપ ન ખુલી, વિગતો ક્લિપબોર્ડમાં કોપી કરી શકો છો.'.tr,
                                       );
                                     }
                                   } finally {
@@ -292,13 +293,13 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
                                       strokeWidth: 2.2,
                                     ),
                                   )
-                                : const Row(
+                                : Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(Icons.mail_outline_rounded, color: Colors.white, size: 20),
                                       SizedBox(width: 8),
                                       Text(
-                                        "ઈમેલ મોકલો",
+                                        "ઈમેલ મોકલો".tr,
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w800,
@@ -360,8 +361,8 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
                                       _showToast(
                                         context,
                                         launched
-                                            ? '💬 WhatsApp ચેટ ખુલી રહી છે...'
-                                            : '⚠️ WhatsApp ન ખુલી શક્યું.',
+                                            ? '💬 WhatsApp ચેટ ખુલી રહી છે...'.tr
+                                            : '⚠️ WhatsApp ન ખુલી શક્યું.'.tr,
                                       );
                                     }
                                   } finally {
@@ -378,13 +379,13 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
                                       strokeWidth: 2.2,
                                     ),
                                   )
-                                : const Row(
+                                : Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(Icons.chat_rounded, color: Colors.white, size: 20),
                                       SizedBox(width: 8),
                                       Text(
-                                        "WhatsApp શેર",
+                                        "WhatsApp શેર".tr,
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w800,
@@ -415,8 +416,8 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       icon: const Icon(Icons.copy_rounded, color: Color(0xFF38BDF8), size: 18),
-                      label: const Text(
-                        "બધું કોપી કરો",
+                      label: Text(
+                        "બધું કોપી કરો".tr,
                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
                       ),
                       onPressed: () {
@@ -430,7 +431,7 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
                           adminPhone: res.adminPhone,
                         );
                         Clipboard.setData(ClipboardData(text: body));
-                        _showToast(context, '📋 સંપૂર્ણ ક્રેડેન્શિયલ્સ પત્ર કોપી થઈ ગયો!');
+                        _showToast(context, '📋 સંપૂર્ણ ક્રેડેન્શિયલ્સ પત્ર કોપી થઈ ગયો!'.tr);
                       },
                     ),
                   ),
@@ -446,8 +447,8 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       icon: const Icon(Icons.share_rounded, color: Color(0xFFF59E0B), size: 18),
-                      label: const Text(
-                        "અન્ય એપમાં શેર",
+                      label: Text(
+                        "અન્ય એપમાં શેર".tr,
                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
                       ),
                       onPressed: () {
@@ -486,8 +487,8 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
                           child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFF59E0B)),
                         )
                       : const Icon(Icons.lock_reset_rounded, color: Color(0xFFF59E0B), size: 18),
-                  label: const Text(
-                    "એડમિનના ઈમેલ પર પાસવર્ડ રીસેટ લિંક મોકલો",
+                  label: Text(
+                    "એડમિનના ઈમેલ પર પાસવર્ડ રીસેટ લિંક મોકલો".tr,
                     style: TextStyle(color: Color(0xFFFCD34D), fontWeight: FontWeight.w700, fontSize: 13),
                   ),
                   onPressed: _isSendingReset
@@ -497,11 +498,11 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
                           try {
                             await SuperAdminService.instance.sendAdminPasswordResetEmail(res.adminEmail);
                             if (context.mounted) {
-                              _showToast(context, '🔑 ${res.adminEmail} પર પાસવર્ડ રીસેટ લિંક મોકલી દેવાઈ!');
+                              _showToast(context, '🔑 ${res.adminEmail} પર પાસવર્ડ રીસેટ લિંક મોકલી દેવાઈ!'.tr);
                             }
                           } catch (e) {
                             if (context.mounted) {
-                              _showToast(context, '⚠️ ભૂલ આવી: $e');
+                              _showToast(context, '⚠️ ભૂલ આવી: $e'.tr);
                             }
                           } finally {
                             if (mounted) setState(() => _isSendingReset = false);
@@ -520,8 +521,8 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text(
-                    "પૂર્ણ થયું (Done)",
+                  child: Text(
+                    "પૂર્ણ થયું (Done)".tr,
                     style: TextStyle(
                       color: Colors.white54,
                       fontWeight: FontWeight.w700,
@@ -627,7 +628,7 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
         IconButton(
           icon: const Icon(Icons.copy_rounded, color: Colors.white60, size: 18),
           visualDensity: VisualDensity.compact,
-          tooltip: 'કોપી કરો',
+          tooltip: 'કોપી કરો'.tr,
           onPressed: onCopy,
         ),
       ],
@@ -656,7 +657,7 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "પ્રારંભિક પાસવર્ડ",
+                "પ્રારંભિક પાસવર્ડ".tr,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.45),
                   fontSize: 11,
@@ -666,7 +667,7 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
               const SizedBox(height: 2),
               Text(
                 password.contains('••')
-                    ? '(સુરક્ષા ખાતર એન્ક્રિપ્ટેડ)'
+                    ? '(સુરક્ષા ખાતર એન્ક્રિપ્ટેડ)'.tr
                     : (isRevealed ? password : '••••••••'),
                 style: TextStyle(
                   color: password.contains('••') ? const Color(0xFFF59E0B) : Colors.white,
@@ -685,13 +686,13 @@ class _AdminCredentialsModalState extends State<AdminCredentialsModal> {
             size: 18,
           ),
           visualDensity: VisualDensity.compact,
-          tooltip: isRevealed ? 'છુપાવો' : 'જોવો',
+          tooltip: isRevealed ? 'છુપાવો'.tr : 'જોવો'.tr,
           onPressed: onToggle,
         ),
         IconButton(
           icon: const Icon(Icons.copy_rounded, color: Colors.white60, size: 18),
           visualDensity: VisualDensity.compact,
-          tooltip: 'કોપી કરો',
+          tooltip: 'કોપી કરો'.tr,
           onPressed: onCopy,
         ),
       ],

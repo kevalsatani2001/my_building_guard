@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/society_service.dart';
+import '../l10n/app_strings.dart';
+import '../services/localization_service.dart';
 
 class AdminVisitorReportScreen extends StatefulWidget {
   const AdminVisitorReportScreen({super.key});
@@ -102,7 +104,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("કૉલ કરી શકાયો નથી: $cleanPhone"),
+            content: Text("કૉલ કરી શકાયો નથી: $cleanPhone".tr),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -122,12 +124,12 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "વિઝિટર રિપોર્ટ & રજીસ્ટર",
-              style: TextStyle(
+              "વિઝિટર રિપોર્ટ & રજીસ્ટર".tr,
+              style: const TextStyle(
                 fontWeight: FontWeight.w900,
                 fontSize: 18,
                 color: Color(0xFF0F172A),
@@ -135,8 +137,8 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
               ),
             ),
             Text(
-              "મુલાકાતી એન્ટ્રી, એક્ઝિટ અને મંજૂરી વિગત",
-              style: TextStyle(
+              "મુલાકાતી એન્ટ્રી, એક્ઝિટ અને મંજૂરી વિગત".tr,
+              style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF64748B),
@@ -145,9 +147,13 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
           ],
         ),
         actions: [
+          const Padding(
+            padding: EdgeInsets.only(right: 4),
+            child: Center(child: LanguageSwitchButton()),
+          ),
           if (_hasActiveFilters)
             IconButton(
-              tooltip: "ફિલ્ટર્સ રીસેટ કરો",
+              tooltip: "ફિલ્ટર્સ રીસેટ કરો".tr,
               icon: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
@@ -160,7 +166,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
               onPressed: _clearAllFilters,
             ),
           IconButton(
-            tooltip: "તારીખ ફિલ્ટર",
+            tooltip: "તારીખ ફિલ્ટર".tr,
             icon: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
@@ -268,8 +274,8 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                     !p.contains('blinkit') &&
                     !p.contains('zepto') &&
                     !p.contains('food') &&
-                    !p.contains('ગ્રોસરી') &&
-                    !p.contains('ખાવાનું') &&
+                    !p.contains('ગ્રોસરી'.tr) &&
+                    !p.contains('ખાવાનું'.tr) &&
                     !n.contains('zomato') &&
                     !n.contains('swiggy') &&
                     vt != 'delivery') {
@@ -280,8 +286,8 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                     !p.contains('flipkart') &&
                     !p.contains('parcel') &&
                     !p.contains('courier') &&
-                    !p.contains('કુરિયર') &&
-                    !p.contains('પાર્સલ') &&
+                    !p.contains('કુરિયર'.tr) &&
+                    !p.contains('પાર્સલ'.tr) &&
                     !p.contains('delivery') &&
                     !n.contains('amazon') &&
                     !n.contains('flipkart')) {
@@ -293,7 +299,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                     !p.contains('uber') &&
                     !p.contains('ola') &&
                     !p.contains('rapido') &&
-                    !p.contains('કેબ') &&
+                    !p.contains('કેબ'.tr) &&
                     !n.contains('uber') &&
                     !n.contains('ola') &&
                     vt != 'cab') {
@@ -302,19 +308,19 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
               } else if (_selectedPurpose == 'service') {
                 if (!p.contains('service') &&
                     !p.contains('repair') &&
-                    !p.contains('સર્વિસ') &&
-                    !p.contains('રિપેર') &&
-                    !p.contains('ટેકનિશિયન') &&
-                    !p.contains('પ્લમ્બર') &&
-                    !p.contains('ઇલેક્ટ્રિશિયન') &&
+                    !p.contains('સર્વિસ'.tr) &&
+                    !p.contains('રિપેર'.tr) &&
+                    !p.contains('ટેકનિશિયન'.tr) &&
+                    !p.contains('પ્લમ્બર'.tr) &&
+                    !p.contains('ઇલેક્ટ્રિશિયન'.tr) &&
                     vt != 'service') {
                   return false;
                 }
               } else if (_selectedPurpose == 'guest') {
                 if (!p.contains('guest') &&
-                    !p.contains('મહેમાન') &&
-                    !p.contains('મુલાકાત') &&
-                    !p.contains('મિત્ર') &&
+                    !p.contains('મહેમાન'.tr) &&
+                    !p.contains('મુલાકાત'.tr) &&
+                    !p.contains('મિત્ર'.tr) &&
                     vt != 'guest') {
                   return false;
                 }
@@ -374,7 +380,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                     controller: _searchController,
                     style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                     decoration: InputDecoration(
-                      hintText: "નામ, ફોન, વાહન અથવા ફ્લેટ નંબર શોધો...",
+                      hintText: "નામ, ફોન, વાહન અથવા ફ્લેટ નંબર શોધો...".tr,
                       hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400, fontWeight: FontWeight.normal),
                       prefixIcon: const Icon(Icons.search_rounded, size: 21, color: Color(0xFF6366F1)),
                       suffixIcon: _searchQuery.isNotEmpty
@@ -400,15 +406,15 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: Row(
                   children: [
-                    _dateFilterChip('all', '📅 બધા સમય'),
+                    _dateFilterChip('all', '📅 બધા સમય'.tr),
                     const SizedBox(width: 6),
-                    _dateFilterChip('today', '⚡ આજે'),
+                    _dateFilterChip('today', '⚡ આજે'.tr),
                     const SizedBox(width: 6),
-                    _dateFilterChip('yesterday', '⏮️ ગઈકાલે'),
+                    _dateFilterChip('yesterday', '⏮️ ગઈકાલે'.tr),
                     const SizedBox(width: 6),
-                    _dateFilterChip('this_week', '📆 આ સપ્તાહ'),
+                    _dateFilterChip('this_week', '📆 આ સપ્તાહ'.tr),
                     const SizedBox(width: 6),
-                    _dateFilterChip('this_month', '🗓️ આ મહિનો'),
+                    _dateFilterChip('this_month', '🗓️ આ મહિનો'.tr),
                     const SizedBox(width: 6),
                     _customDateChip(),
                   ],
@@ -421,15 +427,15 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
                 child: Row(
                   children: [
-                    _filterChip('all', 'બધા ($total)', Icons.people_outline_rounded, const Color(0xFF0F172A)),
+                    _filterChip('all', 'બધા ($total)'.tr, Icons.people_outline_rounded, const Color(0xFF0F172A)),
                     const SizedBox(width: 6),
-                    _filterChip('approved', '🟢 મંજૂર ($approved)', Icons.check_circle_rounded, const Color(0xFF10B981)),
+                    _filterChip('approved', '🟢 મંજૂર ($approved)'.tr, Icons.check_circle_rounded, const Color(0xFF10B981)),
                     const SizedBox(width: 6),
-                    _filterChip('pending', '⏳ પેન્ડિંગ ($pending)', Icons.hourglass_top_rounded, const Color(0xFFF59E0B)),
+                    _filterChip('pending', '⏳ પેન્ડિંગ ($pending)'.tr, Icons.hourglass_top_rounded, const Color(0xFFF59E0B)),
                     const SizedBox(width: 6),
-                    _filterChip('rejected', '🔴 નકારેલ ($rejected)', Icons.cancel_rounded, const Color(0xFFEF4444)),
+                    _filterChip('rejected', '🔴 નકારેલ ($rejected)'.tr, Icons.cancel_rounded, const Color(0xFFEF4444)),
                     const SizedBox(width: 6),
-                    _filterChip('checked_out', '🚪 બહાર ગયા ($checkedOut)', Icons.logout_rounded, const Color(0xFF0D9488)),
+                    _filterChip('checked_out', '🚪 બહાર ગયા ($checkedOut)'.tr, Icons.logout_rounded, const Color(0xFF0D9488)),
                   ],
                 ),
               ),
@@ -440,17 +446,17 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
                 child: Row(
                   children: [
-                    _purposeChip('all', '✨ બધા હેતુ'),
+                    _purposeChip('all', '✨ બધા હેતુ'.tr),
                     const SizedBox(width: 6),
-                    _purposeChip('food', '🍔 ફૂડ & ગ્રોસરી'),
+                    _purposeChip('food', '🍔 ફૂડ & ગ્રોસરી'.tr),
                     const SizedBox(width: 6),
-                    _purposeChip('parcel', '📦 પાર્સલ & કુરિયર'),
+                    _purposeChip('parcel', '📦 પાર્સલ & કુરિયર'.tr),
                     const SizedBox(width: 6),
-                    _purposeChip('cab', '🚕 કેબ & રાઈડ'),
+                    _purposeChip('cab', '🚕 કેબ & રાઈડ'.tr),
                     const SizedBox(width: 6),
-                    _purposeChip('service', '🔧 સર્વિસ & રિપેર'),
+                    _purposeChip('service', '🔧 સર્વિસ & રિપેર'.tr),
                     const SizedBox(width: 6),
-                    _purposeChip('guest', '👥 મહેમાન (Guest)'),
+                    _purposeChip('guest', '👥 મહેમાન (Guest)'.tr),
                   ],
                 ),
               ),
@@ -462,10 +468,10 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
                   child: Row(
                     children: [
-                      _wingChip('all', 'બધા બ્લોક્સ'),
+                      _wingChip('all', 'બધા બ્લોક્સ'.tr),
                       ...sortedBlocks.map((b) => Padding(
                             padding: const EdgeInsets.only(left: 6),
-                            child: _wingChip(b, 'વિંગ $b'),
+                            child: _wingChip(b, 'વિંગ $b'.tr),
                           )),
                     ],
                   ),
@@ -530,12 +536,12 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
                   Icon(Icons.query_stats_rounded, size: 18, color: Color(0xFF0F172A)),
                   SizedBox(width: 6),
                   Text(
-                    "મુલાકાતી આંકડા",
+                    "મુલાકાતી આંકડા".tr,
                     style: TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 14.5,
@@ -571,7 +577,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        "કુલ મુલાકાતીઓ: $total",
+                        "કુલ મુલાકાતીઓ: $total".tr,
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 11.5,
@@ -588,7 +594,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
           Row(
             children: [
               _interactiveKpiCard(
-                label: "મંજૂર",
+                label: "મંજૂર".tr,
                 count: approved,
                 key: 'approved',
                 color: const Color(0xFF10B981),
@@ -598,7 +604,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
               ),
               const SizedBox(width: 8),
               _interactiveKpiCard(
-                label: "પેન્ડિંગ",
+                label: "પેન્ડિંગ".tr,
                 count: pending,
                 key: 'pending',
                 color: const Color(0xFFF59E0B),
@@ -608,7 +614,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
               ),
               const SizedBox(width: 8),
               _interactiveKpiCard(
-                label: "નકારેલ",
+                label: "નકારેલ".tr,
                 count: rejected,
                 key: 'rejected',
                 color: const Color(0xFFEF4444),
@@ -618,7 +624,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
               ),
               const SizedBox(width: 8),
               _interactiveKpiCard(
-                label: "બહાર ગયા",
+                label: "બહાર ગયા".tr,
                 count: checkedOut,
                 key: 'checked_out',
                 color: const Color(0xFF0D9488),
@@ -763,7 +769,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
     final isSelected = _selectedDateFilter == 'custom' && _customDateRange != null;
     final label = isSelected
         ? "${DateFormat('dd MMM').format(_customDateRange!.start)} - ${DateFormat('dd MMM').format(_customDateRange!.end)}"
-        : "🔍 તારીખ પસંદ કરો";
+        : "🔍 તારીખ પસંદ કરો".tr;
 
     return InkWell(
       onTap: _pickCustomDateRange,
@@ -969,9 +975,9 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          const Expanded(
+          Expanded(
             child: Text(
-              "ફિલ્ટર સક્રિય છે",
+              "ફિલ્ટર સક્રિય છે".tr,
               style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
@@ -981,13 +987,13 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
           ),
           InkWell(
             onTap: _clearAllFilters,
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.refresh_rounded, size: 14, color: Color(0xFFEF4444)),
                 SizedBox(width: 4),
                 Text(
-                  "બધા સાફ કરો",
+                  "બધા સાફ કરો".tr,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
@@ -1025,10 +1031,10 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
             const SizedBox(height: 14),
             Text(
               _searchQuery.isNotEmpty
-                  ? "'$_searchQuery' માટે કોઈ રેકોર્ડ મળ્યો નથી"
+                  ? "'$_searchQuery' માટે કોઈ રેકોર્ડ મળ્યો નથી".tr
                   : _hasActiveFilters
-                      ? "આ ફિલ્ટર્સ મુજબ કોઈ વિઝિટર મળ્યા નથી"
-                      : "આ કેટેગરીમાં કોઈ વિઝિટર નથી",
+                      ? "આ ફિલ્ટર્સ મુજબ કોઈ વિઝિટર મળ્યા નથી".tr
+                      : "આ કેટેગરીમાં કોઈ વિઝિટર નથી".tr,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 14.5,
@@ -1038,7 +1044,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              "ફિલ્ટર બદલો અથવા બધા ફિલ્ટર્સ સાફ કરો",
+              "ફિલ્ટર બદલો અથવા બધા ફિલ્ટર્સ સાફ કરો".tr,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
@@ -1051,8 +1057,8 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
               ElevatedButton.icon(
                 onPressed: _clearAllFilters,
                 icon: const Icon(Icons.refresh_rounded, size: 15),
-                label: const Text(
-                  "બધા ફિલ્ટર્સ સાફ કરો",
+                label: Text(
+                  "બધા ફિલ્ટર્સ સાફ કરો".tr,
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -1072,17 +1078,17 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
 
   // Premium Visitor Card matching Image 3 design
   Widget _buildVisitorCard(Map<String, dynamic> d, String docId) {
-    final name = (d['name'] ?? 'અનામી').toString();
+    final name = (d['name'] ?? 'અનામી'.tr).toString();
     final phone = (d['phone'] ?? '').toString();
     final vehicle = (d['vehicleNo'] ?? d['vehicleNumber'] ?? d['vehicle'] ?? '').toString();
-    final purpose = (d['purpose'] ?? 'મુલાકાત').toString();
+    final purpose = (d['purpose'] ?? 'મુલાકાત'.tr).toString();
     final photoUrl = (d['photoUrl'] ?? '').toString();
     final rawBlock = (d['blockName'] ?? '').toString();
     final cleanBlock = rawBlock.contains('_') ? rawBlock.split('_').last : rawBlock;
     final unit = (d['unitNumber'] ?? '').toString();
     final flatDisplay = cleanBlock.isNotEmpty && unit.isNotEmpty
         ? '$cleanBlock - $unit'
-        : (unit.isNotEmpty ? unit : 'સોસાયટી');
+        : (unit.isNotEmpty ? unit : 'સોસાયટી'.tr);
     final status = (d['status'] ?? 'pending').toString();
 
     DateTime? entryTime;
@@ -1104,25 +1110,25 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
       case 'approved':
         statusColor = const Color(0xFF047857);
         statusBg = const Color(0xFFECFDF5);
-        statusLabel = "અંદર છે";
+        statusLabel = "અંદર છે".tr;
         statusIcon = Icons.check_circle_rounded;
         break;
       case 'rejected':
         statusColor = const Color(0xFFB91C1C);
         statusBg = const Color(0xFFFEF2F2);
-        statusLabel = "નકારેલ";
+        statusLabel = "નકારેલ".tr;
         statusIcon = Icons.cancel_rounded;
         break;
       case 'checked_out':
         statusColor = const Color(0xFF0F766E);
         statusBg = const Color(0xFFF0FDFA);
-        statusLabel = "બહાર ગયા";
+        statusLabel = "બહાર ગયા".tr;
         statusIcon = Icons.output_rounded;
         break;
       default:
         statusColor = const Color(0xFFB45309);
         statusBg = const Color(0xFFFFFBEB);
-        statusLabel = "પેન્ડિંગ";
+        statusLabel = "પેન્ડિંગ".tr;
         statusIcon = Icons.schedule_rounded;
         break;
     }
@@ -1288,7 +1294,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                           Icon(Icons.schedule_rounded, size: 12, color: Colors.grey.shade500),
                           const SizedBox(width: 3.5),
                           Text(
-                            entryTime != null ? DateFormat('hh:mm a').format(entryTime) : 'સમય નોંધાયેલ નથી',
+                            entryTime != null ? DateFormat('hh:mm a').format(entryTime) : 'સમય નોંધાયેલ નથી'.tr,
                             style: TextStyle(
                               fontSize: 11,
                               color: Colors.grey.shade600,
@@ -1297,7 +1303,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                           ),
                           if (status == 'checked_out' && exitTime != null) ...[
                             const SizedBox(width: 6),
-                            const Text('•', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                            Text('•', style: TextStyle(color: Colors.grey, fontSize: 10)),
                             const SizedBox(width: 6),
                             Icon(Icons.logout_rounded, size: 11, color: Colors.grey.shade600),
                             const SizedBox(width: 3),
@@ -1312,7 +1318,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                           ],
                           if (vehicle.isNotEmpty) ...[
                             const SizedBox(width: 6),
-                            const Text('•', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                            Text('•', style: TextStyle(color: Colors.grey, fontSize: 10)),
                             const SizedBox(width: 6),
                             Icon(Icons.directions_car_rounded, size: 11, color: Colors.grey.shade600),
                             const SizedBox(width: 3),
@@ -1420,15 +1426,15 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
         p.contains('blinkit') ||
         p.contains('zepto') ||
         p.contains('food') ||
-        p.contains('ખાવાનું')) {
+        p.contains('ખાવાનું'.tr)) {
       return (Icons.delivery_dining_rounded, const Color(0xFFEA580C), const Color(0xFFFFF7ED));
     }
     if (p.contains('parcel') ||
         p.contains('courier') ||
         p.contains('amazon') ||
         p.contains('flipkart') ||
-        p.contains('પાર્સલ') ||
-        p.contains('કુરિયર')) {
+        p.contains('પાર્સલ'.tr) ||
+        p.contains('કુરિયર'.tr)) {
       return (Icons.inventory_2_rounded, const Color(0xFFD97706), const Color(0xFFFFFBEB));
     }
     if (p.contains('cab') ||
@@ -1436,15 +1442,15 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
         p.contains('uber') ||
         p.contains('ola') ||
         p.contains('rapido') ||
-        p.contains('કેબ')) {
+        p.contains('કેબ'.tr)) {
       return (Icons.local_taxi_rounded, const Color(0xFF0284C7), const Color(0xFFF0F9FF));
     }
     if (p.contains('service') ||
         p.contains('repair') ||
-        p.contains('સર્વિસ') ||
-        p.contains('રિપેર') ||
-        p.contains('ટેકનિશિયન') ||
-        p.contains('ઇલેક્ટ્રિશિયન')) {
+        p.contains('સર્વિસ'.tr) ||
+        p.contains('રિપેર'.tr) ||
+        p.contains('ટેકનિશિયન'.tr) ||
+        p.contains('ઇલેક્ટ્રિશિયન'.tr)) {
       return (Icons.build_rounded, const Color(0xFF7C3AED), const Color(0xFFF5F3FF));
     }
     return (Icons.people_alt_rounded, const Color(0xFF059669), const Color(0xFFECFDF5));
@@ -1452,9 +1458,9 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
 
   // Detailed Modal Sheet for Visitor
   void _showAdminVisitorDetailSheet(BuildContext context, Map<String, dynamic> d, String docId) {
-    final name = (d['name'] ?? 'મુલાકાતી').toString();
+    final name = (d['name'] ?? 'મુલાકાતી'.tr).toString();
     final phone = (d['phone'] ?? '').toString();
-    final purpose = (d['purpose'] ?? 'મુલાકાત').toString();
+    final purpose = (d['purpose'] ?? 'મુલાકાત'.tr).toString();
     final photoUrl = (d['photoUrl'] ?? '').toString();
     final vehicle = (d['vehicleNo'] ?? d['vehicleNumber'] ?? d['vehicle'] ?? '').toString();
     final rawBlock = (d['blockName'] ?? '').toString();
@@ -1462,16 +1468,16 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
     final unit = (d['unitNumber'] ?? '').toString();
     final flatDisplay = cleanBlock.isNotEmpty && unit.isNotEmpty
         ? '$cleanBlock - $unit'
-        : (unit.isNotEmpty ? unit : 'સોસાયટી');
+        : (unit.isNotEmpty ? unit : 'સોસાયટી'.tr);
     final status = (d['status'] ?? 'pending').toString();
     final entryTs = d['entryTime'] as Timestamp?;
     final exitTs = d['exitTime'] as Timestamp?;
 
     final (statusLabel, statusColor, statusBg) = switch (status) {
-      'approved' => ('અંદર છે (Approved)', const Color(0xFF047857), const Color(0xFFECFDF5)),
-      'rejected' => ('નકારેલ (Rejected)', const Color(0xFFB91C1C), const Color(0xFFFEF2F2)),
-      'checked_out' => ('બહાર ગયા (Checked Out)', const Color(0xFF0F766E), const Color(0xFFF0FDFA)),
-      _ => ('પેન્ડિંગ (Pending)', const Color(0xFFB45309), const Color(0xFFFFFBEB)),
+      'approved' => ('અંદર છે (Approved)'.tr, const Color(0xFF047857), const Color(0xFFECFDF5)),
+      'rejected' => ('નકારેલ (Rejected)'.tr, const Color(0xFFB91C1C), const Color(0xFFFEF2F2)),
+      'checked_out' => ('બહાર ગયા (Checked Out)'.tr, const Color(0xFF0F766E), const Color(0xFFF0FDFA)),
+      _ => ('પેન્ડિંગ (Pending)'.tr, const Color(0xFFB45309), const Color(0xFFFFFBEB)),
     };
 
     showModalBottomSheet(
@@ -1528,7 +1534,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        "ગંતવ્ય: $flatDisplay",
+                        "ગંતવ્ય: $flatDisplay".tr,
                         style: const TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
@@ -1568,14 +1574,14 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
               ),
               child: Column(
                 children: [
-                  _detailRow('મુલાકાત હેતુ:', purpose),
+                  _detailRow('મુલાકાત હેતુ:'.tr, purpose),
                   if (phone.isNotEmpty) ...[
                     const Divider(height: 18, color: Color(0xFFE2E8F0)),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'મોબાઇલ નંબર:',
+                        Text(
+                          'મોબાઇલ નંબર:'.tr,
                           style: TextStyle(
                             fontSize: 12.5,
                             color: Color(0xFF64748B),
@@ -1604,19 +1610,19 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                   ],
                   if (vehicle.isNotEmpty) ...[
                     const Divider(height: 18, color: Color(0xFFE2E8F0)),
-                    _detailRow('વાહન નંબર:', vehicle),
+                    _detailRow('વાહન નંબર:'.tr, vehicle),
                   ],
                   if (entryTs != null) ...[
                     const Divider(height: 18, color: Color(0xFFE2E8F0)),
                     _detailRow(
-                      'પ્રવેશ સમય:',
+                      'પ્રવેશ સમય:'.tr,
                       DateFormat('dd MMM yyyy, hh:mm a').format(entryTs.toDate()),
                     ),
                   ],
                   if (exitTs != null) ...[
                     const Divider(height: 18, color: Color(0xFFE2E8F0)),
                     _detailRow(
-                      'બહાર નીકળ્યા:',
+                      'બહાર નીકળ્યા:'.tr,
                       DateFormat('dd MMM yyyy, hh:mm a').format(exitTs.toDate()),
                     ),
                   ],
@@ -1633,7 +1639,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () => _makePhoneCall(phone),
                       icon: const Icon(Icons.phone_in_talk_rounded, size: 16),
-                      label: const Text('કૉલ કરો', style: TextStyle(fontWeight: FontWeight.w800)),
+                      label: Text('કૉલ કરો'.tr, style: TextStyle(fontWeight: FontWeight.w800)),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF059669),
                         side: const BorderSide(color: Color(0xFF059669)),
@@ -1654,14 +1660,14 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                           'exitTime': FieldValue.serverTimestamp(),
                         });
                         messenger.showSnackBar(
-                          const SnackBar(
-                            content: Text("મુલાકાતી બહાર ગયા તરીકે નોંધાયા."),
+                          SnackBar(
+                            content: Text("મુલાકાતી બહાર ગયા તરીકે નોંધાયા.".tr),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
                       },
                       icon: const Icon(Icons.output_rounded, size: 16),
-                      label: const Text('એક્ઝિટ માર્ક કરો', style: TextStyle(fontWeight: FontWeight.w800)),
+                      label: Text('એક્ઝિટ માર્ક કરો'.tr, style: TextStyle(fontWeight: FontWeight.w800)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0D9488),
                         foregroundColor: Colors.white,

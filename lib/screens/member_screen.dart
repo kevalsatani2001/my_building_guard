@@ -94,7 +94,7 @@ class _MemberScreenState extends State<MemberScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            status == 'approved' ? 'મુલાકાતીને પ્રવેશ મંજૂરી અપાઈ.' : 'મુલાકાતી પ્રવેશ નકારવામાં આવ્યો.',
+            status == 'approved' ? 'મુલાકાતીને પ્રવેશ મંજૂરી અપાઈ.'.tr : 'મુલાકાતી પ્રવેશ નકારવામાં આવ્યો.'.tr,
           ),
           backgroundColor: status == 'approved' ? const Color(0xFF059669) : const Color(0xFFDC2626),
           behavior: SnackBarBehavior.floating,
@@ -147,8 +147,8 @@ class _MemberScreenState extends State<MemberScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'ઇમરજન્સી SOS મદદ',
+                Text(
+                  'ઇમરજન્સી SOS મદદ'.tr,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 19,
@@ -158,8 +158,8 @@ class _MemberScreenState extends State<MemberScreen> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'તાત્કાલિક સુરક્ષા સહાયતા એલર્ટ',
+                Text(
+                  'તાત્કાલિક સુરક્ષા સહાયતા એલર્ટ'.tr,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12.5,
@@ -176,13 +176,13 @@ class _MemberScreenState extends State<MemberScreen> {
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: const Color(0xFFFECACA), width: 1.2),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
                       Icon(Icons.notifications_active_rounded, color: Color(0xFFDC2626), size: 18),
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'એડમિન અને સોસાયટી ગેટ વોચમેનને સાયરન સાથે તાત્કાલિક એલર્ટ પુશ નોટિફિકેશન જશે.',
+                          'એડમિન અને સોસાયટી ગેટ વોચમેનને સાયરન સાથે તાત્કાલિક એલર્ટ પુશ નોટિફિકેશન જશે.'.tr,
                           style: TextStyle(
                             fontSize: 11.5,
                             color: Color(0xFF991B1B),
@@ -201,9 +201,9 @@ class _MemberScreenState extends State<MemberScreen> {
                   maxLines: 2,
                   style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A)),
                   decoration: InputDecoration(
-                    labelText: 'સમસ્યા અથવા વિગત (વૈકલ્પિક)',
+                    labelText: 'સમસ્યા અથવા વિગત (વૈકલ્પિક)'.tr,
                     labelStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
-                    hintText: 'દા.ત. તબિયત ખરાબ છે, લિફ્ટ સમસ્યા, સુરક્ષા...',
+                    hintText: 'દા.ત. તબિયત ખરાબ છે, લિફ્ટ સમસ્યા, સુરક્ષા...'.tr,
                     hintStyle: TextStyle(fontSize: 12, color: Colors.grey.shade400),
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
@@ -236,8 +236,8 @@ class _MemberScreenState extends State<MemberScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text(
-                          'રદ કરો',
+                        child: Text(
+                          'રદ કરો'.tr,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -268,13 +268,13 @@ class _MemberScreenState extends State<MemberScreen> {
                               ),
                             ],
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.emergency_share_rounded, color: Colors.white, size: 16),
                               SizedBox(width: 5),
                               Text(
-                                'હા, SOS મોકલો',
+                                'હા, SOS મોકલો'.tr,
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,
@@ -300,7 +300,7 @@ class _MemberScreenState extends State<MemberScreen> {
           .doc(currentUserId)
           .get();
       final d = userDoc.data() ?? {};
-      final name = d['name'] ?? 'મેમ્બર';
+      final name = d['name'] ?? 'મેમ્બર'.tr;
       final block = d['blockName'] ?? '';
       final unit = d['unitNumber'] ?? '';
       final flat = [
@@ -309,8 +309,8 @@ class _MemberScreenState extends State<MemberScreen> {
       ].where((e) => e.toString().isNotEmpty).join('-');
       final note = noteC.text.trim();
       final bodyBase =
-          '$name — ઘર: ${flat.isEmpty ? "?" : flat}. મેમ્બર ઇમરજન્સી માંગે છે.';
-      final body = note.isEmpty ? bodyBase : '$bodyBase\nવિગત: $note';
+          '$name — ઘર: ${flat.isEmpty ? "?" : flat}. મેમ્બર ઇમરજન્સી માંગે છે.'.tr;
+      final body = note.isEmpty ? bodyBase : '$bodyBase\nવિગત: $note'.tr;
 
       final app = await ensureDefaultFirebaseApp();
       final functions = FirebaseFunctions.instanceFor(
@@ -323,21 +323,21 @@ class _MemberScreenState extends State<MemberScreen> {
       );
       await callable.call<Map<String, dynamic>>({
         'topicKind': 'admins',
-        'title': '🚨 મેમ્બર ઇમરજન્સી',
+        'title': '🚨 મેમ્બર ઇમરજન્સી'.tr,
         'body': body,
         'type': 'member_emergency',
       });
       await callable.call<Map<String, dynamic>>({
         'topicKind': 'watchmen',
-        'title': '🚨 મેમ્બર ઇમરજન્સી (ગેટ)',
+        'title': '🚨 મેમ્બર ઇમરજન્સી (ગેટ)'.tr,
         'body': body,
         'type': 'member_emergency',
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('મદદની સૂચના એડમિન અને ગેટને સફળતાપૂર્વક મોકલાઈ.'),
+          SnackBar(
+            content: Text('મદદની સૂચના એડમિન અને ગેટને સફળતાપૂર્વક મોકલાઈ.'.tr),
             backgroundColor: Color(0xFF059669),
             behavior: SnackBarBehavior.floating,
           ),
@@ -350,13 +350,13 @@ class _MemberScreenState extends State<MemberScreen> {
             ? '${e.code}: $detail'
             : e.code;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ભૂલ: $line'), backgroundColor: Colors.red),
+          SnackBar(content: Text('ભૂલ: $line'.tr), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ભૂલ: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('ભૂલ: $e'.tr), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -397,7 +397,7 @@ class _MemberScreenState extends State<MemberScreen> {
   void _showMyVehiclesDialog() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const MemberVehiclesScreen()),
+      MaterialPageRoute(builder: (_) => MemberVehiclesScreen()),
     );
   }
 
@@ -421,7 +421,7 @@ class _MemberScreenState extends State<MemberScreen> {
       stream: _userStream,
       builder: (context, userSnap) {
         final userData = userSnap.data?.data() as Map<String, dynamic>? ?? {};
-        final memberName = userData['name']?.toString() ?? 'મેમ્બર';
+        final memberName = userData['name']?.toString() ?? 'મેમ્બર'.tr;
         final blockName = userData['blockName']?.toString() ?? '';
         final unitNumber = userData['unitNumber']?.toString() ?? '';
         final flatDisplay = [blockName, unitNumber].where((s) => s.isNotEmpty).join(' • ');
@@ -548,9 +548,9 @@ class _MemberScreenState extends State<MemberScreen> {
                               child: const Icon(Icons.shield_rounded, color: Colors.white, size: 16),
                             ),
                             const SizedBox(width: 9),
-                            const Text(
-                              "તાજેતરના મુલાકાતીઓ",
-                              style: TextStyle(
+                            Text(
+                              AppStrings.get('recent_visitors'),
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w900,
                                 color: Color(0xFF0F172A),
@@ -578,19 +578,19 @@ class _MemberScreenState extends State<MemberScreen> {
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(color: const Color(0xFF99F6E4), width: 1),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    "બધા જુઓ",
-                                    style: TextStyle(
+                                    AppStrings.get('view_all'),
+                                    style: const TextStyle(
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w800,
                                       color: Color(0xFF0F766E),
                                     ),
                                   ),
-                                  SizedBox(width: 3),
-                                  Icon(Icons.arrow_forward_ios_rounded, size: 9, color: Color(0xFF0F766E)),
+                                  const SizedBox(width: 3),
+                                  const Icon(Icons.arrow_forward_ios_rounded, size: 9, color: Color(0xFF0F766E)),
                                 ],
                               ),
                             ),
@@ -648,102 +648,96 @@ class _MemberScreenState extends State<MemberScreen> {
       elevation: 0,
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
-      titleSpacing: 16,
+      titleSpacing: 12,
       shape: const Border(
         bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.2),
       ),
       title: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF0D9488), Color(0xFF14B8A6)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
                   color: const Color(0xFF0D9488).withValues(alpha: 0.25),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
-            child: const Icon(Icons.apartment_rounded, color: Colors.white, size: 22),
+            child: const Icon(Icons.apartment_rounded, color: Colors.white, size: 20),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
+                Text(
+                  AppStrings.get('my_society'),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.3,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 1.5),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Flexible(
-                      child: Text(
-                        "માય સોસાયટી",
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.3,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                    ),
                     if (flatDisplay.isNotEmpty) ...[
-                      const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                         decoration: BoxDecoration(
                           color: const Color(0xFFEEF2FF),
-                          borderRadius: BorderRadius.circular(7),
-                          border: Border.all(color: const Color(0xFFC7D2FE)),
+                          borderRadius: BorderRadius.circular(5),
+                          border: Border.all(color: const Color(0xFFC7D2FE), width: 0.8),
                         ),
                         child: Text(
                           flatDisplay,
                           style: const TextStyle(
-                            fontSize: 10.5,
+                            fontSize: 9.5,
                             fontWeight: FontWeight.w800,
                             color: Color(0xFF4338CA),
                             letterSpacing: 0.2,
                           ),
                         ),
                       ),
+                      const SizedBox(width: 4.5),
                     ],
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
                     Container(
-                      width: 6.5,
-                      height: 6.5,
+                      width: 5.5,
+                      height: 5.5,
                       decoration: BoxDecoration(
                         color: const Color(0xFF10B981),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
                             color: const Color(0xFF10B981).withValues(alpha: 0.5),
-                            blurRadius: 4,
+                            blurRadius: 3,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 5),
-                    const Flexible(
+                    const SizedBox(width: 4),
+                    Flexible(
                       child: Text(
-                        "મેમ્બર પોર્ટલ • ૨૪×૭ સુરક્ષિત નિવાસ",
+                        AppStrings.get('member_portal'),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
-                        style: TextStyle(
-                          fontSize: 10.5,
+                        style: const TextStyle(
+                          fontSize: 10,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF64748B),
                         ),
@@ -758,61 +752,48 @@ class _MemberScreenState extends State<MemberScreen> {
       ),
       actions: [
         Padding(
-          padding: const EdgeInsets.only(right: 14),
+          padding: const EdgeInsets.only(right: 8),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Emergency SOS Glowing Button
+              // Emergency SOS Glowing Button (Compact 34x34)
               Tooltip(
-                message: 'ઇમરજન્સી SOS મદદ',
+                message: 'ઇમરજન્સી SOS મદદ'.tr,
                 child: InkWell(
                   onTap: _showMemberEmergencyDialog,
-                  borderRadius: BorderRadius.circular(11),
+                  borderRadius: BorderRadius.circular(10),
                   child: Container(
-                    height: 38,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    width: 34,
+                    height: 34,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFFDC2626), Color(0xFFEF4444)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(11),
+                      borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFFDC2626).withValues(alpha: 0.35),
-                          blurRadius: 8,
+                          blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.emergency_share_rounded,
-                          size: 16,
-                          color: Colors.white,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          "SOS",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
+                    child: const Center(
+                      child: Icon(
+                        Icons.sos_rounded,
+                        size: 19,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 5),
               // Notification Bell Button with live stream count
               Tooltip(
-                message: 'નોટિફિકેશન અને એલર્ટ્સ',
+                message: 'નોટિફિકેશન અને એલર્ટ્સ'.tr,
                 child: StreamBuilder<QuerySnapshot>(
                   stream: AppFirestore.instance
                       .collection('notifications')
@@ -836,18 +817,18 @@ class _MemberScreenState extends State<MemberScreen> {
 
                     return InkWell(
                       onTap: () => MemberNotificationsSheet.show(context, userBlock: blockName),
-                      borderRadius: BorderRadius.circular(11),
+                      borderRadius: BorderRadius.circular(10),
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
                           Container(
-                            width: 38,
-                            height: 38,
+                            width: 34,
+                            height: 34,
                             decoration: BoxDecoration(
                               color: unreadCount > 0
                                   ? const Color(0xFFF0FDFA)
                                   : const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(11),
+                              borderRadius: BorderRadius.circular(10),
                               border: Border.all(
                                 color: unreadCount > 0
                                     ? const Color(0xFF99F6E4)
@@ -859,7 +840,7 @@ class _MemberScreenState extends State<MemberScreen> {
                               unreadCount > 0
                                   ? Icons.notifications_active_rounded
                                   : Icons.notifications_none_rounded,
-                              size: 19,
+                              size: 18,
                               color: unreadCount > 0
                                   ? const Color(0xFF0F766E)
                                   : const Color(0xFF64748B),
@@ -867,22 +848,22 @@ class _MemberScreenState extends State<MemberScreen> {
                           ),
                           if (unreadCount > 0)
                             Positioned(
-                              top: -3,
-                              right: -3,
+                              top: -2,
+                              right: -2,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 1.5),
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF0F766E),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: Colors.white, width: 1.5),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.white, width: 1.2),
                                 ),
-                                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
                                 child: Text(
                                   unreadCount > 9 ? '9+' : '$unreadCount',
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 8.5,
+                                    fontSize: 8,
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
@@ -894,33 +875,35 @@ class _MemberScreenState extends State<MemberScreen> {
                   },
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 5),
+              // Multi-language switch button (GU / HI / EN)
+              const LanguageSwitchButton(),
+              const SizedBox(width: 5),
               // Logout Button
               Tooltip(
-                message: 'લોગઆઉટ',
+                message: 'લોગઆઉટ'.tr,
                 child: InkWell(
                   onTap: () async {
                     final confirm = await PremiumLogoutDialog.show(
                       context,
-                      roleName: 'મેમ્બર પોર્ટલ',
+                      roleName: 'મેમ્બર પોર્ટલ'.tr,
                     );
-                    if (confirm) {
-                      await SessionGuardService.instance.clearSession();
-                      await FirebaseAuth.instance.signOut();
+                    if (confirm && mounted) {
+                      await SessionGuardService.performAppLogout(context);
                     }
                   },
-                  borderRadius: BorderRadius.circular(11),
+                  borderRadius: BorderRadius.circular(10),
                   child: Container(
-                    width: 38,
-                    height: 38,
+                    width: 34,
+                    height: 34,
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(11),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
                     ),
                     child: const Icon(
                       Icons.logout_rounded,
-                      size: 18,
+                      size: 17,
                       color: Color(0xFF64748B),
                     ),
                   ),
@@ -1045,7 +1028,7 @@ class _MemberScreenState extends State<MemberScreen> {
                               children: [
                                 Flexible(
                                   child: Text(
-                                    "નમસ્તે, $name",
+                                    "${'namaste'.tr}, $name",
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       color: Colors.white,
@@ -1061,7 +1044,7 @@ class _MemberScreenState extends State<MemberScreen> {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              flat.isNotEmpty ? "રહેવાસી • ફ્લેટ: $flat" : "સોસાયટી માન્ય સભ્ય",
+                              flat.isNotEmpty ? "${'resident'.tr} • ${'flat_label'.tr}: $flat" : 'verified_society_member'.tr,
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.8),
                                 fontSize: 12.5,
@@ -1079,13 +1062,13 @@ class _MemberScreenState extends State<MemberScreen> {
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.shield_rounded, size: 12, color: Color(0xFF34D399)),
                             SizedBox(width: 4),
                             Text(
-                              "લાઈવ ગેટ",
+                              "લાઈવ ગેટ".tr,
                               style: TextStyle(
                                 color: Color(0xFF34D399),
                                 fontSize: 10.5,
@@ -1119,7 +1102,7 @@ class _MemberScreenState extends State<MemberScreen> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              "$pending મુલાકાતી ગેટ પર તમારી મંજૂરીની રાહ જુએ છે!",
+                              "$pending મુલાકાતી ગેટ પર તમારી મંજૂરીની રાહ જુએ છે!".tr,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12.5,
@@ -1146,8 +1129,8 @@ class _MemberScreenState extends State<MemberScreen> {
       children: [
         Expanded(
           child: _statCard(
-            title: "પેન્ડિંગ",
-            subtitle: "પ્રતીક્ષા",
+            title: "પેન્ડિંગ".tr,
+            subtitle: "પ્રતીક્ષા".tr,
             count: pending,
             icon: Icons.hourglass_top_rounded,
             color: const Color(0xFFD97706),
@@ -1164,8 +1147,8 @@ class _MemberScreenState extends State<MemberScreen> {
         const SizedBox(width: 10),
         Expanded(
           child: _statCard(
-            title: "મંજૂર કરેલ",
-            subtitle: "માન્ય મુલાકાતી",
+            title: "મંજૂર કરેલ".tr,
+            subtitle: "માન્ય મુલાકાતી".tr,
             count: approved,
             icon: Icons.check_circle_rounded,
             color: const Color(0xFF059669),
@@ -1182,8 +1165,8 @@ class _MemberScreenState extends State<MemberScreen> {
         const SizedBox(width: 10),
         Expanded(
           child: _statCard(
-            title: "બહાર ગયા",
-            subtitle: "રવાના થયેલ",
+            title: "બહાર ગયા".tr,
+            subtitle: "રવાના થયેલ".tr,
             count: out,
             icon: Icons.output_rounded,
             color: const Color(0xFF475569),
@@ -1283,8 +1266,8 @@ class _MemberScreenState extends State<MemberScreen> {
           children: [
             Expanded(
               child: _primaryActionCard(
-                title: "ગેસ્ટ પાસ (QR)",
-                subtitle: "પ્રી-એપ્રુવલ પાસ",
+                title: AppStrings.get('guest_pass_title'),
+                subtitle: AppStrings.get('guest_pass_sub'),
                 icon: Icons.qr_code_2_rounded,
                 gradient: const [Color(0xFF312E81), Color(0xFF4338CA), Color(0xFF4F46E5)],
                 onTap: _showPreApproveDialog,
@@ -1293,8 +1276,8 @@ class _MemberScreenState extends State<MemberScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: _primaryActionCard(
-                title: "મેન્ટેનન્સ બિલ",
-                subtitle: "ઓનલાઇન પે & રસીદ",
+                title: AppStrings.get('maintenance_bill_title'),
+                subtitle: AppStrings.get('maintenance_bill_sub'),
                 icon: Icons.receipt_long_rounded,
                 gradient: const [Color(0xFF064E3B), Color(0xFF0D9488), Color(0xFF10B981)],
                 onTap: () => _showMaintenancePortal(),
@@ -1308,8 +1291,8 @@ class _MemberScreenState extends State<MemberScreen> {
           children: [
             Expanded(
               child: _secondaryActionCard(
-                title: "ફરિયાદ",
-                subtitle: "સહાય & નિકાલ",
+                title: AppStrings.get('complaint_action_title'),
+                subtitle: AppStrings.get('complaint_action_sub'),
                 icon: Icons.campaign_rounded,
                 color: const Color(0xFF7C3AED),
                 gradient: const [Color(0xFFFAF5FF), Color(0xFFF3E8FF)],
@@ -1320,8 +1303,8 @@ class _MemberScreenState extends State<MemberScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: _secondaryActionCard(
-                title: "કાયમી સ્ટાફ",
-                subtitle: "મેઇડ, ડ્રાઇવર",
+                title: AppStrings.get('daily_staff_title'),
+                subtitle: AppStrings.get('daily_staff_sub'),
                 icon: Icons.badge_rounded,
                 color: const Color(0xFFD97706),
                 gradient: const [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
@@ -1332,8 +1315,8 @@ class _MemberScreenState extends State<MemberScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: _secondaryActionCard(
-                title: "વાહનો & સ્લોટ",
-                subtitle: "પાર્કિંગ કંટ્રોલ",
+                title: AppStrings.get('vehicles_action_title'),
+                subtitle: AppStrings.get('vehicles_action_sub'),
                 icon: Icons.directions_car_rounded,
                 color: const Color(0xFF0284C7),
                 gradient: const [Color(0xFFF0F9FF), Color(0xFFE0F2FE)],
@@ -1391,22 +1374,22 @@ class _MemberScreenState extends State<MemberScreen> {
                     child: const Icon(Icons.account_balance_rounded, color: Colors.white, size: 20),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "સોસાયટી હિસાબ & તિજોરી ફંડ",
-                          style: TextStyle(
+                          AppStrings.get('society_accounts_title'),
+                          style: const TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w900,
                             color: Color(0xFF0F766E),
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          "બચત, વોચમેન પગાર, સફાઈ, લાઈટ બિલ & ખર્ચ વિગત",
-                          style: TextStyle(
+                          AppStrings.get('society_accounts_sub'),
+                          style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF475569),
@@ -1424,19 +1407,19 @@ class _MemberScreenState extends State<MemberScreen> {
                       color: const Color(0xFF0F766E),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          "હિસાબ જુઓ",
-                          style: TextStyle(
+                          AppStrings.get('view_accounts_btn'),
+                          style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
                           ),
                         ),
-                        SizedBox(width: 3),
-                        Icon(Icons.arrow_forward_ios_rounded, size: 9, color: Colors.white),
+                        const SizedBox(width: 3),
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 9, color: Colors.white),
                       ],
                     ),
                   ),
@@ -1493,22 +1476,22 @@ class _MemberScreenState extends State<MemberScreen> {
                     child: const Icon(Icons.how_to_vote_rounded, color: Colors.white, size: 20),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "સોસાયટી નિર્ણય મતદાન (Polls)",
-                          style: TextStyle(
+                          AppStrings.get('society_polls_card_title'),
+                          style: const TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w900,
                             color: Color(0xFF6D28D9),
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          "નવા સોસાયટી નિર્ણયો અને આયોજન માટે આપનો મત આપો",
-                          style: TextStyle(
+                          AppStrings.get('society_polls_card_sub'),
+                          style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF475569),
@@ -1526,19 +1509,19 @@ class _MemberScreenState extends State<MemberScreen> {
                       color: const Color(0xFF7C3AED),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          "મત આપો",
-                          style: TextStyle(
+                          AppStrings.get('vote_now_btn'),
+                          style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
                           ),
                         ),
-                        SizedBox(width: 3),
-                        Icon(Icons.arrow_forward_ios_rounded, size: 9, color: Colors.white),
+                        const SizedBox(width: 3),
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 9, color: Colors.white),
                       ],
                     ),
                   ),
@@ -1602,12 +1585,12 @@ class _MemberScreenState extends State<MemberScreen> {
                           child: const Icon(Icons.domain_rounded, color: Colors.white, size: 20),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "એમેનિટીઝ & વાડી બુકિંગ",
+                                "એમેનિટીઝ & વાડી બુકિંગ".tr,
                                 style: TextStyle(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w900,
@@ -1616,7 +1599,7 @@ class _MemberScreenState extends State<MemberScreen> {
                               ),
                               SizedBox(height: 2),
                               Text(
-                                "વાડી, ક્લબહાઉસ કે ટેરેસ સ્લોટ બુક કરો અને ગેટ પાસ મેળવો",
+                                "વાડી, ક્લબહાઉસ કે ટેરેસ સ્લોટ બુક કરો અને ગેટ પાસ મેળવો".tr,
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
@@ -1635,11 +1618,11 @@ class _MemberScreenState extends State<MemberScreen> {
                             color: const Color(0xFF16A34A),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                "બુક કરો",
+                                "બુક કરો".tr,
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w800,
@@ -1726,8 +1709,8 @@ class _MemberScreenState extends State<MemberScreen> {
                         children: [
                           Row(
                             children: [
-                              const Text(
-                                "રાત્રિ સુરક્ષા ઓડિટ (Night Patrol)",
+                              Text(
+                                "રાત્રિ સુરક્ષા ઓડિટ (Night Patrol)".tr,
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w900,
@@ -1778,11 +1761,11 @@ class _MemberScreenState extends State<MemberScreen> {
                         color: Colors.white.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            "રિપોર્ટ",
+                            "રિપોર્ટ".tr,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
@@ -1834,16 +1817,16 @@ class _MemberScreenState extends State<MemberScreen> {
                     child: const Icon(Icons.verified_user_rounded, color: Color(0xFF4F46E5), size: 24),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'સોસાયટી સુરક્ષા પ્રમાણપત્ર',
+                          'સોસાયટી સુરક્ષા પ્રમાણપત્ર'.tr,
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
                         ),
                         Text(
-                          'વોચમેન ૨૪x૭ રાત્રિ પેટ્રોલિંગ ઓડિટ સ્ટેટસ',
+                          'વોચમેન ૨૪x૭ રાત્રિ પેટ્રોલિંગ ઓડિટ સ્ટેટસ'.tr,
                           style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                         ),
                       ],
@@ -1868,16 +1851,16 @@ class _MemberScreenState extends State<MemberScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('સુરક્ષા કમ્પ્લાયન્સ:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        Text('$compliance% સુરક્ષિત', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                        Text('સુરક્ષા કમ્પ્લાયન્સ:'.tr, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text('$compliance% સુરક્ષિત'.tr, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('રાત્રિ પેટ્રોલિંગ રાઉન્ડ:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                        Text('$completed / $target રાઉન્ડ પૂર્ણ', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        Text('રાત્રિ પેટ્રોલિંગ રાઉન્ડ:'.tr, style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        Text('$completed / $target રાઉન્ડ પૂર્ણ'.tr, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     if (lastPatrol != null) ...[
@@ -1885,7 +1868,7 @@ class _MemberScreenState extends State<MemberScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('છેલ્લો રાઉન્ડ:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                          Text('છેલ્લો રાઉન્ડ:'.tr, style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                           Text('${lastPatrol.guardName} (${DateFormat('hh:mm a').format(lastPatrol.startTime)})',
                               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         ],
@@ -1895,13 +1878,13 @@ class _MemberScreenState extends State<MemberScreen> {
                 ),
               ),
               const SizedBox(height: 14),
-              const Row(
+              Row(
                 children: [
                   Icon(Icons.check_circle, size: 16, color: Color(0xFF10B981)),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'મુખ્ય ગેટ, ટેરેસ, બેઝમેન્ટ પાર્કિંગ & પંપ રૂમ સુરક્ષિત રીતે તપાસવામાં આવ્યા છે.',
+                      'મુખ્ય ગેટ, ટેરેસ, બેઝમેન્ટ પાર્કિંગ & પંપ રૂમ સુરક્ષિત રીતે તપાસવામાં આવ્યા છે.'.tr,
                       style: TextStyle(fontSize: 11.5, color: Color(0xFF475569), fontWeight: FontWeight.w500),
                     ),
                   ),
@@ -1916,7 +1899,7 @@ class _MemberScreenState extends State<MemberScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('સમજાયું (ઓકે)'),
+                  child: Text('સમજાયું (ઓકે)'.tr),
                 ),
               ),
             ],
@@ -2093,11 +2076,11 @@ class _MemberScreenState extends State<MemberScreen> {
 
   Widget _buildFilterControlHeader() {
     final timeLabel = switch (_visitorTimeFilter) {
-      'today' => 'આજે',
-      '7d' => '૭ દિવસ',
-      '30d' => '૩૦ દિવસ',
-      'all' => 'બધો સમય',
-      _ => '૩૦ દિવસ',
+      'today' => 'આજે'.tr,
+      '7d' => '૭ દિવસ'.tr,
+      '30d' => '૩૦ દિવસ'.tr,
+      'all' => 'બધો સમય'.tr,
+      _ => '૩૦ દિવસ'.tr,
     };
 
     return Row(
@@ -2115,8 +2098,8 @@ class _MemberScreenState extends State<MemberScreen> {
               child: const Icon(Icons.filter_list_rounded, size: 14, color: Color(0xFF475569)),
             ),
             const SizedBox(width: 8),
-            const Text(
-              "સ્થિતિ ફિલ્ટર",
+            Text(
+              "સ્થિતિ ફિલ્ટર".tr,
               style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w800,
@@ -2169,10 +2152,10 @@ class _MemberScreenState extends State<MemberScreen> {
 
   void _showTimeFilterModal() {
     final options = [
-      ('today', 'આજે', 'આજના તમામ મુલાકાતીઓ', Icons.today_rounded),
-      ('7d', 'છેલ્લા ૭ દિવસ', 'છેલ્લા એક અઠવાડિયાની વિગત', Icons.date_range_rounded),
-      ('30d', 'છેલ્લા ૩૦ દિવસ', 'ચાલુ માસની મુલાકાતો', Icons.calendar_month_rounded),
-      ('all', 'બધો સમય', 'તમામ ઐતિહાસિક રેકોર્ડ્સ', Icons.all_inclusive_rounded),
+      ('today', 'આજે'.tr, 'આજના તમામ મુલાકાતીઓ'.tr, Icons.today_rounded),
+      ('7d', 'છેલ્લા ૭ દિવસ'.tr, 'છેલ્લા એક અઠવાડિયાની વિગત'.tr, Icons.date_range_rounded),
+      ('30d', 'છેલ્લા ૩૦ દિવસ'.tr, 'ચાલુ માસની મુલાકાતો'.tr, Icons.calendar_month_rounded),
+      ('all', 'બધો સમય'.tr, 'તમામ ઐતિહાસિક રેકોર્ડ્સ'.tr, Icons.all_inclusive_rounded),
     ];
 
     showModalBottomSheet(
@@ -2200,12 +2183,12 @@ class _MemberScreenState extends State<MemberScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            const Row(
+            Row(
               children: [
                 Icon(Icons.calendar_month_rounded, color: Color(0xFF0F766E), size: 20),
                 SizedBox(width: 8),
                 Text(
-                  "સમયગાળો પસંદ કરો (Time Range)",
+                  "સમયગાળો પસંદ કરો (Time Range)".tr,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w900,
@@ -2275,11 +2258,11 @@ class _MemberScreenState extends State<MemberScreen> {
 
   Widget _buildStatusFilterTabs(int total, int pending, int approved, int rejected, int out) {
     final tabs = [
-      ('all', 'બધા', total, Icons.grid_view_rounded, const Color(0xFF0F172A), const Color(0xFFF1F5F9)),
-      ('pending', 'પેન્ડિંગ', pending, Icons.hourglass_top_rounded, const Color(0xFFD97706), const Color(0xFFFEF3C7)),
-      ('approved', 'મંજૂર', approved, Icons.check_circle_rounded, const Color(0xFF059669), const Color(0xFFD1FAE5)),
-      ('checked_out', 'બહાર ગયા', out, Icons.logout_rounded, const Color(0xFF475569), const Color(0xFFF1F5F9)),
-      ('rejected', 'અસ્વીકાર', rejected, Icons.cancel_rounded, const Color(0xFFE11D48), const Color(0xFFFFE4E6)),
+      ('all', 'બધા'.tr, total, Icons.grid_view_rounded, const Color(0xFF0F172A), const Color(0xFFF1F5F9)),
+      ('pending', 'પેન્ડિંગ'.tr, pending, Icons.hourglass_top_rounded, const Color(0xFFD97706), const Color(0xFFFEF3C7)),
+      ('approved', 'મંજૂર'.tr, approved, Icons.check_circle_rounded, const Color(0xFF059669), const Color(0xFFD1FAE5)),
+      ('checked_out', 'બહાર ગયા'.tr, out, Icons.logout_rounded, const Color(0xFF475569), const Color(0xFFF1F5F9)),
+      ('rejected', 'અસ્વીકાર'.tr, rejected, Icons.cancel_rounded, const Color(0xFFE11D48), const Color(0xFFFFE4E6)),
     ];
 
     return SingleChildScrollView(
@@ -2417,7 +2400,7 @@ class _MemberScreenState extends State<MemberScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'મારા ફ્લેટ',
+                      AppStrings.get('scope_my_flat'),
                       style: TextStyle(
                         fontWeight: _visitorScope == 'my_flat' ? FontWeight.w800 : FontWeight.w600,
                         fontSize: 12.5,
@@ -2475,7 +2458,7 @@ class _MemberScreenState extends State<MemberScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'આખી સોસાયટી ગેટ',
+                      AppStrings.get('scope_all_society'),
                       style: TextStyle(
                         fontWeight: _visitorScope == 'all_society' ? FontWeight.w800 : FontWeight.w600,
                         fontSize: 12.5,
@@ -2548,7 +2531,7 @@ class _MemberScreenState extends State<MemberScreen> {
           ),
           const SizedBox(height: 14),
           Text(
-            isMyFlat ? "કોઈ મુલાકાતી બાકી નથી" : "સોસાયટી ગેટ પર કોઈ એન્ટ્રી નથી",
+            isMyFlat ? "કોઈ મુલાકાતી બાકી નથી".tr : "સોસાયટી ગેટ પર કોઈ એન્ટ્રી નથી".tr,
             style: const TextStyle(
               fontWeight: FontWeight.w900,
               fontSize: 16,
@@ -2559,9 +2542,9 @@ class _MemberScreenState extends State<MemberScreen> {
           Text(
             isMyFlat
                 ? (allSocietyCount > 0
-                    ? "તમારા ફ્લેટ માટે કોઈ મુલાકાતી નથી. સોસાયટી ગેટ પર કુલ $allSocietyCount મુલાકાતીઓ નોંધાયેલ છે."
-                    : "તમારા ફ્લેટ માટે તમામ એન્ટ્રી સુરક્ષિત અને અપ-ટૂ-ડેટ છે.")
-                : "પસંદ કરેલ સમયગાળામાં સોસાયટી ગેટ પર કોઈ મુલાકાતી મળ્યા નથી.",
+                    ? "તમારા ફ્લેટ માટે કોઈ મુલાકાતી નથી. સોસાયટી ગેટ પર કુલ $allSocietyCount મુલાકાતીઓ નોંધાયેલ છે.".tr
+                    : "તમારા ફ્લેટ માટે તમામ એન્ટ્રી સુરક્ષિત અને અપ-ટૂ-ડેટ છે.".tr)
+                : "પસંદ કરેલ સમયગાળામાં સોસાયટી ગેટ પર કોઈ મુલાકાતી મળ્યા નથી.".tr,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 12.5,
@@ -2574,7 +2557,7 @@ class _MemberScreenState extends State<MemberScreen> {
             FilledButton.icon(
               onPressed: () => setState(() => _visitorScope = 'all_society'),
               icon: const Icon(Icons.apartment_rounded, size: 16),
-              label: Text('સોસાયટી ગેટ લાઈવ જુઓ ($allSocietyCount)'),
+              label: Text('${"સોસાયટી ગેટ લાઈવ જુઓ".tr} ($allSocietyCount)'.tr),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF4338CA),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -2586,7 +2569,7 @@ class _MemberScreenState extends State<MemberScreen> {
             OutlinedButton.icon(
               onPressed: _showPreApproveDialog,
               icon: const Icon(Icons.qr_code_2_rounded, size: 16),
-              label: const Text('મહેમાન માટે ગેસ્ટ પાસ બનાવો'),
+              label: Text('મહેમાન માટે ગેસ્ટ પાસ બનાવો'.tr),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF0F766E),
                 side: const BorderSide(color: Color(0xFF0F766E)),
@@ -2609,8 +2592,8 @@ class _MemberScreenState extends State<MemberScreen> {
         p.contains('zomato') ||
         p.contains('swiggy') ||
         p.contains('parcel') ||
-        p.contains('પાર્સલ') ||
-        p.contains('ડિલિવરી')) {
+        p.contains('પાર્સલ'.tr) ||
+        p.contains('ડિલિવરી'.tr)) {
       return (Icons.local_shipping_rounded, const Color(0xFFD97706), const Color(0xFFFEF3C7));
     }
     if (p.contains('cab') ||
@@ -2618,8 +2601,8 @@ class _MemberScreenState extends State<MemberScreen> {
         p.contains('uber') ||
         p.contains('ola') ||
         p.contains('auto') ||
-        p.contains('ટેક્સી') ||
-        p.contains('રીક્ષા')) {
+        p.contains('ટેક્સી'.tr) ||
+        p.contains('રીક્ષા'.tr)) {
       return (Icons.local_taxi_rounded, const Color(0xFF2563EB), const Color(0xFFEFF6FF));
     }
     if (p.contains('service') ||
@@ -2627,8 +2610,8 @@ class _MemberScreenState extends State<MemberScreen> {
         p.contains('plumber') ||
         p.contains('electric') ||
         p.contains('maid') ||
-        p.contains('કામવાળા') ||
-        p.contains('રીપેરિંગ')) {
+        p.contains('કામવાળા'.tr) ||
+        p.contains('રીપેરિંગ'.tr)) {
       return (Icons.handyman_rounded, const Color(0xFF7C3AED), const Color(0xFFF5F3FF));
     }
     return (Icons.people_alt_rounded, const Color(0xFF0D9488), const Color(0xFFCCFBF1));
@@ -2703,9 +2686,9 @@ class _MemberScreenState extends State<MemberScreen> {
                         ),
                       ),
                       const SizedBox(width: 7),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'ગેટ પર મંજૂરીની રાહ જુએ છે (Action Required)',
+                          'ગેટ પર મંજૂરીની રાહ જુએ છે (Action Required)'.tr,
                           style: TextStyle(
                             color: Color(0xFF92400E),
                             fontSize: 11,
@@ -2768,7 +2751,7 @@ class _MemberScreenState extends State<MemberScreen> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  visitor.name.isNotEmpty ? visitor.name : "અનામી મુલાકાતી",
+                                  visitor.name.isNotEmpty ? visitor.name : "અનામી મુલાકાતી".tr,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
@@ -2866,12 +2849,12 @@ class _MemberScreenState extends State<MemberScreen> {
                               ),
                               if (visitor.status == 'checked_out' && visitor.exitTime != null) ...[
                                 const SizedBox(width: 8),
-                                const Text('•', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                                Text('•', style: TextStyle(color: Colors.grey, fontSize: 11)),
                                 const SizedBox(width: 8),
                                 Icon(Icons.logout_rounded, size: 12, color: Colors.grey.shade600),
                                 const SizedBox(width: 3),
                                 Text(
-                                  "બહાર: ${DateFormat('hh:mm a').format(visitor.exitTime!)}",
+                                  "બહાર: ${DateFormat('hh:mm a').format(visitor.exitTime!)}".tr,
                                   style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                                 ),
                               ],
@@ -2910,8 +2893,8 @@ class _MemberScreenState extends State<MemberScreen> {
                             child: ElevatedButton.icon(
                               onPressed: () => _updateStatus(visitor.id, 'approved'),
                               icon: const Icon(Icons.check_rounded, color: Colors.white, size: 17),
-                              label: const Text(
-                                'પ્રવેશ મંજૂર',
+                              label: Text(
+                                'પ્રવેશ મંજૂર'.tr,
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
                               ),
                               style: ElevatedButton.styleFrom(
@@ -2930,8 +2913,8 @@ class _MemberScreenState extends State<MemberScreen> {
                           child: OutlinedButton.icon(
                             onPressed: () => _updateStatus(visitor.id, 'rejected'),
                             icon: const Icon(Icons.close_rounded, color: Color(0xFFDC2626), size: 17),
-                            label: const Text(
-                              'નકારો',
+                            label: Text(
+                              'નકારો'.tr,
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFDC2626)),
                             ),
                             style: OutlinedButton.styleFrom(
@@ -2981,10 +2964,10 @@ class _MemberScreenState extends State<MemberScreen> {
 
   Widget _buildStatusAction(VisitorModel visitor) {
     final (color, bgColor, text, icon) = switch (visitor.status) {
-      'approved' => (const Color(0xFF059669), const Color(0xFFECFDF5), 'મંજૂર કરેલ', Icons.check_circle_rounded),
-      'rejected' => (const Color(0xFFDC2626), const Color(0xFFFEF2F2), 'અસ્વીકાર', Icons.cancel_rounded),
-      'checked_out' => (const Color(0xFF475569), const Color(0xFFF1F5F9), 'બહાર ગયા', Icons.output_rounded),
-      _ => (const Color(0xFFD97706), const Color(0xFFFFFBEB), 'પેન્ડિંગ', Icons.hourglass_top_rounded),
+      'approved' => (const Color(0xFF059669), const Color(0xFFECFDF5), 'મંજૂર કરેલ'.tr, Icons.check_circle_rounded),
+      'rejected' => (const Color(0xFFDC2626), const Color(0xFFFEF2F2), 'અસ્વીકાર'.tr, Icons.cancel_rounded),
+      'checked_out' => (const Color(0xFF475569), const Color(0xFFF1F5F9), 'બહાર ગયા'.tr, Icons.output_rounded),
+      _ => (const Color(0xFFD97706), const Color(0xFFFFFBEB), 'પેન્ડિંગ'.tr, Icons.hourglass_top_rounded),
     };
 
     return Container(
@@ -3056,9 +3039,9 @@ class _MemberScreenState extends State<MemberScreen> {
                         child: const Icon(Icons.campaign_rounded, color: Color(0xFFF59E0B), size: 20),
                       ),
                       const SizedBox(width: 10),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          "સોસાયટી પરિપત્ર / નોટિસ",
+                          "સોસાયટી પરિપત્ર / નોટિસ".tr,
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
                         ),
                       ),
@@ -3084,7 +3067,7 @@ class _MemberScreenState extends State<MemberScreen> {
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx),
-                      child: const Text('બંધ કરો', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text('બંધ કરો'.tr, style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -3133,9 +3116,9 @@ class _MemberScreenState extends State<MemberScreen> {
                         child: const Icon(Icons.campaign_rounded, color: Colors.white, size: 16),
                       ),
                       const SizedBox(width: 9),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          "સોસાયટી મહત્વની સૂચના",
+                          "સોસાયટી મહત્વની સૂચના".tr,
                           style: TextStyle(
                             color: Color(0xFFFDE68A),
                             fontWeight: FontWeight.w900,
@@ -3151,13 +3134,13 @@ class _MemberScreenState extends State<MemberScreen> {
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.4)),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.auto_awesome_rounded, size: 10, color: Color(0xFFFDE68A)),
                             SizedBox(width: 3),
                             Text(
-                              "તાજી અપડેટ",
+                              "તાજી અપડેટ".tr,
                               style: TextStyle(
                                 color: Color(0xFFFDE68A),
                                 fontSize: 9.5,
@@ -3171,7 +3154,7 @@ class _MemberScreenState extends State<MemberScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    title,
+                    title.tr,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14.5,

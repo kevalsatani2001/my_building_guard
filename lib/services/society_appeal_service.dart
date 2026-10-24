@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'notification_service.dart';
+import 'package:building_guard/l10n/app_strings.dart';
 
 class SocietyAppealService {
   SocietyAppealService._();
@@ -23,7 +24,7 @@ class SocietyAppealService {
   }) async {
     final cleanMsg = message.trim();
     if (cleanMsg.isEmpty) {
-      throw Exception("કૃપા કરીને અપીલ સંદેશો લખો.");
+      throw Exception("કૃપા કરીને અપીલ સંદેશો લખો.".tr);
     }
 
     final appealRef = _db.collection('society_appeals').doc();
@@ -47,11 +48,14 @@ class SocietyAppealService {
       'repliedAt': null,
     });
 
-    // Send Notification to Super Admins (Topic & notifications collection)
+    // Send Notification to Super Admins (Single source of truth to avoid duplicate notifications)
     try {
+      final notifTitle = '🚨 સોસાયટી પુનઃસક્રિયતા અપીલ'.tr;
+      final notifBody = '$societyName ($adminName) ${"appeal_notif_suffix".tr}: $cleanMsg';
+
       await _db.collection('notifications').add({
-        'title': '🚨 સોસાયટી પુનઃસક્રિયતા અપીલ',
-        'body': '$societyName ના એડમિન $adminName તરફથી અપીલ વિનંતી આવી છે.',
+        'title': notifTitle,
+        'body': notifBody,
         'societyId': societyId,
         'societyName': societyName,
         'targetUID': 'SUPER_ADMIN',
@@ -78,13 +82,21 @@ class SocietyAppealService {
         .collection('society_appeals')
         .where('societyId', isEqualTo: societyId)
         .where('adminUid', isEqualTo: adminUid)
-        .orderBy('createdAt', descending: true)
-        .limit(1)
+        .limit(10)
         .snapshots()
         .map((snap) {
       if (snap.docs.isEmpty) return null;
-      final data = snap.docs.first.data();
-      data['docId'] = snap.docs.first.id;
+      final docs = snap.docs.toList();
+      docs.sort((a, b) {
+        final aTime = a.data()['createdAt'];
+        final bTime = b.data()['createdAt'];
+        if (aTime is Timestamp && bTime is Timestamp) {
+          return bTime.compareTo(aTime);
+        }
+        return 0;
+      });
+      final data = docs.first.data();
+      data['docId'] = docs.first.id;
       return data;
     });
   }
@@ -93,15 +105,23 @@ class SocietyAppealService {
   Stream<List<Map<String, dynamic>>> streamAllAppeals() {
     return _db
         .collection('society_appeals')
-        .orderBy('createdAt', descending: true)
         .limit(100)
         .snapshots()
         .map((snap) {
-      return snap.docs.map((d) {
+      final list = snap.docs.map((d) {
         final data = d.data();
         data['docId'] = d.id;
         return data;
       }).toList();
+      list.sort((a, b) {
+        final aTime = a['createdAt'];
+        final bTime = b['createdAt'];
+        if (aTime is Timestamp && bTime is Timestamp) {
+          return bTime.compareTo(aTime);
+        }
+        return 0;
+      });
+      return list;
     });
   }
 
@@ -130,6 +150,7 @@ class SocietyAppealService {
     // ૧. અપીલ ડોક્યુમેન્ટ અપડેટ
     await _db.collection('society_appeals').doc(appealId).update({
       'status': replyStatus,
+      'isArchived': replyStatus == 'resolved',
       'superAdminReply': replyMessage.trim(),
       'replyMethod': replyMethod,
       'repliedAt': FieldValue.serverTimestamp(),
@@ -142,13 +163,17 @@ class SocietyAppealService {
       await _db.collection('society_settings').doc(societyId).set({
         'isActive': true,
         'isAdminBlocked': false,
+        'isSuspendedBySuperAdmin': false,
         'unblockedAt': FieldValue.serverTimestamp(),
+        'lastUnblockedAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
       if (adminUid.isNotEmpty) {
         await _db.collection('users').doc(adminUid).set({
           'isActive': true,
+          'unblockedAt': FieldValue.serverTimestamp(),
+          'lastUnblockedAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
       }
@@ -158,8 +183,8 @@ class SocietyAppealService {
     if (replyMethod == 'notification') {
       await _db.collection('notifications').add({
         'title': unblockSociety
-            ? '✅ સોસાયટી પુનઃસક્રિય કરાઈ'
-            : '📢 સુપર એડમિન / હેડ ઓફિસ તરફથી જવાબ',
+            ? '✅ સોસાયટી પુનઃસક્રિય કરાઈ'.tr
+            : '📢 સુપર એડમિન / હેડ ઓફિસ તરફથી જવાબ'.tr,
         'body': replyMessage.trim(),
         'societyId': societyId,
         'targetUID': adminUid,

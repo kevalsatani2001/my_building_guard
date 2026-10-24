@@ -50,7 +50,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
 
     if (targetBlock.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('કૃપા કરીને વિંગ સિલેક્ટ કરો અથવા નામ દાખલ કરો!'), backgroundColor: Colors.orange),
+        SnackBar(content: Text('કૃપા કરીને વિંગ સિલેક્ટ કરો અથવા નામ દાખલ કરો!'.tr), backgroundColor: Colors.orange),
       );
       return;
     }
@@ -75,7 +75,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('તમામ ${blocks.length} વિંગ્સ ($_selectedParkingLevel) માટે કુલ $totalCount સ્લોટ્સ સફળતાપૂર્વક Firestore માં સેવ થઈ ગયા!'),
+            content: Text('તમામ ${blocks.length} વિંગ્સ ($_selectedParkingLevel) માટે કુલ $totalCount સ્લોટ્સ સફળતાપૂર્વક Firestore માં સેવ થઈ ગયા!'.tr),
             backgroundColor: const Color(0xFF059669),
             behavior: SnackBarBehavior.floating,
           ),
@@ -94,7 +94,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('વિંગ "$targetBlock" ($_selectedParkingLevel) માટે $count સ્લોટ્સ સફળતાપૂર્વક Firestore માં સેવ થઈ ગયા!'),
+            content: Text('વિંગ "$targetBlock" ($_selectedParkingLevel) માટે $count સ્લોટ્સ સફળતાપૂર્વક Firestore માં સેવ થઈ ગયા!'.tr),
             backgroundColor: const Color(0xFF059669),
             behavior: SnackBarBehavior.floating,
           ),
@@ -103,7 +103,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ભૂલ આવી: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('ભૂલ આવી: $e'.tr), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -126,7 +126,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('સોસાયટી માટે $count કોમન પ્લોટ & વાડી સ્લોટ્સ Firestore માં સેવ થઈ ગયા!'),
+          content: Text('સોસાયટી માટે $count કોમન પ્લોટ & વાડી સ્લોટ્સ Firestore માં સેવ થઈ ગયા!'.tr),
           backgroundColor: const Color(0xFF059669),
           behavior: SnackBarBehavior.floating,
         ),
@@ -134,7 +134,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ભૂલ આવી: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('ભૂલ આવી: $e'.tr), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -151,7 +151,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
         societyId: societyId,
         slotNumber: name,
         blockName: isStreet
-            ? 'કોમન પ્લોટ'
+            ? 'કોમન પ્લોટ'.tr
             : (_selectedBlock == '__ALL__'
                 ? (_manualWingC.text.trim().isNotEmpty ? _manualWingC.text.trim().toUpperCase() : 'A')
                 : (_selectedBlock.isNotEmpty ? _selectedBlock : (_manualWingC.text.trim().isNotEmpty ? _manualWingC.text.trim().toUpperCase() : 'A'))),
@@ -164,7 +164,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
       HapticFeedback.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('નવો સ્લોટ "$name" ઉમેરાઈ ગયો!'),
+          content: Text('નવો સ્લોટ "$name" ઉમેરાઈ ગયો!'.tr),
           backgroundColor: const Color(0xFF059669),
           behavior: SnackBarBehavior.floating,
         ),
@@ -172,7 +172,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ભૂલ આવી: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('ભૂલ આવી: $e'.tr), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -184,14 +184,14 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('સ્લોટ ડિલીટ કરવો છે?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        content: Text('શું તમે ખરેખર સ્લોટ "$slotName" કાયમ માટે કાઢી નાખવા માંગો છો?'),
+        title: Text('સ્લોટ ડિલીટ કરવો છે?'.tr, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Text('શું તમે ખરેખર સ્લોટ "$slotName" કાયમ માટે કાઢી નાખવા માંગો છો?'.tr),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('ના')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('ના'.tr)),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: const Text('હા, ડિલીટ કરો'),
+            child: Text('હા, ડિલીટ કરો'.tr),
           ),
         ],
       ),
@@ -204,7 +204,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('સ્લોટ "$slotName" કાઢી નાખવામાં આવ્યો.'),
+          content: Text('સ્લોટ "$slotName" કાઢી નાખવામાં આવ્યો.'.tr),
           backgroundColor: const Color(0xFF0F172A),
           behavior: SnackBarBehavior.floating,
         ),
@@ -212,7 +212,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ભૂલ આવી: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('ભૂલ આવી: $e'.tr), backgroundColor: Colors.red),
       );
     }
   }
@@ -223,9 +223,9 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: const PremiumAppBar(
-        title: 'પાર્કિંગ સ્લોટ મેનેજમેન્ટ',
-        subtitle: 'ઓટો-જનરેટર, એલોટમેન્ટ અને સ્લોટ સ્ટેટસ',
+      appBar: PremiumAppBar(
+        title: 'પાર્કિંગ સ્લોટ મેનેજમેન્ટ'.tr,
+        subtitle: 'ઓટો-જનરેટર, એલોટમેન્ટ અને સ્લોટ સ્ટેટસ'.tr,
         icon: Icons.local_parking_rounded,
         accentColor: Color(0xFF0284C7),
       ),
@@ -320,10 +320,10 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                                 const SizedBox(width: 8),
                                 Text(
                                   isStreet
-                                      ? 'કોમન પ્લોટ સ્લોટ્સ લિસ્ટ (${displaySlots.length})'
+                                      ? 'કોમન પ્લોટ સ્લોટ્સ લિસ્ટ (${displaySlots.length})'.tr
                                       : (_selectedBlock == '__ALL__'
-                                          ? 'તમામ સ્લોટ્સ (${displaySlots.length})'
-                                          : '${SocietyService.instance.formatBlockDisplayName(_selectedBlock, architectureType: societyArchType)} સ્લોટ્સ (${displaySlots.length})'),
+                                          ? 'તમામ સ્લોટ્સ (${displaySlots.length})'.tr
+                                          : '${SocietyService.instance.formatBlockDisplayName(_selectedBlock, architectureType: societyArchType)} સ્લોટ્સ (${displaySlots.length})'.tr),
                                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                                 ),
                                 const Spacer(),
@@ -346,10 +346,10 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                               child: Center(
                                 child: Text(
                                   isStreet
-                                      ? 'હજુ સુધી કોઈ કોમન પ્લોટ સ્લોટ્સ બનાવવામાં આવ્યા નથી.\n(શેરી સોસાયટીમાં દરેક સભ્ય ઘર આગળ પાર્ક કરે છે).'
+                                      ? 'હજુ સુધી કોઈ કોમન પ્લોટ સ્લોટ્સ બનાવવામાં આવ્યા નથી.\n(શેરી સોસાયટીમાં દરેક સભ્ય ઘર આગળ પાર્ક કરે છે).'.tr
                                       : (_selectedBlock == '__ALL__'
-                                          ? 'હજુ સુધી કોઈ વિંગ્સ સ્લોટ્સ બનાવવામાં આવ્યા નથી.\nઉપરના બટનથી સ્લોટ્સ જનરેટ કરો.'
-                                          : '${SocietyService.instance.formatBlockDisplayName(_selectedBlock, architectureType: societyArchType)} માં હજુ કોઈ સ્લોટ્સ બનાવવામાં આવ્યા નથી.\nઉપરના બટનથી સ્લોટ્સ જનરેટ કરો.'),
+                                          ? 'હજુ સુધી કોઈ વિંગ્સ સ્લોટ્સ બનાવવામાં આવ્યા નથી.\nઉપરના બટનથી સ્લોટ્સ જનરેટ કરો.'.tr
+                                          : '${SocietyService.instance.formatBlockDisplayName(_selectedBlock, architectureType: societyArchType)} માં હજુ કોઈ સ્લોટ્સ બનાવવામાં આવ્યા નથી.\nઉપરના બટનથી સ્લોટ્સ જનરેટ કરો.'.tr),
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.4),
                                 ),
@@ -455,7 +455,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                             Icon(isStreet ? Icons.cottage_rounded : Icons.apartment_rounded, color: Colors.white, size: 14),
                             const SizedBox(width: 5),
                             Text(
-                              isStreet ? 'શેરી / રો-હાઉસ સોસાયટી' : 'હાઇરાઇઝ એપાર્ટમેન્ટ વિંગ્સ',
+                              isStreet ? 'શેરી / રો-હાઉસ સોસાયટી'.tr : 'હાઇરાઇઝ એપાર્ટમેન્ટ વિંગ્સ'.tr,
                               style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -468,8 +468,8 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                           color: const Color(0xFF059669).withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Text(
-                          '👑 એડમિન કંટ્રોલ',
+                        child: Text(
+                          '👑 એડમિન કંટ્રોલ'.tr,
                           style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -478,8 +478,8 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'સોસાયટી પાર્કિંગ કંટ્રોલ સેન્ટર',
+                      Text(
+                        'સોસાયટી પાર્કિંગ કંટ્રોલ સેન્ટર'.tr,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 18.5,
@@ -490,11 +490,11 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          _heroStatBadge('કુલ સ્લોટ્સ', '$total', Colors.white),
+                          _heroStatBadge('કુલ સ્લોટ્સ'.tr, '$total', Colors.white),
                           const SizedBox(width: 8),
-                          _heroStatBadge('બુક થયેલ', '$occupied', const Color(0xFFFCA5A5)),
+                          _heroStatBadge('બુક થયેલ'.tr, '$occupied', const Color(0xFFFCA5A5)),
                           const SizedBox(width: 8),
-                          _heroStatBadge('ઉપલબ્ધ', '$available', const Color(0xFF86EFAC)),
+                          _heroStatBadge('ઉપલબ્ધ'.tr, '$available', const Color(0xFF86EFAC)),
                         ],
                       ),
                     ],
@@ -545,18 +545,18 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
+            children: [
               Icon(Icons.auto_awesome_rounded, color: Color(0xFF0284C7), size: 20),
               SizedBox(width: 8),
               Text(
-                'વિંગ વાઇઝ સ્લોટ્સ ઓટો-જનરેટર',
+                'વિંગ વાઇઝ સ્લોટ્સ ઓટો-જનરેટર'.tr,
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          const Text(
-            'દરેક વિંગ માટે ૪-વ્હીલર, ૨-વ્હીલર અને EV સ્લોટ્સની સંખ્યા સેટ કરી ડેટાબેઝમાં સેવ કરો:',
+          Text(
+            'દરેક વિંગ માટે ૪-વ્હીલર, ૨-વ્હીલર અને EV સ્લોટ્સની સંખ્યા સેટ કરી ડેટાબેઝમાં સેવ કરો:'.tr,
             style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
           ),
           const SizedBox(height: 14),
@@ -570,7 +570,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                 children: [
                   if (blocks.length > 1) ...[
                     ChoiceChip(
-                      label: const Text('⭐ તમામ વિંગ્સ (All)'),
+                      label: Text('⭐ તમામ વિંગ્સ (All)'.tr),
                       selected: _selectedBlock == '__ALL__',
                       onSelected: (_) => setState(() => _selectedBlock = '__ALL__'),
                       selectedColor: const Color(0xFF0284C7),
@@ -612,8 +612,8 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
               controller: _manualWingC,
               textCapitalization: TextCapitalization.characters,
               decoration: InputDecoration(
-                labelText: 'વિંગનું નામ (દા.ત. S-1 અથવા A)',
-                hintText: 'દા.ત. S-1',
+                labelText: 'વિંગનું નામ (દા.ત. S-1 અથવા A)'.tr,
+                hintText: 'દા.ત. S-1'.tr,
                 isDense: true,
                 prefixIcon: const Icon(Icons.apartment_rounded, size: 18),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -623,8 +623,8 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
           ],
 
           // Level / Floor Selector
-          const Text(
-            'પાર્કિંગ લેવલ / ફ્લોર:',
+          Text(
+            'પાર્કિંગ લેવલ / ફ્લોર:'.tr,
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
           ),
           const SizedBox(height: 6),
@@ -632,12 +632,12 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                ('Ground', 'ગ્રાઉન્ડ / સ્ટીલ્ટ', Icons.garage_rounded),
-                ('B1', 'બેઝમેન્ટ - ૧ (B1)', Icons.stairs_rounded),
-                ('B2', 'બેઝમેન્ટ - ૨ (B2)', Icons.stairs_rounded),
-                ('B3', 'બેઝમેન્ટ - ૩ (B3)', Icons.stairs_rounded),
-                ('Open', 'ઓપન / સપાટી', Icons.wb_sunny_rounded),
-                ('Loading', 'કોમર્શિયલ લોડિંગ બે', Icons.local_shipping_rounded),
+                ('Ground', 'ગ્રાઉન્ડ / સ્ટીલ્ટ'.tr, Icons.garage_rounded),
+                ('B1', 'બેઝમેન્ટ - ૧ (B1)'.tr, Icons.stairs_rounded),
+                ('B2', 'બેઝમેન્ટ - ૨ (B2)'.tr, Icons.stairs_rounded),
+                ('B3', 'બેઝમેન્ટ - ૩ (B3)'.tr, Icons.stairs_rounded),
+                ('Open', 'ઓપન / સપાટી'.tr, Icons.wb_sunny_rounded),
+                ('Loading', 'કોમર્શિયલ લોડિંગ બે'.tr, Icons.local_shipping_rounded),
               ].map((lvl) {
                 final isSel = _selectedParkingLevel == lvl.$1;
                 return Padding(
@@ -668,7 +668,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                   controller: _carSlotsC,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: '૪-વ્હીલર (કાર)',
+                    labelText: '૪-વ્હીલર (કાર)'.tr,
                     isDense: true,
                     prefixIcon: const Icon(Icons.directions_car_rounded, size: 18),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -681,7 +681,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                   controller: _bikeSlotsC,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: '૨-વ્હીલર (બાઇક)',
+                    labelText: '૨-વ્હીલર (બાઇક)'.tr,
                     isDense: true,
                     prefixIcon: const Icon(Icons.two_wheeler_rounded, size: 18),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -694,7 +694,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                   controller: _evSlotsC,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: 'EV સ્લોટ્સ',
+                    labelText: 'EV સ્લોટ્સ'.tr,
                     isDense: true,
                     prefixIcon: const Icon(Icons.electric_car_rounded, size: 18),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -714,7 +714,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : const Icon(Icons.flash_on_rounded, color: Colors.white, size: 18),
               label: Text(
-                _isSaving ? 'જનરેટ થઈ રહ્યું છે...' : '૧-ક્લિક સ્લોટ્સ જનરેટ & સેવ કરો',
+                _isSaving ? 'જનરેટ થઈ રહ્યું છે...'.tr : '૧-ક્લિક સ્લોટ્સ જનરેટ & સેવ કરો'.tr,
                 style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.5),
               ),
               style: ElevatedButton.styleFrom(
@@ -749,18 +749,18 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
+            children: [
               Icon(Icons.park_rounded, color: Color(0xFF0D9488), size: 20),
               SizedBox(width: 8),
               Text(
-                'શેરી કોમન પ્લોટ & વાડી સ્લોટ્સ સેટઅપ',
+                'શેરી કોમન પ્લોટ & વાડી સ્લોટ્સ સેટઅપ'.tr,
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          const Text(
-            'શેરી સોસાયટીમાં દરેક સભ્ય ઘર આંગણે પાર્ક કરે છે. જો કોમન પ્લોટ કે વાડીમાં વધારાનું પાર્કિંગ મંજૂર કરવું હોય તો જ સ્લોટ્સ બનાવો:',
+          Text(
+            'શેરી સોસાયટીમાં દરેક સભ્ય ઘર આંગણે પાર્ક કરે છે. જો કોમન પ્લોટ કે વાડીમાં વધારાનું પાર્કિંગ મંજૂર કરવું હોય તો જ સ્લોટ્સ બનાવો:'.tr,
             style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B), height: 1.35),
           ),
           const SizedBox(height: 14),
@@ -772,8 +772,8 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                   controller: _commonPlotSlotsC,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: 'કોમન પ્લોટ સ્લોટ્સ (CP)',
-                    hintText: 'દા.ત. 8',
+                    labelText: 'કોમન પ્લોટ સ્લોટ્સ (CP)'.tr,
+                    hintText: 'દા.ત. 8'.tr,
                     isDense: true,
                     prefixIcon: const Icon(Icons.park_rounded, size: 18),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -786,8 +786,8 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                   controller: _vadiSlotsC,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: 'વાડી પાર્કિંગ સ્લોટ્સ',
-                    hintText: 'દા.ત. 4',
+                    labelText: 'વાડી પાર્કિંગ સ્લોટ્સ'.tr,
+                    hintText: 'દા.ત. 4'.tr,
                     isDense: true,
                     prefixIcon: const Icon(Icons.deck_rounded, size: 18),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -807,7 +807,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : const Icon(Icons.save_rounded, color: Colors.white, size: 18),
               label: Text(
-                _isSaving ? 'સેવ થઈ રહ્યું છે...' : 'કોમન પ્લોટ સ્લોટ્સ સેવ કરો',
+                _isSaving ? 'સેવ થઈ રહ્યું છે...'.tr : 'કોમન પ્લોટ સ્લોટ્સ સેવ કરો'.tr,
                 style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.5),
               ),
               style: ElevatedButton.styleFrom(
@@ -838,7 +838,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
               controller: _customSlotC,
               textCapitalization: TextCapitalization.characters,
               decoration: InputDecoration(
-                hintText: isStreet ? 'કસ્ટમ સ્લોટ દા.ત. CP-VIP, GUEST-P1' : 'કસ્ટમ સ્લોટ દા.ત. BASEMENT-01, VIP-01',
+                hintText: isStreet ? 'કસ્ટમ સ્લોટ દા.ત. CP-VIP, GUEST-P1'.tr : 'કસ્ટમ સ્લોટ દા.ત. BASEMENT-01, VIP-01'.tr,
                 hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                 isDense: true,
                 border: InputBorder.none,
@@ -856,7 +856,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               elevation: 0,
             ),
-            child: const Text('ઉમેરો', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+            child: Text('ઉમેરો'.tr, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
           ),
         ],
       ),
@@ -865,9 +865,9 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
 
   Widget _buildFilterSegment() {
     final opts = [
-      ('all', 'બધા'),
-      ('available', 'ખાલી'),
-      ('occupied', 'બુક'),
+      ('all', 'બધા'.tr),
+      ('available', 'ખાલી'.tr),
+      ('occupied', 'બુક'.tr),
     ];
 
     return Container(
@@ -911,7 +911,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
   }) {
     final isBike = slot.contains('-B') || slot.startsWith('B');
     final isEV = slot.contains('EV');
-    final isCommonPlot = slot.contains('CP') || slot.contains('કોમન') || slot.contains('વાડી');
+    final isCommonPlot = slot.contains('CP') || slot.contains('કોમન'.tr) || slot.contains('વાડી'.tr);
 
     final bayIcon = isCommonPlot
         ? Icons.park_rounded
@@ -957,7 +957,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'ફાળવેલ: ${occInfo.flatDisplay}',
+                  'ફાળવેલ: ${occInfo.flatDisplay}'.tr,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10.5, color: Color(0xFF991B1B)),
@@ -972,7 +972,7 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                           children: [
                             const Icon(Icons.check_circle_rounded, color: Color(0xFF4ADE80), size: 16),
                             const SizedBox(width: 8),
-                            Expanded(child: Text('વાહન નંબર કોપી થયો: ${occInfo.vehicleNumber}')),
+                            Expanded(child: Text('વાહન નંબર કોપી થયો: ${occInfo.vehicleNumber}'.tr)),
                           ],
                         ),
                         duration: const Duration(seconds: 2),
@@ -1005,8 +1005,8 @@ class _AdminParkingManagementScreenState extends State<AdminParkingManagementScr
                 color: const Color(0xFFDCFCE7),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: const Text(
-                'ઉપલબ્ધ (ખાલી)',
+              child: Text(
+                'ઉપલબ્ધ (ખાલી)'.tr,
                 style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
               ),
             ),

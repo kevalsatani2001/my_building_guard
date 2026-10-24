@@ -24,7 +24,7 @@ class UpperCaseTextFormatter extends TextInputFormatter {
 }
 
 class MemberVehiclesScreen extends StatefulWidget {
-  const MemberVehiclesScreen({super.key});
+  MemberVehiclesScreen({super.key});
 
   @override
   State<MemberVehiclesScreen> createState() => _MemberVehiclesScreenState();
@@ -36,15 +36,15 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
   final _modelC = TextEditingController();
   String? _selectedSlot;
 
-  String _selectedType = '૪-વ્હીલર (કાર)';
+  String _selectedType = '૪-વ્હીલર (કાર)'.tr;
   bool _isAdding = false;
   bool _showAddForm = false;
 
-  final List<(String, String, IconData, Color)> _vehicleTypeOptions = const [
-    ('૪-વ્હીલર (કાર)', 'કાર / SUV', Icons.directions_car_filled_rounded, Color(0xFF0284C7)),
-    ('૨-વ્હીલર (બાઇક/સ્કૂટર)', 'બાઇક / સ્કૂટર', Icons.two_wheeler_rounded, Color(0xFF0D9488)),
-    ('ઇલેક્ટ્રિક વાહન (EV)', 'ઇલેક્ટ્રિક EV', Icons.electric_car_rounded, Color(0xFF10B981)),
-    ('અન્ય વાહન', 'કોમર્શિયલ / અન્ય', Icons.local_shipping_rounded, Color(0xFF6366F1)),
+  final List<(String, String, IconData, Color)> _vehicleTypeOptions = [
+    ('૪-વ્હીલર (કાર)'.tr, 'કાર / SUV'.tr, Icons.directions_car_filled_rounded, Color(0xFF0284C7)),
+    ('૨-વ્હીલર (બાઇક/સ્કૂટર)'.tr, 'બાઇક / સ્કૂટર'.tr, Icons.two_wheeler_rounded, Color(0xFF0D9488)),
+    ('ઇલેક્ટ્રિક વાહન (EV)'.tr, 'ઇલેક્ટ્રિક EV'.tr, Icons.electric_car_rounded, Color(0xFF10B981)),
+    ('અન્ય વાહન'.tr, 'કોમર્શિયલ / અન્ય'.tr, Icons.local_shipping_rounded, Color(0xFF6366F1)),
   ];
 
   @override
@@ -90,7 +90,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
       HapticFeedback.heavyImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(validationRes.errorMessage ?? 'અમાન્ય વાહન નંબર પ્લેટ!'),
+          content: Text(validationRes.errorMessage ?? 'અમાન્ય વાહન નંબર પ્લેટ!'.tr),
           backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
         ),
@@ -110,7 +110,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
       HapticFeedback.heavyImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('આ નંબર પ્લેટ ($plate) વાળું વાહન તમારી પ્રોફાઇલમાં પહેલેથી જ છે!'),
+          content: Text('આ નંબર પ્લેટ ($plate) વાળું વાહન તમારી પ્રોફાઇલમાં પહેલેથી જ છે!'.tr),
           backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
         ),
@@ -131,20 +131,20 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
             builder: (ctx) => AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: Row(
-                children: const [
+                children: [
                   Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 24),
                   SizedBox(width: 8),
-                  Text('વાહન પહેલેથી નોંધાયેલ છે', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text('વાહન પહેલેથી નોંધાયેલ છે'.tr, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ],
               ),
               content: Text(
-                'વાહન નંબર "$plate" સોસાયટીમાં સભ્ય ${entry.ownerName} (${entry.flatDisplay}) દ્વારા પહેલેથી જ રજીસ્ટર થયેલું છે.\n\nજો આ તમારું જ વાહન હોય તો સોસાયટી એડમિનનો સંપર્ક કરો.',
+                'વાહન નંબર "$plate" સોસાયટીમાં સભ્ય ${entry.ownerName} (${entry.flatDisplay}) દ્વારા પહેલેથી જ રજીસ્ટર થયેલું છે.\n\nજો આ તમારું જ વાહન હોય તો સોસાયટી એડમિનનો સંપર્ક કરો.'.tr,
                 style: const TextStyle(fontSize: 13, height: 1.4),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('સમજાઈ ગયું', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text('સમજાઈ ગયું'.tr, style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -154,7 +154,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
       }
     } catch (_) {}
 
-    final defaultHomeFront = '🏠 ઘર આંગણે ($flatDisplay)';
+    final defaultHomeFront = '🏠 ઘર આંગણે ($flatDisplay)'.tr;
     final chosenSlot = isStreet
         ? ((_selectedSlot != null && _selectedSlot!.isNotEmpty)
             ? _selectedSlot!.trim().toUpperCase()
@@ -172,7 +172,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('કૃપા કરીને વિંગ "$memberBlock" માટે ઉપલબ્ધ પાર્કિંગ સ્લોટ પસંદ કરો!'),
+              content: Text('કૃપા કરીને વિંગ "$memberBlock" માટે ઉપલબ્ધ પાર્કિંગ સ્લોટ પસંદ કરો!'.tr),
               backgroundColor: Colors.orange.shade800,
               behavior: SnackBarBehavior.floating,
             ),
@@ -253,8 +253,8 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
               Expanded(
                 child: Text(
                   chosenSlot.isNotEmpty
-                      ? 'વાહન સફળતાપૂર્વક નોંધાઈ ગયું અને પાર્કિંગ સ્લોટ "$chosenSlot" ફાળવાઈ ગયો છે.'
-                      : 'વાહન સફળતાપૂર્વક નોંધાઈ ગયું.',
+                      ? 'વાહન સફળતાપૂર્વક નોંધાઈ ગયું અને પાર્કિંગ સ્લોટ "$chosenSlot" ફાળવાઈ ગયો છે.'.tr
+                      : 'વાહન સફળતાપૂર્વક નોંધાઈ ગયું.'.tr,
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
@@ -270,7 +270,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('વાહન નોંધવામાં ભૂલ: $e'),
+          content: Text('વાહન નોંધવામાં ભૂલ: $e'.tr),
           backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
         ),
@@ -285,12 +285,12 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: Row(
-          children: const [
+          children: [
             Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 28),
             SizedBox(width: 8),
             Expanded(
               child: Text(
-                'સ્લોટ પહેલેથી બુક છે!',
+                'સ્લોટ પહેલેથી બુક છે!'.tr,
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
               ),
             ),
@@ -301,7 +301,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'પાર્કિંગ સ્લોટ "$slot" પહેલેથી અન્ય સભ્યને ફાળવાયેલો છે. સોસાયટી નિયમ મુજબ એક સ્લોટ માત્ર એક જ વાહનને ફાળવી શકાય છે.',
+              'પાર્કિંગ સ્લોટ "$slot" પહેલેથી અન્ય સભ્યને ફાળવાયેલો છે. સોસાયટી નિયમ મુજબ એક સ્લોટ માત્ર એક જ વાહનને ફાળવી શકાય છે.'.tr,
               style: const TextStyle(fontSize: 13.5, color: Color(0xFF334155), height: 1.4),
             ),
             const SizedBox(height: 12),
@@ -316,16 +316,16 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('• ફાળવેલ ફ્લેટ: ${occInfo.flatDisplay}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                    Text('• ફાળવેલ ફ્લેટ: ${occInfo.flatDisplay}'.tr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                     const SizedBox(height: 3),
-                    Text('• વાહન: ${occInfo.vehicleNumber} (${occInfo.vehicleModel})', style: const TextStyle(fontSize: 12)),
+                    Text('• વાહન: ${occInfo.vehicleNumber} (${occInfo.vehicleModel})'.tr, style: const TextStyle(fontSize: 12)),
                   ],
                 ),
               ),
             ],
             const SizedBox(height: 10),
-            const Text(
-              'કૃપા કરીને અન્ય ખાલી (લીલો) સ્લોટ પસંદ કરો.',
+            Text(
+              'કૃપા કરીને અન્ય ખાલી (લીલો) સ્લોટ પસંદ કરો.'.tr,
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
             ),
           ],
@@ -338,7 +338,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('અન્ય સ્લોટ પસંદ કરો'),
+            child: Text('અન્ય સ્લોટ પસંદ કરો'.tr),
           ),
         ],
       ),
@@ -354,10 +354,10 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: Row(
-          children: const [
+          children: [
             Icon(Icons.delete_outline_rounded, color: Colors.red, size: 26),
             SizedBox(width: 8),
-            Text('વાહન કાઢી નાખવું છે?', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            Text('વાહન કાઢી નાખવું છે?'.tr, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
@@ -365,7 +365,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'વાહન નંબર $plate કાઢી નાખવાથી તેના માટે ફાળવેલ પાર્કિંગ સ્લોટ ${slot.isNotEmpty ? '"$slot"' : ''} ખાલી થઈ જશે અને અન્ય સભ્યો માટે ઉપલબ્ધ બનશે.',
+              'વાહન નંબર $plate કાઢી નાખવાથી તેના માટે ફાળવેલ પાર્કિંગ સ્લોટ ${slot.isNotEmpty ? '.tr"$slot"' : ''} ખાલી થઈ જશે અને અન્ય સભ્યો માટે ઉપલબ્ધ બનશે.'.tr,
               style: const TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.4),
             ),
           ],
@@ -373,7 +373,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('રદ કરો', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text('રદ કરો'.tr, style: TextStyle(color: Color(0xFF64748B))),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -382,7 +382,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('કાઢી નાખો'),
+            child: Text('કાઢી નાખો'.tr),
           ),
         ],
       ),
@@ -409,7 +409,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
       HapticFeedback.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$plate કાઢી નાખવામાં આવ્યું. સ્લોટ ખાલી થઈ ગયો છે.'),
+          content: Text('$plate કાઢી નાખવામાં આવ્યું. સ્લોટ ખાલી થઈ ગયો છે.'.tr),
           backgroundColor: const Color(0xFF059669),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -418,7 +418,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ભૂલ આવી: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('ભૂલ આવી: $e'.tr), backgroundColor: Colors.red),
       );
     }
   }
@@ -433,7 +433,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
   }) async {
     final currentSlot = (vehicle['slot'] ?? '').toString();
     final plate = (vehicle['number'] ?? '').toString();
-    final type = (vehicle['type'] ?? '૪-વ્હીલર (કાર)').toString();
+    final type = (vehicle['type'] ?? '૪-વ્હીલર (કાર)'.tr).toString();
 
     final newSlot = await ParkingSlotSelectorSheet.show(
       context,
@@ -498,7 +498,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('વાહન $plate માટે સ્લોટ બદલીને "$newSlot" સફળતાપૂર્વક અપડેટ થઈ ગયો!'),
+          content: Text('વાહન $plate માટે સ્લોટ બદલીને "$newSlot" સફળતાપૂર્વક અપડેટ થઈ ગયો!'.tr),
           backgroundColor: const Color(0xFF059669),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -507,7 +507,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('સ્લોટ બદલવામાં ભૂલ આવી: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('સ્લોટ બદલવામાં ભૂલ આવી: $e'.tr), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isAdding = false);
@@ -560,7 +560,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
         final memberBlock = SocietyService.instance.logicalBlockName(rawBlock);
         final unitNumber = userData['unitNumber']?.toString() ?? '';
         final flatDisplay = [memberBlock, unitNumber].where((s) => s.isNotEmpty).join(' • ');
-        final userName = (userData['name'] ?? 'સભ્ય').toString();
+        final userName = (userData['name'] ?? 'સભ્ય'.tr).toString();
         final List vehicles = List.from(userData['vehicles'] ?? []);
 
         return StreamBuilder<DocumentSnapshot>(
@@ -574,7 +574,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
             // Street / Row House: ONLY IF societyArchType is explicitly 'Street' or block contains 'શેરી'.
             final isStreet = societyArchType == 'Street' ||
                 (societyArchType != 'Wing' &&
-                    (memberBlock.contains('શેરી') ||
+                    (memberBlock.contains('શેરી'.tr) ||
                         RegExp(r'\bstreet\b', caseSensitive: false).hasMatch(memberBlock)));
 
             // If flat member, reset any lingering street/common-plot slot selection
@@ -582,15 +582,15 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                 _selectedSlot != null &&
                 (ParkingSlotService.instance.isFlexibleStreetParking(_selectedSlot!) ||
                     _selectedSlot!.startsWith('CP-') ||
-                    _selectedSlot!.startsWith('વાડી-'))) {
+                    _selectedSlot!.startsWith('વાડી-'.tr))) {
               _selectedSlot = null;
             }
 
             return Scaffold(
               backgroundColor: const Color(0xFFF8FAFC),
-              appBar: const PremiumAppBar(
-                title: 'મારા વાહનો & પાર્કિંગ સ્લોટ',
-                subtitle: 'નંબર પ્લેટ, સ્લોટ એલોટમેન્ટ અને ડિજિટલ પાસ',
+              appBar: PremiumAppBar(
+                title: 'મારા વાહનો & પાર્કિંગ સ્લોટ'.tr,
+                subtitle: 'નંબર પ્લેટ, સ્લોટ એલોટમેન્ટ અને ડિજિટલ પાસ'.tr,
                 icon: Icons.directions_car_rounded,
                 accentColor: Color(0xFF0284C7),
               ),
@@ -640,15 +640,15 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          const Text(
-                                            'નવું વાહન ઉમેરો & સ્લોટ ફાળવો',
+                                          Text(
+                                            'નવું વાહન ઉમેરો & સ્લોટ ફાળવો'.tr,
                                             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF0F172A)),
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
                                             isStreet
-                                                ? 'શેરી સોસાયટી: ઘર આંગણે આપોઆપ સુરક્ષિત પાર્કિંગ'
-                                                : 'બિલ્ડિંગ વિંગ $memberBlock ના માન્ય સ્લોટમાંથી પસંદ કરો',
+                                                ? 'શેરી સોસાયટી: ઘર આંગણે આપોઆપ સુરક્ષિત પાર્કિંગ'.tr
+                                                : 'બિલ્ડિંગ વિંગ $memberBlock ના માન્ય સ્લોટમાંથી પસંદ કરો'.tr,
                                             style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                           ),
                                         ],
@@ -674,8 +674,8 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
-                                      'વાહનનો પ્રકાર:',
+                                    Text(
+                                      'વાહનનો પ્રકાર:'.tr,
                                       style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
                                     ),
                                     const SizedBox(height: 8),
@@ -688,7 +688,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                       childAspectRatio: 2.3,
                                       children: _vehicleTypeOptions.map((t) {
                                         final (name, subtitle, iconData, color) = t;
-                                        final isSelected = _selectedType == name || (name.contains('ઇલેક્ટ્રિક') && _selectedType.contains('ઇલેક્ટ્રિક'));
+                                        final isSelected = _selectedType == name || (name.contains('ઇલેક્ટ્રિક'.tr) && _selectedType.contains('ઇલેક્ટ્રિક'.tr));
                                         return Material(
                                           color: Colors.transparent,
                                           child: InkWell(
@@ -782,9 +782,9 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                       ],
                                       style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.8),
                                       decoration: InputDecoration(
-                                        labelText: 'વાહન નંબર પ્લેટ *',
-                                        hintText: 'દા.ત. GJ 01 AB 1234',
-                                        helperText: 'ફોર્મેટ: GJ 01 AB 1234 અથવા 22 BH 1234 AA',
+                                        labelText: 'વાહન નંબર પ્લેટ *'.tr,
+                                        hintText: 'દા.ત. GJ 01 AB 1234'.tr,
+                                        helperText: 'ફોર્મેટ: GJ 01 AB 1234 અથવા 22 BH 1234 AA'.tr,
                                         helperStyle: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                         prefixIcon: const Icon(Icons.pin_rounded, color: Color(0xFF0284C7)),
                                         filled: true,
@@ -806,7 +806,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                           return existingClean == cleanPlate;
                                         });
                                         if (isDuplicate) {
-                                          return 'આ નંબર પ્લેટવાળું વાહન તમે પહેલેથી જ ઉમેરેલું છે!';
+                                          return 'આ નંબર પ્લેટવાળું વાહન તમે પહેલેથી જ ઉમેરેલું છે!'.tr;
                                         }
                                         return null;
                                       },
@@ -817,8 +817,8 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                     TextFormField(
                                       controller: _modelC,
                                       decoration: InputDecoration(
-                                        labelText: 'વાહન મોડેલ / કંપની',
-                                        hintText: 'દા.ત. Swift / Activa / Nexon EV',
+                                        labelText: 'વાહન મોડેલ / કંપની'.tr,
+                                        hintText: 'દા.ત. Swift / Activa / Nexon EV'.tr,
                                         prefixIcon: const Icon(Icons.car_repair_rounded, color: Color(0xFF0284C7)),
                                         filled: true,
                                         fillColor: const Color(0xFFF8FAFC),
@@ -834,8 +834,8 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                     // 3. INTELLIGENT ARCHITECTURE-AWARE PARKING ALLOCATION
                                     if (isStreet) ...[
                                       // === શેરી / રો-હાઉસ સોસાયટી: ઘર આંગણે ડિફોલ્ટ ફાળવણી ===
-                                      const Text(
-                                        'સોસાયટી પાર્કિંગ વ્યવસ્થા:',
+                                      Text(
+                                        'સોસાયટી પાર્કિંગ વ્યવસ્થા:'.tr,
                                         style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
                                       ),
                                       const SizedBox(height: 8),
@@ -876,8 +876,8 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                                 children: [
                                                   Row(
                                                     children: [
-                                                      const Text(
-                                                        'ઘર આંગણે પાર્કિંગ (Home Front)',
+                                                      Text(
+                                                        'ઘર આંગણે પાર્કિંગ (Home Front)'.tr,
                                                         style: TextStyle(
                                                           fontWeight: FontWeight.w800,
                                                           fontSize: 13.5,
@@ -893,12 +893,12 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                                   ),
                                                   const SizedBox(height: 3),
                                                   Text(
-                                                    'તમારા પોતાના મકાન/પ્લોટ ($flatDisplay) ની સામે વાહન પાર્ક થશે.',
+                                                    'તમારા પોતાના મકાન/પ્લોટ ($flatDisplay) ની સામે વાહન પાર્ક થશે.'.tr,
                                                     style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569)),
                                                   ),
                                                   const SizedBox(height: 2),
-                                                  const Text(
-                                                    '✓ શેરી સોસાયટી: કોઈ સ્લોટ નંબર પસંદ કરવાની જરૂર નથી.',
+                                                  Text(
+                                                    '✓ શેરી સોસાયટી: કોઈ સ્લોટ નંબર પસંદ કરવાની જરૂર નથી.'.tr,
                                                     style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
                                                   ),
                                                 ],
@@ -920,7 +920,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                           }
 
                                           final isCpChosen = _selectedSlot != null &&
-                                              (_selectedSlot!.startsWith('CP-') || _selectedSlot!.startsWith('વાડી-'));
+                                              (_selectedSlot!.startsWith('CP-') || _selectedSlot!.startsWith('વાડી-'.tr));
 
                                           return Padding(
                                             padding: const EdgeInsets.only(top: 10),
@@ -947,8 +947,8 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                                       children: [
                                                         Text(
                                                           isCpChosen
-                                                              ? 'કોમન પ્લોટ સ્લોટ: $_selectedSlot (પસંદ કરેલ)'
-                                                              : 'સોસાયટી કોમન પ્લોટ / વાડી સ્લોટ',
+                                                              ? 'કોમન પ્લોટ સ્લોટ: $_selectedSlot (પસંદ કરેલ)'.tr
+                                                              : 'સોસાયટી કોમન પ્લોટ / વાડી સ્લોટ'.tr,
                                                           style: TextStyle(
                                                             fontWeight: FontWeight.bold,
                                                             fontSize: 12.5,
@@ -957,8 +957,8 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                                         ),
                                                         Text(
                                                           isCpChosen
-                                                              ? 'સોસાયટી કોમન પ્લોટમાં સ્લોટ સુરક્ષિત છે.'
-                                                              : 'એડમિન દ્વારા મંજૂર થયેલ ${commonSlots.length} સ્લોટ્સ ઉપલબ્ધ (વૈકલ્પિક)',
+                                                              ? 'સોસાયટી કોમન પ્લોટમાં સ્લોટ સુરક્ષિત છે.'.tr
+                                                              : 'એડમિન દ્વારા મંજૂર થયેલ ${commonSlots.length} સ્લોટ્સ ઉપલબ્ધ (વૈકલ્પિક)'.tr,
                                                           style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                                                         ),
                                                       ],
@@ -967,12 +967,12 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                                   if (isCpChosen)
                                                     TextButton(
                                                       onPressed: () => setState(() => _selectedSlot = null),
-                                                      child: const Text('ઘર આંગણે રાખો', style: TextStyle(fontSize: 11, color: Color(0xFFDC2626))),
+                                                      child: Text('ઘર આંગણે રાખો'.tr, style: TextStyle(fontSize: 11, color: Color(0xFFDC2626))),
                                                     )
                                                   else
                                                     OutlinedButton(
                                                       onPressed: () => _openSlotPicker(
-                                                        targetBlock: 'કોમન પ્લોટ',
+                                                        targetBlock: 'કોમન પ્લોટ'.tr,
                                                         isCommonPlotOnly: true,
                                                       ),
                                                       style: OutlinedButton.styleFrom(
@@ -980,7 +980,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                                         side: const BorderSide(color: Color(0xFF0284C7)),
                                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                                       ),
-                                                      child: const Text('સ્લોટ પસંદ કરો', style: TextStyle(fontSize: 11, color: Color(0xFF0284C7))),
+                                                      child: Text('સ્લોટ પસંદ કરો'.tr, style: TextStyle(fontSize: 11, color: Color(0xFF0284C7))),
                                                     ),
                                                 ],
                                               ),
@@ -991,7 +991,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                     ] else ...[
                                       // === ફ્લેટ / એપાર્ટમેન્ટ: વિંગ સ્લોટ સિલેક્શન ફરજિયાત ===
                                       Text(
-                                        'વિંગ $memberBlock પાર્કિંગ સ્લોટ:',
+                                        'વિંગ $memberBlock પાર્કિંગ સ્લોટ:'.tr,
                                         style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
                                       ),
                                       const SizedBox(height: 6),
@@ -1042,8 +1042,8 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                                     children: [
                                                       Text(
                                                         _selectedSlot != null && _selectedSlot!.isNotEmpty
-                                                            ? 'સ્લોટ: $_selectedSlot (લૉક માટે પસંદ કરેલ)'
-                                                            : 'વિંગ $memberBlock સ્લોટ પસંદ કરો (Tap to Select)',
+                                                            ? 'સ્લોટ: $_selectedSlot (લૉક માટે પસંદ કરેલ)'.tr
+                                                            : 'વિંગ $memberBlock સ્લોટ પસંદ કરો (Tap to Select)'.tr,
                                                         style: TextStyle(
                                                           fontWeight: FontWeight.bold,
                                                           fontSize: 13.5,
@@ -1055,8 +1055,8 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                                       const SizedBox(height: 2),
                                                       Text(
                                                         _selectedSlot != null && _selectedSlot!.isNotEmpty
-                                                            ? 'વિંગ $memberBlock • સ્લોટ બદલવા ટેપ કરો'
-                                                            : 'એડમિન દ્વારા બનાવેલા રીઅલ સ્લોટ્સમાંથી પસંદ કરો',
+                                                            ? 'વિંગ $memberBlock • સ્લોટ બદલવા ટેપ કરો'.tr
+                                                            : 'એડમિન દ્વારા બનાવેલા રીઅલ સ્લોટ્સમાંથી પસંદ કરો'.tr,
                                                         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                                       ),
                                                     ],
@@ -1101,7 +1101,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                               )
                                             : const Icon(Icons.add_task_rounded, color: Colors.white),
                                         label: Text(
-                                          _isAdding ? 'નોંધાઈ રહ્યું છે...' : 'વાહન & સ્લોટ સાચવો',
+                                          _isAdding ? 'નોંધાઈ રહ્યું છે...'.tr : 'વાહન & સ્લોટ સાચવો'.tr,
                                           style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 15),
                                         ),
                                         style: ElevatedButton.styleFrom(
@@ -1213,7 +1213,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                             const Icon(Icons.shield_rounded, color: Color(0xFF38BDF8), size: 14),
                             const SizedBox(width: 5),
                             Text(
-                              flatDisplay.isNotEmpty ? flatDisplay : 'સોસાયટી સભ્ય',
+                              flatDisplay.isNotEmpty ? flatDisplay : 'સોસાયટી સભ્ય'.tr,
                               style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -1226,13 +1226,13 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                           color: const Color(0xFF059669).withValues(alpha: 0.85),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.check_circle_rounded, color: Colors.white, size: 12),
                             SizedBox(width: 4),
                             Text(
-                              'ગેટ સિક્યોરિટી એક્ટિવ',
+                              'ગેટ સિક્યોરિટી એક્ટિવ'.tr,
                               style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -1243,8 +1243,8 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'સ્માર્ટ સોસાયટી પાર્કિંગ ગાર્ડ',
+                      Text(
+                        'સ્માર્ટ સોસાયટી પાર્કિંગ ગાર્ડ'.tr,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 19,
@@ -1254,7 +1254,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'નોંધાયેલા વાહનો: $vehicleCount • સિંગલ-અસાઇનમેન્ટ સ્લોટ પ્રોટેક્શન',
+                        'નોંધાયેલા વાહનો: $vehicleCount • સિંગલ-અસાઇનમેન્ટ સ્લોટ પ્રોટેક્શન'.tr,
                         style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 12, fontWeight: FontWeight.w500),
                       ),
                     ],
@@ -1303,13 +1303,13 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'હજુ કોઈ વાહન નોંધાયેલ નથી',
+            Text(
+              'હજુ કોઈ વાહન નોંધાયેલ નથી'.tr,
               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: Color(0xFF0F172A)),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'ઉપરના "+ નવું વાહન ઉમેરો" પર ક્લિક કરી તમારી કાર/બાઇક અને ફાળવેલ પાર્કિંગ સ્લોટ સાચવો.',
+            Text(
+              'ઉપરના "+ નવું વાહન ઉમેરો" પર ક્લિક કરી તમારી કાર/બાઇક અને ફાળવેલ પાર્કિંગ સ્લોટ સાચવો.'.tr,
               textAlign: TextAlign.center,
               style: TextStyle(color: Color(0xFF64748B), fontSize: 12.5, height: 1.4),
             ),
@@ -1337,12 +1337,12 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
               const Icon(Icons.garage_rounded, color: Color(0xFF0284C7), size: 20),
               const SizedBox(width: 8),
               Text(
-                'નોંધાયેલા વાહનો (${vehicles.length})',
+                'નોંધાયેલા વાહનો (${vehicles.length})'.tr,
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
               ),
               const Spacer(),
-              const Text(
-                '૧ સ્લોટ = ૧ વાહન',
+              Text(
+                '૧ સ્લોટ = ૧ વાહન'.tr,
                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
               ),
             ],
@@ -1356,12 +1356,12 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
             itemBuilder: (context, index) {
               final v = Map<String, dynamic>.from(vehicles[index] as Map);
               final number = (v['number'] ?? '').toString();
-              final type = (v['type'] ?? 'કાર').toString();
+              final type = (v['type'] ?? 'કાર'.tr).toString();
               final model = (v['model'] ?? '').toString();
               final slot = (v['slot'] ?? '').toString();
 
-              final isBike = type.contains('૨') || type.toLowerCase().contains('bike');
-              final isEV = type.contains('EV') || type.contains('ઇલેક્ટ્રિક');
+              final isBike = type.contains('૨'.tr) || type.toLowerCase().contains('bike');
+              final isEV = type.contains('EV') || type.contains('ઇલેક્ટ્રિક'.tr);
               final vehicleIcon = isEV
                   ? Icons.electric_car_rounded
                   : (isBike ? Icons.two_wheeler_rounded : Icons.directions_car_rounded);
@@ -1428,7 +1428,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                             const SizedBox(width: 8),
                                             Expanded(
                                               child: Text(
-                                                'વાહન નંબર કોપી થયો: $number',
+                                                'વાહન નંબર કોપી થયો: $number'.tr,
                                                 style: const TextStyle(fontWeight: FontWeight.bold),
                                               ),
                                             ),
@@ -1442,7 +1442,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                   },
                                   borderRadius: BorderRadius.circular(8),
                                   child: Tooltip(
-                                    message: 'નંબર કોપી કરવા માટે ક્લિક કરો',
+                                    message: 'નંબર કોપી કરવા માટે ક્લિક કરો'.tr,
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
                                       decoration: BoxDecoration(
@@ -1459,7 +1459,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                               color: const Color(0xFF1D4ED8),
                                               borderRadius: BorderRadius.circular(4),
                                             ),
-                                            child: const Text(
+                                            child: Text(
                                               'IND',
                                               style: TextStyle(
                                                 color: Colors.white,
@@ -1498,7 +1498,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                         style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                                       ),
                                       const SizedBox(width: 6),
-                                      const Text('•', style: TextStyle(color: Color(0xFF94A3B8))),
+                                      Text('•', style: TextStyle(color: Color(0xFF94A3B8))),
                                       const SizedBox(width: 6),
                                     ],
                                     Text(
@@ -1514,7 +1514,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                           // Delete Action
                           IconButton(
                             icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 22),
-                            tooltip: 'વાહન કાઢી નાખો',
+                            tooltip: 'વાહન કાઢી નાખો'.tr,
                             onPressed: () => _confirmDeleteVehicle(societyId, v),
                           ),
                         ],
@@ -1539,7 +1539,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                 child: Row(
                                   children: [
                                     Text(
-                                      slot.isNotEmpty ? 'સ્લોટ: $slot' : 'કોઈ સ્લોટ ફાળવેલ નથી',
+                                      slot.isNotEmpty ? 'સ્લોટ: $slot'.tr : 'કોઈ સ્લોટ ફાળવેલ નથી'.tr,
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w800,
@@ -1554,8 +1554,8 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                           color: const Color(0xFFDCFCE7),
                                           borderRadius: BorderRadius.circular(5),
                                         ),
-                                        child: const Text(
-                                          'સુરક્ષિત લૉક',
+                                        child: Text(
+                                          'સુરક્ષિત લૉક'.tr,
                                           style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
                                         ),
                                       ),
@@ -1582,11 +1582,11 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
-                                    children: const [
+                                    children: [
                                       Icon(Icons.swap_horiz_rounded, size: 13, color: Color(0xFF0284C7)),
                                       SizedBox(width: 4),
                                       Text(
-                                        'સ્લોટ બદલો',
+                                        'સ્લોટ બદલો'.tr,
                                         style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                                       ),
                                     ],
@@ -1616,11 +1616,11 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                   border: Border.all(color: const Color(0xFFFECACA), width: 0.8),
                                 ),
                                 child: Row(
-                                  children: const [
+                                  children: [
                                     Icon(Icons.report_problem_rounded, size: 14, color: Color(0xFFDC2626)),
                                     SizedBox(width: 6),
                                     Text(
-                                      'સ્લોટમાં સમસ્યા છે? (અન્ય વાહન / ફરિયાદ)',
+                                      'સ્લોટમાં સમસ્યા છે? (અન્ય વાહન / ફરિયાદ)'.tr,
                                       style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
                                     ),
                                     Spacer(),
@@ -1683,7 +1683,7 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
     final raw = _wrongPlateC.text.trim();
     if (raw.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('કૃપા કરીને વાહન નંબર પ્લેટ લખો!'), backgroundColor: Colors.orange),
+        SnackBar(content: Text('કૃપા કરીને વાહન નંબર પ્લેટ લખો!'.tr), backgroundColor: Colors.orange),
       );
       return;
     }
@@ -1712,7 +1712,7 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('સર્ચ કરવામાં ભૂલ આવી: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('સર્ચ કરવામાં ભૂલ આવી: $e'.tr), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isSearching = false);
@@ -1724,9 +1724,9 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
     setState(() => _isNotifying = true);
 
     try {
-      final title = '🚨 પાર્કિંગ સ્લોટ ખાલી કરવાની વિનંતી';
+      final title = '🚨 પાર્કિંગ સ્લોટ ખાલી કરવાની વિનંતી'.tr;
       final body =
-          'તમારું વાહન (${_foundOwner!.vehicleNumber}) સભ્ય ${widget.flatDisplay} ના પાર્કિંગ સ્લોટ (${widget.assignedSlot}) માં પાર્ક થયેલું છે. કૃપા કરીને તેને તાત્કાલિક યોગ્ય જગ્યાએ હટાવો.';
+          'તમારું વાહન (${_foundOwner!.vehicleNumber}) સભ્ય ${widget.flatDisplay} ના પાર્કિંગ સ્લોટ (${widget.assignedSlot}) માં પાર્ક થયેલું છે. કૃપા કરીને તેને તાત્કાલિક યોગ્ય જગ્યાએ હટાવો.'.tr;
 
       await AppFirestore.instance.collection('notifications').add({
         'title': title,
@@ -1748,7 +1748,7 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('સભ્ય ${_foundOwner!.ownerName} (${_foundOwner!.flatDisplay}) ને સીધું એલર્ટ મોકલી દીધું છે! એડમિનને ખલેલ પહોંચાડ્યા વગર સીધું સોલ્યુશન.'),
+          content: Text('સભ્ય ${_foundOwner!.ownerName} (${_foundOwner!.flatDisplay}) ને સીધું એલર્ટ મોકલી દીધું છે! એડમિનને ખલેલ પહોંચાડ્યા વગર સીધું સોલ્યુશન.'.tr),
           backgroundColor: const Color(0xFF059669),
           behavior: SnackBarBehavior.floating,
         ),
@@ -1756,7 +1756,7 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('એલર્ટ મોકલવામાં ભૂલ: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('એલર્ટ મોકલવામાં ભૂલ: $e'.tr), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isNotifying = false);
@@ -1769,9 +1769,9 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
     setState(() => _isNotifying = true);
 
     try {
-      final title = '🚨 અનધિકૃત વાહન પાર્કિંગ એલર્ટ';
+      final title = '🚨 અનધિકૃત વાહન પાર્કિંગ એલર્ટ'.tr;
       final body =
-          'સભ્ય ${widget.flatDisplay} ના પાર્કિંગ સ્લોટ (${widget.assignedSlot}) માં અજાણ્યું વાહન ($raw) ખોટી જગ્યાએ પાર્ક છે. કૃપા કરીને તપાસ કરી તાત્કાલિક હટાવો.';
+          'સભ્ય ${widget.flatDisplay} ના પાર્કિંગ સ્લોટ (${widget.assignedSlot}) માં અજાણ્યું વાહન ($raw) ખોટી જગ્યાએ પાર્ક છે. કૃપા કરીને તપાસ કરી તાત્કાલિક હટાવો.'.tr;
 
       await AppFirestore.instance.collection('notifications').add({
         'title': title,
@@ -1787,7 +1787,7 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('સિક્યોરિટી ગાર્ડ / વૉચમેનને સ્લોટ ${widget.assignedSlot} અંગે એલર્ટ મોકલી દીધું છે!'),
+          content: Text('સિક્યોરિટી ગાર્ડ / વૉચમેનને સ્લોટ ${widget.assignedSlot} અંગે એલર્ટ મોકલી દીધું છે!'.tr),
           backgroundColor: const Color(0xFF059669),
           behavior: SnackBarBehavior.floating,
         ),
@@ -1795,7 +1795,7 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('એલર્ટ મોકલવામાં ભૂલ: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('એલર્ટ મોકલવામાં ભૂલ: $e'.tr), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isNotifying = false);
@@ -1853,13 +1853,13 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'પાર્કિંગ સ્લોટ સમસ્યા નિવારણ',
+                      Text(
+                        'પાર્કિંગ સ્લોટ સમસ્યા નિવારણ'.tr,
                         style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16.5, color: Color(0xFF0F172A)),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'સ્લોટ: ${widget.assignedSlot} • વાહન: ${widget.vehiclePlate}',
+                        'સ્લોટ: ${widget.assignedSlot} • વાહન: ${widget.vehiclePlate}'.tr,
                         style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                       ),
                     ],
@@ -1885,18 +1885,18 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    children: const [
+                    children: [
                       Icon(Icons.car_crash_rounded, color: Color(0xFFDC2626), size: 18),
                       SizedBox(width: 8),
                       Text(
-                        'મારા સ્લોટમાં અન્ય વાહન પાર્ક છે',
+                        'મારા સ્લોટમાં અન્ય વાહન પાર્ક છે'.tr,
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
                       ),
                     ],
                   ),
                   const SizedBox(height: 6),
-                  const Text(
-                    'ખોટી જગ્યાએ પાર્ક થયેલ વાહન નંબર દાખલ કરી તપાસ કરો:',
+                  Text(
+                    'ખોટી જગ્યાએ પાર્ક થયેલ વાહન નંબર દાખલ કરી તપાસ કરો:'.tr,
                     style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                   ),
                   const SizedBox(height: 12),
@@ -1912,7 +1912,7 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
                             FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s\-]')),
                           ],
                           decoration: InputDecoration(
-                            hintText: 'દા.ત. GJ 01 AB 1234',
+                            hintText: 'દા.ત. GJ 01 AB 1234'.tr,
                             isDense: true,
                             filled: true,
                             fillColor: Colors.white,
@@ -1936,7 +1936,7 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
                         ),
                         child: _isSearching
                             ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Text('તપાસ કરો', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                            : Text('તપાસ કરો'.tr, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                       ),
                     ],
                   ),
@@ -1959,12 +1959,12 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
                               const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 18),
                               const SizedBox(width: 6),
                               Text(
-                                'વાહન માલિક: ${_foundOwner!.ownerName}',
+                                'વાહન માલિક: ${_foundOwner!.ownerName}'.tr,
                                 style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF15803D)),
                               ),
                               const Spacer(),
                               Text(
-                                'ફ્લેટ: ${_foundOwner!.flatDisplay}',
+                                'ફ્લેટ: ${_foundOwner!.flatDisplay}'.tr,
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF166534)),
                               ),
                             ],
@@ -1984,7 +1984,7 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
                                           const Icon(Icons.check_circle_rounded, color: Color(0xFF4ADE80), size: 18),
                                           const SizedBox(width: 8),
                                           Expanded(
-                                            child: Text('વાહન નંબર કોપી થયો: ${_foundOwner!.vehicleNumber}'),
+                                            child: Text('વાહન નંબર કોપી થયો: ${_foundOwner!.vehicleNumber}'.tr),
                                           ),
                                         ],
                                       ),
@@ -2011,7 +2011,7 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
                                           color: const Color(0xFF1D4ED8),
                                           borderRadius: BorderRadius.circular(3),
                                         ),
-                                        child: const Text('IND', style: TextStyle(color: Colors.white, fontSize: 7.5, fontWeight: FontWeight.w900)),
+                                        child: Text('IND', style: TextStyle(color: Colors.white, fontSize: 7.5, fontWeight: FontWeight.w900)),
                                       ),
                                       const SizedBox(width: 5),
                                       Text(
@@ -2040,7 +2040,7 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
                                         const Icon(Icons.phone_in_talk_rounded, size: 13, color: Color(0xFF0284C7)),
                                         const SizedBox(width: 4),
                                         Text(
-                                          'કૉલ: ${_foundOwner!.ownerPhone}',
+                                          'કૉલ: ${_foundOwner!.ownerPhone}'.tr,
                                           style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                                         ),
                                       ],
@@ -2055,7 +2055,7 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
                             child: ElevatedButton.icon(
                               onPressed: _isNotifying ? null : _notifyOwner,
                               icon: const Icon(Icons.notification_important_rounded, size: 16, color: Colors.white),
-                              label: const Text('માલિકને ગાડી હટાવવાનું એલર્ટ મોકલો', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white)),
+                              label: Text('માલિકને ગાડી હટાવવાનું એલર્ટ મોકલો'.tr, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFDC2626),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -2065,12 +2065,12 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
                           const SizedBox(height: 8),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
+                            children: [
                               Icon(Icons.shield_outlined, size: 13, color: Color(0xFF64748B)),
                               SizedBox(width: 4),
                               Expanded(
                                 child: Text(
-                                  'આ નોટિફિકેશન સીધું વાહન માલિકને જશે (એડમિનને નહીં, જેથી આપસી સમજણથી તાત્કાલિક ગાડી હટી શકે).',
+                                  'આ નોટિફિકેશન સીધું વાહન માલિકને જશે (એડમિનને નહીં, જેથી આપસી સમજણથી તાત્કાલિક ગાડી હટી શકે).'.tr,
                                   style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
                                 ),
                               ),
@@ -2095,12 +2095,12 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            children: const [
+                            children: [
                               Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 18),
                               SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  'આ વાહન સોસાયટીના કોઈ સભ્યનું નથી (વિઝિટર/મહેમાનનું હોઈ શકે છે).',
+                                  'આ વાહન સોસાયટીના કોઈ સભ્યનું નથી (વિઝિટર/મહેમાનનું હોઈ શકે છે).'.tr,
                                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
                                 ),
                               ),
@@ -2112,7 +2112,7 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
                             child: ElevatedButton.icon(
                               onPressed: _isNotifying ? null : _notifyWatchman,
                               icon: const Icon(Icons.shield_rounded, size: 16, color: Colors.white),
-                              label: const Text('સિક્યોરિટી / વૉચમેનને તાત્કાલિક જાણ કરો', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white)),
+                              label: Text('સિક્યોરિટી / વૉચમેનને તાત્કાલિક જાણ કરો'.tr, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFD97706),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -2141,16 +2141,16 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
                           builder: (context) => MemberComplaintRegisterScreen(
                             memberName: widget.userName,
                             memberFlat: widget.flatDisplay,
-                            initialCategory: 'પાર્કિંગ વિવાદ',
-                            initialTitle: 'પાર્કિંગ સ્લોટ ${widget.assignedSlot} અંગે સમસ્યા',
-                            initialDesc: 'મારા ફાળવેલા સ્લોટ ${widget.assignedSlot} (વાહન: ${widget.vehiclePlate}) માં નીચે મુજબની સમસ્યા છે:\n',
+                            initialCategory: 'પાર્કિંગ વિવાદ'.tr,
+                            initialTitle: 'પાર્કિંગ સ્લોટ ${widget.assignedSlot} અંગે સમસ્યા'.tr,
+                            initialDesc: 'મારા ફાળવેલા સ્લોટ ${widget.assignedSlot} (વાહન: ${widget.vehiclePlate}) માં નીચે મુજબની સમસ્યા છે:\n'.tr,
                           ),
                         ),
                       );
                     },
                     icon: const Icon(Icons.assignment_late_rounded, size: 16, color: Color(0xFF7C3AED)),
-                    label: const Text(
-                      'પાર્કિંગ ફરિયાદ',
+                    label: Text(
+                      'પાર્કિંગ ફરિયાદ'.tr,
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF7C3AED)),
                     ),
                     style: OutlinedButton.styleFrom(
@@ -2169,8 +2169,8 @@ class _ParkingIssueBottomSheetState extends State<_ParkingIssueBottomSheet> {
                       widget.onChangeSlot();
                     },
                     icon: const Icon(Icons.swap_horiz_rounded, size: 16, color: Color(0xFF0284C7)),
-                    label: const Text(
-                      'સ્લોટ બદલો',
+                    label: Text(
+                      'સ્લોટ બદલો'.tr,
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                     ),
                     style: OutlinedButton.styleFrom(

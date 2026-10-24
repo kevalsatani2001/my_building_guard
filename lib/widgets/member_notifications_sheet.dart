@@ -2,10 +2,12 @@ import 'package:building_guard/core/app_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../services/notification_navigation_service.dart';
 import '../services/society_service.dart';
+import 'package:building_guard/l10n/app_strings.dart';
 
 /// સભ્ય અને એડમિન માટે પ્રીમિયમ ઇન-એપ નોટિફિકેશન સેન્ટર બોટમ શીટ
 class MemberNotificationsSheet {
@@ -73,11 +75,11 @@ class MemberNotificationsSheet {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        const Column(
+                        Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'નોટિફિકેશન અને એલર્ટ્સ',
+                              'નોટિફિકેશન અને એલર્ટ્સ'.tr,
                               style: TextStyle(
                                 fontSize: 16.5,
                                 fontWeight: FontWeight.w900,
@@ -86,7 +88,7 @@ class MemberNotificationsSheet {
                               ),
                             ),
                             Text(
-                              'રસીદ અને મહત્ત્વપૂર્ણ અપડેટ્સ',
+                              'રસીદ અને મહત્ત્વપૂર્ણ અપડેટ્સ'.tr,
                               style: TextStyle(
                                 fontSize: 11.5,
                                 color: Color(0xFF64748B),
@@ -159,7 +161,7 @@ class MemberNotificationsSheet {
                       itemBuilder: (context, index) {
                         final doc = notifs[index];
                         final data = doc.data() as Map<String, dynamic>;
-                        return _buildNotificationCard(ctx, context, data);
+                        return _buildNotificationCard(ctx, context, data, doc.id);
                       },
                     );
                   },
@@ -177,9 +179,10 @@ class MemberNotificationsSheet {
     BuildContext sheetCtx,
     BuildContext rootCtx,
     Map<String, dynamic> data,
+    String notifDocId,
   ) {
     final type = (data['type'] ?? '').toString().trim();
-    final title = (data['title'] ?? 'સૂચના').toString().trim();
+    final title = (data['title'] ?? 'સૂચના'.tr).toString().trim();
     final body = (data['body'] ?? '').toString().trim();
     final ts = data['createdAt'];
 
@@ -192,6 +195,8 @@ class MemberNotificationsSheet {
     final isReminder = type == 'maintenance_due_reminder' || type == 'maintenance_bill';
     final isSos = type == 'sos' || type == 'emergency';
     final isParking = type == 'parking_alert' || type == 'parking_wrong_slot';
+    final isVisitor = type == 'visitor_alert';
+    final isVisitorCheckout = type == 'visitor_checked_out';
 
     final Color badgeBg;
     final Color badgeBorder;
@@ -218,6 +223,11 @@ class MemberNotificationsSheet {
       badgeBorder = const Color(0xFFFDE68A);
       iconColor = const Color(0xFFD97706);
       icon = Icons.car_crash_rounded;
+    } else if (isVisitor || isVisitorCheckout) {
+      badgeBg = const Color(0xFFF0FDFA);
+      badgeBorder = const Color(0xFF99F6E4);
+      iconColor = const Color(0xFF0F766E);
+      icon = isVisitor ? Icons.person_pin_circle_rounded : Icons.door_sliding_rounded;
     } else {
       badgeBg = const Color(0xFFEEF2FF);
       badgeBorder = const Color(0xFFC7D2FE);
@@ -308,6 +318,10 @@ class MemberNotificationsSheet {
                       height: 1.35,
                     ),
                   ),
+                  if (isVisitor && data['visitorDocId'] != null) ...[
+                    const SizedBox(height: 10),
+                    _buildVisitorActionRow(rootCtx, data, notifDocId),
+                  ],
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -331,7 +345,7 @@ class MemberNotificationsSheet {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              isReceipt ? 'રસીદ જુઓ' : 'ખોલો',
+                              isReceipt ? 'રસીદ જુઓ'.tr : (isVisitor ? 'વિગતો'.tr : 'ખોલો'.tr),
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w800,
@@ -351,6 +365,149 @@ class MemberNotificationsSheet {
           ],
         ),
       ),
+    );
+  }
+
+  static Widget _buildVisitorActionRow(
+    BuildContext rootCtx,
+    Map<String, dynamic> data,
+    String notifDocId,
+  ) {
+    final visitorDocId = (data['visitorDocId'] ?? '').toString();
+    final status = (data['status'] ?? 'pending').toString();
+
+    if (status == 'approved') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: const Color(0xFFECFDF5),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFA7F3D0)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF059669)),
+            const SizedBox(width: 5),
+            Text(
+              'visitor_status_approved'.tr,
+              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF059669)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (status == 'rejected') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF2F2),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFFECACA)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cancel_rounded, size: 14, color: Color(0xFFDC2626)),
+            const SizedBox(width: 5),
+            Text(
+              'visitor_status_rejected'.tr,
+              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFFDC2626)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 36,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                HapticFeedback.mediumImpact();
+                try {
+                  if (visitorDocId.isNotEmpty) {
+                    await AppFirestore.instance.collection('visitors').doc(visitorDocId).update({
+                      'status': 'approved',
+                      'actionTime': FieldValue.serverTimestamp(),
+                    });
+                  }
+                  await AppFirestore.instance.collection('notifications').doc(notifDocId).update({
+                    'status': 'approved',
+                  });
+                  if (rootCtx.mounted) {
+                    ScaffoldMessenger.of(rootCtx).showSnackBar(
+                      SnackBar(
+                        content: Text('visitor_approved_success'.tr),
+                        backgroundColor: const Color(0xFF059669),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  debugPrint('Error approving visitor: $e');
+                }
+              },
+              icon: const Icon(Icons.check_circle_rounded, size: 15, color: Colors.white),
+              label: Text(
+                'approve_visitor_btn'.tr,
+                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF059669),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: SizedBox(
+            height: 36,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                HapticFeedback.mediumImpact();
+                try {
+                  if (visitorDocId.isNotEmpty) {
+                    await AppFirestore.instance.collection('visitors').doc(visitorDocId).update({
+                      'status': 'rejected',
+                      'actionTime': FieldValue.serverTimestamp(),
+                    });
+                  }
+                  await AppFirestore.instance.collection('notifications').doc(notifDocId).update({
+                    'status': 'rejected',
+                  });
+                  if (rootCtx.mounted) {
+                    ScaffoldMessenger.of(rootCtx).showSnackBar(
+                      SnackBar(
+                        content: Text('visitor_denied_success'.tr),
+                        backgroundColor: const Color(0xFFDC2626),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  debugPrint('Error rejecting visitor: $e');
+                }
+              },
+              icon: const Icon(Icons.cancel_rounded, size: 15, color: Color(0xFFDC2626)),
+              label: Text(
+                'deny_visitor_btn'.tr,
+                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFFDC2626)),
+              ),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFFEF2F2),
+                side: const BorderSide(color: Color(0xFFFECACA), width: 1.2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -374,8 +531,8 @@ class MemberNotificationsSheet {
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'હાલ કોઈ નવી નોટિફિકેશન નથી',
+            Text(
+              'હાલ કોઈ નવી નોટિફિકેશન નથી'.tr,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
@@ -383,8 +540,8 @@ class MemberNotificationsSheet {
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'જ્યારે એડમિન પેમેન્ટ સ્વીકારશે અથવા સોસાયટી એલર્ટ મોકલશે, ત્યારે અહીં દેખાશે.',
+            Text(
+              'જ્યારે એડમિન પેમેન્ટ સ્વીકારશે અથવા સોસાયટી એલર્ટ મોકલશે, ત્યારે અહીં દેખાશે.'.tr,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,

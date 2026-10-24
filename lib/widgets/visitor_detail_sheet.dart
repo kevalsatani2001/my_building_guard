@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/visitor_model.dart';
+import 'package:building_guard/l10n/app_strings.dart';
 
 class VisitorDetailSheet extends StatelessWidget {
   final VisitorModel visitor;
@@ -39,7 +40,7 @@ class VisitorDetailSheet extends StatelessWidget {
     final clean = phone.replaceAll(RegExp(r'[^0-9+]'), '');
     if (clean.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('માન્ય ફોન નંબર મળ્યો નથી.')),
+        SnackBar(content: Text('માન્ય ફોન નંબર મળ્યો નથી.'.tr)),
       );
       return;
     }
@@ -51,9 +52,9 @@ class VisitorDetailSheet extends StatelessWidget {
 
   Future<void> _openWhatsApp(BuildContext context, String phone) async {
     final clean = phone.replaceAll(RegExp(r'[^0-9]'), '');
-    if (clean.isEmpty) return;
     final intlPhone = clean.length == 10 ? '91$clean' : clean;
-    final uri = Uri.parse('https://wa.me/$intlPhone?text=નમસ્તે%20${visitor.name.isNotEmpty ? visitor.name : 'મહેમાન'},%20સોસાયટી%20ગેટ%20પાસ%20સંદર્ભે.');
+    final guestText = 'મહેમાન'.tr;
+    final uri = Uri.parse('https://wa.me/$intlPhone?text=નમસ્તે%20${visitor.name.isNotEmpty ? visitor.name : guestText},%20સોસાયટી%20ગેટ%20પાસ%20સંદર્ભે.');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -64,9 +65,9 @@ class VisitorDetailSheet extends StatelessWidget {
     final text = '''
 🏢 *સોસાયટી વિઝિટર ગેટ પાસ વિગત*
 ━━━━━━━━━━━━━━━━━━
-👤 મુલાકાતી: ${visitor.name.isNotEmpty ? visitor.name : 'અનામી'}
-📞 ફોન: ${visitor.phone.isNotEmpty ? visitor.phone : 'ઉપલબ્ધ નથી'}
-🎯 હેતુ: ${visitor.purpose.isNotEmpty ? visitor.purpose : 'મુલાકાત'}
+👤 મુલાકાતી: ${visitor.name.isNotEmpty ? visitor.name : 'અનામી'.tr}
+📞 ફોન: ${visitor.phone.isNotEmpty ? visitor.phone : 'ઉપલબ્ધ નથી'.tr}
+🎯 હેતુ: ${visitor.purpose.isNotEmpty ? visitor.purpose : 'મુલાકાત'.tr}
 🏠 લક્ષ્ય ફ્લેટ: ${visitor.flatDisplay}
 📌 સ્ટેટસ: ${_getStatusTitle()}
 ⏰ પ્રવેશ સમય: ${DateFormat('dd MMM yyyy, hh:mm a').format(visitor.entryTime)}
@@ -78,55 +79,55 @@ ${visitor.exitTime != null ? '🚪 બહાર ગયા: ${DateFormat('dd MMM 
     SharePlus.instance.share(
       ShareParams(
         text: text.trim(),
-        subject: 'વિઝિટર ગેટ પાસ વિગત - ${visitor.flatDisplay}',
+        subject: 'વિઝિટર ગેટ પાસ વિગત - ${visitor.flatDisplay}'.tr,
       ),
     );
   }
 
   String _getStatusTitle() {
     return switch (visitor.status) {
-      'approved' => 'પ્રવેશ મંજૂર (Approved)',
-      'rejected' => 'પ્રવેશ નકાર્યો (Rejected)',
-      'checked_out' => 'સોસાયટીમાંથી બહાર ગયા (Checked-out)',
-      _ => 'મંજૂરીની રાહ (Pending Approval)',
+      'approved' => 'પ્રવેશ મંજૂર (Approved)'.tr,
+      'rejected' => 'પ્રવેશ નકાર્યો (Rejected)'.tr,
+      'checked_out' => 'સોસાયટીમાંથી બહાર ગયા (Checked-out)'.tr,
+      _ => 'મંજૂરીની રાહ (Pending Approval)'.tr,
     };
   }
 
   String _calculateStayDuration() {
     final end = visitor.exitTime ?? DateTime.now();
     final diff = end.difference(visitor.entryTime);
-    if (diff.isNegative) return 'હમણાં જ આવ્યા';
+    if (diff.isNegative) return 'હમણાં જ આવ્યા'.tr;
 
     final hours = diff.inHours;
     final minutes = diff.inMinutes % 60;
 
     if (visitor.status == 'checked_out') {
-      if (hours > 0) return '$hours કલાક $minutes મિનિટ રોકાણ';
-      return '$minutes મિનિટ રોકાણ';
+      if (hours > 0) return '$hours કલાક $minutes મિનિટ રોકાણ'.tr;
+      return '$minutes મિનિટ રોકાણ'.tr;
     } else {
-      if (hours > 0) return '$hours કલાક $minutes મિનિટથી અંદર છે';
-      return '$minutes મિનિટથી અંદર છે';
+      if (hours > 0) return '$hours કલાક $minutes મિનિટથી અંદર છે'.tr;
+      return '$minutes મિનિટથી અંદર છે'.tr;
     }
   }
 
   (IconData, Color, Color) _getVisitorMeta() {
     final p = visitor.purpose.toLowerCase();
-    if (p.contains('swiggy') || p.contains('zomato') || p.contains('food') || p.contains('ખાવાનું')) {
+    if (p.contains('swiggy') || p.contains('zomato') || p.contains('food') || p.contains('ખાવાનું'.tr)) {
       return (Icons.fastfood_rounded, const Color(0xFFEA580C), const Color(0xFFFFF7ED));
     }
-    if (p.contains('amazon') || p.contains('flipkart') || p.contains('courier') || p.contains('પાર્સલ')) {
+    if (p.contains('amazon') || p.contains('flipkart') || p.contains('courier') || p.contains('પાર્સલ'.tr)) {
       return (Icons.local_shipping_rounded, const Color(0xFF0284C7), const Color(0xFFF0F9FF));
     }
-    if (p.contains('blinkit') || p.contains('zepto') || p.contains('grocery') || p.contains('શાકભાજી')) {
+    if (p.contains('blinkit') || p.contains('zepto') || p.contains('grocery') || p.contains('શાકભાજી'.tr)) {
       return (Icons.shopping_basket_rounded, const Color(0xFF16A34A), const Color(0xFFF0FDF4));
     }
     if (p.contains('cab') || p.contains('uber') || p.contains('ola') || p.contains('rapido')) {
       return (Icons.local_taxi_rounded, const Color(0xFFCA8A04), const Color(0xFFFEFCE8));
     }
-    if (p.contains('maid') || p.contains('કામવાળા') || p.contains('કૂક') || p.contains('cook')) {
+    if (p.contains('maid') || p.contains('કામવાળા'.tr) || p.contains('કૂક'.tr) || p.contains('cook')) {
       return (Icons.cleaning_services_rounded, const Color(0xFF9333EA), const Color(0xFFFAF5FF));
     }
-    if (p.contains('plumber') || p.contains('electrician') || p.contains('રિપેર') || p.contains('repair')) {
+    if (p.contains('plumber') || p.contains('electrician') || p.contains('રિપેર'.tr) || p.contains('repair')) {
       return (Icons.handyman_rounded, const Color(0xFFDC2626), const Color(0xFFFEF2F2));
     }
     return (Icons.person_rounded, const Color(0xFF4F46E5), const Color(0xFFEEF2FF));
@@ -139,10 +140,10 @@ ${visitor.exitTime != null ? '🚪 બહાર ગયા: ${DateFormat('dd MMM 
     final canAction = isPending && isMyFlat && onStatusUpdate != null;
 
     final (statusColor, statusBg, statusText, statusIcon) = switch (visitor.status) {
-      'approved' => (const Color(0xFF059669), const Color(0xFFECFDF5), 'પ્રવેશ મંજૂર (Approved)', Icons.check_circle_rounded),
-      'rejected' => (const Color(0xFFDC2626), const Color(0xFFFEF2F2), 'પ્રવેશ નકાર્યો (Rejected)', Icons.cancel_rounded),
-      'checked_out' => (const Color(0xFF475569), const Color(0xFFF1F5F9), 'બહાર ગયા (Checked Out)', Icons.logout_rounded),
-      _ => (const Color(0xFFD97706), const Color(0xFFFFFBEB), 'મંજૂરીની રાહ (Pending)', Icons.hourglass_top_rounded),
+      'approved' => (const Color(0xFF059669), const Color(0xFFECFDF5), 'પ્રવેશ મંજૂર (Approved)'.tr, Icons.check_circle_rounded),
+      'rejected' => (const Color(0xFFDC2626), const Color(0xFFFEF2F2), 'પ્રવેશ નકાર્યો (Rejected)'.tr, Icons.cancel_rounded),
+      'checked_out' => (const Color(0xFF475569), const Color(0xFFF1F5F9), 'બહાર ગયા (Checked Out)'.tr, Icons.logout_rounded),
+      _ => (const Color(0xFFD97706), const Color(0xFFFFFBEB), 'મંજૂરીની રાહ (Pending)'.tr, Icons.hourglass_top_rounded),
     };
 
     return Container(
@@ -174,9 +175,9 @@ ${visitor.exitTime != null ? '🚪 બહાર ગયા: ${DateFormat('dd MMM 
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'વિઝિટર સંપૂર્ણ વિગતો',
+                    'વિઝિટર સંપૂર્ણ વિગતો'.tr,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
@@ -186,7 +187,7 @@ ${visitor.exitTime != null ? '🚪 બહાર ગયા: ${DateFormat('dd MMM 
                   ),
                 ),
                 IconButton(
-                  tooltip: 'શેર કરો',
+                  tooltip: 'શેર કરો'.tr,
                   icon: const Icon(Icons.share_outlined, color: Color(0xFF0284C7)),
                   onPressed: () => _shareVisitorDetails(context),
                 ),
@@ -260,7 +261,7 @@ ${visitor.exitTime != null ? '🚪 બહાર ગયા: ${DateFormat('dd MMM 
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                visitor.name.isNotEmpty ? visitor.name : "અનામી મુલાકાતી",
+                                visitor.name.isNotEmpty ? visitor.name : "અનામી મુલાકાતી".tr,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w900,
                                   fontSize: 18,
@@ -287,7 +288,7 @@ ${visitor.exitTime != null ? '🚪 બહાર ગયા: ${DateFormat('dd MMM 
                                         Icon(typeIcon, size: 12, color: typeColor),
                                         const SizedBox(width: 4),
                                         Text(
-                                          visitor.purpose.isNotEmpty ? visitor.purpose : 'સામાન્ય મુલાકાત',
+                                          visitor.purpose.isNotEmpty ? visitor.purpose : 'સામાન્ય મુલાકાત'.tr,
                                           style: TextStyle(
                                             fontSize: 11,
                                             fontWeight: FontWeight.bold,
@@ -367,7 +368,7 @@ ${visitor.exitTime != null ? '🚪 બહાર ગયા: ${DateFormat('dd MMM 
                             onPressed: () => _makeCall(context, visitor.phone),
                             icon: const Icon(Icons.phone_rounded, color: Colors.white, size: 17),
                             label: Text(
-                              'કૉલ: ${visitor.phone}',
+                              'કૉલ: ${visitor.phone}'.tr,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
@@ -385,8 +386,8 @@ ${visitor.exitTime != null ? '🚪 બહાર ગયા: ${DateFormat('dd MMM 
                           child: ElevatedButton.icon(
                             onPressed: () => _openWhatsApp(context, visitor.phone),
                             icon: const Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 17),
-                            label: const Text(
-                              'વોટ્સએપ',
+                            label: Text(
+                              'વોટ્સએપ'.tr,
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
                             ),
                             style: ElevatedButton.styleFrom(
@@ -403,8 +404,8 @@ ${visitor.exitTime != null ? '🚪 બહાર ગયા: ${DateFormat('dd MMM 
                   ],
 
                   // 3. Complete Detail Metrics Grid
-                  const Text(
-                    'ચકાસણી અને સમય વિગત (Verification & Logs):',
+                  Text(
+                    'ચકાસણી અને સમય વિગત (Verification & Logs):'.tr,
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
                   ),
                   const SizedBox(height: 8),
@@ -420,30 +421,30 @@ ${visitor.exitTime != null ? '🚪 બહાર ગયા: ${DateFormat('dd MMM 
                         _infoTile(
                           icon: Icons.login_rounded,
                           iconColor: const Color(0xFF0284C7),
-                          title: 'પ્રવેશ સમય (Entry Time)',
+                          title: 'પ્રવેશ સમય (Entry Time)'.tr,
                           value: DateFormat('dd MMM yyyy, hh:mm:ss a').format(visitor.entryTime),
                         ),
                         const Divider(height: 1, color: Color(0xFFF1F5F9)),
                         _infoTile(
                           icon: Icons.logout_rounded,
                           iconColor: visitor.exitTime != null ? const Color(0xFFDC2626) : const Color(0xFF94A3B8),
-                          title: 'બહાર ગયા (Exit Time)',
+                          title: 'બહાર ગયા (Exit Time)'.tr,
                           value: visitor.exitTime != null
                               ? DateFormat('dd MMM yyyy, hh:mm:ss a').format(visitor.exitTime!)
-                              : 'હજુ સોસાયટીની અંદર જ છે',
+                              : 'હજુ સોસાયટીની અંદર જ છે'.tr,
                         ),
                         const Divider(height: 1, color: Color(0xFFF1F5F9)),
                         _infoTile(
                           icon: Icons.timelapse_rounded,
                           iconColor: const Color(0xFF7C3AED),
-                          title: 'કુલ રોકાણનો સમયગાળો (Duration)',
+                          title: 'કુલ રોકાણનો સમયગાળો (Duration)'.tr,
                           value: _calculateStayDuration(),
                         ),
                         const Divider(height: 1, color: Color(0xFFF1F5F9)),
                         _infoTile(
                           icon: Icons.meeting_room_rounded,
                           iconColor: const Color(0xFF059669),
-                          title: 'લક્ષ્ય ફ્લેટ / મકાન',
+                          title: 'લક્ષ્ય ફ્લેટ / મકાન'.tr,
                           value: visitor.flatDisplay,
                         ),
                         if (visitor.memberName.isNotEmpty) ...[
@@ -451,7 +452,7 @@ ${visitor.exitTime != null ? '🚪 બહાર ગયા: ${DateFormat('dd MMM 
                           _infoTile(
                             icon: Icons.person_pin_rounded,
                             iconColor: const Color(0xFF2563EB),
-                            title: 'રહીશ / યજમાન (Host)',
+                            title: 'રહીશ / યજમાન (Host)'.tr,
                             value: visitor.memberName,
                           ),
                         ],
@@ -459,8 +460,8 @@ ${visitor.exitTime != null ? '🚪 બહાર ગયા: ${DateFormat('dd MMM 
                         _infoTile(
                           icon: Icons.security_rounded,
                           iconColor: const Color(0xFF0D9488),
-                          title: 'નોંધણી ગેટ / સુરક્ષા',
-                          value: 'મુખ્ય સોસાયટી ગેટ (સુરક્ષા ચેકપોઇન્ટ)',
+                          title: 'નોંધણી ગેટ / સુરક્ષા'.tr,
+                          value: 'મુખ્ય સોસાયટી ગેટ (સુરક્ષા ચેકપોઇન્ટ)'.tr,
                         ),
                       ],
                     ),
@@ -469,8 +470,8 @@ ${visitor.exitTime != null ? '🚪 બહાર ગયા: ${DateFormat('dd MMM 
                   // 4. Action Buttons (Pending Gate Approvals)
                   if (canAction) ...[
                     const SizedBox(height: 24),
-                    const Text(
-                      'ગેટ પ્રવેશ નિર્ણય (Gate Action):',
+                    Text(
+                      'ગેટ પ્રવેશ નિર્ણય (Gate Action):'.tr,
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
                     ),
                     const SizedBox(height: 8),
@@ -485,8 +486,8 @@ ${visitor.exitTime != null ? '🚪 બહાર ગયા: ${DateFormat('dd MMM 
                                 onStatusUpdate!(visitor.id, 'approved');
                               },
                               icon: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 19),
-                              label: const Text(
-                                'પ્રવેશ મંજૂર કરો',
+                              label: Text(
+                                'પ્રવેશ મંજૂર કરો'.tr,
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
                               ),
                               style: ElevatedButton.styleFrom(
@@ -507,8 +508,8 @@ ${visitor.exitTime != null ? '🚪 બહાર ગયા: ${DateFormat('dd MMM 
                                 onStatusUpdate!(visitor.id, 'rejected');
                               },
                               icon: const Icon(Icons.cancel_rounded, color: Color(0xFFDC2626), size: 19),
-                              label: const Text(
-                                'પ્રવેશ નકારો',
+                              label: Text(
+                                'પ્રવેશ નકારો'.tr,
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFFDC2626)),
                               ),
                               style: OutlinedButton.styleFrom(

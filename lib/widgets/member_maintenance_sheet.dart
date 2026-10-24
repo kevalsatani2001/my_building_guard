@@ -10,6 +10,7 @@ import '../models/maintenance_model.dart';
 import '../services/maintenance_service.dart';
 import '../services/society_service.dart';
 import '../services/maintenance_receipt_pdf_service.dart';
+import 'package:building_guard/l10n/app_strings.dart';
 
 /// Modular maintenance widgets & sheets for Resident/Member Screen.
 class MemberMaintenanceSheet {
@@ -93,8 +94,8 @@ class MemberMaintenanceSheet {
                     ),
                     Text(
                       isReview
-                          ? 'UPI પેમેન્ટ ચકાસણી હેઠળ છે'
-                          : 'બાકી: ${currencyFmt.format(bill.totalPayable)} • છેલ્લી તા: ${DateFormat("dd/MM").format(bill.dueDate)}',
+                          ? 'UPI પેમેન્ટ ચકાસણી હેઠળ છે'.tr
+                          : 'બાકી: ${currencyFmt.format(bill.totalPayable)} • છેલ્લી તા: ${DateFormat("dd/MM").format(bill.dueDate)}'.tr,
                       style:
                           const TextStyle(color: Colors.white70, fontSize: 11),
                     ),
@@ -115,7 +116,7 @@ class MemberMaintenanceSheet {
                   visualDensity: VisualDensity.compact,
                 ),
                 child: Text(
-                  isReview ? 'વિગત' : 'હમણાં ચૂકવો',
+                  isReview ? 'વિગત'.tr : 'હમણાં ચૂકવો'.tr,
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 11),
                 ),
@@ -243,8 +244,8 @@ class MemberMaintenanceSheet {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'મેન્ટેનન્સ ચુકવણી રસીદ',
+                        Text(
+                          'મેન્ટેનન્સ ચુકવણી રસીદ'.tr,
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.bold,
@@ -252,8 +253,8 @@ class MemberMaintenanceSheet {
                         ),
                         Text(
                           bill.receiptNumber.isNotEmpty
-                              ? 'રસીદ નં: ${bill.receiptNumber}'
-                              : 'ડિજિટલ રસીદ',
+                              ? 'રસીદ નં: ${bill.receiptNumber}'.tr
+                              : 'ડિજિટલ રસીદ'.tr,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade600,
@@ -289,8 +290,8 @@ class MemberMaintenanceSheet {
                 ),
                 child: Column(
                   children: [
-                    const Text(
-                      'ચૂકવેલ રકમ (PAID)',
+                    Text(
+                      'ચૂકવેલ રકમ (PAID)'.tr,
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: 11,
@@ -314,13 +315,13 @@ class MemberMaintenanceSheet {
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.check_circle_rounded, color: Colors.white, size: 14),
                           SizedBox(width: 4),
                           Text(
-                            'સફળતાપૂર્વક પ્રમાણિત (VERIFIED)',
+                            'સફળતાપૂર્વક પ્રમાણિત (VERIFIED)'.tr,
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 11,
@@ -346,22 +347,22 @@ class MemberMaintenanceSheet {
                 ),
                 child: Column(
                   children: [
-                    _receiptItem('બિલિંગ મહિનો', bill.billTitle),
-                    _receiptItem('ફ્લેટ / યુનિટ', bill.flatDisplay),
-                    _receiptItem('સભ્યનું નામ', bill.memberName.isNotEmpty ? bill.memberName : '-'),
-                    _receiptItem('ચુકવણી પદ્ધતિ', bill.paymentMode.isNotEmpty ? bill.paymentMode.toUpperCase() : 'UPI'),
+                    _receiptItem('બિલિંગ મહિનો'.tr, bill.billTitle),
+                    _receiptItem('ફ્લેટ / યુનિટ'.tr, bill.flatDisplay),
+                    _receiptItem('સભ્યનું નામ'.tr, bill.memberName.isNotEmpty ? bill.memberName : '-'),
+                    _receiptItem('ચુકવણી પદ્ધતિ'.tr, bill.paymentMode.isNotEmpty ? bill.paymentMode.toUpperCase() : 'UPI'),
                     if (bill.utrNumber.isNotEmpty)
-                      _receiptItem('UTR / ટ્રાન્ઝેક્શન નં', bill.utrNumber),
+                      _receiptItem('UTR / ટ્રાન્ઝેક્શન નં'.tr, bill.utrNumber),
                     if (bill.chequeNumber.isNotEmpty)
-                      _receiptItem('ચેક નંબર', bill.chequeNumber),
-                    _receiptItem('ચુકવણી તારીખ', paidDate),
+                      _receiptItem('ચેક નંબર'.tr, bill.chequeNumber),
+                    _receiptItem('ચુકવણી તારીખ'.tr, paidDate),
                     if (bill.verifiedBy.isNotEmpty)
                       _receiptItem(
-                        'ચકાસણી કરનાર',
+                        'ચકાસણી કરનાર'.tr,
                         (bill.verifiedBy.trim().toLowerCase() == 'admin' ||
                                 (bill.verifiedBy.trim().length >= 20 &&
                                     !bill.verifiedBy.trim().contains(' ')))
-                            ? 'સોસાયટી એડમિન'
+                            ? 'સોસાયટી એડમિન'.tr
                             : bill.verifiedBy.trim(),
                       ),
                   ],
@@ -384,7 +385,7 @@ class MemberMaintenanceSheet {
                         );
                       },
                       icon: const Icon(Icons.picture_as_pdf_rounded),
-                      label: const Text('PDF જુઓ'),
+                      label: Text('PDF જુઓ'.tr),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF0F766E),
                         side: const BorderSide(color: Color(0xFF0F766E), width: 1.5),
@@ -407,7 +408,7 @@ class MemberMaintenanceSheet {
                         );
                       },
                       icon: const Icon(Icons.download_rounded),
-                      label: const Text('PDF ડાઉનલોડ'),
+                      label: Text('PDF ડાઉનલોડ'.tr),
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFF0F766E),
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -441,7 +442,7 @@ class MemberMaintenanceSheet {
                     } catch (_) {}
                   },
                   icon: const Icon(Icons.share_rounded, size: 18),
-                  label: const Text('રસીદ PDF શેર કરો (Share)'),
+                  label: Text('રસીદ PDF શેર કરો (Share)'.tr),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.grey.shade700,
                   ),
@@ -654,8 +655,8 @@ class _MemberMaintenanceSheetContentState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'મેન્ટેનન્સ & ઓનલાઇન પેમેન્ટ',
+                        Text(
+                          'મેન્ટેનન્સ & ઓનલાઇન પેમેન્ટ'.tr,
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.bold,
@@ -663,7 +664,7 @@ class _MemberMaintenanceSheetContentState
                           ),
                         ),
                         Text(
-                          '${widget.societyName} • ડિજિટલ રસીદો',
+                          '${widget.societyName} • ડિજિટલ રસીદો'.tr,
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.grey.shade600,
@@ -705,16 +706,16 @@ class _MemberMaintenanceSheetContentState
                 indicatorSize: TabBarIndicatorSize.tab,
                 labelColor: Colors.white,
                 unselectedLabelColor: const Color(0xFF475569),
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 dividerColor: Colors.transparent,
-                tabs: const [
+                tabs: [
                   Tab(
                     icon: Icon(Icons.payment_rounded, size: 18),
-                    text: 'ચુકવણી (Pay)',
+                    text: 'ચુકવણી (Pay)'.tr,
                   ),
                   Tab(
                     icon: Icon(Icons.history_rounded, size: 18),
-                    text: 'ઇતિહાસ & રસીદો',
+                    text: 'ઇતિહાસ & રસીદો'.tr,
                   ),
                 ],
               ),
@@ -788,8 +789,8 @@ class _MemberMaintenanceSheetContentState
                                       color: Colors.grey.shade400,
                                     ),
                                     const SizedBox(height: 12),
-                                    const Text(
-                                      'હજુ સુધી કોઈ બિલ કે રસીદ મળી નથી.',
+                                    Text(
+                                      'હજુ સુધી કોઈ બિલ કે રસીદ મળી નથી.'.tr,
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.bold,
@@ -797,8 +798,8 @@ class _MemberMaintenanceSheetContentState
                                       ),
                                     ),
                                     const SizedBox(height: 6),
-                                    const Text(
-                                      'સોસાયટી દ્વારા બિલ જનરેટ થશે ત્યારે અહીં લિસ્ટ થશે.',
+                                    Text(
+                                      'સોસાયટી દ્વારા બિલ જનરેટ થશે ત્યારે અહીં લિસ્ટ થશે.'.tr,
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: 12,
@@ -884,8 +885,8 @@ class _MemberMaintenanceSheetContentState
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
-                '🎉 તમામ મેન્ટેનન્સ બિલ ચૂકવાઈ ગયા છે!',
+              Text(
+                '🎉 તમામ મેન્ટેનન્સ બિલ ચૂકવાઈ ગયા છે!'.tr,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 18,
@@ -894,8 +895,8 @@ class _MemberMaintenanceSheetContentState
                 ),
               ),
               const SizedBox(height: 6),
-              const Text(
-                'તમારું કોઈ બાકી લેણું નથી • સોસાયટી ખાતું સંપૂર્ણ ક્લિયર છે.',
+              Text(
+                'તમારું કોઈ બાકી લેણું નથી • સોસાયટી ખાતું સંપૂર્ણ ક્લિયર છે.'.tr,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -974,8 +975,8 @@ class _MemberMaintenanceSheetContentState
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'છેલ્લી ચુકવણીની રસીદ',
+                          Text(
+                            'છેલ્લી ચુકવણીની રસીદ'.tr,
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -984,8 +985,8 @@ class _MemberMaintenanceSheetContentState
                           ),
                           Text(
                             latestPaidBill.receiptNumber.isNotEmpty
-                                ? 'રસીદ નં: ${latestPaidBill.receiptNumber}'
-                                : 'ડિજિટલ વેરિફાઇડ રસીદ',
+                                ? 'રસીદ નં: ${latestPaidBill.receiptNumber}'.tr
+                                : 'ડિજિટલ વેરિફાઇડ રસીદ'.tr,
                             style: TextStyle(
                               fontSize: 11,
                               color: Colors.grey.shade600,
@@ -1042,7 +1043,7 @@ class _MemberMaintenanceSheetContentState
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'ફ્લેટ: ${latestPaidBill.flatDisplay}',
+                            'ફ્લેટ: ${latestPaidBill.flatDisplay}'.tr,
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey.shade700,
@@ -1125,7 +1126,7 @@ class _MemberMaintenanceSheetContentState
                           );
                         },
                         icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
-                        label: const Text('રસીદ PDF જુઓ'),
+                        label: Text('રસીદ PDF જુઓ'.tr),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF0F766E),
                           side: const BorderSide(
@@ -1149,7 +1150,7 @@ class _MemberMaintenanceSheetContentState
                           );
                         },
                         icon: const Icon(Icons.download_rounded, size: 18),
-                        label: const Text('PDF ડાઉનલોડ'),
+                        label: Text('PDF ડાઉનલોડ'.tr),
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFF0F766E),
                           padding: const EdgeInsets.symmetric(vertical: 11),
@@ -1197,8 +1198,8 @@ class _MemberMaintenanceSheetContentState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'બધી જૂની રસીદો & ઇતિહાસ જુઓ',
+                      Text(
+                        'બધી જૂની રસીદો & ઇતિહાસ જુઓ'.tr,
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
@@ -1206,7 +1207,7 @@ class _MemberMaintenanceSheetContentState
                         ),
                       ),
                       Text(
-                        '$totalPaidCount રસીદો ઉપલબ્ધ છે • ક્લિક કરી વિગત જુઓ',
+                        '$totalPaidCount રસીદો ઉપલબ્ધ છે • ક્લિક કરી વિગત જુઓ'.tr,
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.grey.shade600,
@@ -1300,9 +1301,9 @@ class _MemberMaintenanceSheetContentState
                       Text(
                         isPaid
                             ? (bill.receiptNumber.isNotEmpty
-                                ? 'રસીદ નં: ${bill.receiptNumber}'
-                                : 'ચૂકવેલ: $paidDate')
-                            : 'મુદત: $paidDate',
+                                ? 'રસીદ નં: ${bill.receiptNumber}'.tr
+                                : 'ચૂકવેલ: $paidDate'.tr)
+                            : 'મુદત: $paidDate'.tr,
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.grey.shade600,
@@ -1382,14 +1383,14 @@ class _MemberMaintenanceSheetContentState
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(color: const Color(0xFFA7F3D0)),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.picture_as_pdf_rounded,
                                   size: 13, color: Color(0xFF059669)),
                               SizedBox(width: 4),
                               Text(
-                                'જુઓ',
+                                'જુઓ'.tr,
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
@@ -1418,14 +1419,14 @@ class _MemberMaintenanceSheetContentState
                             color: const Color(0xFF0F766E),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.download_rounded,
                                   size: 13, color: Colors.white),
                               SizedBox(width: 4),
                               Text(
-                                'ડાઉનલોડ',
+                                'ડાઉનલોડ'.tr,
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
@@ -1450,7 +1451,7 @@ class _MemberMaintenanceSheetContentState
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  'UTR: ${bill.utrNumber} • એડમિન ચકાસણી હેઠળ છે.',
+                  'UTR: ${bill.utrNumber} • એડમિન ચકાસણી હેઠળ છે.'.tr,
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.blue.shade900,
@@ -1467,7 +1468,7 @@ class _MemberMaintenanceSheetContentState
                     _tabController.animateTo(0);
                   },
                   icon: const Icon(Icons.payment_rounded, size: 14),
-                  label: const Text('હમણાં ચૂકવો (Pay Now)'),
+                  label: Text('હમણાં ચૂકવો (Pay Now)'.tr),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red.shade700,
                     side: BorderSide(color: Colors.red.shade300),
@@ -1511,19 +1512,19 @@ class _MemberMaintenanceSheetContentState
             Icon(Icons.hourglass_bottom_rounded,
                 size: 52, color: Colors.blue.shade800),
             const SizedBox(height: 12),
-            const Text(
-              'UPI પેમેન્ટ ચકાસણી હેઠળ છે',
+            Text(
+              'UPI પેમેન્ટ ચકાસણી હેઠળ છે'.tr,
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              'તમારો સબમિટ થયેલ UTR: ${bill.utrNumber}\nરકમ: ${currencyFmt.format(bill.totalPayable)}',
+              'તમારો સબમિટ થયેલ UTR: ${bill.utrNumber}\nરકમ: ${currencyFmt.format(bill.totalPayable)}'.tr,
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.black87, fontSize: 13),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'ચેરમેન/એડમિન આ રકમ વેરિફાય કરશે એટલે તરત જ તમને ડિજિટલ રસીદ મળી જશે અને PDF ડાઉનલોડ થઈ શકશે.',
+            Text(
+              'ચેરમેન/એડમિન આ રકમ વેરિફાય કરશે એટલે તરત જ તમને ડિજિટલ રસીદ મળી જશે અને PDF ડાઉનલોડ થઈ શકશે.'.tr,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: Colors.black54),
             ),
@@ -1574,7 +1575,7 @@ class _MemberMaintenanceSheetContentState
               ),
               const SizedBox(height: 6),
               Text(
-                'કુલ ચૂકવવાપાત્ર: ${currencyFmt.format(bill.totalPayable)}',
+                'કુલ ચૂકવવાપાત્ર: ${currencyFmt.format(bill.totalPayable)}'.tr,
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
@@ -1600,13 +1601,13 @@ class _MemberMaintenanceSheetContentState
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.orange.shade200),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Icon(Icons.info_outline, color: Colors.orange),
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'સોસાયટી દ્વારા હજુ સુધી UPI ID સેટ કરવામાં આવ્યો નથી. કૃપા કરીને એડમિનનો સંપર્ક કરી રોકડ અથવા ચેકથી ચુકવણી કરો.',
+                    'સોસાયટી દ્વારા હજુ સુધી UPI ID સેટ કરવામાં આવ્યો નથી. કૃપા કરીને એડમિનનો સંપર્ક કરી રોકડ અથવા ચેકથી ચુકવણી કરો.'.tr,
                     style: TextStyle(fontSize: 12),
                   ),
                 ),
@@ -1627,9 +1628,9 @@ class _MemberMaintenanceSheetContentState
                   );
                   if (!launched && context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text(
-                          'UPI એપ ખૂલી શકી નથી. નીચે આપેલ QR કોડ સ્કેન કરો.',
+                          'UPI એપ ખૂલી શકી નથી. નીચે આપેલ QR કોડ સ્કેન કરો.'.tr,
                         ),
                       ),
                     );
@@ -1637,14 +1638,14 @@ class _MemberMaintenanceSheetContentState
                 } catch (e) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('ભૂલ: $e')),
+                      SnackBar(content: Text('ભૂલ: $e'.tr)),
                     );
                   }
                 }
               },
               icon: const Icon(Icons.account_balance_wallet_rounded),
-              label: const Text(
-                'Google Pay / PhonePe થી ચૂકવો (1-Tap)',
+              label: Text(
+                'Google Pay / PhonePe થી ચૂકવો (1-Tap)'.tr,
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               style: FilledButton.styleFrom(
@@ -1662,8 +1663,8 @@ class _MemberMaintenanceSheetContentState
           Center(
             child: Column(
               children: [
-                const Text(
-                  'અથવા અન્ય મોબાઈલથી સ્કેન કરો:',
+                Text(
+                  'અથવા અન્ય મોબાઈલથી સ્કેન કરો:'.tr,
                   style: TextStyle(fontSize: 12, color: Colors.black54),
                 ),
                 const SizedBox(height: 8),
@@ -1705,16 +1706,16 @@ class _MemberMaintenanceSheetContentState
           const Divider(height: 28),
 
           // UTR Input Field
-          const Text(
-            'પેમેન્ટ કર્યા પછી અહીં UTR નંબર દાખલ કરો:',
+          Text(
+            'પેમેન્ટ કર્યા પછી અહીં UTR નંબર દાખલ કરો:'.tr,
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           const SizedBox(height: 8),
           TextField(
             controller: utrController,
             decoration: InputDecoration(
-              labelText: '૧૨-આંકડાનો UTR / ટ્રાન્ઝેક્શન નંબર *',
-              hintText: 'દા.ત. 4289XXXXXXXX',
+              labelText: '૧૨-આંકડાનો UTR / ટ્રાન્ઝેક્શન નંબર *'.tr,
+              hintText: 'દા.ત. 4289XXXXXXXX'.tr,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -1730,8 +1731,8 @@ class _MemberMaintenanceSheetContentState
                 final utr = utrController.text.trim();
                 if (utr.length < 6) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('કૃપા કરીને માન્ય UTR નંબર દાખલ કરો'),
+                    SnackBar(
+                      content: Text('કૃપા કરીને માન્ય UTR નંબર દાખલ કરો'.tr),
                       backgroundColor: Colors.orange,
                     ),
                   );
@@ -1746,17 +1747,17 @@ class _MemberMaintenanceSheetContentState
                 if (parentCtx.mounted) {
                   Navigator.pop(parentCtx);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content:
-                          Text('UPI પેમેન્ટ વેરિફિકેશન માટે સબમિટ થઈ ગયું!'),
+                          Text('UPI પેમેન્ટ વેરિફિકેશન માટે સબમિટ થઈ ગયું!'.tr),
                       backgroundColor: Colors.green,
                     ),
                   );
                 }
               },
               icon: const Icon(Icons.check_circle_outline),
-              label: const Text(
-                'ચુકવણી કન્ફર્મ કરો',
+              label: Text(
+                'ચુકવણી કન્ફર્મ કરો'.tr,
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               style: OutlinedButton.styleFrom(

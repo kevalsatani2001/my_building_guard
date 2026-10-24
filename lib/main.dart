@@ -17,6 +17,8 @@ import 'screens/super_admin/super_admin_dashboard.dart';
 import 'screens/admin_suspended_screen.dart';
 import 'screens/society_suspended_notice_screen.dart';
 import 'services/notification_service.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'services/localization_service.dart';
 import 'services/session_guard_service.dart';
 import 'services/society_service.dart';
 import 'theme/premium_theme.dart';
@@ -26,6 +28,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize selected language (Gujarati, Hindi, or English)
+  await LocalizationService.instance.init();
 
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
@@ -42,12 +47,28 @@ class SocietyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: rootNavigatorKey,
-      debugShowCheckedModeBanner: false,
-      title: 'Society Manager',
-      theme: PremiumTheme.light(),
-      home: const AuthWrapper(),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LocalizationService.instance.currentLocale,
+      builder: (context, activeLocale, child) {
+        return MaterialApp(
+          navigatorKey: rootNavigatorKey,
+          debugShowCheckedModeBanner: false,
+          title: 'Society Manager',
+          theme: PremiumTheme.light(),
+          locale: activeLocale,
+          supportedLocales: const [
+            Locale('gu'),
+            Locale('hi'),
+            Locale('en'),
+          ],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const AuthWrapper(),
+        );
+      },
     );
   }
 }
@@ -65,22 +86,8 @@ class AuthWrapper extends StatelessWidget {
         }
         if (snapshot.hasData) {
           final currentUser = snapshot.data!;
-          return FutureBuilder<DocumentSnapshot>(
-            future: () async {
-              final newDb = AppFirestore.instance;
-              final uid = currentUser.uid;
-              var doc = await newDb.collection('users').doc(uid).get();
-              if (!doc.exists) {
-                try {
-                  final oldDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-                  if (oldDoc.exists && oldDoc.data() != null) {
-                    await newDb.collection('users').doc(uid).set(oldDoc.data()!);
-                    doc = await newDb.collection('users').doc(uid).get();
-                  }
-                } catch (_) {}
-              }
-              return doc;
-            }(),
+          return StreamBuilder<DocumentSnapshot>(
+            stream: AppFirestore.instance.collection('users').doc(currentUser.uid).snapshots(),
             builder: (context, userSnap) {
               if (userSnap.connectionState == ConnectionState.waiting) {
                 return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -97,9 +104,7 @@ class AuthWrapper extends StatelessWidget {
               SessionGuardService.instance.validateAndAttachSession(context, currentUser.uid, userData);
 
               final email = (currentUser.email ?? '').toLowerCase().trim();
-              final rawRole = (userData?['role'] ??
-                      (userSnap.data!.data() as Map<String, dynamic>?)?['role'] ??
-                      'member')
+              final rawRole = (userData?['role'] ?? 'member')
                   .toString()
                   .toLowerCase()
                   .trim();
@@ -114,7 +119,8 @@ class AuthWrapper extends StatelessWidget {
 
               final bool isAdmin = rawRole == 'admin' ||
                   rawRole == 'chairman' ||
-                  rawRole == 'president';
+                  rawRole == 'president' ||
+                  userData?['isAdmin'] == true;
 
               final bool isSubAdminOrCommittee = rawRole == 'sub_admin' ||
                   rawRole == 'subadmin' ||
@@ -134,52 +140,50 @@ class AuthWrapper extends StatelessWidget {
                   userData?['isGuard'] == true;
 
               final societyId = (userData?['societyId'] ?? '').toString().trim();
+              final effectiveSocietyId = societyId.isEmpty ? SocietyService.kDefaultSocietyId : societyId;
 
-              // જો societyId હોય તો society_settings નો રીયલ-ટાઇમ પ્રવાહ સાંભળો જેથી કેસ્કેડ બ્લોક આપમેળે લાગુ પડે
-              if (societyId.isNotEmpty && societyId != 'default') {
-                return StreamBuilder<DocumentSnapshot>(
-                  stream: AppFirestore.instance.collection('society_settings').doc(societyId).snapshots(),
-                  builder: (context, socSnap) {
-                    final socData = socSnap.data?.data() as Map<String, dynamic>?;
-                    final bool isSocietyActive = socData == null || socData['isActive'] != false;
-                    final bool isAdminBlocked = socData?['isAdminBlocked'] == true;
-                    final bool isUserActive = userData?['isActive'] != false;
+              // સોસાયટી સેટિંગ્સનો રીયલ-ટાઇમ પ્રવાહ સાંભળો જેથી કેસ્કેડ બ્લોક આપમેળે લાગુ પડે
+              return StreamBuilder<DocumentSnapshot>(
+                stream: AppFirestore.instance.collection('society_settings').doc(effectiveSocietyId).snapshots(),
+                builder: (context, socSnap) {
+                  if (socSnap.connectionState == ConnectionState.waiting) {
+                    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+                  }
 
-                    // જો સોસાયટી ફ્રીઝ હોય અથવા સોસાયટીનો એડમિન બ્લોક હોય અથવા યુઝર જાતે બ્લોક હોય:
-                    if (!isSocietyActive || isAdminBlocked || !isUserActive) {
-                      if (isAdmin) {
-                        return AdminSuspendedScreen(
-                          societyId: societyId,
-                          userData: userData,
-                          societyData: socData,
-                        );
-                      } else {
-                        return SocietySuspendedNoticeScreen(
-                          societyData: socData,
-                          societyName: socData?['name'] ?? userData?['societyName'],
-                        );
+                  final socData = socSnap.data?.data() as Map<String, dynamic>?;
+                  final bool isSocietyActive = socData == null || socData['isActive'] != false;
+                  final bool isAdminBlocked = socData?['isAdminBlocked'] == true;
+                  final bool isSuspendedBySuperAdmin = socData?['isSuspendedBySuperAdmin'] == true;
+                  final bool isUserActive = userData?['isActive'] != false;
+
+                  // જો સોસાયટી ફ્રીઝ હોય અથવા સોસાયટીનો એડમિન બ્લોક હોય અથવા યુઝર જાતે બ્લોક હોય:
+                  if (!isSocietyActive || isAdminBlocked || isSuspendedBySuperAdmin || !isUserActive) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      final nav = rootNavigatorKey.currentState;
+                      if (nav != null && nav.canPop()) {
+                        nav.popUntil((route) => route.isFirst);
                       }
+                    });
+
+                    if (isAdmin) {
+                      return AdminSuspendedScreen(
+                        societyId: effectiveSocietyId,
+                        userData: userData,
+                        societyData: socData,
+                      );
+                    } else {
+                      return SocietySuspendedNoticeScreen(
+                        societyData: socData,
+                        societyName: socData?['name'] ?? socData?['societyName'] ?? userData?['societyName'],
+                      );
                     }
+                  }
 
-                    if (isAdmin || isSubAdminOrCommittee) return const AdminDashboard();
-                    if (isGuard) return const WatchmanScreen();
-                    return const MemberScreen();
-                  },
-                );
-              }
-
-              // Default society fallback
-              if (userData != null && userData['isActive'] == false) {
-                if (isAdmin) {
-                  return AdminSuspendedScreen(societyId: 'default', userData: userData);
-                } else {
-                  return const SocietySuspendedNoticeScreen();
-                }
-              }
-
-              if (isAdmin || isSubAdminOrCommittee) return const AdminDashboard();
-              if (isGuard) return const WatchmanScreen();
-              return const MemberScreen();
+                  if (isAdmin || isSubAdminOrCommittee) return const AdminDashboard();
+                  if (isGuard) return const WatchmanScreen();
+                  return const MemberScreen();
+                },
+              );
             },
           );
         }

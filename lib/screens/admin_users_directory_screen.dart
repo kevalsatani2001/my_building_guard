@@ -88,7 +88,7 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'યુઝર ડિલીટ કરવો છે?',
+              'યુઝર ડિલીટ કરવો છે?'.tr,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -97,7 +97,7 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'શું તમે ખરેખર "$userName" નું એકાઉન્ટ સોસાયટીમાંથી કાઢી નાખવા માંગો છો?',
+              'શું તમે ખરેખર "$userName" નું એકાઉન્ટ સોસાયટીમાંથી કાઢી નાખવા માંગો છો?'.tr,
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
             ),
@@ -111,7 +111,7 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
-                    child: const Text('રદ કરો'),
+                    child: Text('રદ કરો'.tr),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -125,7 +125,7 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       elevation: 0,
                     ),
-                    child: const Text('હા, કાઢી નાખો', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: Text('હા, કાઢી નાખો'.tr, style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -143,7 +143,7 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$userName સફળતાપૂર્વક કાઢી નાખવામાં આવ્યા.'),
+          content: Text('$userName સફળતાપૂર્વક કાઢી નાખવામાં આવ્યા.'.tr),
           backgroundColor: Colors.green.shade700,
           behavior: SnackBarBehavior.floating,
         ),
@@ -152,7 +152,7 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('ભૂલ આવી: $e'),
+          content: Text('ભૂલ આવી: $e'.tr),
           backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
         ),
@@ -165,8 +165,8 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: PremiumAppBar(
-        title: "સોસાયટી સભ્યો & સ્ટાફ",
-        subtitle: "મેમ્બર, વોચમેન અને એડમિન ડિરેક્ટરી",
+        title: "સોસાયટી સભ્યો & સ્ટાફ".tr,
+        subtitle: "મેમ્બર, વોચમેન અને એડમિન ડિરેક્ટરી".tr,
         icon: Icons.people_alt_rounded,
         accentColor: const Color(0xFF4338CA),
         actions: [
@@ -174,7 +174,7 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
             icon: Icons.person_add_rounded,
             color: const Color(0xFF4338CA),
             backgroundColor: const Color(0xFFEEF2FF),
-            tooltip: 'નવો યુઝર ઉમેરો',
+            tooltip: 'નવો યુઝર ઉમેરો'.tr,
             onTap: () {
               Navigator.push(
                 context,
@@ -232,7 +232,7 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
                       controller: _searchC,
                       onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
                       decoration: InputDecoration(
-                        hintText: 'નામ, ફોન, વિંગ અથવા ફ્લેટ નંબરથી શોધો...',
+                        hintText: 'નામ, ફોન, વિંગ અથવા ફ્લેટ નંબરથી શોધો...'.tr,
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                         prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF4338CA), size: 20),
                         suffixIcon: _searchQuery.isNotEmpty
@@ -266,13 +266,13 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: [
-                          _buildFilterChip('all', 'બધા ($countAll)', Icons.groups_rounded),
+                          _buildFilterChip('all', 'બધા ($countAll)'.tr, Icons.groups_rounded),
                           const SizedBox(width: 8),
-                          _buildFilterChip('member', 'મેમ્બર્સ ($countMember)', Icons.home_rounded),
+                          _buildFilterChip('member', 'મેમ્બર્સ ($countMember)'.tr, Icons.home_rounded),
                           const SizedBox(width: 8),
-                          _buildFilterChip('watchman', 'વોચમેન ($countWatchman)', Icons.security_rounded),
+                          _buildFilterChip('watchman', 'વોચમેન ($countWatchman)'.tr, Icons.security_rounded),
                           const SizedBox(width: 8),
-                          _buildFilterChip('admin', 'એડમિન ($countAdmin)', Icons.admin_panel_settings_rounded),
+                          _buildFilterChip('admin', 'એડમિન ($countAdmin)'.tr, Icons.admin_panel_settings_rounded),
                         ],
                       ),
                     ),
@@ -291,7 +291,7 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
 
                     if (snapshot.hasError) {
                       return Center(
-                        child: Text('ડેટા લોડ કરવામાં ભૂલ: ${snapshot.error}'),
+                        child: Text('ડેટા લોડ કરવામાં ભૂલ: ${snapshot.error}'.tr),
                       );
                     }
 
@@ -309,15 +309,15 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
                               child: const Icon(Icons.person_search_rounded, size: 50, color: Color(0xFF4338CA)),
                             ),
                             const SizedBox(height: 16),
-                            const Text(
-                              'કોઈ યુઝર મળ્યા નથી',
+                            Text(
+                              'કોઈ યુઝર મળ્યા નથી'.tr,
                               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                             ),
                             const SizedBox(height: 6),
                             Text(
                               _searchQuery.isNotEmpty
-                                  ? 'તમારા સર્ચ સાથે મેળ ખાતું કોઈ પરિણામ નથી.'
-                                  : 'આ કેટેગરીમાં હજી કોઈ નોંધણી થયેલ નથી.',
+                                  ? 'તમારા સર્ચ સાથે મેળ ખાતું કોઈ પરિણામ નથી.'.tr
+                                  : 'આ કેટેગરીમાં હજી કોઈ નોંધણી થયેલ નથી.'.tr,
                               style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
                             ),
                           ],
@@ -355,7 +355,7 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
         backgroundColor: const Color(0xFF4338CA),
         foregroundColor: Colors.white,
         icon: const Icon(Icons.person_add_rounded),
-        label: const Text('નવો યુઝર', style: TextStyle(fontWeight: FontWeight.bold)),
+        label: Text('નવો યુઝર'.tr, style: TextStyle(fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -420,7 +420,7 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
   }
 
   Widget _buildUserCard(String docId, Map<String, dynamic> d) {
-    final name = (d['name'] ?? 'અનામી').toString();
+    final name = (d['name'] ?? 'અનામી'.tr).toString();
     final role = (d['role'] ?? 'member').toString();
     final phone = (d['phone'] ?? '').toString();
     final email = (d['email'] ?? '').toString();
@@ -437,17 +437,17 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
     if (role == 'admin') {
       badgeColor = const Color(0xFF7C3AED);
       avatarGradient = const [Color(0xFF8B5CF6), Color(0xFF6D28D9)];
-      roleName = 'એડમિન';
+      roleName = 'એડમિન'.tr;
       roleIcon = Icons.admin_panel_settings_rounded;
     } else if (role == 'watchman') {
       badgeColor = const Color(0xFF0D9488);
       avatarGradient = const [Color(0xFF14B8A6), Color(0xFF0F766E)];
-      roleName = 'વોચમેન';
+      roleName = 'વોચમેન'.tr;
       roleIcon = Icons.security_rounded;
     } else {
       badgeColor = const Color(0xFF4338CA);
       avatarGradient = const [Color(0xFF4F46E5), Color(0xFF3730A3)];
-      roleName = 'મેમ્બર';
+      roleName = 'મેમ્બર'.tr;
       roleIcon = Icons.home_rounded;
     }
 
@@ -641,8 +641,8 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
                           color: const Color(0xFFF8FAFC),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text(
-                          'મોબાઇલ નંબર નોંધાયેલ નથી',
+                        child: Text(
+                          'મોબાઇલ નંબર નોંધાયેલ નથી'.tr,
                           style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontStyle: FontStyle.italic),
                         ),
                       ),
@@ -671,7 +671,7 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
   }
 
   void _showUserDetailsSheet(String docId, Map<String, dynamic> d) {
-    final name = (d['name'] ?? 'અનામી').toString();
+    final name = (d['name'] ?? 'અનામી'.tr).toString();
     final role = (d['role'] ?? 'member').toString();
     final phone = (d['phone'] ?? '').toString();
     final email = (d['email'] ?? '').toString();
@@ -693,17 +693,17 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
     if (role == 'admin') {
       badgeColor = const Color(0xFF7C3AED);
       avatarGradient = const [Color(0xFF8B5CF6), Color(0xFF6D28D9)];
-      roleName = 'સોસાયટી એડમિન';
+      roleName = 'સોસાયટી એડમિન'.tr;
       roleIcon = Icons.admin_panel_settings_rounded;
     } else if (role == 'watchman') {
       badgeColor = const Color(0xFF0D9488);
       avatarGradient = const [Color(0xFF14B8A6), Color(0xFF0F766E)];
-      roleName = 'ગેટ વોચમેન';
+      roleName = 'ગેટ વોચમેન'.tr;
       roleIcon = Icons.security_rounded;
     } else {
       badgeColor = const Color(0xFF4338CA);
       avatarGradient = const [Color(0xFF4F46E5), Color(0xFF3730A3)];
-      roleName = 'સોસાયટી મેમ્બર';
+      roleName = 'સોસાયટી મેમ્બર'.tr;
       roleIcon = Icons.home_rounded;
     }
 
@@ -813,8 +813,8 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
             const Divider(height: 1, color: Color(0xFFF1F5F9)),
             const SizedBox(height: 14),
 
-            const Text(
-              'સભ્યની વિગતો',
+            Text(
+              'સભ્યની વિગતો'.tr,
               style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w800,
@@ -826,40 +826,40 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
 
             _detailRow(
               icon: Icons.apartment_rounded,
-              label: 'બ્લોક & ફ્લેટ નંબર',
+              label: 'બ્લોક & ફ્લેટ નંબર'.tr,
               value: cleanBlock.isNotEmpty || unit.isNotEmpty
                   ? '$cleanBlock • $unit'
-                  : 'કોઈ ફ્લેટ એસાઇન નથી',
+                  : 'કોઈ ફ્લેટ એસાઇન નથી'.tr,
               color: const Color(0xFF4338CA),
             ),
             _detailRow(
               icon: Icons.phone_rounded,
-              label: 'મોબાઇલ નંબર',
-              value: phone.isNotEmpty ? phone : 'નોંધાયેલ નથી',
+              label: 'મોબાઇલ નંબર'.tr,
+              value: phone.isNotEmpty ? phone : 'નોંધાયેલ નથી'.tr,
               color: const Color(0xFF059669),
             ),
             _detailRow(
               icon: Icons.email_rounded,
-              label: 'ઇમેઇલ એડ્રેસ',
-              value: email.isNotEmpty ? email : 'નોંધાયેલ નથી',
+              label: 'ઇમેઇલ એડ્રેસ'.tr,
+              value: email.isNotEmpty ? email : 'નોંધાયેલ નથી'.tr,
               color: const Color(0xFF2563EB),
             ),
             if (createdDate != null)
               _detailRow(
                 icon: Icons.calendar_today_rounded,
-                label: 'રજીસ્ટ્રેશન તારીખ',
+                label: 'રજીસ્ટ્રેશન તારીખ'.tr,
                 value: DateFormat('dd MMM yyyy, hh:mm a').format(createdDate),
                 color: const Color(0xFFD97706),
               ),
             _detailRow(
               icon: Icons.verified_user_rounded,
-              label: 'એકાઉન્ટ સ્ટેટસ',
-              value: 'સક્રિય (Active & Verified)',
+              label: 'એકાઉન્ટ સ્ટેટસ'.tr,
+              value: 'સક્રિય (Active & Verified)'.tr,
               color: const Color(0xFF047857),
             ),
             _detailRow(
               icon: Icons.fingerprint_rounded,
-              label: 'યુઝર આઈડી',
+              label: 'યુઝર આઈડી'.tr,
               value: uid,
               color: const Color(0xFF64748B),
               isCopyable: true,
@@ -878,7 +878,7 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
                         _makeCall(phone);
                       },
                       icon: const Icon(Icons.call_rounded, size: 16),
-                      label: const Text('કૉલ કરો', style: TextStyle(fontWeight: FontWeight.w800)),
+                      label: Text('કૉલ કરો'.tr, style: TextStyle(fontWeight: FontWeight.w800)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF059669),
                         foregroundColor: Colors.white,
@@ -897,8 +897,8 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
                       _deleteUser(docId, name);
                     },
                     icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
-                    label: const Text(
-                      'ડિલીટ કરો',
+                    label: Text(
+                      'ડિલીટ કરો'.tr,
                       style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFFDC2626)),
                     ),
                     style: OutlinedButton.styleFrom(
@@ -966,11 +966,11 @@ class _AdminUsersDirectoryScreenState extends State<AdminUsersDirectoryScreen> {
               icon: const Icon(Icons.copy_rounded, size: 15, color: Color(0xFF94A3B8)),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
-              tooltip: 'કૉપિ કરો',
+              tooltip: 'કૉપિ કરો'.tr,
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: value));
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('આઈડી કૉપિ થઈ ગયું!'), duration: Duration(seconds: 1)),
+                  SnackBar(content: Text('આઈડી કૉપિ થઈ ગયું!'.tr), duration: Duration(seconds: 1)),
                 );
               },
             ),

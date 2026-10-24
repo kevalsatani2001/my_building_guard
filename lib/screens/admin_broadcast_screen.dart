@@ -23,23 +23,23 @@ class AdminBroadcastScreen extends StatefulWidget {
 class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
   final _titleC = TextEditingController();
   final _bodyC = TextEditingController();
-  String _selectedCategory = 'સામાન્ય';
+  String _selectedCategory = 'સામાન્ય'.tr;
   String _targetBlock = 'ALL';
   List<String> _availableBlocks = [];
   bool _isSending = false;
 
   final List<(String, String, IconData)> _categories = [
-    ('સામાન્ય', 'સોસાયટી સૂચના', Icons.campaign_rounded),
-    ('પાણી', 'પાણી સપ્લાય અપડેટ', Icons.water_drop_rounded),
-    ('વીજળી', 'લાઈટ / પાવર કટ સૂચના', Icons.bolt_rounded),
-    ('મીટિંગ', 'સોસાયટી સામાન્ય સભા', Icons.groups_rounded),
-    ('ઇમરજન્સી', 'તાકીદની સુરક્ષા સૂચના', Icons.warning_rounded),
+    ('સામાન્ય'.tr, 'સોસાયટી સૂચના'.tr, Icons.campaign_rounded),
+    ('પાણી'.tr, 'પાણી સપ્લાય અપડેટ'.tr, Icons.water_drop_rounded),
+    ('વીજળી'.tr, 'લાઈટ / પાવર કટ સૂચના'.tr, Icons.bolt_rounded),
+    ('મીટિંગ'.tr, 'સોસાયટી સામાન્ય સભા'.tr, Icons.groups_rounded),
+    ('ઇમરજન્સી'.tr, 'તાકીદની સુરક્ષા સૂચના'.tr, Icons.warning_rounded),
   ];
 
   @override
   void initState() {
     super.initState();
-    _titleC.text = "સોસાયટી સામાન્ય સૂચના";
+    _titleC.text = "સોસાયટી સામાન્ય સૂચના".tr;
     _loadBlocks();
     _loadCustomCategories();
   }
@@ -95,11 +95,11 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.add_circle_outline_rounded, color: Color(0xFFF59E0B)),
             SizedBox(width: 8),
-            Text('નવી મેસેજ કેટેગરી ઉમેરો', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text('નવી મેસેજ કેટેગરી ઉમેરો'.tr, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
@@ -108,18 +108,18 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
           children: [
             TextField(
               controller: catController,
-              decoration: const InputDecoration(
-                labelText: 'કેટેગરી નામ *',
-                hintText: 'દા.ત. લિફ્ટ, સિક્યોરિટી, પાર્કિંગ, વગેરે',
+              decoration: InputDecoration(
+                labelText: 'કેટેગરી નામ *'.tr,
+                hintText: 'દા.ત. લિફ્ટ, સિક્યોરિટી, પાર્કિંગ, વગેરે'.tr,
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: titleController,
-              decoration: const InputDecoration(
-                labelText: 'ડિફૉલ્ટ શીર્ષક (વૈકલ્પિક)',
-                hintText: 'દા.ત. લિફ્ટ મેઇન્ટેનન્સ જરૂરી સૂચના',
+              decoration: InputDecoration(
+                labelText: 'ડિફૉલ્ટ શીર્ષક (વૈકલ્પિક)'.tr,
+                hintText: 'દા.ત. લિફ્ટ મેઇન્ટેનન્સ જરૂરી સૂચના'.tr,
                 border: OutlineInputBorder(),
               ),
             ),
@@ -128,7 +128,7 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('રદ કરો'),
+            child: Text('રદ કરો'.tr),
           ),
           FilledButton(
             onPressed: () {
@@ -137,7 +137,7 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
               }
             },
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFFF59E0B)),
-            child: const Text('ઉમેરો'),
+            child: Text('ઉમેરો'.tr),
           ),
         ],
       ),
@@ -147,7 +147,7 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
       final newCat = catController.text.trim();
       final newTitle = titleController.text.trim().isNotEmpty
           ? titleController.text.trim()
-          : 'સોસાયટી $newCat સૂચના';
+          : 'સોસાયટી $newCat સૂચના'.tr;
 
       setState(() {
         if (!_categories.any((c) => c.$1 == newCat)) {
@@ -181,8 +181,8 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
 
     if (title.isEmpty || body.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("કૃપા કરીને શીર્ષક અને સંદેશ બંને દાખલ કરો."),
+        SnackBar(
+          content: Text("કૃપા કરીને શીર્ષક અને સંદેશ બંને દાખલ કરો.".tr),
           backgroundColor: Colors.red,
         ),
       );
@@ -227,7 +227,7 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("સૂચના મોકલવામાં ભૂલ: $e"),
+          content: Text("સૂચના મોકલવામાં ભૂલ: $e".tr),
           backgroundColor: Colors.red.shade800,
         ),
       );
@@ -243,10 +243,10 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: PremiumAppBar(
-        title: isAll ? "લાઈવ બ્રોડકાસ્ટ" : "વ્યક્તિગત સૂચના",
+        title: isAll ? "લાઈવ બ્રોડકાસ્ટ".tr : "વ્યક્તિગત સૂચના".tr,
         subtitle: isAll
-            ? "સોસાયટીના તમામ સભ્યોને પુશ નોટિફિકેશન"
-            : "${widget.targetName} ને ડાયરેક્ટ નોટિફિકેશન",
+            ? "સોસાયટીના તમામ સભ્યોને પુશ નોટિફિકેશન".tr
+            : "${widget.targetName} ને ડાયરેક્ટ નોટિફિકેશન".tr,
         icon: Icons.campaign_rounded,
         accentColor: const Color(0xFFF59E0B),
       ),
@@ -298,13 +298,13 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(Icons.notifications_active_rounded, size: 12, color: Colors.white),
                                       SizedBox(width: 4),
                                       Text(
-                                        'ઈન્સ્ટન્ટ બ્રોડકાસ્ટ',
+                                        'ઈન્સ્ટન્ટ બ્રોડકાસ્ટ'.tr,
                                         style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                                       ),
                                     ],
@@ -312,7 +312,7 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
                                 ),
                                 const SizedBox(height: 7),
                                 Text(
-                                  isAll ? "સોસાયટી બ્રોડકાસ્ટ" : "ડાયરેક્ટ એલર્ટ",
+                                  isAll ? "સોસાયટી બ્રોડકાસ્ટ".tr : "ડાયરેક્ટ એલર્ટ".tr,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w900,
@@ -323,8 +323,8 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
                                 const SizedBox(height: 4),
                                 Text(
                                   isAll
-                                      ? "તમામ સભ્યોના મોબાઇલ પર તાત્કાલિક સાઉન્ડ સાથે પુશ નોટિસ પહોંચશે."
-                                      : "${widget.targetName} ને તાત્કાલિક સૂચના પહોંચાડવામાં આવશે.",
+                                      ? "તમામ સભ્યોના મોબાઇલ પર તાત્કાલિક સાઉન્ડ સાથે પુશ નોટિસ પહોંચશે.".tr
+                                      : "${widget.targetName} ને તાત્કાલિક સૂચના પહોંચાડવામાં આવશે.".tr,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -376,7 +376,7 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isAll ? "પ્રાપ્તકર્તા: તમામ સભ્યો (Broadcasting)" : "પ્રાપ્તકર્તા: ${widget.targetName}",
+                          isAll ? "પ્રાપ્તકર્તા: તમામ સભ્યો (Broadcasting)".tr : "પ્રાપ્તકર્તા: ${widget.targetName}".tr,
                           style: const TextStyle(
                             fontWeight: FontWeight.w800,
                             fontSize: 13,
@@ -385,8 +385,8 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
                         ),
                         Text(
                           isAll
-                              ? "આ સૂચના તમામ એપ યુઝર્સના ફોન પર તરત વાગશે"
-                              : "આ સભ્યના મોબાઈલ પર પુશ એલર્ટ જશે",
+                              ? "આ સૂચના તમામ એપ યુઝર્સના ફોન પર તરત વાગશે".tr
+                              : "આ સભ્યના મોબાઈલ પર પુશ એલર્ટ જશે".tr,
                           style: const TextStyle(fontSize: 11, color: Color(0xFFB45309)),
                         ),
                       ],
@@ -397,8 +397,8 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
             ),
             if (isAll && _availableBlocks.isNotEmpty) ...[
               const SizedBox(height: 14),
-              const Text(
-                "લક્ષ્ય પરિસર / વિંગ (Target Audience):",
+              Text(
+                "લક્ષ્ય પરિસર / વિંગ (Target Audience):".tr,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
@@ -416,7 +416,7 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
                         size: 15,
                         color: _targetBlock == 'ALL' ? Colors.white : const Color(0xFFF59E0B),
                       ),
-                      label: const Text('સમગ્ર પરિસર (All)'),
+                      label: Text('સમગ્ર પરિસર (All)'.tr),
                       selected: _targetBlock == 'ALL',
                       selectedColor: const Color(0xFFF59E0B),
                       labelStyle: TextStyle(
@@ -460,8 +460,8 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
             const SizedBox(height: 20),
 
             // Category Chips
-            const Text(
-              "સૂચનાનો વિષય પસંદ કરો:",
+            Text(
+              "સૂચનાનો વિષય પસંદ કરો:".tr,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
@@ -506,7 +506,7 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
                     padding: const EdgeInsets.only(right: 8),
                     child: ActionChip(
                       avatar: const Icon(Icons.add_rounded, size: 16, color: Color(0xFFF59E0B)),
-                      label: const Text('+ નવી કેટેગરી', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF92400E))),
+                      label: Text('+ નવી કેટેગરી'.tr, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF92400E))),
                       backgroundColor: const Color(0xFFFFFBEB),
                       side: const BorderSide(color: Color(0xFFFDE68A)),
                       onPressed: _showAddCategoryDialog,
@@ -538,8 +538,8 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
                   TextField(
                     controller: _titleC,
                     decoration: InputDecoration(
-                      labelText: "સૂચનાનું શીર્ષક (Title) *",
-                      hintText: "દા.ત. આવતીકાલે સવારે પાણી 7 વાગે આવશે",
+                      labelText: "સૂચનાનું શીર્ષક (Title) *".tr,
+                      hintText: "દા.ત. આવતીકાલે સવારે પાણી 7 વાગે આવશે".tr,
                       prefixIcon: const Icon(Icons.title_rounded, size: 20, color: Color(0xFFF59E0B)),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                     ),
@@ -550,8 +550,8 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
                     controller: _bodyC,
                     maxLines: 4,
                     decoration: InputDecoration(
-                      labelText: "સંપૂર્ણ સંદેશ / વિગત (Message Details) *",
-                      hintText: "વિગતવાર માહિતી લખો...",
+                      labelText: "સંપૂર્ણ સંદેશ / વિગત (Message Details) *".tr,
+                      hintText: "વિગતવાર માહિતી લખો...".tr,
                       alignLabelWithHint: true,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                     ),
@@ -563,8 +563,8 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
             const SizedBox(height: 20),
 
             // Mobile Notification Live Preview
-            const Text(
-              "મોબાઈલ પર આ રીતે દેખાશે:",
+            Text(
+              "મોબાઈલ પર આ રીતે દેખાશે:".tr,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
@@ -609,7 +609,7 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
                       children: [
                         Row(
                           children: [
-                            const Text(
+                            Text(
                               "Building Guard",
                               style: TextStyle(
                                 color: Colors.white70,
@@ -619,7 +619,7 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
                             ),
                             const Spacer(),
                             Text(
-                              "હમણાં",
+                              "હમણાં".tr,
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.5),
                                 fontSize: 10,
@@ -629,7 +629,7 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          _titleC.text.isEmpty ? "સૂચનાનું શીર્ષક" : _titleC.text,
+                          _titleC.text.isEmpty ? "સૂચનાનું શીર્ષક".tr : _titleC.text,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 13,
@@ -638,7 +638,7 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          _bodyC.text.isEmpty ? "અહીં તમારો સંદેશ દેખાશે..." : _bodyC.text,
+                          _bodyC.text.isEmpty ? "અહીં તમારો સંદેશ દેખાશે...".tr : _bodyC.text,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -671,13 +671,13 @@ class _AdminBroadcastScreenState extends State<AdminBroadcastScreen> {
                         height: 24,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                       )
-                    : const Row(
+                    : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.send_rounded, size: 20),
                           SizedBox(width: 8),
                           Text(
-                            "તુરંત પુશ સૂચના મોકલો",
+                            "તુરંત પુશ સૂચના મોકલો".tr,
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                           ),
                         ],

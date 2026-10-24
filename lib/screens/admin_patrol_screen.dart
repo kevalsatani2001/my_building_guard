@@ -6,6 +6,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:building_guard/core/app_firestore.dart';
 import '../models/patrol_model.dart';
 import '../services/guard_patrol_service.dart';
+import '../l10n/app_strings.dart';
+import '../services/localization_service.dart';
 
 class AdminPatrolScreen extends StatefulWidget {
   final String? societyId;
@@ -59,7 +61,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
           .doc(_effectiveSocietyId)
           .get();
       if (socDoc.exists) {
-        _societyName = socDoc.data()?['name']?.toString() ?? 'સોસાયટી';
+        _societyName = socDoc.data()?['name']?.toString() ?? 'સોસાયટી'.tr;
       }
     }
 
@@ -73,20 +75,20 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'સુરક્ષા નાઈટ પેટ્રોલિંગ ઓડિટ',
-              style: TextStyle(
+              'સુરક્ષા નાઈટ પેટ્રોલિંગ ઓડિટ'.tr,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: Color(0xFF0F172A),
               ),
             ),
             Text(
-              'વોચમેન QR સ્કેન અને રાત્રિ સુરક્ષા રિપોર્ટ',
-              style: TextStyle(
+              'વોચમેન QR સ્કેન અને રાત્રિ સુરક્ષા રિપોર્ટ'.tr,
+              style: const TextStyle(
                 fontSize: 11,
                 color: Color(0xFF64748B),
                 fontWeight: FontWeight.w500,
@@ -108,10 +110,14 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
               ),
               child: const Icon(Icons.info_outline_rounded, color: Color(0xFF4F46E5), size: 19),
             ),
-            tooltip: 'પેટ્રોલિંગ માર્ગદર્શિકા',
+            tooltip: 'પેટ્રોલિંગ માર્ગદર્શિકા'.tr,
             onPressed: _showInfoGuideSheet,
           ),
-          const SizedBox(width: 6),
+          const Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: Center(child: LanguageSwitchButton()),
+          ),
+          const SizedBox(width: 4),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(58),
@@ -142,9 +148,9 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
               labelColor: Colors.white,
               unselectedLabelColor: const Color(0xFF64748B),
               labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               dividerColor: Colors.transparent,
-              tabs: const [
+              tabs: [
                 Tab(
                   height: 38,
                   child: Row(
@@ -152,7 +158,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                     children: [
                       Icon(Icons.shield_outlined, size: 17),
                       SizedBox(width: 8),
-                      Text('ઓડિટ રિપોર્ટ લોગ'),
+                      Text('ઓડિટ રિપોર્ટ લોગ'.tr),
                     ],
                   ),
                 ),
@@ -163,7 +169,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                     children: [
                       Icon(Icons.qr_code_2_rounded, size: 17),
                       SizedBox(width: 8),
-                      Text('ચેકપોઇન્ટ્સ & QR કોડ'),
+                      Text('ચેકપોઇન્ટ્સ & QR કોડ'.tr),
                     ],
                   ),
                 ),
@@ -175,8 +181,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _effectiveSocietyId == null || _effectiveSocietyId!.isEmpty
-              ? const Center(
-                  child: Text('સોસાયટી ઓળખ મળી નથી. કૃપા કરીને ફરી લૉગિન કરો.'),
+              ? Center(
+                  child: Text('સોસાયટી ઓળખ મળી નથી. કૃપા કરીને ફરી લૉગિન કરો.'.tr),
                 )
               : TabBarView(
                   controller: _tabController,
@@ -199,7 +205,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
         final completedRounds = (stats['completedRounds'] as num?)?.toInt() ?? 0;
         final targetRounds = (stats['targetRounds'] as num?)?.toInt() ?? 4;
         final totalIncidents = (stats['totalIncidents'] as num?)?.toInt() ?? 0;
-        final statusMsg = stats['statusMessage'] as String? ?? 'ઓડિટ લોડ થઈ રહ્યું છે...';
+        final statusMsg = stats['statusMessage'] as String? ?? 'ઓડિટ લોડ થઈ રહ્યું છે...'.tr;
 
         return Column(
           children: [
@@ -240,8 +246,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                                 color: Color(0xFF818CF8), size: 20),
                           ),
                           const SizedBox(width: 10),
-                          const Text(
-                            'સુરક્ષા કમ્પ્લાયન્સ સ્કોર',
+                          Text(
+                            'સુરક્ષા કમ્પ્લાયન્સ સ્કોર'.tr,
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 15,
@@ -264,7 +270,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                           ),
                         ),
                         child: Text(
-                          '$compliancePercent% સ્કોર',
+                          '$compliancePercent% સ્કોર'.tr,
                           style: TextStyle(
                             color: compliancePercent >= 75
                                 ? const Color(0xFF34D399)
@@ -291,7 +297,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                       Expanded(
                         child: _buildMetricTile(
                           icon: Icons.check_circle_outline,
-                          label: 'પૂર્ણ રાઉન્ડ',
+                          label: 'પૂર્ણ રાઉન્ડ'.tr,
                           value: '$completedRounds / $targetRounds',
                           color: const Color(0xFF34D399),
                         ),
@@ -300,8 +306,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                       Expanded(
                         child: _buildMetricTile(
                           icon: Icons.warning_amber_rounded,
-                          label: 'નોંધાયેલ સમસ્યાઓ',
-                          value: '$totalIncidents બાબત',
+                          label: 'નોંધાયેલ સમસ્યાઓ'.tr,
+                          value: '$totalIncidents બાબત'.tr,
                           color: totalIncidents > 0
                               ? const Color(0xFFF87171)
                               : const Color(0xFF94A3B8),
@@ -318,8 +324,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  const Text(
-                    'રાઉન્ડ હિસ્ટ્રી:',
+                  Text(
+                    'રાઉન્ડ હિસ્ટ્રી:'.tr,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -328,7 +334,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                   ),
                   const Spacer(),
                   ChoiceChip(
-                    label: const Text('બધા'),
+                    label: Text('બધા'.tr),
                     selected: _selectedDateFilter == null,
                     onSelected: (val) {
                       if (val) setState(() => _selectedDateFilter = null);
@@ -336,7 +342,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                   ),
                   const SizedBox(width: 8),
                   ChoiceChip(
-                    label: const Text('આજે'),
+                    label: Text('આજે'.tr),
                     selected: _selectedDateFilter ==
                         DateFormat('yyyy-MM-dd').format(DateTime.now()),
                     onSelected: (val) {
@@ -349,7 +355,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                   ),
                   const SizedBox(width: 8),
                   ChoiceChip(
-                    label: const Text('ગઈકાલે'),
+                    label: Text('ગઈકાલે'.tr),
                     selected: _selectedDateFilter ==
                         DateFormat('yyyy-MM-dd').format(
                             DateTime.now().subtract(const Duration(days: 1))),
@@ -388,8 +394,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                           Icon(Icons.nightlight_round,
                               size: 52, color: Colors.grey.shade400),
                           const SizedBox(height: 12),
-                          const Text(
-                            'કોઈ પેટ્રોલિંગ રાઉન્ડ મળ્યા નથી',
+                          Text(
+                            'કોઈ પેટ્રોલિંગ રાઉન્ડ મળ્યા નથી'.tr,
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
@@ -397,8 +403,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                             ),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
-                            'વોચમેન એપમાંથી રાઉન્ડ શરૂ કરશે ત્યારે અહીં લાઈવ જોવા મળશે.',
+                          Text(
+                            'વોચમેન એપમાંથી રાઉન્ડ શરૂ કરશે ત્યારે અહીં લાઈવ જોવા મળશે.'.tr,
                             style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                           ),
                         ],
@@ -478,10 +484,10 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
             : const Color(0xFFEF4444);
 
     final statusText = isDone
-        ? 'સફળતાપૂર્વક પૂર્ણ'
+        ? 'સફળતાપૂર્વક પૂર્ણ'.tr
         : s.isInProgress
-            ? 'રાઉન્ડ ચાલુ છે'
-            : 'અધૂરો / છૂટી ગયેલ';
+            ? 'રાઉન્ડ ચાલુ છે'.tr
+            : 'અધૂરો / છૂટી ગયેલ'.tr;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -511,7 +517,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
         title: Row(
           children: [
             Text(
-              s.roundLabel.isNotEmpty ? s.roundLabel : 'રાઉન્ડ ${s.roundNumber}',
+              s.roundLabel.isNotEmpty ? s.roundLabel : 'રાઉન્ડ ${s.roundNumber}'.tr,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             const SizedBox(width: 8),
@@ -538,12 +544,12 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'તારીખ: ${dateFormat.format(s.startTime)} • સમય: ${timeFormat.format(s.startTime)}${s.endTime != null ? ' થી ${timeFormat.format(s.endTime!)}' : ''}',
+                'તારીખ: ${dateFormat.format(s.startTime)} • સમય: ${timeFormat.format(s.startTime)}${s.endTime != null ? '.tr થી ${timeFormat.format(s.endTime!)}' : ''}',
                 style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
               ),
               const SizedBox(height: 2),
               Text(
-                'ગાર્ડ: ${s.guardName} (${s.guardPhone}) • ચેકપોઇન્ટ્સ: ${s.scannedCount}/${s.totalCheckpoints}',
+                'ગાર્ડ: ${s.guardName} (${s.guardPhone}) • ચેકપોઇન્ટ્સ: ${s.scannedCount}/${s.totalCheckpoints}'.tr,
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -558,13 +564,13 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                     color: const Color(0xFFFEE2E2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.report_problem, size: 13, color: Color(0xFFDC2626)),
                       SizedBox(width: 4),
                       Text(
-                        'નોંધાયેલ સમસ્યા છે (વિગત જુઓ)',
+                        'નોંધાયેલ સમસ્યા છે (વિગત જુઓ)'.tr,
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -586,8 +592,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'ચેકપોઇન્ટ સ્કેન ટાઇમલાઇન:',
+                Text(
+                  'ચેકપોઇન્ટ સ્કેન ટાઇમલાઇન:'.tr,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -596,8 +602,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                 ),
                 const SizedBox(height: 10),
                 if (s.scanLogs.isEmpty)
-                  const Text(
-                    'હજુ સુધી કોઈ ચેકપોઇન્ટ સ્કેન થયો નથી.',
+                  Text(
+                    'હજુ સુધી કોઈ ચેકપોઇન્ટ સ્કેન થયો નથી.'.tr,
                     style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                   )
                 else
@@ -657,7 +663,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                                     log.incidentNote != null) ...[
                                   const SizedBox(height: 4),
                                   Text(
-                                    'નોંધ: ${log.incidentNote}',
+                                    'નોંધ: ${log.incidentNote}'.tr,
                                     style: const TextStyle(
                                       fontSize: 11,
                                       color: Color(0xFFB91C1C),
@@ -705,15 +711,15 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'કુલ ${checkpoints.length} સિક્યોરિટી ચેકપોઇન્ટ્સ',
+                          'કુલ ${checkpoints.length} સિક્યોરિટી ચેકપોઇન્ટ્સ'.tr,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                             color: Color(0xFF0F172A),
                           ),
                         ),
-                        const Text(
-                          'ચેકપોઇન્ટના QR કોડ પ્રિન્ટ કરીને સંબંધિત જગ્યાએ ચોંટાડો',
+                        Text(
+                          'ચેકપોઇન્ટના QR કોડ પ્રિન્ટ કરીને સંબંધિત જગ્યાએ ચોંટાડો'.tr,
                           style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                         ),
                       ],
@@ -729,7 +735,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                     ),
                     onPressed: () => _showAddCheckpointSheet(checkpoints.length + 1),
                     icon: const Icon(Icons.add_location_alt_rounded, size: 16),
-                    label: const Text('નવો ઉમેરો', style: TextStyle(fontSize: 12)),
+                    label: Text('નવો ઉમેરો'.tr, style: TextStyle(fontSize: 12)),
                   ),
                 ],
               ),
@@ -762,8 +768,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                               ),
                             ),
                             const SizedBox(height: 16),
-                            const Text(
-                              'હજુ કોઈ ચેકપોઇન્ટ ઉમેરેલ નથી',
+                            Text(
+                              'હજુ કોઈ ચેકપોઇન્ટ ઉમેરેલ નથી'.tr,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
@@ -771,8 +777,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                               ),
                             ),
                             const SizedBox(height: 6),
-                            const Text(
-                              'વોચમેન નાઈટ પેટ્રોલિંગ માટે સોસાયટીના ગેટ, ટેરેસ, બેઝમેન્ટ જેવા સ્થળો ઉમેરો અને QR સ્ટીકર પ્રિન્ટ કરો.',
+                            Text(
+                              'વોચમેન નાઈટ પેટ્રોલિંગ માટે સોસાયટીના ગેટ, ટેરેસ, બેઝમેન્ટ જેવા સ્થળો ઉમેરો અને QR સ્ટીકર પ્રિન્ટ કરો.'.tr,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 12.5,
@@ -792,8 +798,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                               ),
                               onPressed: () => _showAddCheckpointSheet(1),
                               icon: const Icon(Icons.add_location_alt_rounded, size: 18),
-                              label: const Text(
-                                '+ પ્રથમ ચેકપોઇન્ટ ઉમેરો',
+                              label: Text(
+                                '+ પ્રથમ ચેકપોઇન્ટ ઉમેરો'.tr,
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
                               ),
                             ),
@@ -908,7 +914,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        'સ્થળ: ${cp.location}',
+                        'સ્થળ: ${cp.location}'.tr,
                         style: const TextStyle(fontSize: 12, color: Color(0xFF475569), fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -922,7 +928,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          'સૂચના: ${cp.notes}',
+                          'સૂચના: ${cp.notes}'.tr,
                           style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
                         ),
                       ),
@@ -945,8 +951,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                       onPressed: () => _showPrintableQrDialog(cp),
                       icon: const Icon(Icons.qr_code_2_rounded,
                           size: 16, color: Color(0xFF4F46E5)),
-                      label: const Text(
-                        'QR કોડ જુઓ / પ્રિન્ટ',
+                      label: Text(
+                        'QR કોડ જુઓ / પ્રિન્ટ'.tr,
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w800,
@@ -965,7 +971,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                         child: const Icon(Icons.delete_outline_rounded,
                             size: 17, color: Color(0xFFEF4444)),
                       ),
-                      tooltip: 'કાઢી નાખો',
+                      tooltip: 'કાઢી નાખો'.tr,
                       onPressed: () => _confirmDeleteCheckpoint(cp),
                     ),
                   ],
@@ -987,12 +993,12 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
     final noteCtrl = TextEditingController();
 
     final suggestions = [
-      {'name': 'મુખ્ય પ્રવેશ દ્વાર', 'loc': 'ગ્રાઉન્ડ ફ્લોર - ગેટ સામે'},
-      {'name': 'વિંગ A ટેરેસ એન્ટ્રી', 'loc': 'ટોપ ફ્લોર - ટેરેસ ડોર'},
-      {'name': 'વિંગ B ટેરેસ એન્ટ્રી', 'loc': 'ટોપ ફ્લોર - ટેરેસ ડોર'},
-      {'name': 'બેઝમેન્ટ B1 પાર્કિંગ', 'loc': 'બેઝમેન્ટ - પિલર નં. ૫ પાસે'},
-      {'name': 'જનરેટર / ઇલેક્ટ્રિક રૂમ', 'loc': 'ગ્રાઉન્ડ લેવલ - યુટિલિટી બ્લોક'},
-      {'name': 'પાછળનો ગાર્ડન / પ્લે એરિયા', 'loc': 'પાછળની બાઉન્ડ્રી વોલ'},
+      {'name': 'મુખ્ય પ્રવેશ દ્વાર'.tr, 'loc': 'ગ્રાઉન્ડ ફ્લોર - ગેટ સામે'.tr},
+      {'name': 'વિંગ A ટેરેસ એન્ટ્રી'.tr, 'loc': 'ટોપ ફ્લોર - ટેરેસ ડોર'.tr},
+      {'name': 'વિંગ B ટેરેસ એન્ટ્રી'.tr, 'loc': 'ટોપ ફ્લોર - ટેરેસ ડોર'.tr},
+      {'name': 'બેઝમેન્ટ B1 પાર્કિંગ'.tr, 'loc': 'બેઝમેન્ટ - પિલર નં. ૫ પાસે'.tr},
+      {'name': 'જનરેટર / ઇલેક્ટ્રિક રૂમ'.tr, 'loc': 'ગ્રાઉન્ડ લેવલ - યુટિલિટી બ્લોક'.tr},
+      {'name': 'પાછળનો ગાર્ડન / પ્લે એરિયા'.tr, 'loc': 'પાછળની બાઉન્ડ્રી વોલ'.tr},
     ];
 
     showModalBottomSheet(
@@ -1047,12 +1053,12 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                           child: const Icon(Icons.add_location_alt_rounded, color: Colors.white, size: 22),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'નવો સુરક્ષા ચેકપોઇન્ટ ઉમેરો',
+                                'નવો સુરક્ષા ચેકપોઇન્ટ ઉમેરો'.tr,
                                 style: TextStyle(
                                   fontSize: 16.5,
                                   fontWeight: FontWeight.w900,
@@ -1060,7 +1066,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                                 ),
                               ),
                               Text(
-                                'વોચમેન સ્કેન કરવા માટે QR સ્ટીકર જનરેટ થશે',
+                                'વોચમેન સ્કેન કરવા માટે QR સ્ટીકર જનરેટ થશે'.tr,
                                 style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                               ),
                             ],
@@ -1083,8 +1089,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Checkpoint Code & Order
-                          const Text(
-                            'ચેકપોઇન્ટ કોડ & ક્રમ *',
+                          Text(
+                            'ચેકપોઇન્ટ કોડ & ક્રમ *'.tr,
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                           ),
                           const SizedBox(height: 6),
@@ -1098,7 +1104,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                                   border: Border.all(color: const Color(0xFFCBD5E1)),
                                 ),
                                 child: Text(
-                                  'ક્રમ: #$defaultOrder',
+                                  'ક્રમ: #$defaultOrder'.tr,
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF334155)),
                                 ),
                               ),
@@ -1108,7 +1114,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                                   controller: codeCtrl,
                                   textCapitalization: TextCapitalization.characters,
                                   decoration: InputDecoration(
-                                    hintText: 'દા.ત. CP01, CP02',
+                                    hintText: 'દા.ત. CP01, CP02'.tr,
                                     prefixIcon: const Icon(Icons.tag_rounded, size: 20, color: Color(0xFF4F46E5)),
                                     filled: true,
                                     fillColor: const Color(0xFFF8FAFC),
@@ -1125,15 +1131,15 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                           const SizedBox(height: 16),
 
                           // Checkpoint Name
-                          const Text(
-                            'ચેકપોઇન્ટનું નામ *',
+                          Text(
+                            'ચેકપોઇન્ટનું નામ *'.tr,
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                           ),
                           const SizedBox(height: 6),
                           TextField(
                             controller: nameCtrl,
                             decoration: InputDecoration(
-                              hintText: 'દા.ત. મુખ્ય પ્રવેશ દ્વાર (Main Gate)',
+                              hintText: 'દા.ત. મુખ્ય પ્રવેશ દ્વાર (Main Gate)'.tr,
                               prefixIcon: const Icon(Icons.business_rounded, size: 20, color: Color(0xFF4F46E5)),
                               filled: true,
                               fillColor: const Color(0xFFF8FAFC),
@@ -1147,8 +1153,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                           const SizedBox(height: 8),
 
                           // Quick Chips for Name
-                          const Text(
-                            'ઝડપી પસંદગી:',
+                          Text(
+                            'ઝડપી પસંદગી:'.tr,
                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
                           ),
                           const SizedBox(height: 6),
@@ -1182,15 +1188,15 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                           const SizedBox(height: 16),
 
                           // Location description
-                          const Text(
-                            'ચોક્કસ સ્થળ વર્ણન *',
+                          Text(
+                            'ચોક્કસ સ્થળ વર્ણન *'.tr,
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                           ),
                           const SizedBox(height: 6),
                           TextField(
                             controller: locCtrl,
                             decoration: InputDecoration(
-                              hintText: 'દા.ત. ગ્રાઉન્ડ ફ્લોર - સિક્યોરિટી કેબિન સામે',
+                              hintText: 'દા.ત. ગ્રાઉન્ડ ફ્લોર - સિક્યોરિટી કેબિન સામે'.tr,
                               prefixIcon: const Icon(Icons.pin_drop_rounded, size: 20, color: Color(0xFF4F46E5)),
                               filled: true,
                               fillColor: const Color(0xFFF8FAFC),
@@ -1204,8 +1210,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                           const SizedBox(height: 16),
 
                           // Security instruction
-                          const Text(
-                            'સુરક્ષા સૂચના / ગાર્ડ માટે નોંધ (વૈકલ્પિક)',
+                          Text(
+                            'સુરક્ષા સૂચના / ગાર્ડ માટે નોંધ (વૈકલ્પિક)'.tr,
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                           ),
                           const SizedBox(height: 6),
@@ -1213,7 +1219,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                             controller: noteCtrl,
                             maxLines: 2,
                             decoration: InputDecoration(
-                              hintText: 'દા.ત. રાત્રે તાળું અને લાઈટ ચાલુ છે તે ખાસ ચકાસવું...',
+                              hintText: 'દા.ત. રાત્રે તાળું અને લાઈટ ચાલુ છે તે ખાસ ચકાસવું...'.tr,
                               prefixIcon: const Icon(Icons.shield_outlined, size: 20, color: Color(0xFF64748B)),
                               filled: true,
                               fillColor: const Color(0xFFF8FAFC),
@@ -1248,7 +1254,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                         onPressed: () async {
                           if (nameCtrl.text.trim().isEmpty || locCtrl.text.trim().isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('કૃપા કરીને નામ અને સ્થળ દાખલ કરો.')),
+                              SnackBar(content: Text('કૃપા કરીને નામ અને સ્થળ દાખલ કરો.'.tr)),
                             );
                             return;
                           }
@@ -1265,16 +1271,16 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
 
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('ચેકપોઇન્ટ સફળતાપૂર્વક ઉમેરાઈ ગયો! 🎉'),
+                              SnackBar(
+                                content: Text('ચેકપોઇન્ટ સફળતાપૂર્વક ઉમેરાઈ ગયો! 🎉'.tr),
                                 backgroundColor: Color(0xFF10B981),
                               ),
                             );
                           }
                         },
                         icon: const Icon(Icons.verified_rounded, size: 20),
-                        label: const Text(
-                          'ચેકપોઇન્ટ સાચવો અને QR મેળવો',
+                        label: Text(
+                          'ચેકપોઇન્ટ સાચવો અને QR મેળવો'.tr,
                           style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -1326,12 +1332,12 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                   child: const Icon(Icons.shield_moon_rounded, color: Color(0xFF4F46E5), size: 24),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'નાઈટ પેટ્રોલિંગ સિસ્ટમ માર્ગદર્શિકા',
+                        'નાઈટ પેટ્રોલિંગ સિસ્ટમ માર્ગદર્શિકા'.tr,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
@@ -1339,7 +1345,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                         ),
                       ),
                       Text(
-                        'સુરક્ષા ગાર્ડ અને કમિટી માટે ઓડિટ નિયમો',
+                        'સુરક્ષા ગાર્ડ અને કમિટી માટે ઓડિટ નિયમો'.tr,
                         style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                       ),
                     ],
@@ -1353,30 +1359,30 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
             ),
             const Divider(height: 24),
             _buildInfoStep(
-              step: '૧',
-              title: 'ચેકપોઇન્ટ્સ ઉમેરો (Add Checkpoints)',
-              desc: 'સોસાયટીના મુખ્ય સુરક્ષા સ્થળો જેમ કે મુખ્ય ગેટ, ટેરેસ, બેઝમેન્ટ પાર્કિંગ, પંપ રૂમ ઉમેરો.',
+              step: '૧'.tr,
+              title: 'ચેકપોઇન્ટ્સ ઉમેરો (Add Checkpoints)'.tr,
+              desc: 'સોસાયટીના મુખ્ય સુરક્ષા સ્થળો જેમ કે મુખ્ય ગેટ, ટેરેસ, બેઝમેન્ટ પાર્કિંગ, પંપ રૂમ ઉમેરો.'.tr,
               icon: Icons.add_location_alt_outlined,
             ),
             const SizedBox(height: 12),
             _buildInfoStep(
-              step: '૨',
-              title: 'QR સ્ટીકર પ્રિન્ટ કરી લગાવો',
-              desc: 'દરેક ચેકપોઇન્ટનું "QR કોડ જુઓ / પ્રિન્ટ" કરી તે સંબંધિત સ્થળની દિવાલ પર વોટરપ્રૂફ સ્ટીકર લગાવો.',
+              step: '૨'.tr,
+              title: 'QR સ્ટીકર પ્રિન્ટ કરી લગાવો'.tr,
+              desc: 'દરેક ચેકપોઇન્ટનું "QR કોડ જુઓ / પ્રિન્ટ" કરી તે સંબંધિત સ્થળની દિવાલ પર વોટરપ્રૂફ સ્ટીકર લગાવો.'.tr,
               icon: Icons.qr_code_2_rounded,
             ),
             const SizedBox(height: 12),
             _buildInfoStep(
-              step: '૩',
-              title: 'વોચમેન રાત્રિ પેટ્રોલિંગ અને સ્કેન',
-              desc: 'વોચમેન રાત્રે ૧૧:૦૦ PM થી સવારે ૬:૦૦ AM દરમિયાન એપથી ટોર્ચ અને કેમેરા વડે QR સ્કેન કરી રાઉન્ડ પૂર્ણ કરશે.',
+              step: '૩'.tr,
+              title: 'વોચમેન રાત્રિ પેટ્રોલિંગ અને સ્કેન'.tr,
+              desc: 'વોચમેન રાત્રે ૧૧:૦૦ PM થી સવારે ૬:૦૦ AM દરમિયાન એપથી ટોર્ચ અને કેમેરા વડે QR સ્કેન કરી રાઉન્ડ પૂર્ણ કરશે.'.tr,
               icon: Icons.radar_rounded,
             ),
             const SizedBox(height: 12),
             _buildInfoStep(
-              step: '૪',
-              title: 'સવારે લાઈવ ઓડિટ અને પ્રમાણપત્ર',
-              desc: 'કમિટી સમય અને સ્થળ સાથે ૧૦૦% સુરક્ષા રિપોર્ટ જોઈ શકશે અને સભ્યોને પણ સુરક્ષાની ખાતરી મળશે.',
+              step: '૪'.tr,
+              title: 'સવારે લાઈવ ઓડિટ અને પ્રમાણપત્ર'.tr,
+              desc: 'કમિટી સમય અને સ્થળ સાથે ૧૦૦% સુરક્ષા રિપોર્ટ જોઈ શકશે અને સભ્યોને પણ સુરક્ષાની ખાતરી મળશે.'.tr,
               icon: Icons.verified_user_outlined,
             ),
             const SizedBox(height: 20),
@@ -1389,7 +1395,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('સમજાયું (Close)', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text('સમજાયું (Close)'.tr, style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -1479,15 +1485,15 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _societyName ?? 'માય બિલ્ડિંગ ગાર્ડ',
+                          _societyName ?? 'માય બિલ્ડિંગ ગાર્ડ'.tr,
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
                             color: Color(0xFF0F172A),
                           ),
                         ),
-                        const Text(
-                          'સુરક્ષા પેટ્રોલિંગ સ્ટીકર',
+                        Text(
+                          'સુરક્ષા પેટ્રોલિંગ સ્ટીકર'.tr,
                           style: TextStyle(
                             fontSize: 11,
                             color: Color(0xFF64748B),
@@ -1528,7 +1534,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          'સુરક્ષા ચેકપોઇન્ટ: ${cp.code}',
+                          'સુરક્ષા ચેકપોઇન્ટ: ${cp.code}'.tr,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 13,
@@ -1569,8 +1575,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                           color: const Color(0xFFFEF3C7),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text(
-                          'સુરક્ષા ગાર્ડ માટે: પેટ્રોલિંગ દરમિયાન અહીં સ્કેન કરો',
+                        child: Text(
+                          'સુરક્ષા ગાર્ડ માટે: પેટ્રોલિંગ દરમિયાન અહીં સ્કેન કરો'.tr,
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
@@ -1597,13 +1603,13 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                     onPressed: () {
                       SharePlus.instance.share(
                         ShareParams(
-                          text: 'સુરક્ષા ચેકપોઇન્ટ QR: [${cp.code}] ${cp.name} - ${cp.location}\nQR કોડ ડેટા: ${cp.qrPayload}',
-                          subject: 'સુરક્ષા ચેકપોઇન્ટ QR - ${cp.name}',
+                          text: 'સુરક્ષા ચેકપોઇન્ટ QR: [${cp.code}] ${cp.name} - ${cp.location}\nQR કોડ ડેટા: ${cp.qrPayload}'.tr,
+                          subject: 'સુરક્ષા ચેકપોઇન્ટ QR - ${cp.name}'.tr,
                         ),
                       );
                     },
                     icon: const Icon(Icons.share_rounded, size: 18),
-                    label: const Text('QR વિગત શેર કરો'),
+                    label: Text('QR વિગત શેર કરો'.tr),
                   ),
                 ),
               ],
@@ -1618,12 +1624,12 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('ચેકપોઇન્ટ કાઢી નાખવો છે?'),
-        content: Text('શું તમે ખરેખર "${cp.name}" ચેકપોઇન્ટ કાઢી નાખવા માંગો છો?'),
+        title: Text('ચેકપોઇન્ટ કાઢી નાખવો છે?'.tr),
+        content: Text('શું તમે ખરેખર "${cp.name}" ચેકપોઇન્ટ કાઢી નાખવા માંગો છો?'.tr),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('રદ કરો'),
+            child: Text('રદ કરો'.tr),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
@@ -1631,7 +1637,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
               Navigator.pop(ctx);
               await _service.deleteCheckpoint(_effectiveSocietyId!, cp.id);
             },
-            child: const Text('કાઢી નાખો'),
+            child: Text('કાઢી નાખો'.tr),
           ),
         ],
       ),

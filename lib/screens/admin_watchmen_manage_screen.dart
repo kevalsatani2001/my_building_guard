@@ -33,8 +33,8 @@ class _AdminWatchmenManageScreenState extends State<AdminWatchmenManageScreen> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 20),
         actionsPadding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
         title: PremiumDialogHeader(
-          title: 'પાસવર્ડ બદલો',
-          subtitle: '$name — વોચમેન સુરક્ષા પાસવર્ડ',
+          title: 'પાસવર્ડ બદલો'.tr,
+          subtitle: '$name — વોચમેન સુરક્ષા પાસવર્ડ'.tr,
           icon: Icons.lock_reset_rounded,
           accentColor: const Color(0xFF4338CA),
           onClose: () => Navigator.pop(ctx),
@@ -48,8 +48,8 @@ class _AdminWatchmenManageScreenState extends State<AdminWatchmenManageScreen> {
               controller: pwdC,
               obscureText: true,
               decoration: InputDecoration(
-                labelText: 'નવો પાસવર્ડ *',
-                hintText: 'ઓછામાં ઓછા 6 અક્ષર',
+                labelText: 'નવો પાસવર્ડ *'.tr,
+                hintText: 'ઓછામાં ઓછા 6 અક્ષર'.tr,
                 filled: true,
                 fillColor: const Color(0xFFF8FAFC),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -64,7 +64,7 @@ class _AdminWatchmenManageScreenState extends State<AdminWatchmenManageScreen> {
               side: const BorderSide(color: Color(0xFFCBD5E1)),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('રદ', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w700)),
+            child: Text('રદ'.tr, style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w700)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -75,19 +75,19 @@ class _AdminWatchmenManageScreenState extends State<AdminWatchmenManageScreen> {
               final pwd = pwdC.text.trim();
               if (pwd.length < 6) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('પાસવર્ડ 6 અક્ષરથી મોટો હોવો જોઈએ.')),
+                  SnackBar(content: Text('પાસવર્ડ 6 અક્ષરથી મોટો હોવો જોઈએ.'.tr)),
                 );
                 return;
               }
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('વોચમેન પાસવર્ડ રીસેટ રિક્વેસ્ટ મોકલાઈ ગઈ છે.'),
+                SnackBar(
+                  content: Text('વોચમેન પાસવર્ડ રીસેટ રિક્વેસ્ટ મોકલાઈ ગઈ છે.'.tr),
                   backgroundColor: Color(0xFF047857),
                 ),
               );
             },
-            child: const Text('બદલો'),
+            child: Text('બદલો'.tr),
           ),
         ],
       ),
@@ -98,9 +98,9 @@ class _AdminWatchmenManageScreenState extends State<AdminWatchmenManageScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: const PremiumAppBar(
-        title: "વોચમેન સિક્યોરિટી મેનેજમેન્ટ",
-        subtitle: "ગેટ ગાર્ડ્સ, ઓન-ડ્યુટી સ્ટેટસ & પિન કંટ્રોલ",
+      appBar: PremiumAppBar(
+        title: "વોચમેન સિક્યોરિટી મેનેજમેન્ટ".tr,
+        subtitle: "ગેટ ગાર્ડ્સ, ઓન-ડ્યુટી સ્ટેટસ & પિન કંટ્રોલ".tr,
         icon: Icons.security_rounded,
         accentColor: Color(0xFF059669),
       ),
@@ -112,7 +112,7 @@ class _AdminWatchmenManageScreenState extends State<AdminWatchmenManageScreen> {
           ),
         ),
         icon: const Icon(Icons.person_add_rounded),
-        label: const Text('નવો વોચમેન ઉમેરો', style: TextStyle(fontWeight: FontWeight.w800)),
+        label: Text('નવો વોચમેન ઉમેરો'.tr, style: const TextStyle(fontWeight: FontWeight.w800)),
         backgroundColor: const Color(0xFF10B981),
         foregroundColor: Colors.white,
       ),
@@ -167,8 +167,8 @@ class _AdminWatchmenManageScreenState extends State<AdminWatchmenManageScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            "મુખ્ય ગેટ સિક્યોરિટી ટીમ",
+                          Text(
+                            "મુખ્ય ગેટ સિક્યોરિટી ટીમ".tr,
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w800,
@@ -177,7 +177,7 @@ class _AdminWatchmenManageScreenState extends State<AdminWatchmenManageScreen> {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            "કુલ વોચમેન: ${docs.length} • હાલ ફરજ પર: $onDutyCount",
+                            "કુલ વોચમેન: ${docs.length} • હાલ ફરજ પર: $onDutyCount".tr,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.85),
                               fontSize: 12,
@@ -200,13 +200,13 @@ class _AdminWatchmenManageScreenState extends State<AdminWatchmenManageScreen> {
                           children: [
                             Icon(Icons.shield_outlined, size: 64, color: Colors.grey.shade400),
                             const SizedBox(height: 12),
-                            const Text(
-                              "હજુ સુધી કોઈ વોચમેન નોંધાયેલ નથી.",
+                            Text(
+                              "હજુ સુધી કોઈ વોચમેન નોંધાયેલ નથી.".tr,
                               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87),
                             ),
                             const SizedBox(height: 6),
-                            const Text(
-                              "નીચેના બટનથી નવો વોચમેન ઉમેરો.",
+                            Text(
+                              "નીચેના બટનથી નવો વોચમેન ઉમેરો.".tr,
                               style: TextStyle(fontSize: 12, color: Colors.grey),
                             ),
                           ],
@@ -219,7 +219,7 @@ class _AdminWatchmenManageScreenState extends State<AdminWatchmenManageScreen> {
                         itemBuilder: (context, i) {
                           final d = docs[i].data() as Map<String, dynamic>;
                           final docId = docs[i].id;
-                          final name = (d['name'] ?? 'અનામી ગાર્ડ').toString();
+                          final name = (d['name'] ?? 'અનામી ગાર્ડ'.tr).toString();
                           final phone = (d['phone'] ?? '').toString();
                           final email = (d['email'] ?? '').toString();
                           final isActive = d['isActive'] == true;
@@ -284,7 +284,7 @@ class _AdminWatchmenManageScreenState extends State<AdminWatchmenManageScreen> {
                                               borderRadius: BorderRadius.circular(6),
                                             ),
                                             child: Text(
-                                              isActive ? "🟢 ફરજ પર" : "⚪ રજા પર",
+                                              isActive ? "🟢 ફરજ પર".tr : "⚪ રજા પર".tr,
                                               style: TextStyle(
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.w800,
@@ -305,12 +305,12 @@ class _AdminWatchmenManageScreenState extends State<AdminWatchmenManageScreen> {
                                 if (phone.isNotEmpty)
                                   IconButton(
                                     icon: const Icon(Icons.call_rounded, size: 20, color: Color(0xFF047857)),
-                                    tooltip: 'કોલ કરો',
+                                    tooltip: 'કોલ કરો'.tr,
                                     onPressed: () => _makeCall(phone),
                                   ),
                                 IconButton(
                                   icon: const Icon(Icons.lock_reset_rounded, size: 20, color: Color(0xFF4338CA)),
-                                  tooltip: 'પાસવર્ડ બદલો',
+                                  tooltip: 'પાસવર્ડ બદલો'.tr,
                                   onPressed: () => _showResetPasswordDialog(docId, name),
                                 ),
                                 Switch(

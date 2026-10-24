@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/society_appeal_service.dart';
 import '../../services/super_admin_service.dart';
+import '../../services/localization_service.dart';
+import '../../l10n/app_strings.dart';
 
 class SuperAdminAppealDetailScreen extends StatefulWidget {
   final String appealId;
@@ -24,42 +26,42 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
 
   Future<void> _sendMail(String email, String societyName, String adminName) async {
     if (email.isEmpty) {
-      _showToast("ઈમેલ સરનામું ઉપલબ્ધ નથી.");
+      _showToast("ઈમેલ સરનામું ઉપલબ્ધ નથી.".tr);
       return;
     }
-    final subject = Uri.encodeComponent("BuildingGuard: સોસાયટી પુનઃસક્રિયતા અપીલ સંદર્ભે ($societyName)");
+    final subject = Uri.encodeComponent("BuildingGuard: સોસાયટી પુનઃસક્રિયતા અપીલ સંદર્ભે ($societyName)".tr);
     final body = Uri.encodeComponent(
-      "નમસ્તે $adminName,\n\n"
-      "તમારી સોસાયટી '$societyName' ની સસ્પેન્શન અપીલ સંદર્ભે જણાવવાનું કે,\n\n"
-      "[અહીં તમારો સંદેશો લખો]\n\n"
-      "આભાર,\n"
-      "સુપર એડમિન હેડ ઓફિસ - BuildingGuard",
+      "નમસ્તે $adminName,\n\n".tr +
+      "તમારી સોસાયટી '$societyName' ની સસ્પેન્શન અપીલ સંદર્ભે જણાવવાનું કે,\n\n".tr +
+      "[અહીં તમારો સંદેશો લખો]\n\n".tr +
+      "આભાર,\n".tr +
+      "સુપર એડમિન હેડ ઓફિસ - BuildingGuard".tr,
     );
     final uri = Uri.parse("mailto:$email?subject=$subject&body=$body");
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
-      _showToast("ઈમેલ એપ ખોલી શકાઈ નથી.");
+      _showToast("ઈમેલ એપ ખોલી શકાઈ નથી.".tr);
     }
   }
 
   Future<void> _sendWhatsApp(String phone, String societyName, String adminName) async {
     final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
     if (cleanPhone.isEmpty) {
-      _showToast("ફોન નંબર ઉપલબ્ધ નથી.");
+      _showToast("ફોન નંબર ઉપલબ્ધ નથી.".tr);
       return;
     }
     final formattedPhone = cleanPhone.length == 10 ? '91$cleanPhone' : cleanPhone;
     final msg = Uri.encodeComponent(
-      "નમસ્તે $adminName,\n"
-      "તમારી સોસાયટી *$societyName* ની અપીલ વિનંતી સંદર્ભે સુપર એડમિન ટીમ તરફથી સંપર્ક કરવામાં આવ્યો છે.\n\n"
-      "[અહીં વિગત લખો]",
+      "નમસ્તે $adminName,\n".tr +
+      "તમારી સોસાયટી *$societyName* ની અપીલ વિનંતી સંદર્ભે સુપર એડમિન ટીમ તરફથી સંપર્ક કરવામાં આવ્યો છે.\n\n".tr +
+      "[અહીં વિગત લખો]".tr,
     );
     final uri = Uri.parse("https://wa.me/$formattedPhone?text=$msg");
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
-      _showToast("WhatsApp ખોલી શકાયું નથી.");
+      _showToast("WhatsApp ખોલી શકાયું નથી.".tr);
     }
   }
 
@@ -68,20 +70,20 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: const Text("સોસાયટી સક્રિય કરવી છે?", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+        title: Text("સોસાયટી સક્રિય કરવી છે?".tr, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
         content: Text(
-          "'$societyName' અને તેના એડમિનને પુનઃસક્રિય કરવામાં આવશે. તમામ સભ્યો અને વોચમેન માટે એપ ફરીથી ચાલુ થશે.",
+          "'$societyName' અને તેના એડમિનને પુનઃસક્રિય કરવામાં આવશે. તમામ સભ્યો અને વોચમેન માટે એપ ફરીથી ચાલુ થશે.".tr,
           style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text("રદ કરો", style: TextStyle(color: Color(0xFF94A3B8))),
+            child: Text("રદ કરો".tr, style: TextStyle(color: Color(0xFF94A3B8))),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("હા, સક્રિય કરો"),
+            child: Text("હા, સક્રિય કરો".tr),
           ),
         ],
       ),
@@ -99,15 +101,15 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
         appealId: widget.appealId,
         societyId: societyId,
         adminUid: adminUid,
-        replyMessage: "તમારી અપીલ સ્વીકારી લેવામાં આવી છે અને સોસાયટી પુનઃસક્રિય કરી દેવામાં આવી છે.",
+        replyMessage: "તમારી અપીલ સ્વીકારી લેવામાં આવી છે અને સોસાયટી પુનઃસક્રિય કરી દેવામાં આવી છે.".tr,
         replyStatus: 'resolved',
         replyMethod: 'notification',
         unblockSociety: true,
       );
 
-      _showToast("સોસાયટી અને એડમિન સફળતાપૂર્વક સક્રિય થઈ ગયા છે.");
+      _showToast("સોસાયટી અને એડમિન સફળતાપૂર્વક સક્રિય થઈ ગયા છે.".tr);
     } catch (e) {
-      _showToast("ક્ષતિ: $e");
+      _showToast("ક્ષતિ: $e".tr);
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
@@ -148,12 +150,12 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
                 ),
               ),
               const SizedBox(height: 16),
-              const Row(
+              Row(
                 children: [
                   Icon(Icons.notifications_active_rounded, color: Color(0xFF38BDF8), size: 20),
                   SizedBox(width: 8),
                   Text(
-                    "એપ પુશ નોટિફિકેશન રિપ્લાય",
+                    "એપ પુશ નોટિફિકેશન રિપ્લાય".tr,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -164,7 +166,7 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
               ),
               const SizedBox(height: 6),
               Text(
-                "આ સંદેશો સીધો એડમિનના ફોનમાં નોટિફિકેશન તરીકે જશે.",
+                "આ સંદેશો સીધો એડમિનના ફોનમાં નોટિફિકેશન તરીકે જશે.".tr,
                 style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
               ),
               const SizedBox(height: 14),
@@ -173,7 +175,7 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
               Row(
                 children: [
                   _statusChoicePill(
-                    label: "મંજૂર (Resolved)",
+                    label: "મંજૂર (Resolved)".tr,
                     selected: selectedStatus == 'resolved',
                     color: const Color(0xFF10B981),
                     onTap: () => setModalState(() {
@@ -183,7 +185,7 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
                   ),
                   const SizedBox(width: 8),
                   _statusChoicePill(
-                    label: "વધુ વિગત (Needs Info)",
+                    label: "વધુ વિગત (Needs Info)".tr,
                     selected: selectedStatus == 'pending_info',
                     color: const Color(0xFFF59E0B),
                     onTap: () => setModalState(() {
@@ -201,7 +203,7 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
                 maxLines: 4,
                 style: const TextStyle(color: Colors.white, fontSize: 13),
                 decoration: InputDecoration(
-                  hintText: "સુપર એડમિન તરીકે તમારો સત્તાવાર સંદેશો લખો...",
+                  hintText: "સુપર એડમિન તરીકે તમારો સત્તાવાર સંદેશો લખો...".tr,
                   hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                   filled: true,
                   fillColor: const Color(0xFF0F172A),
@@ -215,8 +217,8 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
                 contentPadding: EdgeInsets.zero,
                 value: unblockToo,
                 activeColor: const Color(0xFF10B981),
-                title: const Text(
-                  "સાથે સાથે સોસાયટી અને એડમિનને અનબ્લોક (સક્રિય) કરો",
+                title: Text(
+                  "સાથે સાથે સોસાયટી અને એડમિનને અનબ્લોક (સક્રિય) કરો".tr,
                   style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w600),
                 ),
                 onChanged: (val) => setModalState(() => unblockToo = val ?? false),
@@ -233,7 +235,7 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
                 onPressed: () async {
                   final text = replyCtrl.text.trim();
                   if (text.isEmpty) {
-                    _showToast("કૃપા કરીને સંદેશો લખો.");
+                    _showToast("કૃપા કરીને સંદેશો લખો.".tr);
                     return;
                   }
                   Navigator.pop(ctx);
@@ -248,15 +250,15 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
                       replyMethod: 'notification',
                       unblockSociety: unblockToo,
                     );
-                    _showToast("નોટિફિકેશન રિપ્લાય સફળતાપૂર્વક મોકલાઈ ગયો છે.");
+                    _showToast("નોટિફિકેશન રિપ્લાય સફળતાપૂર્વક મોકલાઈ ગયો છે.".tr);
                   } catch (e) {
-                    _showToast("ક્ષતિ: $e");
+                    _showToast("ક્ષતિ: $e".tr);
                   } finally {
                     if (mounted) setState(() => _isProcessing = false);
                   }
                 },
                 icon: const Icon(Icons.send_rounded, size: 16),
-                label: const Text("જવાબ મોકલો", style: TextStyle(fontWeight: FontWeight.w800)),
+                label: Text("જવાબ મોકલો".tr, style: TextStyle(fontWeight: FontWeight.w800)),
               ),
             ],
           ),
@@ -314,19 +316,23 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "અપીલ રિવ્યુ & નિર્ણય",
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
+              "અપીલ રિવ્યુ & નિર્ણય".tr,
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
             ),
             Text(
-              "સુપર એડમિન કંટ્રોલ સેન્ટર",
-              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+              "સુપર એડમિન કંટ્રોલ સેન્ટર".tr,
+              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
             ),
           ],
         ),
+        actions: const [
+          LanguageSwitchButton(isDark: true),
+          SizedBox(width: 8),
+        ],
       ),
       body: StreamBuilder<Map<String, dynamic>?>(
         stream: SocietyAppealService.instance.streamAppealById(widget.appealId),
@@ -336,9 +342,9 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
             return const Center(child: CircularProgressIndicator(color: Colors.white));
           }
 
-          final societyName = (data['societyName'] ?? 'સોસાયટી').toString();
+          final societyName = (data['societyName'] ?? 'સોસાયટી'.tr).toString();
           final societyId = (data['societyId'] ?? '').toString();
-          final adminName = (data['adminName'] ?? 'એડમિન').toString();
+          final adminName = (data['adminName'] ?? 'એડમિન'.tr).toString();
           final adminPhone = (data['adminPhone'] ?? '').toString();
           final adminEmail = (data['adminEmail'] ?? '').toString();
           final adminUid = (data['adminUid'] ?? '').toString();
@@ -404,7 +410,7 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
                               ),
                             ),
                             child: Text(
-                              status == 'resolved' ? "✅ સક્રિય / ઉકેલાયેલ" : "⏳ અપીલ પેન્ડિંગ",
+                              status == 'resolved' ? "✅ સક્રિય / ઉકેલાયેલ".tr : "⏳ અપીલ પેન્ડિંગ".tr,
                               style: TextStyle(
                                 color: status == 'resolved' ? const Color(0xFF34D399) : const Color(0xFFFBBF24),
                                 fontSize: 11,
@@ -419,7 +425,7 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
                         children: [
                           const Icon(Icons.person_outline_rounded, size: 15, color: Color(0xFF94A3B8)),
                           const SizedBox(width: 5),
-                          Text("એડમિન: $adminName", style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                          Text("એડમિન: $adminName".tr, style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w700)),
                           const Spacer(),
                           if (adminPhone.isNotEmpty)
                             Text(adminPhone, style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold)),
@@ -455,8 +461,8 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
                         children: [
                           const Icon(Icons.chat_bubble_outline_rounded, size: 16, color: Color(0xFFF59E0B)),
                           const SizedBox(width: 6),
-                          const Text(
-                            "એડમિનનો અપીલ સંદેશો:",
+                          Text(
+                            "એડમિનનો અપીલ સંદેશો:".tr,
                             style: TextStyle(color: Color(0xFFF59E0B), fontSize: 13, fontWeight: FontWeight.w800),
                           ),
                           const Spacer(),
@@ -489,8 +495,8 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "તમારો અગાઉનો સત્તાવાર જવાબ:",
+                        Text(
+                          "તમારો અગાઉનો સત્તાવાર જવાબ:".tr,
                           style: TextStyle(color: Color(0xFF34D399), fontSize: 12, fontWeight: FontWeight.w800),
                         ),
                         const SizedBox(height: 5),
@@ -512,16 +518,16 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   icon: const Icon(Icons.lock_open_rounded, size: 18),
-                  label: const Text(
-                    "સોસાયટી & એડમિન સક્રિય કરો (Unblock Now)",
+                  label: Text(
+                    "સોસાયટી & એડમિન સક્રિય કરો (Unblock Now)".tr,
                     style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
                   ),
                 ),
                 const SizedBox(height: 14),
 
                 // 3 Reply Channels
-                const Text(
-                  "એડમિન સાથે પ્રત્યુત્તર માધ્યમ:",
+                Text(
+                  "એડમિન સાથે પ્રત્યુત્તર માધ્યમ:".tr,
                   style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
@@ -533,7 +539,7 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
                       child: OutlinedButton.icon(
                         onPressed: () => _sendMail(adminEmail, societyName, adminName),
                         icon: const Icon(Icons.mail_rounded, size: 16),
-                        label: const Text("Mail", style: TextStyle(fontWeight: FontWeight.w800)),
+                        label: Text("Mail", style: TextStyle(fontWeight: FontWeight.w800)),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF38BDF8),
                           side: const BorderSide(color: Color(0xFF38BDF8)),
@@ -549,7 +555,7 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
                       child: OutlinedButton.icon(
                         onPressed: () => _sendWhatsApp(adminPhone, societyName, adminName),
                         icon: const Icon(Icons.chat_rounded, size: 16),
-                        label: const Text("WhatsApp", style: TextStyle(fontWeight: FontWeight.w800)),
+                        label: Text("WhatsApp", style: TextStyle(fontWeight: FontWeight.w800)),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF22C55E),
                           side: const BorderSide(color: Color(0xFF22C55E)),
@@ -569,7 +575,7 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
                           societyName: societyName,
                         ),
                         icon: const Icon(Icons.send_to_mobile_rounded, size: 16),
-                        label: const Text("પુશ રિપ્લાય", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5)),
+                        label: Text("પુશ રિપ્લાય".tr, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5)),
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFF6366F1),
                           padding: const EdgeInsets.symmetric(vertical: 12),

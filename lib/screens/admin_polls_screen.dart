@@ -6,6 +6,8 @@ import '../services/society_poll_service.dart';
 import '../services/society_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:building_guard/core/app_firestore.dart';
+import '../services/localization_service.dart';
+import '../l10n/app_strings.dart';
 
 class AdminPollsScreen extends StatefulWidget {
   const AdminPollsScreen({super.key});
@@ -93,9 +95,9 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'સોસાયટી ડિજિટલ પોલિંગ',
-              style: TextStyle(
+            Text(
+              AppStrings.get('admin_polls_title'),
+              style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF0F172A),
@@ -103,11 +105,17 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
               ),
             ),
             Text(
-              'પારદર્શક નિર્ણય & મતદાન કેન્દ્ર',
+              AppStrings.get('admin_polls_subtitle'),
               style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
             ),
           ],
         ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 14),
+            child: LanguageSwitchButton(),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(58),
           child: Container(
@@ -139,15 +147,15 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
               labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
               unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               dividerColor: Colors.transparent,
-              tabs: const [
+              tabs: [
                 Tab(
                   height: 38,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.how_to_vote_rounded, size: 17),
-                      SizedBox(width: 8),
-                      Text('સક્રિય પોલ (Active)'),
+                      const Icon(Icons.how_to_vote_rounded, size: 17),
+                      const SizedBox(width: 8),
+                      Text(AppStrings.get('active_polls')),
                     ],
                   ),
                 ),
@@ -156,9 +164,9 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.archive_outlined, size: 17),
-                      SizedBox(width: 8),
-                      Text('પૂર્ણ / બંધ (Closed)'),
+                      const Icon(Icons.archive_outlined, size: 17),
+                      const SizedBox(width: 8),
+                      Text(AppStrings.get('closed_polls')),
                     ],
                   ),
                 ),
@@ -188,8 +196,8 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
           elevation: 0,
           highlightElevation: 0,
           icon: const Icon(Icons.add_task_rounded, size: 20),
-          label: const Text(
-            'નવો પોલ બનાવો',
+          label: Text(
+            'નવો પોલ બનાવો'.tr,
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
           ),
         ),
@@ -201,7 +209,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('ભૂલ આવી: ${snapshot.error}'));
+            return Center(child: Text('ભૂલ આવી: ${snapshot.error}'.tr));
           }
 
           final allPolls = snapshot.data ?? [];
@@ -253,7 +261,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
               ),
               const SizedBox(height: 16),
               Text(
-                isActiveTab ? 'હજુ કોઈ સક્રિય પોલ ચાલુ નથી' : 'કોઈ પૂર્ણ થયેલો પોલ નથી',
+                isActiveTab ? 'હજુ કોઈ સક્રિય પોલ ચાલુ નથી'.tr : 'કોઈ પૂર્ણ થયેલો પોલ નથી'.tr,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
@@ -263,8 +271,8 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
               const SizedBox(height: 6),
               Text(
                 isActiveTab
-                    ? 'સોસાયટી કલરકામ, સુરક્ષા કે આયોજન જેવા મહત્વના વિષયો પર સભ્યો પાસેથી ડિજિટલ અભિપ્રાય મેળવવા પોલ શરૂ કરો.'
-                    : 'અગાઉ પૂર્ણ થયેલા પોલ અને કમિટીના નિર્ણયો અહીં સંગ્રહિત થશે.',
+                    ? 'સોસાયટી કલરકામ, સુરક્ષા કે આયોજન જેવા મહત્વના વિષયો પર સભ્યો પાસેથી ડિજિટલ અભિપ્રાય મેળવવા પોલ શરૂ કરો.'.tr
+                    : 'અગાઉ પૂર્ણ થયેલા પોલ અને કમિટીના નિર્ણયો અહીં સંગ્રહિત થશે.'.tr,
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.4),
               ),
@@ -278,7 +286,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                   ),
                   onPressed: _showCreatePollDialog,
                   icon: const Icon(Icons.add_task_rounded, size: 18),
-                  label: const Text('નવો પોલ બનાવો', style: TextStyle(fontWeight: FontWeight.bold)),
+                  label: Text('નવો પોલ બનાવો'.tr, style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ],
             ],
@@ -366,13 +374,13 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: const Color(0xFF2DD4BF).withValues(alpha: 0.4)),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.admin_panel_settings_outlined, size: 11, color: Color(0xFF2DD4BF)),
                           SizedBox(width: 4),
                           Text(
-                            'એડમિન પોલિંગ કંટ્રોલ',
+                            'એડમિન પોલિંગ કંટ્રોલ'.tr,
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
@@ -390,7 +398,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        'કુલ: $totalCount',
+                        'કુલ: $totalCount'.tr,
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
@@ -401,8 +409,8 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                   ],
                 ),
                 const SizedBox(height: 5),
-                const Text(
-                  'સોસાયટી ડિજિટલ પોલિંગ & નિર્ણય',
+                Text(
+                  'સોસાયટી ડિજિટલ પોલિંગ & નિર્ણય'.tr,
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w800,
@@ -423,8 +431,8 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                     const SizedBox(width: 5),
                     Text(
                       activeCount > 0
-                          ? '$activeCount પોલ અત્યારે ચાલુ મતદાનમાં છે'
-                          : 'કોઈ સક્રિય પોલ ચાલુ નથી',
+                          ? '$activeCount પોલ અત્યારે ચાલુ મતદાનમાં છે'.tr
+                          : 'કોઈ સક્રિય પોલ ચાલુ નથી'.tr,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -456,13 +464,13 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
 
     String deadlineText;
     if (isExpired || !poll.isLive) {
-      deadlineText = "મતદાન પૂર્ણ";
+      deadlineText = "મતદાન પૂર્ણ".tr;
     } else if (remaining.inDays > 0) {
-      deadlineText = "બાકી: ${remaining.inDays} દિવસ";
+      deadlineText = "બાકી: ${remaining.inDays} દિવસ".tr;
     } else if (remaining.inHours > 0) {
-      deadlineText = "બાકી: ${remaining.inHours} કલાક";
+      deadlineText = "બાકી: ${remaining.inHours} કલાક".tr;
     } else {
-      deadlineText = "અંતિમ ઘડીઓ";
+      deadlineText = "અંતિમ ઘડીઓ".tr;
     }
 
     return Container(
@@ -516,7 +524,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        poll.isLive ? 'ચાલુ મતદાન' : 'પૂર્ણ / બંધ',
+                        poll.isLive ? 'ચાલુ મતદાન'.tr : 'પૂર્ણ / બંધ'.tr,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
@@ -538,7 +546,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                     ),
                   ),
                   child: Text(
-                    poll.targetScope == 'all' ? 'સમગ્ર સોસાયટી' : 'વિંગ ${poll.targetScope}',
+                    poll.targetScope == 'all' ? 'સમગ્ર સોસાયટી'.tr : 'વિંગ ${poll.targetScope}'.tr,
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w800,
@@ -556,13 +564,13 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: const Color(0xFFFED7AA)),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.visibility_off_rounded, size: 11, color: Color(0xFFEA580C)),
                         SizedBox(width: 3),
                         Text(
-                          'ગુપ્ત મત',
+                          'ગુપ્ત મત'.tr,
                           style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFFEA580C)),
                         ),
                       ],
@@ -652,12 +660,12 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
                     Icon(Icons.leaderboard_rounded, size: 16, color: Color(0xFF0F766E)),
                     SizedBox(width: 6),
                     Text(
-                      'લાઈવ પરિણામ:',
+                      'લાઈવ પરિણામ:'.tr,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
@@ -673,7 +681,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    'કુલ $totalVotes મત',
+                    'કુલ $totalVotes મત'.tr,
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
@@ -784,7 +792,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'ઠરાવ: ${poll.resolutionSummary}',
+                        'ઠરાવ: ${poll.resolutionSummary}'.tr,
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -802,7 +810,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  poll.isLive ? 'મતદાન પ્રક્રિયા ચાલુ છે' : 'મતદાન પૂર્ણ થયેલ છે',
+                  poll.isLive ? 'મતદાન પ્રક્રિયા ચાલુ છે'.tr : 'મતદાન પૂર્ણ થયેલ છે'.tr,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -810,7 +818,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                   ),
                 ),
                 Text(
-                  'અંતિમ: ${dateFormat.format(poll.endDate)}',
+                  'અંતિમ: ${dateFormat.format(poll.endDate)}'.tr,
                   style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
                 ),
               ],
@@ -832,7 +840,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                       onPressed: () => _showVotersSheet(poll),
                       icon: const Icon(Icons.groups_rounded, size: 16),
                       label: Text(
-                        'મતદારો ($totalVotes)',
+                        'મતદારો ($totalVotes)'.tr,
                         style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
                       ),
                     ),
@@ -850,8 +858,8 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                       ),
                       onPressed: () => _showClosePollDialog(poll),
                       icon: const Icon(Icons.lock_rounded, size: 15),
-                      label: const Text(
-                        'મતદાન બંધ',
+                      label: Text(
+                        'મતદાન બંધ'.tr,
                         style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
                       ),
                     ),
@@ -859,7 +867,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
 
                 const SizedBox(width: 8),
                 IconButton(
-                  tooltip: 'પોલ ડીલીટ કરો',
+                  tooltip: 'પોલ ડીલીટ કરો'.tr,
                   style: IconButton.styleFrom(
                     backgroundColor: const Color(0xFFFEF2F2),
                     foregroundColor: Colors.red,
@@ -881,8 +889,8 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final optionCtrls = [
-      TextEditingController(text: 'હા, સંમત છીએ (Yes)'),
-      TextEditingController(text: 'ના, અત્યારે જરૂર નથી (No)'),
+      TextEditingController(text: 'હા, સંમત છીએ (Yes)'.tr),
+      TextEditingController(text: 'ના, અત્યારે જરૂર નથી (No)'.tr),
     ];
     String scope = _userRestrictedBlock ?? 'all';
     DateTime endDate = DateTime.now().add(const Duration(days: 3));
@@ -938,12 +946,12 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                         child: const Icon(Icons.how_to_vote_rounded, color: Colors.white, size: 22),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'નવો નિર્ણય પોલ બનાવો',
+                              'નવો નિર્ણય પોલ બનાવો'.tr,
                               style: TextStyle(
                                 fontSize: 16.5,
                                 fontWeight: FontWeight.w900,
@@ -951,7 +959,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                               ),
                             ),
                             Text(
-                              'સભ્યોના ડિજિટલ મતદાન દ્વારા પારદર્શક નિર્ણય',
+                              'સભ્યોના ડિજિટલ મતદાન દ્વારા પારદર્શક નિર્ણય'.tr,
                               style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                             ),
                           ],
@@ -973,15 +981,15 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Title
-                        const Text(
-                          'પોલ પ્રશ્ન / મુખ્ય વિષય *',
+                        Text(
+                          'પોલ પ્રશ્ન / મુખ્ય વિષય *'.tr,
                           style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                         ),
                         const SizedBox(height: 6),
                         TextField(
                           controller: titleCtrl,
                           decoration: InputDecoration(
-                            hintText: 'દા.ત. સોસાયટી કલરકામ અને વોટરપ્રૂફિંગ કરાવવું?',
+                            hintText: 'દા.ત. સોસાયટી કલરકામ અને વોટરપ્રૂફિંગ કરાવવું?'.tr,
                             prefixIcon: const Icon(Icons.help_outline_rounded, size: 20, color: Color(0xFF0F766E)),
                             filled: true,
                             fillColor: const Color(0xFFF8FAFC),
@@ -995,8 +1003,8 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                         const SizedBox(height: 16),
 
                         // Description
-                        const Text(
-                          'વિગત / સમજૂતી (વૈકલ્પિક)',
+                        Text(
+                          'વિગત / સમજૂતી (વૈકલ્પિક)'.tr,
                           style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                         ),
                         const SizedBox(height: 6),
@@ -1004,7 +1012,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                           controller: descCtrl,
                           maxLines: 2,
                           decoration: InputDecoration(
-                            hintText: 'અંદાજિત ખર્ચ, એજન્ડા કે કોટેશનની વિગત લખો...',
+                            hintText: 'અંદાજિત ખર્ચ, એજન્ડા કે કોટેશનની વિગત લખો...'.tr,
                             prefixIcon: const Icon(Icons.notes_rounded, size: 20, color: Color(0xFF64748B)),
                             filled: true,
                             fillColor: const Color(0xFFF8FAFC),
@@ -1023,8 +1031,8 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                           children: [
                             Row(
                               children: [
-                                const Text(
-                                  'મતદાન વિકલ્પો (Options) *',
+                                Text(
+                                  'મતદાન વિકલ્પો (Options) *'.tr,
                                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                                 ),
                                 const SizedBox(width: 8),
@@ -1035,7 +1043,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
-                                    '${optionCtrls.length} વિકલ્પો',
+                                    '${optionCtrls.length} વિકલ્પો'.tr,
                                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
                                   ),
                                 ),
@@ -1053,7 +1061,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                                   });
                                 },
                                 icon: const Icon(Icons.add_circle_outline_rounded, size: 16),
-                                label: const Text('વિકલ્પ ઉમેરો', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                label: Text('વિકલ્પ ઉમેરો'.tr, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                               ),
                           ],
                         ),
@@ -1084,7 +1092,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                                   child: TextField(
                                     controller: optionCtrls[i],
                                     decoration: InputDecoration(
-                                      hintText: 'વિકલ્પ ${i + 1} (દા.ત. હા / ના)',
+                                      hintText: 'વિકલ્પ ${i + 1} (દા.ત. હા / ના)'.tr,
                                       filled: true,
                                       fillColor: const Color(0xFFF8FAFC),
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
@@ -1120,8 +1128,8 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
 
                         // Target Scope
                         if (_userRestrictedBlock == null) ...[
-                          const Text(
-                            'કોના માટે લાગુ છે? (Target Scope)',
+                          Text(
+                            'કોના માટે લાગુ છે? (Target Scope)'.tr,
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                           ),
                           const SizedBox(height: 6),
@@ -1129,10 +1137,10 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                             builder: (context) {
                               final blockTerm = SocietyService.instance.vocabulary.blockShortLabel;
                               final dropdownItems = <DropdownMenuItem<String>>[
-                                const DropdownMenuItem(value: 'all', child: Text('સમગ્ર સોસાયટી (All Society)')),
+                                DropdownMenuItem(value: 'all', child: Text('સમગ્ર સોસાયટી (All Society)'.tr)),
                                 ..._availableBlocks.map((b) => DropdownMenuItem(
                                   value: b,
-                                  child: Text('માત્ર $blockTerm $b'),
+                                  child: Text('માત્ર $blockTerm $b'.tr),
                                 )),
                               ];
                               final validValues = dropdownItems.map((e) => e.value).toSet();
@@ -1159,8 +1167,8 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                         ],
 
                         // End Date Picker
-                        const Text(
-                          'મતદાન સમાપ્તિ તારીખ & સમય *',
+                        Text(
+                          'મતદાન સમાપ્તિ તારીખ & સમય *'.tr,
                           style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                         ),
                         const SizedBox(height: 6),
@@ -1194,7 +1202,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                                     const Icon(Icons.event_available_rounded, size: 20, color: Color(0xFF0F766E)),
                                     const SizedBox(width: 10),
                                     Text(
-                                      DateFormat('dd/MM/yyyy (સાંજે ૧૧:૫૯)').format(endDate),
+                                      DateFormat('dd/MM/yyyy (સાંજે ૧૧:૫૯)'.tr).format(endDate),
                                       style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF0F172A)),
                                     ),
                                   ],
@@ -1233,9 +1241,9 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('ગુપ્ત મતદાન (Anonymous Voting)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+                                    Text('ગુપ્ત મતદાન (Anonymous Voting)'.tr, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
                                     const SizedBox(height: 2),
-                                    const Text('મતદારોનું નામ જાહેર નહીં થાય, માત્ર ટકાવારી દેખાશે', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                    Text('મતદારોનું નામ જાહેર નહીં થાય, માત્ર ટકાવારી દેખાશે'.tr, style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                                   ],
                                 ),
                               ),
@@ -1275,13 +1283,13 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
 
                         if (title.isEmpty) {
                           ScaffoldMessenger.of(ctx).showSnackBar(
-                            const SnackBar(content: Text('કૃપા કરીને પોલ વિષય લખો.')),
+                            SnackBar(content: Text('કૃપા કરીને પોલ વિષય લખો.'.tr)),
                           );
                           return;
                         }
                         if (opts.length < 2) {
                           ScaffoldMessenger.of(ctx).showSnackBar(
-                            const SnackBar(content: Text('ઓછામાં ઓછા ૨ વિકલ્પો લખવા જરૂરી છે.')),
+                            SnackBar(content: Text('ઓછામાં ઓછા ૨ વિકલ્પો લખવા જરૂરી છે.'.tr)),
                           );
                           return;
                         }
@@ -1300,8 +1308,8 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                           );
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('નિર્ણય પોલ સફળતાપૂર્વક શરૂ થયો! 🗳️'),
+                              SnackBar(
+                                content: Text('નિર્ણય પોલ સફળતાપૂર્વક શરૂ થયો! 🗳️'.tr),
                                 backgroundColor: Color(0xFF10B981),
                               ),
                             );
@@ -1309,14 +1317,14 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                         } catch (e) {
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('ભૂલ આવી: $e')),
+                              SnackBar(content: Text('ભૂલ આવી: $e'.tr)),
                             );
                           }
                         }
                       },
                       icon: const Icon(Icons.send_rounded, size: 18),
-                      label: const Text(
-                        'મતદાન શરૂ કરો (Publish Poll)',
+                      label: Text(
+                        'મતદાન શરૂ કરો (Publish Poll)'.tr,
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                       ),
                     ),
@@ -1338,28 +1346,28 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('મતદાન બંધ કરવું છે?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        title: Text('મતદાન બંધ કરવું છે?'.tr, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'શું આપ આ પોલનું મતદાન અત્યારે બંધ કરીને આખરી નિર્ણય જાહેર કરવા માંગો છો?',
+            Text(
+              'શું આપ આ પોલનું મતદાન અત્યારે બંધ કરીને આખરી નિર્ણય જાહેર કરવા માંગો છો?'.tr,
               style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: remarkCtrl,
-              decoration: const InputDecoration(
-                labelText: 'આખરી ઠરાવ / નિર્ણય નોંધ (વૈકલ્પિક)',
-                hintText: 'દા.ત. ૭૨% બહુમતીથી કલરકામ મંજૂર થયું.',
+              decoration: InputDecoration(
+                labelText: 'આખરી ઠરાવ / નિર્ણય નોંધ (વૈકલ્પિક)'.tr,
+                hintText: 'દા.ત. ૭૨% બહુમતીથી કલરકામ મંજૂર થયું.'.tr,
                 border: OutlineInputBorder(),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('રદ કરો')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('રદ કરો'.tr)),
           FilledButton(
             onPressed: () async {
               Navigator.pop(ctx);
@@ -1369,12 +1377,12 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
               );
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('પોલ બંધ કરવામાં આવ્યો છે.')),
+                  SnackBar(content: Text('પોલ બંધ કરવામાં આવ્યો છે.'.tr)),
                 );
               }
             },
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFFD97706)),
-            child: const Text('હા, બંધ કરો'),
+            child: Text('હા, બંધ કરો'.tr),
           ),
         ],
       ),
@@ -1408,7 +1416,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                   children: [
                     const Icon(Icons.groups_rounded, color: Color(0xFF0F766E)),
                     const SizedBox(width: 8),
-                    const Text('મતદાન કરનાર સભ્યોનું લિસ્ટ', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                    Text('મતદાન કરનાર સભ્યોનું લિસ્ટ'.tr, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                     const Spacer(),
                     IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(ctx)),
                   ],
@@ -1421,7 +1429,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
                     final docs = snapshot.data!.docs;
-                    if (docs.isEmpty) return const Center(child: Text('હજુ કોઈ મત પડ્યો નથી.'));
+                    if (docs.isEmpty) return Center(child: Text('હજુ કોઈ મત પડ્યો નથી.'.tr));
 
                     return ListView.separated(
                       padding: const EdgeInsets.all(16),
@@ -1433,7 +1441,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                         final optId = (d['optionId'] ?? '').toString();
                         final option = poll.options.firstWhere(
                           (o) => o.id == optId,
-                          orElse: () => const PollOption(id: '', text: 'અજ્ઞાત વિકલ્પ'),
+                          orElse: () => PollOption(id: '', text: 'અજ્ઞાત વિકલ્પ'.tr),
                         );
 
                         return ListTile(
@@ -1441,8 +1449,8 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
                             backgroundColor: const Color(0xFF0F766E).withValues(alpha: 0.15),
                             child: const Icon(Icons.check_rounded, color: Color(0xFF0F766E), size: 18),
                           ),
-                          title: Text('ફ્લેટ: ${flat.isNotEmpty ? flat : 'સભ્ય'}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
-                          subtitle: Text('પસંદ કરેલ: ${option.text}', style: const TextStyle(fontSize: 12, color: Color(0xFF0F766E))),
+                          title: Text('ફ્લેટ: ${flat.isNotEmpty ? flat : '.trસભ્ય'}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                          subtitle: Text('પસંદ કરેલ: ${option.text}'.tr, style: const TextStyle(fontSize: 12, color: Color(0xFF0F766E))),
                         );
                       },
                     );
@@ -1460,14 +1468,14 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('પોલ ડીલીટ કરવો છે?'),
-        content: const Text('આ પોલ અને તેનો تمام મતદાન રેકોર્ડ કાયમ માટે દૂર થઈ જશે.'),
+        title: Text('પોલ ડીલીટ કરવો છે?'.tr),
+        content: Text('આ પોલ અને તેનો تمام મતદાન રેકોર્ડ કાયમ માટે દૂર થઈ જશે.'.tr),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('રદ કરો')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('રદ કરો'.tr)),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('ડીલીટ કરો'),
+            child: Text('ડીલીટ કરો'.tr),
           ),
         ],
       ),
@@ -1477,7 +1485,7 @@ class _AdminPollsScreenState extends State<AdminPollsScreen> with SingleTickerPr
       await _pollService.deletePoll(poll.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('પોલ ડીલીટ કરવામાં આવ્યો.')),
+          SnackBar(content: Text('પોલ ડીલીટ કરવામાં આવ્યો.'.tr)),
         );
       }
     }

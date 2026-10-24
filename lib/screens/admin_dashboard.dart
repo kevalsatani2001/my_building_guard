@@ -312,12 +312,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         ),
                       ),
                       const SizedBox(width: 5),
-                      const Flexible(
+                      Flexible(
                         child: Text(
-                          "એડમિન કંટ્રોલ સેન્ટર • ૨૪×૭ લાઈવ",
+                          AppStrings.get('admin_control_center'),
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF64748B),
@@ -348,7 +348,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   builder: (context, snap) {
                     final pendingCount = snap.hasData ? snap.data!.docs.length : 0;
                     return Tooltip(
-                      message: 'ફરિયાદો & એલર્ટ્સ',
+                      message: 'ફરિયાદો & એલર્ટ્સ'.tr,
                       child: InkWell(
                         onTap: () => _openComplaints(context),
                         borderRadius: BorderRadius.circular(10),
@@ -412,7 +412,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 const SizedBox(width: 7),
                 // 2. Bank & UPI Settings button
                 Tooltip(
-                  message: 'સોસાયટી બેંક & UPI સેટિંગ્સ',
+                  message: 'સોસાયટી બેંક & UPI સેટિંગ્સ'.tr,
                   child: InkWell(
                     onTap: () => Navigator.push(
                       context,
@@ -436,9 +436,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                 ),
                 const SizedBox(width: 7),
+                // Multi-language switch button (GU / HI / EN)
+                const LanguageSwitchButton(),
+                const SizedBox(width: 7),
                 // 3. Logout button
                 Tooltip(
-                  message: 'લોગઆઉટ',
+                  message: AppStrings.get('logout'),
                   child: InkWell(
                     onTap: () => _showLogoutConfirmation(),
                     borderRadius: BorderRadius.circular(10),
@@ -484,16 +487,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
             const SizedBox(height: 22),
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: PremiumSectionHeader(
-                    title: "તાજેતરના સભ્યો",
+                    title: "તાજેતરના સભ્યો".tr,
                     icon: Icons.groups_rounded,
                   ),
                 ),
                 TextButton.icon(
-                  onPressed: () => _showRoleUsersDialog('મેમ્બર', 'member'),
+                  onPressed: () => _showRoleUsersDialog('મેમ્બર'.tr, 'member'),
                   icon: const Icon(Icons.arrow_forward_rounded, size: 14),
-                  label: const Text('બધા જુઓ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  label: Text('બધા જુઓ'.tr, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -509,11 +512,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
   void _showLogoutConfirmation() async {
     final confirmed = await PremiumLogoutDialog.show(
       context,
-      roleName: 'એડમિન પેનલ',
+      roleName: 'એડમિન પેનલ'.tr,
     );
-    if (confirmed) {
-      await SessionGuardService.instance.clearSession();
-      FirebaseAuth.instance.signOut();
+    if (confirmed && mounted) {
+      await SessionGuardService.performAppLogout(context);
     }
   }
 
@@ -572,13 +574,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             color: const Color(0xFF10B981).withValues(alpha: 0.45),
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.shield_outlined, size: 13, color: Color(0xFF34D399)),
                             SizedBox(width: 5),
                             Text(
-                              "સ્માર્ટ સિક્યોરિટી • સક્રિય",
+                              "સ્માર્ટ સિક્યોરિટી • સક્રિય".tr,
                               style: TextStyle(
                                 color: Color(0xFF34D399),
                                 fontSize: 11,
@@ -610,7 +612,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    _societyName.isEmpty ? "સ્માર્ટ સોસાયટી કમાન્ડ હબ" : _societyName,
+                    _societyName.isEmpty ? "સ્માર્ટ સોસાયટી કમાન્ડ હબ".tr : _societyName,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 22,
@@ -620,7 +622,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "ગેટ વિઝિટર્સ, સિક્યોરિટી કવચ, મેન્ટેનન્સ અને ડિજિટલ પરિપત્ર",
+                    "ગેટ વિઝિટર્સ, સિક્યોરિટી કવચ, મેન્ટેનન્સ અને ડિજિટલ પરિપત્ર".tr,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.78),
                       fontSize: 12.5,
@@ -635,21 +637,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       children: [
                         _buildHeroActionButton(
                           icon: Icons.campaign_rounded,
-                          label: "લાઈવ બ્રોડકાસ્ટ",
+                          label: "લાઈવ બ્રોડકાસ્ટ".tr,
                           color: const Color(0xFFF59E0B),
                           onTap: () => _showNotificationDialog(context),
                         ),
                         const SizedBox(width: 8),
                         _buildHeroActionButton(
                           icon: Icons.post_add_rounded,
-                          label: "નવી નોટિસ",
+                          label: "નવી નોટિસ".tr,
                           color: const Color(0xFFEA580C),
                           onTap: () => _showPublishNoticeDialog(context),
                         ),
                         const SizedBox(width: 8),
                         _buildHeroActionButton(
                           icon: Icons.account_balance_wallet_rounded,
-                          label: "મેન્ટેનન્સ પોર્ટલ",
+                          label: "મેન્ટેનન્સ પોર્ટલ".tr,
                           color: const Color(0xFF10B981),
                           onTap: () => Navigator.push(
                             context,
@@ -659,7 +661,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         const SizedBox(width: 8),
                         _buildHeroActionButton(
                           icon: Icons.account_balance_rounded,
-                          label: "સોસાયટી હિસાબ",
+                          label: "સોસાયટી હિસાબ".tr,
                           color: const Color(0xFF0F766E),
                           onTap: () => Navigator.push(
                             context,
@@ -669,7 +671,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         const SizedBox(width: 8),
                         _buildHeroActionButton(
                           icon: Icons.phone_in_talk_rounded,
-                          label: "ઈમરજન્સી હેલ્પ",
+                          label: "ઈમરજન્સી હેલ્પ".tr,
                           color: const Color(0xFFEF4444),
                           onTap: () => _showEmergencyContactsDialog(context),
                         ),
@@ -779,9 +781,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   child: const Icon(Icons.verified_user_rounded, color: Color(0xFF059669), size: 16),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    "સોસાયટી સુરક્ષા વ્યવસ્થા સામાન્ય છે • કોઈ પેન્ડિંગ ફરિયાદ નથી",
+                    "સોસાયટી સુરક્ષા વ્યવસ્થા સામાન્ય છે • કોઈ પેન્ડિંગ ફરિયાદ નથી".tr,
                     style: TextStyle(
                       color: Color(0xFF065F46),
                       fontSize: 12,
@@ -840,7 +842,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "⚠️ $pendingCount સભ્યોની ફરિયાદો ઉકેલવા માટે બાકી છે",
+                            "⚠️ $pendingCount સભ્યોની ફરિયાદો ઉકેલવા માટે બાકી છે".tr,
                             style: const TextStyle(
                               color: Color(0xFF92400E),
                               fontWeight: FontWeight.w800,
@@ -848,8 +850,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             ),
                           ),
                           const SizedBox(height: 1),
-                          const Text(
-                            "તુરંત તપાસ અને નિરાકરણ માટે અહીં ટેપ કરો",
+                          Text(
+                            "તુરંત તપાસ અને નિરાકરણ માટે અહીં ટેપ કરો".tr,
                             style: TextStyle(
                               color: Color(0xFFB45309),
                               fontSize: 11,
@@ -880,18 +882,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
       physics: const NeverScrollableScrollPhysics(),
       children: [
         _buildLiveMetricCard(
-          title: "સભ્યો",
-          subtitle: "પરિવાર ડિરેક્ટરી",
+          title: AppStrings.get('role_member'),
+          subtitle: "પરિવાર ડિરેક્ટરી".tr,
           icon: Icons.groups_rounded,
           gradientColors: const [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
           collection: 'users',
           field: 'role',
           value: 'member',
-          onTap: () => _showRoleUsersDialog('મેમ્બર', 'member'),
+          onTap: () => _showRoleUsersDialog('મેમ્બર'.tr, 'member'),
         ),
         _buildLiveMetricCard(
-          title: "ગેટ સિક્યોરિટી",
-          subtitle: "વોચમેન સ્ટાફ & PIN",
+          title: AppStrings.get('role_guard'),
+          subtitle: "વોચમેન સ્ટાફ & PIN".tr,
           icon: Icons.security_rounded,
           gradientColors: const [Color(0xFF10B981), Color(0xFF047857)],
           collection: 'users',
@@ -902,7 +904,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         _buildTodayVisitorsMetricCard(),
         _buildLiveMetricCard(
           title: PremiseVocabulary.fromString(_architectureType).blockLabel,
-          subtitle: "સ્ટ્રક્ચર નકશો",
+          subtitle: "સ્ટ્રક્ચર નકશો".tr,
           icon: Icons.apartment_rounded,
           gradientColors: const [Color(0xFFF59E0B), Color(0xFFD97706)],
           collection: 'blocks',
@@ -934,8 +936,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
         }
 
         return _buildExecutiveMetricCard(
-          title: "આજના મુલાકાતી",
-          subtitle: "ગેટ લાઈવ ટ્રાફિક",
+          title: AppStrings.get('admin_today_visitors'),
+          subtitle: "ગેટ લાઈવ ટ્રાફિક".tr,
           icon: Icons.badge_rounded,
           gradientColors: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
           count: todayCount,
@@ -1211,9 +1213,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           children: [
                             Row(
                               children: [
-                                const Flexible(
+                                Flexible(
                                   child: Text(
-                                    "મેન્ટેનન્સ પોર્ટલ & QR પેમેન્ટ",
+                                    "મેન્ટેનન્સ પોર્ટલ & QR પેમેન્ટ".tr,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -1239,8 +1241,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                       ),
                                     ],
                                   ),
-                                  child: const Text(
-                                    "UPI ૧-ટેપ",
+                                  child: Text(
+                                    "UPI ૧-ટેપ".tr,
                                     style: TextStyle(
                                       color: Color(0xFF78350F),
                                       fontSize: 10,
@@ -1252,7 +1254,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              "માસિક બિલિંગ, સોસાયટી UPI QR સ્કેન અને ઑનલાઇન કલેક્શન",
+                              "માસિક બિલિંગ, સોસાયટી UPI QR સ્કેન અને ઑનલાઇન કલેક્શન".tr,
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.84),
                                 fontSize: 11.5,
@@ -1277,8 +1279,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             padding: const EdgeInsets.symmetric(vertical: 11),
                           ),
                           icon: const Icon(Icons.receipt_long_rounded, size: 16),
-                          label: const Text(
-                            "બિલિંગ ડેસ્ક",
+                          label: Text(
+                            "બિલિંગ ડેસ્ક".tr,
                             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
                           ),
                           onPressed: () => Navigator.push(
@@ -1298,8 +1300,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             padding: const EdgeInsets.symmetric(vertical: 11),
                           ),
                           icon: const Icon(Icons.qr_code_rounded, size: 16),
-                          label: const Text(
-                            "બેંક/UPI સેટિંગ",
+                          label: Text(
+                            "બેંક/UPI સેટિંગ".tr,
                             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
                           ),
                           onPressed: () => Navigator.push(
@@ -1321,8 +1323,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         padding: const EdgeInsets.symmetric(vertical: 11),
                       ),
                       icon: const Icon(Icons.account_balance_rounded, size: 16),
-                      label: const Text(
-                        "સોસાયટી હિસાબ & ખર્ચ (Ledger & Fund)",
+                      label: Text(
+                        "સોસાયટી હિસાબ & ખર્ચ (Ledger & Fund)".tr,
                         style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
                       ),
                       onPressed: () => Navigator.push(
@@ -1381,9 +1383,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
             // 1. Integrated Header matching sequence
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: PremiumSectionHeader(
-                    title: "લાઈવ ગેટ એક્ટિવિટી",
+                    title: "લાઈવ ગેટ એક્ટિવિટી".tr,
                     icon: Icons.radar_rounded,
                   ),
                 ),
@@ -1407,8 +1409,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         ),
                       ),
                       const SizedBox(width: 5),
-                      const Text(
-                        "૨૪x૭ લાઈવ",
+                      Text(
+                        "૨૪x૭ લાઈવ".tr,
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
@@ -1430,11 +1432,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: const Color(0xFFC7D2FE)),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          "રિપોર્ટ જુઓ",
+                          "રિપોર્ટ જુઓ".tr,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
@@ -1458,19 +1460,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
               child: Row(
                 children: [
                   _buildGateFilterChip(
-                      'all', 'બધા (${allDocs.length})', Icons.apps_rounded),
+                      'all', 'બધા (${allDocs.length})'.tr, Icons.apps_rounded),
                   const SizedBox(width: 8),
-                  _buildGateFilterChip('pending', '⏳ ગેટ પર ($pendingCount)',
+                  _buildGateFilterChip('pending', '⏳ ગેટ પર ($pendingCount)'.tr,
                       Icons.hourglass_top_rounded),
                   const SizedBox(width: 8),
-                  _buildGateFilterChip('approved', '🟢 અંદર છે ($approvedCount)',
+                  _buildGateFilterChip('approved', '🟢 અંદર છે ($approvedCount)'.tr,
                       Icons.door_front_door_rounded),
                   const SizedBox(width: 8),
-                  _buildGateFilterChip('checked_out', '🚪 બહાર ($checkedOutCount)',
+                  _buildGateFilterChip('checked_out', '🚪 બહાર ($checkedOutCount)'.tr,
                       Icons.exit_to_app_rounded),
                   const SizedBox(width: 8),
                   _buildGateFilterChip(
-                      'rejected', '🔴 નકારેલ ($rejectedCount)', Icons.cancel_rounded),
+                      'rejected', '🔴 નકારેલ ($rejectedCount)'.tr, Icons.cancel_rounded),
                 ],
               ),
             ),
@@ -1500,7 +1502,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       icon: const Icon(Icons.history_rounded,
                           size: 16, color: Color(0xFF4F46E5)),
                       label: Text(
-                        "તમામ ${allDocs.length} મુલાકાતીઓ જુઓ (View All)",
+                        "તમામ ${allDocs.length} મુલાકાતીઓ જુઓ (View All)".tr,
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
@@ -1627,8 +1629,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
-            "ગેટ સુરક્ષા સક્રિય & સામાન્ય છે",
+          Text(
+            "ગેટ સુરક્ષા સક્રિય & સામાન્ય છે".tr,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w900,
@@ -1639,8 +1641,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
           const SizedBox(height: 4),
           Text(
             _gateFeedFilter == 'all'
-                ? "આજના દિવસમાં સોસાયટી ગેટ પર તમામ સુરક્ષા સામાન્ય છે. કોઈ પેન્ડિંગ કે શંકાસ્પદ મુલાકાતી નથી."
-                : "પસંદ કરેલ ફિલ્ટર મુજબ કોઈ મુલાકાતીની એન્ટ્રી મળી નથી.",
+                ? "આજના દિવસમાં સોસાયટી ગેટ પર તમામ સુરક્ષા સામાન્ય છે. કોઈ પેન્ડિંગ કે શંકાસ્પદ મુલાકાતી નથી.".tr
+                : "પસંદ કરેલ ફિલ્ટર મુજબ કોઈ મુલાકાતીની એન્ટ્રી મળી નથી.".tr,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 11.5,
@@ -1657,8 +1659,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
               OutlinedButton.icon(
                 onPressed: () => _showVisitorReportDialog(context),
                 icon: const Icon(Icons.receipt_long_rounded, size: 14),
-                label: const Text(
-                  "મુલાકાતી રજીસ્ટર",
+                label: Text(
+                  "મુલાકાતી રજીસ્ટર".tr,
                   style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
                 ),
                 style: OutlinedButton.styleFrom(
@@ -1674,8 +1676,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
               FilledButton.icon(
                 onPressed: () => _showWatchmanManageDialog(context),
                 icon: const Icon(Icons.security_rounded, size: 14),
-                label: const Text(
-                  "વોચમેન મેનેજ",
+                label: Text(
+                  "વોચમેન મેનેજ".tr,
                   style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
                 ),
                 style: FilledButton.styleFrom(
@@ -1697,9 +1699,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
   /// Ultra-luxury visitor card matching MemberScreen design language
   Widget _buildAdminVisitorCard(QueryDocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
-    final name = (d['name'] ?? 'મુલાકાતી').toString();
+    final name = (d['name'] ?? 'મુલાકાતી'.tr).toString();
     final phone = (d['phone'] ?? '').toString();
-    final purpose = (d['purpose'] ?? 'મુલાકાત').toString();
+    final purpose = (d['purpose'] ?? 'મુલાકાત'.tr).toString();
     final photoUrl = (d['photoUrl'] ?? '').toString();
     final rawBlock = (d['blockName'] ?? '').toString();
     final cleanBlock =
@@ -1707,21 +1709,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final unit = (d['unitNumber'] ?? '').toString();
     final flatDisplay = cleanBlock.isNotEmpty && unit.isNotEmpty
         ? '$cleanBlock - $unit'
-        : (unit.isNotEmpty ? unit : 'સોસાયટી');
+        : (unit.isNotEmpty ? unit : 'સોસાયટી'.tr);
     final status = (d['status'] ?? 'pending').toString();
     final entryTs = d['entryTime'] as Timestamp?;
     final exitTs = d['exitTime'] as Timestamp?;
     final timeStr = entryTs != null
         ? DateFormat('hh:mm a').format(entryTs.toDate())
-        : 'હમણાં';
+        : 'હમણાં'.tr;
     final (typeIcon, typeColor, typeBg) = _getVisitorTypeMeta(purpose);
 
     final (statusLabel, statusColor, statusBg) = switch (status) {
-      'approved' => ('અંદર છે', const Color(0xFF047857), const Color(0xFFECFDF5)),
-      'rejected' => ('નકારેલ', const Color(0xFFB91C1C), const Color(0xFFFEF2F2)),
+      'approved' => ('અંદર છે'.tr, const Color(0xFF047857), const Color(0xFFECFDF5)),
+      'rejected' => ('નકારેલ'.tr, const Color(0xFFB91C1C), const Color(0xFFFEF2F2)),
       'checked_out' =>
-        ('બહાર ગયા', const Color(0xFF0F766E), const Color(0xFFF0FDFA)),
-      _ => ('ગેટ પર', const Color(0xFFB45309), const Color(0xFFFFFBEB)),
+        ('બહાર ગયા'.tr, const Color(0xFF0F766E), const Color(0xFFF0FDFA)),
+      _ => ('ગેટ પર'.tr, const Color(0xFFB45309), const Color(0xFFFFFBEB)),
     };
 
     return Container(
@@ -1895,7 +1897,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           ),
                           if (status == 'checked_out' && exitTs != null) ...[
                             const SizedBox(width: 6),
-                            const Text('•', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                            Text('•', style: TextStyle(color: Colors.grey, fontSize: 10)),
                             const SizedBox(width: 6),
                             Icon(Icons.logout_rounded, size: 11, color: Colors.grey.shade600),
                             const SizedBox(width: 3),
@@ -2019,8 +2021,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
         p.contains('zomato') ||
         p.contains('swiggy') ||
         p.contains('parcel') ||
-        p.contains('પાર્સલ') ||
-        p.contains('ડિલિવરી')) {
+        p.contains('પાર્સલ'.tr) ||
+        p.contains('ડિલિવરી'.tr)) {
       return (
         Icons.local_shipping_rounded,
         const Color(0xFFD97706),
@@ -2032,8 +2034,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
         p.contains('uber') ||
         p.contains('ola') ||
         p.contains('auto') ||
-        p.contains('ટેક્સી') ||
-        p.contains('રીક્ષા')) {
+        p.contains('ટેક્સી'.tr) ||
+        p.contains('રીક્ષા'.tr)) {
       return (
         Icons.local_taxi_rounded,
         const Color(0xFF2563EB),
@@ -2045,8 +2047,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
         p.contains('plumber') ||
         p.contains('electric') ||
         p.contains('maid') ||
-        p.contains('કામવાળા') ||
-        p.contains('રીપેરિંગ')) {
+        p.contains('કામવાળા'.tr) ||
+        p.contains('રીપેરિંગ'.tr)) {
       return (
         Icons.handyman_rounded,
         const Color(0xFF7C3AED),
@@ -2063,9 +2065,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
   /// Full visitor detail bottom sheet with admin quick controls
   void _showAdminVisitorDetailSheet(
       BuildContext context, Map<String, dynamic> d, String docId) {
-    final name = (d['name'] ?? 'મુલાકાતી').toString();
+    final name = (d['name'] ?? 'મુલાકાતી'.tr).toString();
     final phone = (d['phone'] ?? '').toString();
-    final purpose = (d['purpose'] ?? 'મુલાકાત').toString();
+    final purpose = (d['purpose'] ?? 'મુલાકાત'.tr).toString();
     final photoUrl = (d['photoUrl'] ?? '').toString();
     final vehicle = (d['vehicleNumber'] ?? d['vehicle'] ?? '').toString();
     final rawBlock = (d['blockName'] ?? '').toString();
@@ -2074,17 +2076,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final unit = (d['unitNumber'] ?? '').toString();
     final flatDisplay = cleanBlock.isNotEmpty && unit.isNotEmpty
         ? '$cleanBlock - $unit'
-        : (unit.isNotEmpty ? unit : 'સોસાયટી');
+        : (unit.isNotEmpty ? unit : 'સોસાયટી'.tr);
     final status = (d['status'] ?? 'pending').toString();
     final entryTs = d['entryTime'] as Timestamp?;
     final exitTs = d['exitTime'] as Timestamp?;
 
     final (statusLabel, statusColor, statusBg) = switch (status) {
-      'approved' => ('અંદર છે (Approved)', const Color(0xFF047857), const Color(0xFFECFDF5)),
-      'rejected' => ('નકારેલ (Rejected)', const Color(0xFFB91C1C), const Color(0xFFFEF2F2)),
+      'approved' => ('અંદર છે (Approved)'.tr, const Color(0xFF047857), const Color(0xFFECFDF5)),
+      'rejected' => ('નકારેલ (Rejected)'.tr, const Color(0xFFB91C1C), const Color(0xFFFEF2F2)),
       'checked_out' =>
-        ('બહાર ગયા (Checked Out)', const Color(0xFF0F766E), const Color(0xFFF0FDFA)),
-      _ => ('ગેટ પર (Pending)', const Color(0xFFB45309), const Color(0xFFFFFBEB)),
+        ('બહાર ગયા (Checked Out)'.tr, const Color(0xFF0F766E), const Color(0xFFF0FDFA)),
+      _ => ('ગેટ પર (Pending)'.tr, const Color(0xFFB45309), const Color(0xFFFFFBEB)),
     };
 
     showModalBottomSheet(
@@ -2142,7 +2144,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        "ગંતવ્ય: $flatDisplay",
+                        "ગંતવ્ય: $flatDisplay".tr,
                         style: const TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
@@ -2184,14 +2186,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
               child: Column(
                 children: [
-                  _adminVisitorDetailRow('મુલાકાત હેતુ:', purpose),
+                  _adminVisitorDetailRow('મુલાકાત હેતુ:'.tr, purpose),
                   if (phone.isNotEmpty) ...[
                     const Divider(height: 18, color: Color(0xFFE2E8F0)),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'મોબાઇલ નંબર:',
+                        Text(
+                          'મોબાઇલ નંબર:'.tr,
                           style: TextStyle(
                               fontSize: 12.5,
                               color: Color(0xFF64748B),
@@ -2220,19 +2222,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ],
                   if (vehicle.isNotEmpty) ...[
                     const Divider(height: 18, color: Color(0xFFE2E8F0)),
-                    _adminVisitorDetailRow('વાહન નંબર:', vehicle),
+                    _adminVisitorDetailRow('વાહન નંબર:'.tr, vehicle),
                   ],
                   if (entryTs != null) ...[
                     const Divider(height: 18, color: Color(0xFFE2E8F0)),
                     _adminVisitorDetailRow(
-                      'પ્રવેશ સમય:',
+                      'પ્રવેશ સમય:'.tr,
                       DateFormat('dd MMM yyyy, hh:mm a').format(entryTs.toDate()),
                     ),
                   ],
                   if (exitTs != null) ...[
                     const Divider(height: 18, color: Color(0xFFE2E8F0)),
                     _adminVisitorDetailRow(
-                      'બહાર નીકળ્યા:',
+                      'બહાર નીકળ્યા:'.tr,
                       DateFormat('dd MMM yyyy, hh:mm a').format(exitTs.toDate()),
                     ),
                   ],
@@ -2252,8 +2254,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         _checkOutVisitor(docId, name);
                       },
                       icon: const Icon(Icons.logout_rounded, size: 16),
-                      label: const Text(
-                        'બહાર ગયા માર્ક કરો',
+                      label: Text(
+                        'બહાર ગયા માર્ક કરો'.tr,
                         style: TextStyle(
                             fontSize: 12.5, fontWeight: FontWeight.bold),
                       ),
@@ -2275,8 +2277,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       _deleteVisitor(docId, name);
                     },
                     icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                    label: const Text(
-                      'એન્ટ્રી ડિલીટ',
+                    label: Text(
+                      'એન્ટ્રી ડિલીટ'.tr,
                       style: TextStyle(
                           fontSize: 12.5, fontWeight: FontWeight.bold),
                     ),
@@ -2332,14 +2334,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: const Color(0xFF0F766E),
-            content: Text('$name સોસાયટી બહાર ગયા તરીકે માર્ક થયા.'),
+            content: Text('$name સોસાયટી બહાર ગયા તરીકે માર્ક થયા.'.tr),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ભૂલ આવી: $e')),
+          SnackBar(content: Text('ભૂલ આવી: $e'.tr)),
         );
       }
     }
@@ -2349,10 +2351,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Future<void> _deleteVisitor(String docId, String name) async {
     final confirmed = await PremiumConfirmationDialog.show(
       context,
-      title: "મુલાકાતી એન્ટ્રી ડિલીટ",
-      message: "શું તમે ખરેખર $name ની એન્ટ્રી ડિલીટ કરવા માંગો છો?",
+      title: "મુલાકાતી એન્ટ્રી ડિલીટ".tr,
+      message: "શું તમે ખરેખર $name ની એન્ટ્રી ડિલીટ કરવા માંગો છો?".tr,
       icon: Icons.delete_outline_rounded,
-      confirmText: "હા, ડિલીટ કરો",
+      confirmText: "હા, ડિલીટ કરો".tr,
       confirmColor: const Color(0xFFDC2626),
       isDestructive: true,
     );
@@ -2362,16 +2364,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
         await AppFirestore.instance.collection('visitors').doc(docId).delete();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               backgroundColor: Color(0xFFDC2626),
-              content: Text('એન્ટ્રી સફળતાપૂર્વક ડિલીટ થઈ.'),
+              content: Text('એન્ટ્રી સફળતાપૂર્વક ડિલીટ થઈ.'.tr),
             ),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('ડિલીટ કરવામાં ભૂલ આવી: $e')),
+            SnackBar(content: Text('ડિલીટ કરવામાં ભૂલ આવી: $e'.tr)),
           );
         }
       }
@@ -2383,8 +2385,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const PremiumSectionHeader(
-          title: "કંટ્રોલ પેનલ & મેનેજમેન્ટ",
+        PremiumSectionHeader(
+          title: "કંટ્રોલ પેનલ & મેનેજમેન્ટ".tr,
           icon: Icons.dashboard_customize_rounded,
         ),
         const SizedBox(height: 12),
@@ -2393,13 +2395,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              _buildCategoryChip('all', 'બધા (All)', Icons.apps_rounded),
+              _buildCategoryChip('all', 'બધા (All)'.tr, Icons.apps_rounded),
               const SizedBox(width: 8),
-              _buildCategoryChip('security', '🛡️ સુરક્ષા & ગેટ', Icons.security_rounded),
+              _buildCategoryChip('security', '🛡️ સુરક્ષા & ગેટ'.tr, Icons.security_rounded),
               const SizedBox(width: 8),
-              _buildCategoryChip('comm', '📢 સંચાર & સૂચના', Icons.campaign_rounded),
+              _buildCategoryChip('comm', '📢 સંચાર & સૂચના'.tr, Icons.campaign_rounded),
               const SizedBox(width: 8),
-              _buildCategoryChip('admin', '🏢 વહીવટ & સેટઅપ', Icons.apartment_rounded),
+              _buildCategoryChip('admin', '🏢 વહીવટ & સેટઅપ'.tr, Icons.apartment_rounded),
             ],
           ),
         ),
@@ -2469,8 +2471,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final allActions = [
       (
         category: 'admin',
-        title: "પરિસર સેટઅપ વિઝાર્ડ",
-        subtitle: "આર્કિટેક્ચર & બ્લોક ગોઠવણી",
+        title: AppStrings.get('admin_btn_setup_wizard'),
+        subtitle: "આર્કિટેક્ચર & બ્લોક ગોઠવણી".tr,
         icon: Icons.architecture_rounded,
         gradient: [const Color(0xFF6366F1), const Color(0xFF4F46E5)],
         onTap: () {
@@ -2491,8 +2493,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
       (
         category: 'admin',
-        title: "સભ્ય સહી પત્રક (PDF)",
-        subtitle: "ઠરાવ/કારણ & સહી લિસ્ટ",
+        title: "સભ્ય સહી પત્રક (PDF)".tr,
+        subtitle: "ઠરાવ/કારણ & સહી લિસ્ટ".tr,
         icon: Icons.draw_rounded,
         gradient: [const Color(0xFF1E3A8A), const Color(0xFF2563EB)],
         onTap: () {
@@ -2506,48 +2508,48 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
       (
         category: 'admin',
-        title: "નવી $_architectureType ઉમેરો",
-        subtitle: "નવા બ્લોક/ઘર એડ કરો",
+        title: "નવી $_architectureType ઉમેરો".tr,
+        subtitle: "નવા બ્લોક/ઘર એડ કરો".tr,
         icon: Icons.add_business_rounded,
         gradient: [const Color(0xFF0D9488), const Color(0xFF0F766E)],
         onTap: _showAddBlockDialog,
       ),
       (
         category: 'admin',
-        title: "યુઝર રજીસ્ટ્રેશન",
-        subtitle: "મેમ્બર & સ્ટાફ નોંધણી",
+        title: AppStrings.get('admin_btn_add_member'),
+        subtitle: "મેમ્બર & સ્ટાફ નોંધણી".tr,
         icon: Icons.person_add_alt_1_rounded,
         gradient: [const Color(0xFF3B82F6), const Color(0xFF2563EB)],
         onTap: () => _showAddUserDialog(context),
       ),
       (
         category: 'comm',
-        title: "લાઈવ બ્રોડકાસ્ટ",
-        subtitle: "તમામને તુરંત સૂચના",
+        title: AppStrings.get('admin_btn_broadcast'),
+        subtitle: "તમામને તુરંત સૂચના".tr,
         icon: Icons.campaign_rounded,
         gradient: [const Color(0xFFF59E0B), const Color(0xFFD97706)],
         onTap: () => _showNotificationDialog(context),
       ),
       (
         category: 'comm',
-        title: "નોટિસ બોર્ડ પોસ્ટ",
-        subtitle: "ડિજિટલ પરિપત્ર પબ્લિશ",
+        title: "નોટિસ બોર્ડ પોસ્ટ".tr,
+        subtitle: "ડિજિટલ પરિપત્ર પબ્લિશ".tr,
         icon: Icons.article_rounded,
         gradient: [const Color(0xFFEA580C), const Color(0xFFC2410C)],
         onTap: () => _showPublishNoticeDialog(context),
       ),
       (
         category: 'comm',
-        title: "ફરિયાદ નિવારણ",
-        subtitle: "મેમ્બર સમસ્યા & સમાધાન",
+        title: AppStrings.get('admin_btn_complaints'),
+        subtitle: "મેમ્બર સમસ્યા & સમાધાન".tr,
         icon: Icons.report_problem_rounded,
         gradient: [const Color(0xFF8B5CF6), const Color(0xFF7C3AED)],
         onTap: () => _openComplaints(context),
       ),
       (
         category: 'comm',
-        title: "નિર્ણય મતદાન (Polls)",
-        subtitle: "ડિજિટલ વોટિંગ & પોલ",
+        title: AppStrings.get('polls'),
+        subtitle: "ડિજિટલ વોટિંગ & પોલ".tr,
         icon: Icons.how_to_vote_rounded,
         gradient: [const Color(0xFF0F766E), const Color(0xFF14B8A6)],
         onTap: () => Navigator.push(
@@ -2557,32 +2559,32 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
       (
         category: 'security',
-        title: "વિઝિટર રિપોર્ટ",
-        subtitle: "મુલાકાતી એન્ટ્રી વિગત",
+        title: AppStrings.get('admin_btn_visitors'),
+        subtitle: "મુલાકાતી એન્ટ્રી વિગત".tr,
         icon: Icons.analytics_rounded,
         gradient: [const Color(0xFF0284C7), const Color(0xFF0369A1)],
         onTap: () => _showVisitorReportDialog(context),
       ),
       (
         category: 'security',
-        title: "વોચમેન મેનેજ",
-        subtitle: "ડ્યુટી સ્ટેટસ & પિન",
+        title: "વોચમેન મેનેજ".tr,
+        subtitle: "ડ્યુટી સ્ટેટસ & પિન".tr,
         icon: Icons.security_rounded,
         gradient: [const Color(0xFF4F46E5), const Color(0xFF4338CA)],
         onTap: () => _showWatchmanManageDialog(context),
       ),
       (
         category: 'security',
-        title: "ઈમરજન્સી હેલ્પલાઇન",
-        subtitle: "પોલીસ, ૧૦૮, ફાયર, પ્લમ્બર",
+        title: "ઈમરજન્સી હેલ્પલાઇન".tr,
+        subtitle: "પોલીસ, ૧૦૮, ફાયર, પ્લમ્બર".tr,
         icon: Icons.phone_in_talk_rounded,
         gradient: [const Color(0xFFE11D48), const Color(0xFFBE123C)],
         onTap: () => _showEmergencyContactsDialog(context),
       ),
       (
         category: 'security',
-        title: "નાઈટ પેટ્રોલિંગ ઓડિટ",
-        subtitle: "વોચમેન QR સ્કેન રિપોર્ટ",
+        title: AppStrings.get('guard_patrol'),
+        subtitle: "વોચમેન QR સ્કેન રિપોર્ટ".tr,
         icon: Icons.shield_moon_rounded,
         gradient: [const Color(0xFF0F172A), const Color(0xFF334155)],
         onTap: () => Navigator.push(
@@ -2592,8 +2594,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
       (
         category: 'admin',
-        title: "બેંક/UPI સેટિંગ્સ",
-        subtitle: "સોસાયટી કલેક્શન QR",
+        title: "બેંક/UPI સેટિંગ્સ".tr,
+        subtitle: "સોસાયટી કલેક્શન QR".tr,
         icon: Icons.account_balance_rounded,
         gradient: [const Color(0xFF059669), const Color(0xFF047857)],
         onTap: () => Navigator.push(
@@ -2603,16 +2605,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
       (
         category: 'admin',
-        title: "સોસાયટી નકશો",
-        subtitle: "ફ્લેટ્સ વિઝ્યુઅલ પ્રિવ્યુ",
+        title: "સોસાયટી નકશો".tr,
+        subtitle: "ફ્લેટ્સ વિઝ્યુઅલ પ્રિવ્યુ".tr,
         icon: Icons.map_rounded,
         gradient: [const Color(0xFF6366F1), const Color(0xFF4338CA)],
         onTap: _navigateToPreview,
       ),
       (
         category: 'admin',
-        title: "પાર્કિંગ સ્લોટ મેનેજર",
-        subtitle: "સ્લોટ્સ જનરેટ & કંટ્રોલ",
+        title: AppStrings.get('admin_btn_parking'),
+        subtitle: "સ્લોટ્સ જનરેટ & કંટ્રોલ".tr,
         icon: Icons.local_parking_rounded,
         gradient: [const Color(0xFF0284C7), const Color(0xFF0369A1)],
         onTap: () => Navigator.push(
@@ -2622,8 +2624,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
       (
         category: 'admin',
-        title: "એમેનિટીઝ & હોલ",
-        subtitle: "વાડી, ક્લબહાઉસ સેટઅપ",
+        title: AppStrings.get('admin_btn_amenities'),
+        subtitle: "વાડી, ક્લબહાઉસ સેટઅપ".tr,
         icon: Icons.domain_rounded,
         gradient: [const Color(0xFF0F766E), const Color(0xFF14B8A6)],
         onTap: () => Navigator.push(
@@ -2801,12 +2803,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     child: const Icon(Icons.analytics_rounded, size: 20, color: Color(0xFF2563EB)),
                   ),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "મુલાકાતી વિશ્લેષણ",
+                          "મુલાકાતી વિશ્લેષણ".tr,
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
@@ -2816,7 +2818,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         ),
                         SizedBox(height: 1),
                         Text(
-                          "ગેટ ટ્રાફિક & એન્ટ્રી આંકડા",
+                          "ગેટ ટ્રાફિક & એન્ટ્રી આંકડા".tr,
                           style: TextStyle(
                             fontSize: 11,
                             color: Color(0xFF64748B),
@@ -2834,7 +2836,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: Text(
-                      "કુલ: $total",
+                      "કુલ: $total".tr,
                       style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 12,
@@ -2854,7 +2856,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     child: DropdownButtonFormField<DateTime>(
                       initialValue: _analyticsMonth,
                       decoration: InputDecoration(
-                        labelText: 'મહિનો',
+                        labelText: 'મહિનો'.tr,
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -2888,21 +2890,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     child: DropdownButtonFormField<String>(
                       initialValue: _analyticsBlockType,
                       decoration: InputDecoration(
-                        labelText: 'પ્રકાર',
+                        labelText: 'પ્રકાર'.tr,
                         isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          borderSide: BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'All', child: Text('બધા (All)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
-                        DropdownMenuItem(value: 'Wing', child: Text('વિંગ (Wing)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
+                      items: [
+                        DropdownMenuItem(value: 'All', child: Text('બધા (All)'.tr, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
+                        DropdownMenuItem(value: 'Wing', child: Text('વિંગ (Wing)'.tr, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
                         DropdownMenuItem(
                           value: 'Street',
-                          child: Text('શેરી (Street)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          child: Text('શેરી (Street)'.tr, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                         ),
                       ],
                       onChanged: (v) {
@@ -2925,7 +2927,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 children: [
                   Expanded(
                     child: _buildInsightStatCard(
-                      label: "મંજૂર",
+                      label: "મંજૂર".tr,
                       count: approved,
                       color: const Color(0xFF10B981),
                       icon: Icons.check_circle_rounded,
@@ -2934,7 +2936,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildInsightStatCard(
-                      label: "બાકી",
+                      label: "બાકી".tr,
                       count: pending,
                       color: const Color(0xFFF59E0B),
                       icon: Icons.schedule_rounded,
@@ -2943,7 +2945,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildInsightStatCard(
-                      label: "નકારેલ",
+                      label: "નકારેલ".tr,
                       count: rejected,
                       color: const Color(0xFFEF4444),
                       icon: Icons.cancel_rounded,
@@ -2952,7 +2954,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildInsightStatCard(
-                      label: "બહાર ગયા",
+                      label: "બહાર ગયા".tr,
                       count: checkedOut,
                       color: const Color(0xFF0D9488),
                       icon: Icons.logout_rounded,
@@ -2962,8 +2964,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
               if (topBlockBars.isNotEmpty) ...[
                 const SizedBox(height: 18),
-                const Text(
-                  "સૌથી વધુ વિઝિટર્સ ધરાવતા બ્લોક્સ",
+                Text(
+                  "સૌથી વધુ વિઝિટર્સ ધરાવતા બ્લોક્સ".tr,
                   style: TextStyle(
                     color: Color(0xFF0F172A),
                     fontWeight: FontWeight.w800,
@@ -3306,8 +3308,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  "હજુ સુધી કોઈ મેમ્બર્સ ઉમેરાયા નથી",
+                Text(
+                  "હજુ સુધી કોઈ મેમ્બર્સ ઉમેરાયા નથી".tr,
                   style: TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w800,
@@ -3316,7 +3318,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "સોસાયટીના ફ્લેટ માલિકો અને ભાડૂતોની નોંધણી કરો.",
+                  "સોસાયટીના ફ્લેટ માલિકો અને ભાડૂતોની નોંધણી કરો.".tr,
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
                 ),
@@ -3331,8 +3333,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     elevation: 0,
                   ),
                   icon: const Icon(Icons.person_add_rounded, size: 16),
-                  label: const Text(
-                    "નવા મેમ્બર ઉમેરો",
+                  label: Text(
+                    "નવા મેમ્બર ઉમેરો".tr,
                     style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800),
                   ),
                 ),
@@ -3448,7 +3450,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         Text(
                           mPhone.isNotEmpty
                               ? mPhone
-                              : (mEmail.isNotEmpty ? mEmail : 'કોઈ સંપર્ક નથી'),
+                              : (mEmail.isNotEmpty ? mEmail : 'કોઈ સંપર્ક નથી'.tr),
                           style: TextStyle(
                             fontSize: 11.5,
                             color: Colors.grey.shade600,
@@ -3488,23 +3490,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       }
                     },
                     itemBuilder: (context) => [
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'transfer',
                         child: Row(
                           children: [
                             Icon(Icons.swap_horiz_rounded, size: 18, color: Colors.teal),
                             SizedBox(width: 8),
-                            Text('પ્રમુખ પદ સોંપો', style: TextStyle(fontSize: 13)),
+                            Text('પ્રમુખ પદ સોંપો'.tr, style: TextStyle(fontSize: 13)),
                           ],
                         ),
                       ),
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'notify',
                         child: Row(
                           children: [
                             Icon(Icons.notifications_active_rounded, size: 18, color: Colors.orange),
                             SizedBox(width: 8),
-                            Text('સૂચના મોકલો', style: TextStyle(fontSize: 13)),
+                            Text('સૂચના મોકલો'.tr, style: TextStyle(fontSize: 13)),
                           ],
                         ),
                       ),
@@ -3584,13 +3586,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
   void _confirmTransfer(String newAdminId, String name) async {
     final confirmed = await PremiumConfirmationDialog.show(
       context,
-      title: "એડમિન સત્તા સોંપણી",
+      title: "એડમિન સત્તા સોંપણી".tr,
       message:
-          "શું તમે ખરેખર $name ને સોસાયટીના નવા પ્રમુખ બનાવવા માંગો છો? આ કર્યા પછી તમારી એડમિન સત્તા જતી રહેશે અને તમારો રોલ મેમ્બર થઈ જશે.",
+          "શું તમે ખરેખર $name ને સોસાયટીના નવા પ્રમુખ બનાવવા માંગો છો? આ કર્યા પછી તમારી એડમિન સત્તા જતી રહેશે અને તમારો રોલ મેમ્બર થઈ જશે.".tr,
       icon: Icons.admin_panel_settings_rounded,
       gradientColors: const [Color(0xFFD97706), Color(0xFFB45309)],
-      cancelText: "ના, રદ કરો",
-      confirmText: "હા, સત્તા સોંપો",
+      cancelText: "ના, રદ કરો".tr,
+      confirmText: "હા, સત્તા સોંપો".tr,
       confirmGradient: const [Color(0xFFDC2626), Color(0xFFB91C1C)],
       confirmColor: const Color(0xFFDC2626),
       isDestructive: true,
@@ -3627,19 +3629,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
       // સફળતાનો મેસેજ અને લોગઆઉટ (કારણ કે હવે તમે એડમિન નથી)
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("માલિકી સફળતાપૂર્વક બદલાઈ ગઈ છે!"),
+        SnackBar(
+          content: Text("માલિકી સફળતાપૂર્વક બદલાઈ ગઈ છે!".tr),
           backgroundColor: Colors.green,
         ),
       );
 
       // એડમિન પેનલમાંથી બહાર કાઢીને લોગિન પર મોકલી દેવા
-      await SessionGuardService.instance.clearSession();
-      FirebaseAuth.instance.signOut();
+      if (mounted) {
+        await SessionGuardService.performAppLogout(context);
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("ભૂલ આવી: $e"), backgroundColor: Colors.red),
+        SnackBar(content: Text("ભૂલ આવી: $e".tr), backgroundColor: Colors.red),
       );
     }
   }

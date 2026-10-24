@@ -93,8 +93,8 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
 
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('કૃપા કરીને નામ, ઈમેલ અને પાસવર્ડ દાખલ કરો.'),
+        SnackBar(
+          content: Text('કૃપા કરીને નામ, ઈમેલ અને પાસવર્ડ દાખલ કરો.'.tr),
           backgroundColor: Colors.red,
         ),
       );
@@ -103,8 +103,8 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
 
     if (!_isValidEmail(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('કૃપા કરીને સાચું ઈમેલ આઈડી દાખલ કરો.'),
+        SnackBar(
+          content: Text('કૃપા કરીને સાચું ઈમેલ આઈડી દાખલ કરો.'.tr),
           backgroundColor: Colors.red,
         ),
       );
@@ -113,8 +113,8 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
 
     if (password.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('પાસવર્ડ ઓછામાં ઓછો 6 અક્ષરનો હોવો જોઈએ.'),
+        SnackBar(
+          content: Text('પાસવર્ડ ઓછામાં ઓછો 6 અક્ષરનો હોવો જોઈએ.'.tr),
           backgroundColor: Colors.red,
         ),
       );
@@ -131,8 +131,8 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
 
     if (_selectedRole == 'member' && (effectiveBlock.isEmpty || effectiveUnit.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('કૃપા કરીને મેમ્બર માટે બ્લોક અને ફ્લેટ / ઘર નંબર પસંદ કરો.'),
+        SnackBar(
+          content: Text('કૃપા કરીને મેમ્બર માટે બ્લોક અને ફ્લેટ / ઘર નંબર પસંદ કરો.'.tr),
           backgroundColor: Colors.red,
         ),
       );
@@ -172,7 +172,7 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'ફ્લેટ "$effectiveUnit" બ્લોક "$cleanBlock" ના રજિસ્ટર્ડ યુનિટ્સમાં નથી. કૃપા કરીને લિસ્ટમાંથી જ માન્ય ફ્લેટ પસંદ કરો.',
+                'ફ્લેટ "$effectiveUnit" બ્લોક "$cleanBlock" ના રજિસ્ટર્ડ યુનિટ્સમાં નથી. કૃપા કરીને લિસ્ટમાંથી જ માન્ય ફ્લેટ પસંદ કરો.'.tr,
               ),
               backgroundColor: Colors.red,
             ),
@@ -193,13 +193,13 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
               if (!mounted) return;
               final proceed = await PremiumConfirmationDialog.show(
                 context,
-                title: 'ફ્લેટમાં પહેલેથી સભ્ય છે',
+                title: 'ફ્લેટમાં પહેલેથી સભ્ય છે'.tr,
                 message:
-                    'આ ફ્લેટ ($cleanBlock-$effectiveUnit) પર પહેલેથી $count મેમ્બર નોંધાયેલ છે. વધારાના પરિવાર સભ્ય તરીકે ઉમેરવા માંગો છો?',
+                    'આ ફ્લેટ ($cleanBlock-$effectiveUnit) પર પહેલેથી $count મેમ્બર નોંધાયેલ છે. વધારાના પરિવાર સભ્ય તરીકે ઉમેરવા માંગો છો?'.tr,
                 icon: Icons.info_outline_rounded,
                 gradientColors: const [Color(0xFFD97706), Color(0xFFF59E0B)],
-                cancelText: 'ના, રદ કરો',
-                confirmText: 'હા, ઉમેરો',
+                cancelText: 'ના, રદ કરો'.tr,
+                confirmText: 'હા, ઉમેરો'.tr,
                 confirmGradient: const [Color(0xFF4338CA), Color(0xFF6366F1)],
                 confirmColor: const Color(0xFF4338CA),
                 confirmIcon: Icons.person_add_rounded,
@@ -285,8 +285,8 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
       if (!mounted) return;
 
       final roleLabel = _selectedRole == 'sub_admin'
-          ? 'સબ-એડમિન'
-          : (_selectedRole == 'watchman' ? 'વોચમેન' : 'મેમ્બર');
+          ? 'સબ-એડમિન'.tr
+          : (_selectedRole == 'watchman' ? 'વોચમેન'.tr : 'મેમ્બર'.tr);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -294,7 +294,7 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
             children: [
               const Icon(Icons.check_circle_rounded, color: Colors.white),
               const SizedBox(width: 10),
-              Expanded(child: Text('$name ($roleLabel) નું એકાઉન્ટ સફળતાપૂર્વક બની ગયું!')),
+              Expanded(child: Text('$name ($roleLabel) નું એકાઉન્ટ સફળતાપૂર્વક બની ગયું!'.tr)),
             ],
           ),
           backgroundColor: const Color(0xFF047857),
@@ -305,13 +305,13 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
       Navigator.pop(context);
     } on FirebaseAuthException catch (authErr) {
       if (!mounted) return;
-      String msg = 'ભૂલ આવી: ${authErr.message ?? authErr.code}';
+      String msg = 'ભૂલ આવી: ${authErr.message ?? authErr.code}'.tr;
       if (authErr.code == 'email-already-in-use') {
-        msg = 'આ ઇમેઇલ ($email) પહેલેથી જ રજીસ્ટર થયેલો છે. કૃપા કરીને અન્ય ઇમેઇલ વાપરો.';
+        msg = 'આ ઇમેઇલ ($email) પહેલેથી જ રજીસ્ટર થયેલો છે. કૃપા કરીને અન્ય ઇમેઇલ વાપરો.'.tr;
       } else if (authErr.code == 'weak-password') {
-        msg = 'પાસવર્ડ ઓછામાં ઓછો 6 અક્ષરનો હોવો જોઈએ.';
+        msg = 'પાસવર્ડ ઓછામાં ઓછો 6 અક્ષરનો હોવો જોઈએ.'.tr;
       } else if (authErr.code == 'invalid-email') {
-        msg = 'અમાન્ય ઈમેલ એડ્રેસ: $email';
+        msg = 'અમાન્ય ઈમેલ એડ્રેસ: $email'.tr;
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -324,7 +324,7 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('ભૂલ આવી: $e'),
+          content: Text('ભૂલ આવી: $e'.tr),
           backgroundColor: Colors.red.shade800,
           behavior: SnackBarBehavior.floating,
         ),
@@ -346,20 +346,20 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "યુઝર રજીસ્ટ્રેશન",
-              style: TextStyle(
+              "યુઝર રજીસ્ટ્રેશન".tr,
+              style: const TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 18,
                 color: Color(0xFF0F172A),
               ),
             ),
             Text(
-              "સોસાયટી મેમ્બર, વોચમેન અથવા એડમિન એડ કરો",
-              style: TextStyle(
+              "સોસાયટી મેમ્બર, વોચમેન અથવા એડમિન એડ કરો".tr,
+              style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF64748B),
@@ -367,6 +367,12 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
             ),
           ],
         ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Center(child: LanguageSwitchButton()),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -376,8 +382,8 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 1. Role Selection Header
-              const Text(
-                "૧. યુઝર રોલ પસંદ કરો",
+              Text(
+                "૧. યુઝર રોલ પસંદ કરો".tr,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
@@ -389,9 +395,9 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                 children: [
                   Expanded(
                     child: _buildRoleCard(
-                      label: 'મેમ્બર',
+                      label: 'મેમ્બર'.tr,
                       role: 'member',
-                      subtitle: 'ફ્લેટ ધારક',
+                      subtitle: 'ફ્લેટ ધારક'.tr,
                       icon: Icons.apartment_rounded,
                       gradient: [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
                     ),
@@ -399,9 +405,9 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildRoleCard(
-                      label: 'સબ-એડમિન',
+                      label: 'સબ-એડમિન'.tr,
                       role: 'sub_admin',
-                      subtitle: 'કમિટી સભ્ય',
+                      subtitle: 'કમિટી સભ્ય'.tr,
                       icon: Icons.shield_rounded,
                       gradient: [const Color(0xFF8B5CF6), const Color(0xFF6D28D9)],
                     ),
@@ -409,9 +415,9 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildRoleCard(
-                      label: 'વોચમેન',
+                      label: 'વોચમેન'.tr,
                       role: 'watchman',
-                      subtitle: 'ગેટ સ્ટાફ',
+                      subtitle: 'ગેટ સ્ટાફ'.tr,
                       icon: Icons.security_rounded,
                       gradient: [const Color(0xFF10B981), const Color(0xFF047857)],
                     ),
@@ -421,8 +427,8 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
               const SizedBox(height: 24),
 
               // 2. Personal Information Card
-              const Text(
-                "૨. વ્યક્તિગત વિગતો",
+              Text(
+                "૨. વ્યક્તિગત વિગતો".tr,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
@@ -450,8 +456,8 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                       controller: _nameC,
                       textCapitalization: TextCapitalization.words,
                       decoration: InputDecoration(
-                        labelText: 'પૂરું નામ (Full Name) *',
-                        hintText: 'દા.ત. રમેશભાઈ પટેલ',
+                        labelText: 'પૂરું નામ (Full Name) *'.tr,
+                        hintText: 'દા.ત. રમેશભાઈ પટેલ'.tr,
                         prefixIcon: const Icon(Icons.person_rounded, size: 20, color: Color(0xFF4338CA)),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                       ),
@@ -461,8 +467,8 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                       controller: _phoneC,
                       keyboardType: TextInputType.phone,
                       decoration: InputDecoration(
-                        labelText: 'મોબાઈલ નંબર (Mobile Number)',
-                        hintText: 'દા.ત. 9876543210',
+                        labelText: 'મોબાઈલ નંબર (Mobile Number)'.tr,
+                        hintText: 'દા.ત. 9876543210'.tr,
                         prefixIcon: const Icon(Icons.phone_rounded, size: 20, color: Color(0xFF4338CA)),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                       ),
@@ -472,8 +478,8 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                       controller: _emailC,
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
-                        labelText: 'ઈમેલ આઈડી (Email / Login ID) *',
-                        hintText: 'દા.ત. user@gmail.com',
+                        labelText: 'ઈમેલ આઈડી (Email / Login ID) *'.tr,
+                        hintText: 'દા.ત. user@gmail.com'.tr,
                         prefixIcon: const Icon(Icons.email_rounded, size: 20, color: Color(0xFF4338CA)),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                       ),
@@ -483,8 +489,8 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                       controller: _passwordC,
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
-                        labelText: 'પાસવર્ડ (Login Password) *',
-                        hintText: 'ઓછામાં ઓછા 6 અક્ષર',
+                        labelText: 'પાસવર્ડ (Login Password) *'.tr,
+                        hintText: 'ઓછામાં ઓછા 6 અક્ષર'.tr,
                         prefixIcon: const Icon(Icons.lock_rounded, size: 20, color: Color(0xFF4338CA)),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -515,8 +521,8 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                       child: const Icon(Icons.home_work_rounded, color: Color(0xFF0D9488), size: 18),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
-                      "૩. બ્લોક & ફ્લેટ / ઘર નંબરની વિગતો",
+                    Text(
+                      "૩. બ્લોક & ફ્લેટ / ઘર નંબરની વિગતો".tr,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
@@ -618,8 +624,8 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                                       ? SocietyService.instance.normalizeBlockName(_selectedBlock!)
                                       : null,
                                   decoration: InputDecoration(
-                                    labelText: 'બ્લોક / વિંગ / ફ્લોર *',
-                                    hintText: 'બ્લોક પસંદ કરો',
+                                    labelText: 'બ્લોક / વિંગ / ફ્લોર *'.tr,
+                                    hintText: 'બ્લોક પસંદ કરો'.tr,
                                     prefixIcon: const Icon(Icons.apartment_rounded, size: 20, color: Color(0xFF0D9488)),
                                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                                     isDense: true,
@@ -650,14 +656,14 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                                 TextFormField(
                                   controller: _customBlockC,
                                   decoration: InputDecoration(
-                                    labelText: 'બ્લોક / વિંગ નામ (Block / Wing) *',
-                                    hintText: 'દા.ત. A, B, વિંગ-1',
+                                    labelText: 'બ્લોક / વિંગ નામ (Block / Wing) *'.tr,
+                                    hintText: 'દા.ત. A, B, વિંગ-1'.tr,
                                     prefixIcon: const Icon(Icons.apartment_rounded, size: 20, color: Color(0xFF0D9488)),
                                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                                     isDense: true,
                                     filled: true,
                                     fillColor: const Color(0xFFF8FAFC),
-                                    helperText: 'હજુ કોઈ બ્લોક નોંધાયેલ નથી, નામ સીધું લખો.',
+                                    helperText: 'હજુ કોઈ બ્લોક નોંધાયેલ નથી, નામ સીધું લખો.'.tr,
                                   ),
                                   onChanged: (v) {
                                     setState(() {
@@ -678,7 +684,7 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                                     const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF0D9488)),
                                     const SizedBox(width: 5),
                                     Text(
-                                      "રજિસ્ટર્ડ ફ્લેટ લિસ્ટમાંથી પસંદ કરો:",
+                                      "રજિસ્ટર્ડ ફ્લેટ લિસ્ટમાંથી પસંદ કરો:".tr,
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w700,
@@ -694,8 +700,8 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                                       ? _selectedUnit
                                       : null,
                                   decoration: InputDecoration(
-                                    labelText: 'ફ્લેટ / ઘર નંબર (Flat / Unit No.) *',
-                                    hintText: 'માન્ય ફ્લેટ નંબર પસંદ કરો',
+                                    labelText: 'ફ્લેટ / ઘર નંબર (Flat / Unit No.) *'.tr,
+                                    hintText: 'માન્ય ફ્લેટ નંબર પસંદ કરો'.tr,
                                     prefixIcon: const Icon(Icons.meeting_room_rounded, size: 20, color: Color(0xFF0D9488)),
                                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                                     isDense: true,
@@ -712,7 +718,7 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
-                                            'ફ્લેટ $num',
+                                            'ફ્લેટ $num'.tr,
                                             style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
                                           ),
                                           const SizedBox(width: 8),
@@ -726,7 +732,7 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                                               ),
                                             ),
                                             child: Text(
-                                              isOccupied ? '$count સભ્ય' : 'ખાલી',
+                                              isOccupied ? '$count સભ્ય'.tr : 'ખાલી'.tr,
                                               style: TextStyle(
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.w800,
@@ -753,13 +759,13 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(color: const Color(0xFFE2E8F0)),
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     children: [
                                       Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF64748B)),
                                       SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
-                                          'કૃપા કરીને પહેલા ઉપરથી બ્લોક / વિંગ પસંદ કરો.',
+                                          'કૃપા કરીને પહેલા ઉપરથી બ્લોક / વિંગ પસંદ કરો.'.tr,
                                           style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                                         ),
                                       ),
@@ -777,21 +783,21 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Row(
+                                      Row(
                                         children: [
                                           Icon(Icons.warning_amber_rounded, size: 16, color: Color(0xFFD97706)),
                                           SizedBox(width: 6),
                                           Expanded(
                                             child: Text(
-                                              'આ બ્લોકમાં અગાઉથી કોઈ ફ્લેટ ડેટાબેઝમાં નોંધાયેલ નથી.',
+                                              'આ બ્લોકમાં અગાઉથી કોઈ ફ્લેટ ડેટાબેઝમાં નોંધાયેલ નથી.'.tr,
                                               style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF92400E)),
                                             ),
                                           ),
                                         ],
                                       ),
                                       const SizedBox(height: 6),
-                                      const Text(
-                                        'માન્ય ફ્લેટ / ઘર નંબર દાખલ કરો (દા.ત. 101, A-101):',
+                                      Text(
+                                        'માન્ય ફ્લેટ / ઘર નંબર દાખલ કરો (દા.ત. 101, A-101):'.tr,
                                         style: TextStyle(fontSize: 11, color: Color(0xFF78350F)),
                                       ),
                                       const SizedBox(height: 8),
@@ -800,8 +806,8 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                                         keyboardType: TextInputType.text,
                                         textCapitalization: TextCapitalization.characters,
                                         decoration: InputDecoration(
-                                          labelText: 'ફ્લેટ / ઘર નંબર *',
-                                          hintText: 'દા.ત. 101',
+                                          labelText: 'ફ્લેટ / ઘર નંબર *'.tr,
+                                          hintText: 'દા.ત. 101'.tr,
                                           prefixIcon: const Icon(Icons.meeting_room_rounded, size: 20, color: Color(0xFF0D9488)),
                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                                           isDense: true,
@@ -845,13 +851,13 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                           height: 24,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                         )
-                      : const Row(
+                      : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.person_add_alt_1_rounded, size: 20),
                             SizedBox(width: 8),
                             Text(
-                              "યુઝર રજીસ્ટર કરો",
+                              "યુઝર રજીસ્ટર કરો".tr,
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                             ),
                           ],

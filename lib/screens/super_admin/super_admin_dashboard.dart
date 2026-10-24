@@ -1,20 +1,24 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/super_admin_models.dart';
 import '../../services/super_admin_service.dart';
 import '../../services/society_service.dart';
+import '../../services/session_guard_service.dart';
 import '../../services/notification_service.dart';
 import '../../screens/admin_dashboard.dart';
-import '../../screens/login_screen.dart';
 import 'super_admin_create_admin_screen.dart';
 import 'super_admin_onboard_society_screen.dart';
 import 'super_admin_broadcast_screen.dart';
 import 'super_admin_appeal_detail_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/app_firestore.dart';
 import '../../services/society_appeal_service.dart';
 import '../../widgets/admin_credentials_modal.dart';
+import '../../services/localization_service.dart';
+import '../../l10n/app_strings.dart';
 
 
 class SuperAdminDashboard extends StatefulWidget {
@@ -27,6 +31,15 @@ class SuperAdminDashboard extends StatefulWidget {
 class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTickerProviderStateMixin {
   final SuperAdminService _service = SuperAdminService.instance;
   final NumberFormat _currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹ ', decimalDigits: 0);
+
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final clean = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (clean.isEmpty) return;
+    final uri = Uri.parse('tel:$clean');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
 
   late TabController _tabController;
   int _currentTabIndex = 0;
@@ -188,6 +201,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
               headerSliverBuilder: (context, innerBoxIsScrolled) {
                 return [
                   _buildExecutiveAppBar(),
+                  _buildPendingAppealsLiveBannerSliver(),
                   _buildKpiDeckSliver(),
                   _buildFloatingTabBarSliver(),
                 ];
@@ -219,58 +233,63 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
   Widget _buildExecutiveAppBar() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
         child: Row(
           children: [
             // ગોલ્ડન ક્રાઉન લોગો વિથ ગ્લો
             Container(
-              padding: const EdgeInsets.all(9),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
                     color: const Color(0xFFF59E0B).withValues(alpha: 0.35),
-                    blurRadius: 14,
+                    blurRadius: 12,
                     offset: const Offset(0, 3),
                   ),
                 ],
               ),
               child: const Icon(Icons.workspace_premium_rounded, size: 20, color: Colors.white),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
 
             // ટાઈટલ અને પ્લેટફોર્મ પલ્સ
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
                     children: [
-                      const Text(
-                        "SUPER ADMIN",
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.2,
-                          color: Colors.white,
+                      Flexible(
+                        child: Text(
+                          "SUPER ADMIN",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.1,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 5),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                         decoration: BoxDecoration(
                           color: const Color(0xFF14B8A6).withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(5),
                           border: Border.all(color: const Color(0xFF14B8A6).withValues(alpha: 0.4), width: 0.8),
                         ),
                         child: const Text(
                           "PRO",
-                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Color(0xFF34D399)),
+                          style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w900, color: Color(0xFF34D399)),
                         ),
                       ),
                     ],
@@ -293,41 +312,256 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                           ],
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      const Text(
-                        "LIVE ENGINE • કમાન્ડ સેન્ટર",
-                        style: TextStyle(fontSize: 10.5, color: Colors.white60, fontWeight: FontWeight.w600),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          "LIVE ENGINE • કમાન્ડ સેન્ટર".tr,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 10, color: Colors.white60, fontWeight: FontWeight.w600),
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 8),
+
+            // નોટિફિકેશન બેલ બટન (લાઇવ અપીલ & એડમિન સૂચનાઓ)
+            // નોટિફિકેશન બેલ બટન (લાઇવ અપીલ & એડમિન સૂચનાઓ)
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: SocietyAppealService.instance.streamAllAppeals(),
+              builder: (context, snap) {
+                final allAppeals = snap.data ?? [];
+                final count = allAppeals.where((a) => a['status'] == 'pending').length;
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      tooltip: 'સૂચનાઓ & અપીલ્સ'.tr,
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                      padding: EdgeInsets.zero,
+                      style: IconButton.styleFrom(
+                        backgroundColor: const Color(0xFF111827),
+                        minimumSize: const Size(36, 36),
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        side: BorderSide(
+                          color: count > 0 ? const Color(0xFFF59E0B).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.08),
+                        ),
+                      ),
+                      icon: Icon(
+                        count > 0 ? Icons.notifications_active_rounded : Icons.notifications_none_rounded,
+                        size: 19,
+                        color: count > 0 ? const Color(0xFFF59E0B) : const Color(0xFF94A3B8),
+                      ),
+                      onPressed: _showAppealsListDialog,
+                    ),
+                    if (count > 0)
+                      Positioned(
+                        top: -2,
+                        right: -2,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFF0F172A), width: 1.5),
+                          ),
+                          constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
+                          child: Text(
+                            count > 9 ? '9+' : '$count',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(width: 5),
 
             // રીફ્રેશ બટન
             IconButton(
-              tooltip: 'ડેટા રિફ્રેશ કરો',
+              tooltip: 'ડેટા રિફ્રેશ કરો'.tr,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              padding: EdgeInsets.zero,
               style: IconButton.styleFrom(
                 backgroundColor: const Color(0xFF111827),
+                minimumSize: const Size(36, 36),
+                padding: EdgeInsets.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
               ),
-              icon: const Icon(Icons.refresh_rounded, size: 20, color: Color(0xFF38BDF8)),
+              icon: const Icon(Icons.refresh_rounded, size: 19, color: Color(0xFF38BDF8)),
               onPressed: _loadAllData,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
+
+            // Multi-language switch button (GU / HI / EN)
+            const LanguageSwitchButton(isDark: true),
+            const SizedBox(width: 5),
 
             // લૉગઆઉટ બટન
             IconButton(
-              tooltip: 'લૉગઆઉટ',
+              tooltip: 'લૉગઆઉટ'.tr,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              padding: EdgeInsets.zero,
               style: IconButton.styleFrom(
                 backgroundColor: const Color(0xFF111827),
+                minimumSize: const Size(36, 36),
+                padding: EdgeInsets.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
               ),
-              icon: const Icon(Icons.logout_rounded, size: 20, color: Color(0xFFF87171)),
+              icon: const Icon(Icons.logout_rounded, size: 19, color: Color(0xFFF87171)),
               onPressed: _confirmLogout,
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ==========================================
+  // ૧.૧ લાઇવ પેન્ડિંગ અપીલ બેનર (Pending Appeals Live Alert Banner)
+  // ==========================================
+  Widget _buildPendingAppealsLiveBannerSliver() {
+    return SliverToBoxAdapter(
+      child: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: SocietyAppealService.instance.streamAllAppeals(),
+        builder: (context, snap) {
+          final allAppeals = snap.data ?? [];
+          final pendingAppeals = allAppeals.where((a) => a['status'] == 'pending').toList();
+          if (pendingAppeals.isEmpty) return const SizedBox.shrink();
+
+          final count = pendingAppeals.length;
+          final latest = pendingAppeals.first;
+          final socName = (latest['societyName'] ?? 'સોસાયટી'.tr).toString();
+          final admName = (latest['adminName'] ?? 'એડમિન'.tr).toString();
+          final appealId = (latest['appealId'] ?? latest['docId'] ?? '').toString();
+
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+            child: InkWell(
+              onTap: () {
+                if (count == 1 && appealId.isNotEmpty) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SuperAdminAppealDetailScreen(
+                        appealId: appealId,
+                        initialData: latest,
+                      ),
+                    ),
+                  );
+                } else {
+                  _showAppealsListDialog();
+                }
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF78350F), Color(0xFF451A03)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFF59E0B), width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFF59E0B)),
+                      ),
+                      child: const Icon(Icons.notifications_active_rounded, color: Color(0xFFFBBF24), size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                "🚨 પેન્ડિંગ પુનઃસક્રિયતા અપીલ ($count)".tr,
+                                style: const TextStyle(
+                                  color: Color(0xFFFDE68A),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            "$socName ($admName) ${'appeal_notif_suffix'.tr}",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF59E0B),
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "રિવ્યુ કરો".tr,
+                            style: const TextStyle(
+                              color: Color(0xFF0F172A),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Color(0xFF0F172A)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -345,36 +579,36 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
           child: Row(
             children: [
               _buildBentoKpiCard(
-                title: "કુલ કલેક્શન વોલ્યુમ",
+                title: "કુલ કલેક્શન વોલ્યુમ".tr,
                 value: _currency.format(_stats.totalPlatformCollected.toInt()),
-                trend: "આ મહિને જમા",
+                trend: "આ મહિને જમા".tr,
                 icon: Icons.currency_rupee_rounded,
                 gradient: const [Color(0xFF0F766E), Color(0xFF042F2E)],
                 accentColor: const Color(0xFF34D399),
               ),
               const SizedBox(width: 10),
               _buildBentoKpiCard(
-                title: "રજિસ્ટર્ડ પરિસરો",
-                value: "${_stats.totalSocieties} સંકુલ",
-                trend: "${_allSocieties.where((s) => s.isActive).length} સક્રિય",
+                title: "રજિસ્ટર્ડ પરિસરો".tr,
+                value: "${_stats.totalSocieties} ${'complexes_label'.tr}",
+                trend: "${_allSocieties.where((s) => s.isActive).length} ${'active'.tr}",
                 icon: Icons.apartment_rounded,
                 gradient: const [Color(0xFF1E3A8A), Color(0xFF0F172A)],
                 accentColor: const Color(0xFF38BDF8),
               ),
               const SizedBox(width: 10),
               _buildBentoKpiCard(
-                title: "કુલ યુઝર્સ & સભ્યો",
-                value: "${_stats.totalMembers} સભ્યો",
-                trend: "${_stats.totalAdmins} એડમિન",
+                title: "કુલ યુઝર્સ & સભ્યો".tr,
+                value: "${_stats.totalMembers} ${'label_members'.tr}",
+                trend: "${_stats.totalAdmins} ${'admins_label'.tr}",
                 icon: Icons.groups_rounded,
                 gradient: const [Color(0xFF581C87), Color(0xFF1E1B4B)],
                 accentColor: const Color(0xFFA78BFA),
               ),
               const SizedBox(width: 10),
               _buildBentoKpiCard(
-                title: "ગેટ સિક્યોરિટી પલ્સ",
-                value: "${_stats.todayTotalVisitors} વિઝિટર",
-                trend: "${_stats.totalWatchmen} ગાર્ડ્સ ઓન-ડ્યુટી",
+                title: "ગેટ સિક્યોરિટી પલ્સ".tr,
+                value: "${_stats.todayTotalVisitors} ${'visitors_label'.tr}",
+                trend: "${_stats.totalWatchmen} ${'guards_on_duty_label'.tr}",
                 icon: Icons.shield_rounded,
                 gradient: const [Color(0xFF78350F), Color(0xFF1C1917)],
                 accentColor: const Color(0xFFFBBF24),
@@ -484,10 +718,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
             ),
             child: Row(
               children: [
-                _buildSegmentTabItem(0, "પરિસરો", Icons.apartment_rounded, "${_allSocieties.length}"),
-                _buildSegmentTabItem(1, "યુઝર્સ", Icons.groups_rounded, "${_allUsers.length}"),
-                _buildSegmentTabItem(2, "ફાઇનાન્સ", Icons.insights_rounded, null),
-                _buildSegmentTabItem(3, "પાવર્સ", Icons.bolt_rounded, null),
+                _buildSegmentTabItem(0, "પરિસરો".tr, Icons.apartment_rounded, "${_allSocieties.length}"),
+                _buildSegmentTabItem(1, "યુઝર્સ".tr, Icons.groups_rounded, "${_allUsers.length}"),
+                _buildSegmentTabItem(2, "ફાઇનાન્સ".tr, Icons.insights_rounded, null),
+                _buildSegmentTabItem(3, "પાવર્સ".tr, Icons.bolt_rounded, null),
               ],
             ),
           ),
@@ -528,42 +762,49 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                   ]
                 : null,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 15,
-                color: isSelected ? Colors.white : Colors.white60,
-              ),
-              const SizedBox(width: 5),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
-                  color: isSelected ? Colors.white : Colors.white60,
-                ),
-              ),
-              if (badge != null) ...[
-                const SizedBox(width: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.white.withValues(alpha: 0.25) : Colors.white12,
-                    borderRadius: BorderRadius.circular(8),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    size: 14,
+                    color: isSelected ? Colors.white : Colors.white60,
                   ),
-                  child: Text(
-                    badge,
+                  const SizedBox(width: 4),
+                  Text(
+                    label,
                     style: TextStyle(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w900,
-                      color: isSelected ? Colors.white : Colors.white70,
+                      fontSize: 11.5,
+                      fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                      color: isSelected ? Colors.white : Colors.white60,
                     ),
                   ),
-                ),
-              ],
-            ],
+                  if (badge != null) ...[
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.white.withValues(alpha: 0.25) : Colors.white12,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        badge,
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w900,
+                          color: isSelected ? Colors.white : Colors.white70,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -594,7 +835,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
               isDense: true,
               filled: true,
               fillColor: const Color(0xFF111827),
-              hintText: 'પરિસર, શહેર, એડમિન કે ફોન શોધો...',
+              hintText: 'પરિસર, શહેર, એડમિન કે ફોન શોધો...'.tr,
               hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.38), fontSize: 13),
               prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF38BDF8), size: 20),
               border: InputBorder.none,
@@ -610,18 +851,18 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
           physics: const BouncingScrollPhysics(),
           child: Row(
             children: [
-              _buildArchFilterPill('all', 'બધા પરિસરો (${_allSocieties.length})'),
-              _buildArchFilterPill('commercial', '🛍️ કોમર્શિયલ મોલ'),
-              _buildArchFilterPill('mixed', '🏙️ મિક્સ્ડ કોમ્પ્લેક્સ'),
-              _buildArchFilterPill('wing', '🏢 રેસિડેન્શિયલ'),
-              _buildArchFilterPill('street', '🏡 સોસાયટી / બંગલો'),
+              _buildArchFilterPill('all', '${'all_premises_label'.tr} (${_allSocieties.length})'),
+              _buildArchFilterPill('commercial', '🛍️ કોમર્શિયલ મોલ'.tr),
+              _buildArchFilterPill('mixed', '🏙️ મિક્સ્ડ કોમ્પ્લેક્સ'.tr),
+              _buildArchFilterPill('wing', '🏢 રેસિડેન્શિયલ'.tr),
+              _buildArchFilterPill('street', '🏡 સોસાયટી / બંગલો'.tr),
             ],
           ),
         ),
         const SizedBox(height: 14),
 
         if (list.isEmpty)
-          _buildEmptyState("કોઈ પરિસર મળ્યું નથી", "સર્ચ ક્વેરી અથવા ફિલ્ટર બદલીને પ્રયાસ કરો.")
+          _buildEmptyState("કોઈ પરિસર મળ્યું નથી".tr, "સર્ચ ક્વેરી અથવા ફિલ્ટર બદલીને પ્રયાસ કરો.".tr)
         else
           ...list.map((soc) => _buildLuxurySocietyCard(soc)),
       ],
@@ -670,10 +911,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
             : (isStreet ? const Color(0xFF10B981) : const Color(0xFF38BDF8)));
 
     final String badgeText = isCommercial
-        ? "🛍️ કોમર્શિયલ મોલ"
+        ? "🛍️ કોમર્શિયલ મોલ".tr
         : (isMixed
-            ? "🏙️ મિક્સ્ડ સંકુલ"
-            : (isStreet ? "🏡 બંગલો સોસાયટી" : "🏢 ફ્લેટ ટાવર"));
+            ? "🏙️ મિક્સ્ડ સંકુલ".tr
+            : (isStreet ? "🏡 બંગલો સોસાયટી".tr : "🏢 ફ્લેટ ટાવર".tr));
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -735,7 +976,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      soc.isActive ? "કાર્યરત" : "ફ્રીઝ્ડ",
+                      soc.isActive ? "કાર્યરત".tr : "ફ્રીઝ્ડ".tr,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
@@ -774,7 +1015,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                     const Icon(Icons.location_on_rounded, size: 12, color: Colors.white54),
                     const SizedBox(width: 4),
                     Text(
-                      "${soc.city} • રજિસ્ટર્ડ: ${DateFormat('dd MMM yyyy').format(soc.createdAt)}",
+                      "${soc.city} • ${'registered_on'.tr}: ${DateFormat('dd MMM yyyy').format(soc.createdAt)}",
                       style: const TextStyle(fontSize: 11, color: Colors.white54),
                     ),
                   ],
@@ -796,14 +1037,14 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
               ),
               child: Row(
                 children: [
-                  _buildMicroGridItem("એકમો", "${soc.totalUnits}", Icons.tag_rounded, const Color(0xFF38BDF8)),
+                  _buildMicroGridItem("એકમો".tr, "${soc.totalUnits}", Icons.tag_rounded, const Color(0xFF38BDF8)),
                   _buildDividerLine(),
-                  _buildMicroGridItem("સભ્યો", "${soc.totalMembers}", Icons.person_rounded, const Color(0xFFA78BFA)),
+                  _buildMicroGridItem("સભ્યો".tr, "${soc.totalMembers}", Icons.person_rounded, const Color(0xFFA78BFA)),
                   _buildDividerLine(),
-                  _buildMicroGridItem("ગાર્ડ્સ", "${soc.totalWatchmen}", Icons.shield_rounded, const Color(0xFFFBBF24)),
+                  _buildMicroGridItem("ગાર્ડ્સ".tr, "${soc.totalWatchmen}", Icons.shield_rounded, const Color(0xFFFBBF24)),
                   _buildDividerLine(),
                   _buildMicroGridItem(
-                    "કલેક્શન",
+                    "કલેક્શન".tr,
                     _currency.format(soc.totalCollectedMonth.toInt()),
                     Icons.currency_rupee_rounded,
                     const Color(0xFF34D399),
@@ -830,7 +1071,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      "એડમિન: ${soc.adminName} (${soc.adminPhone})",
+                      "${'admins_label'.tr}: ${soc.adminName} (${soc.adminPhone})",
                       style: const TextStyle(fontSize: 11.5, color: Colors.white70, fontWeight: FontWeight.w600),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -845,12 +1086,12 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                         color: const Color(0xFF10B981).withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.phone_rounded, size: 12, color: Color(0xFF34D399)),
                           SizedBox(width: 4),
-                          Text("કોલ", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF34D399))),
+                          Text("કોલ".tr, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF34D399))),
                         ],
                       ),
                     ),
@@ -870,12 +1111,12 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                         color: const Color(0xFF0284C7).withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.notifications_active_rounded, size: 12, color: Color(0xFF38BDF8)),
                           SizedBox(width: 4),
-                          Text("નોટિસ", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF38BDF8))),
+                          Text("નોટિસ".tr, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF38BDF8))),
                         ],
                       ),
                     ),
@@ -895,7 +1136,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                   child: OutlinedButton.icon(
                     onPressed: () => _showSocietyInspectionSheet(soc),
                     icon: const Icon(Icons.analytics_rounded, size: 15),
-                    label: const Text("સંપૂર્ણ કુંડળી", style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
+                    label: Text("સંપૂર્ણ કુંડળી".tr, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF38BDF8),
                       side: BorderSide(color: const Color(0xFF38BDF8).withValues(alpha: 0.4)),
@@ -910,7 +1151,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                   child: FilledButton.icon(
                     onPressed: () => _shadowLogin(soc),
                     icon: const Icon(Icons.remove_red_eye_rounded, size: 15),
-                    label: const Text("View As Admin", style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
+                    label: Text("View As Admin", style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFF0F766E),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -982,7 +1223,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
               isDense: true,
               filled: true,
               fillColor: const Color(0xFF111827),
-              hintText: 'નામ, ફોન, ઈમેલ કે એકમ નંબર શોધો...',
+              hintText: 'નામ, ફોન, ઈમેલ કે એકમ નંબર શોધો...'.tr,
               hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.38), fontSize: 13),
               prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF38BDF8), size: 20),
               border: InputBorder.none,
@@ -998,19 +1239,19 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
           physics: const BouncingScrollPhysics(),
           child: Row(
             children: [
-              _buildUserRoleChip("બધા (${_allUsers.length})", 'all'),
-              _buildUserRoleChip("👑 સુપર એડમિન", 'super_admin'),
-              _buildUserRoleChip("💼 એડમિન (${_stats.totalAdmins})", 'admin'),
-              _buildUserRoleChip("🛡️ વોચમેન (${_stats.totalWatchmen})", 'watchman'),
-              _buildUserRoleChip("🏢 સબ-એડમિન (${_stats.totalSubAdmins})", 'wing_admin'),
-              _buildUserRoleChip("👥 સભ્યો (${_stats.totalMembers})", 'member'),
+              _buildUserRoleChip("બધા (${_allUsers.length})".tr, 'all'),
+              _buildUserRoleChip("👑 સુપર એડમિન".tr, 'super_admin'),
+              _buildUserRoleChip("💼 એડમિન (${_stats.totalAdmins})".tr, 'admin'),
+              _buildUserRoleChip("🛡️ વોચમેન (${_stats.totalWatchmen})".tr, 'watchman'),
+              _buildUserRoleChip("🏢 સબ-એડમિન (${_stats.totalSubAdmins})".tr, 'wing_admin'),
+              _buildUserRoleChip("👥 સભ્યો (${_stats.totalMembers})".tr, 'member'),
             ],
           ),
         ),
         const SizedBox(height: 14),
 
         if (list.isEmpty)
-          _buildEmptyState("કોઈ યુઝર મળ્યા નથી", "સર્ચ ક્વેરી અથવા રોલ ફિલ્ટર બદલીને પ્રયાસ કરો.")
+          _buildEmptyState("કોઈ યુઝર મળ્યા નથી".tr, "સર્ચ ક્વેરી અથવા રોલ ફિલ્ટર બદલીને પ્રયાસ કરો.".tr)
         else
           ...list.map((u) => _buildLuxuryUserCard(u)),
       ],
@@ -1058,28 +1299,28 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
       case 'super_admin':
       case 'superadmin':
         roleColor = const Color(0xFFF59E0B);
-        roleName = '👑 સુપર એડમિન';
+        roleName = '👑 સુપર એડમિન'.tr;
         roleIcon = Icons.workspace_premium_rounded;
         break;
       case 'admin':
         roleColor = const Color(0xFFF59E0B);
-        roleName = 'મુખ્ય એડમિન';
+        roleName = 'મુખ્ય એડમિન'.tr;
         roleIcon = Icons.admin_panel_settings_rounded;
         break;
       case 'watchman':
         roleColor = const Color(0xFF10B981);
-        roleName = 'સિક્યોરિટી ગાર્ડ';
+        roleName = 'સિક્યોરિટી ગાર્ડ'.tr;
         roleIcon = Icons.shield_rounded;
         break;
       case 'wing_admin':
       case 'sub_admin':
         roleColor = const Color(0xFF38BDF8);
-        roleName = 'સબ-એડમિન';
+        roleName = 'સબ-એડમિન'.tr;
         roleIcon = Icons.supervised_user_circle_rounded;
         break;
       default:
         roleColor = const Color(0xFF94A3B8);
-        roleName = 'સભ્ય / માલિક';
+        roleName = 'સભ્ય / માલિક'.tr;
         roleIcon = Icons.person_rounded;
         break;
     }
@@ -1151,7 +1392,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  "🏬 ${u.societyName}${u.unitNumber != null ? ' (એકમ: ${u.unitNumber})' : ''}",
+                  "🏬 ${u.societyName}${u.unitNumber != null ? ' (એકમ: ${u.unitNumber})' : ''}".tr,
                   style: const TextStyle(fontSize: 11, color: Color(0xFF14B8A6), fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1163,7 +1404,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
 
           // એક્ટિવ/બ્લોક બટન
           IconButton(
-            tooltip: u.isActive ? 'યુઝર બ્લોક કરો' : 'યુઝર એક્ટિવ કરો',
+            tooltip: u.isActive ? 'યુઝર બ્લોક કરો'.tr : 'યુઝર એક્ટિવ કરો'.tr,
             icon: Icon(
               u.isActive ? Icons.check_circle_rounded : Icons.block_rounded,
               color: u.isActive ? const Color(0xFF34D399) : Colors.redAccent,
@@ -1201,7 +1442,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                   children: [
                     const Icon(Icons.notifications_active_rounded, color: Color(0xFF38BDF8), size: 18),
                     const SizedBox(width: 8),
-                    const Text("નોટિફિકેશન / નોટિસ મોકલો", style: TextStyle(color: Colors.white, fontSize: 13)),
+                    Text("નોટિફિકેશન / નોટિસ મોકલો".tr, style: TextStyle(color: Colors.white, fontSize: 13)),
                   ],
                 ),
               ),
@@ -1211,29 +1452,29 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                   children: [
                     const Icon(Icons.phone_rounded, color: Color(0xFF34D399), size: 18),
                     const SizedBox(width: 8),
-                    Text("કોલ કરો (${u.phone})", style: const TextStyle(color: Colors.white, fontSize: 13)),
+                    Text("કોલ કરો (${u.phone})".tr, style: const TextStyle(color: Colors.white, fontSize: 13)),
                   ],
                 ),
               ),
               if (!isSuper)
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'promote',
                   child: Row(
                     children: [
                       Icon(Icons.workspace_premium_rounded, color: Color(0xFFF59E0B), size: 18),
                       SizedBox(width: 8),
-                      Text("👑 સુપર એડમિન બનાવો", style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
+                      Text("👑 સુપર એડમિન બનાવો".tr, style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
                     ],
                   ),
                 )
               else
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'revoke',
                   child: Row(
                     children: [
                       Icon(Icons.person_remove_rounded, color: Colors.redAccent, size: 18),
                       SizedBox(width: 8),
-                      Text("સુપર એડમિન સત્તા રદ્દ કરો", style: TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.w700)),
+                      Text("સુપર એડમિન સત્તા રદ્દ કરો".tr, style: TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.w700)),
                     ],
                   ),
                 ),
@@ -1289,8 +1530,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                     child: const Icon(Icons.account_balance_wallet_rounded, size: 20, color: Colors.white),
                   ),
                   const SizedBox(width: 10),
-                  const Text(
-                    "પ્લેટફોર્મ મેન્ટેનન્સ હિસાબ (કુલ વોલ્યુમ)",
+                  Text(
+                    "પ્લેટફોર્મ મેન્ટેનન્સ હિસાબ (કુલ વોલ્યુમ)".tr,
                     style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5, color: Colors.white),
                   ),
                 ],
@@ -1300,9 +1541,9 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildFinancialStat("કુલ બિલિંગ", _currency.format(billed.toInt()), Colors.white70),
-                  _buildFinancialStat("કુલ જમા થયેલ", _currency.format(collected.toInt()), const Color(0xFF34D399)),
-                  _buildFinancialStat("કુલ બાકી રકમ", _currency.format(pending.toInt()), const Color(0xFFF87171)),
+                  _buildFinancialStat("કુલ બિલિંગ".tr, _currency.format(billed.toInt()), Colors.white70),
+                  _buildFinancialStat("કુલ જમા થયેલ".tr, _currency.format(collected.toInt()), const Color(0xFF34D399)),
+                  _buildFinancialStat("કુલ બાકી રકમ".tr, _currency.format(pending.toInt()), const Color(0xFFF87171)),
                 ],
               ),
               const SizedBox(height: 16),
@@ -1321,8 +1562,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("સરેરાશ વસૂલાત દર: ${pct.toStringAsFixed(1)}%", style: const TextStyle(fontSize: 11, color: Colors.white70, fontWeight: FontWeight.w700)),
-                  const Text("૧૦૦% સિક્યોર્ડ ડેટાબેઝ", style: TextStyle(fontSize: 10, color: Color(0xFF34D399), fontWeight: FontWeight.w800)),
+                  Text("${'avg_recovery_rate'.tr}: ${pct.toStringAsFixed(1)}%", style: const TextStyle(fontSize: 11, color: Colors.white70, fontWeight: FontWeight.w700)),
+                  Text("૧૦૦% સિક્યોર્ડ ડેટાબેઝ".tr, style: const TextStyle(fontSize: 10, color: Color(0xFF34D399), fontWeight: FontWeight.w800)),
                 ],
               ),
             ],
@@ -1341,17 +1582,17 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.receipt_long_rounded, color: Color(0xFFF59E0B), size: 18),
-                  SizedBox(width: 8),
-                  Text("૧૮% GST ઇન્વોઇસિંગ સમરી (કોમર્શિયલ)", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.white)),
+                  const Icon(Icons.receipt_long_rounded, color: Color(0xFFF59E0B), size: 18),
+                  const SizedBox(width: 8),
+                  Text("૧૮% GST ઇન્વોઇસિંગ સમરી (કોમર્શિયલ)".tr, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.white)),
                 ],
               ),
               const SizedBox(height: 12),
-              _buildAuditRow("કુલ GST વસૂલાત", _currency.format(_stats.totalPlatformGst.toInt()), color: const Color(0xFFFBBF24)),
-              _buildAuditRow("CGST (૯%)", _currency.format((_stats.totalPlatformGst / 2).toInt())),
-              _buildAuditRow("SGST (૯%)", _currency.format((_stats.totalPlatformGst / 2).toInt())),
+              _buildAuditRow("કુલ GST વસૂલાત".tr, _currency.format(_stats.totalPlatformGst.toInt()), color: const Color(0xFFFBBF24)),
+              _buildAuditRow("CGST (૯%)".tr, _currency.format((_stats.totalPlatformGst / 2).toInt())),
+              _buildAuditRow("SGST (૯%)".tr, _currency.format((_stats.totalPlatformGst / 2).toInt())),
             ],
           ),
         ),
@@ -1368,17 +1609,17 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.security_rounded, color: Color(0xFF38BDF8), size: 18),
-                  SizedBox(width: 8),
-                  Text("પ્લેટફોર્મ ગેટ & સિક્યોરિટી પલ્સ", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.white)),
+                  const Icon(Icons.security_rounded, color: Color(0xFF38BDF8), size: 18),
+                  const SizedBox(width: 8),
+                  Text("પ્લેટફોર્મ ગેટ & સિક્યોરિટી પલ્સ".tr, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.white)),
                 ],
               ),
               const SizedBox(height: 12),
-              _buildAuditRow("આજની કુલ વિઝિટર એન્ટ્રીઓ", "${_stats.todayTotalVisitors} મહેમાનો", color: const Color(0xFF38BDF8)),
-              _buildAuditRow("કુલ ઓન-ડ્યુટી સિક્યોરિટી ગાર્ડ્સ", "${_stats.totalWatchmen} જવાનો"),
-              _buildAuditRow("કુલ પેન્ડિંગ સોસાયટી ફરિયાદો", "${(_stats.totalComplaints - _stats.resolvedComplaints).clamp(0, 999999)} ફરિયાદો", color: const Color(0xFFF87171)),
+              _buildAuditRow("આજની કુલ વિઝિટર એન્ટ્રીઓ".tr, "${_stats.todayTotalVisitors} ${'guests_label'.tr}", color: const Color(0xFF38BDF8)),
+              _buildAuditRow("કુલ ઓન-ડ્યુટી સિક્યોરિટી ગાર્ડ્સ".tr, "${_stats.totalWatchmen} ${'guards_label'.tr}"),
+              _buildAuditRow("કુલ પેન્ડિંગ સોસાયટી ફરિયાદો".tr, "${(_stats.totalComplaints - _stats.resolvedComplaints).clamp(0, 999999)} ${'complaints_label'.tr}", color: const Color(0xFFF87171)),
             ],
           ),
         ),
@@ -1418,8 +1659,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
       children: [
         _buildActionTile(
-          title: "સોસાયટી અપીલ વિનંતીઓ (Appeals & Reviews)",
-          subtitle: "સ્થગિત સોસાયટીના એડમિન તરફથી આવેલી પુનઃસક્રિયતા અપીલો ચકાસો અને નિર્ણય લો",
+          title: "સોસાયટી અપીલ વિનંતીઓ (Appeals & Reviews)".tr,
+          subtitle: "સ્થગિત સોસાયટીના એડમિન તરફથી આવેલી પુનઃસક્રિયતા અપીલો ચકાસો અને નિર્ણય લો".tr,
           icon: Icons.gavel_rounded,
           color: const Color(0xFFEF4444),
           onTap: _showAppealsListDialog,
@@ -1427,8 +1668,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
         const SizedBox(height: 12),
 
         _buildActionTile(
-          title: "નવા કો-સુપર એડમિન બનાવો (Co-Super Admin)",
-          subtitle: "તમારા પાર્ટનર કે ઓપરેશન્સ મેનેજરને સંપૂર્ણ માસ્ટર એક્સેસ આપો",
+          title: "નવા કો-સુપર એડમિન બનાવો (Co-Super Admin)".tr,
+          subtitle: "તમારા પાર્ટનર કે ઓપરેશન્સ મેનેજરને સંપૂર્ણ માસ્ટર એક્સેસ આપો".tr,
           icon: Icons.person_add_alt_1_rounded,
           color: const Color(0xFFF59E0B),
           onTap: _showCreateSuperAdminDialog,
@@ -1436,8 +1677,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
         const SizedBox(height: 12),
 
         _buildActionTile(
-          title: "નવી સોસાયટી ઓનબોર્ડ કરો (1-Click Setup)",
-          subtitle: "નવું પરિસર બનાવીને ચેરમેન/સેક્રેટરીનો એડમિન પાસવર્ડ સેટ કરો",
+          title: "નવી સોસાયટી ઓનબોર્ડ કરો (1-Click Setup)".tr,
+          subtitle: "નવું પરિસર બનાવીને ચેરમેન/સેક્રેટરીનો એડમિન પાસવર્ડ સેટ કરો".tr,
           icon: Icons.add_business_rounded,
           color: const Color(0xFF14B8A6),
           onTap: _showOnboardSocietyDialog,
@@ -1445,8 +1686,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
         const SizedBox(height: 12),
 
         _buildActionTile(
-          title: "ગ્લોબલ સિસ્ટમ બ્રોડકાસ્ટ (Global Notice)",
-          subtitle: "તમામ સોસાયટીના એડમિનો અથવા મેમ્બર્સને ઓફિશિયલ સૂચના મોકલો",
+          title: "ગ્લોબલ સિસ્ટમ બ્રોડકાસ્ટ (Global Notice)".tr,
+          subtitle: "તમામ સોસાયટીના એડમિનો અથવા મેમ્બર્સને ઓફિશિયલ સૂચના મોકલો".tr,
           icon: Icons.campaign_rounded,
           color: const Color(0xFF38BDF8),
           onTap: _showGlobalBroadcastDialog,
@@ -1454,16 +1695,16 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
         const SizedBox(height: 12),
 
         _buildActionTile(
-          title: "સિસ્ટમ કેશ ક્લીન & ડેટા રિફ્રેશ",
-          subtitle: "તમામ સોસાયટીઓ અને યુઝર્સનો ડેટાબેઝ કેશ ફરીથી સિંક કરો",
+          title: "સિસ્ટમ કેશ ક્લીન & ડેટા રિફ્રેશ".tr,
+          subtitle: "તમામ સોસાયટીઓ અને યુઝર્સનો ડેટાબેઝ કેશ ફરીથી સિંક કરો".tr,
           icon: Icons.cloud_sync_rounded,
           color: const Color(0xFFA855F7),
           onTap: () {
             _loadAllData();
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
+              SnackBar(
                 backgroundColor: Color(0xFF0F766E),
-                content: Text("સિસ્ટમ કેશ રિફ્રેશ સફળ થઈ ગઈ છે!"),
+                content: Text("સિસ્ટમ કેશ રિફ્રેશ સફળ થઈ ગઈ છે!".tr),
               ),
             );
           },
@@ -1563,21 +1804,21 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                 style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.white),
               ),
               Text(
-                "આર્કિટેક્ચર: ${soc.architectureType} • શહેર: ${soc.city}",
+                "આર્કિટેક્ચર: ${soc.architectureType} • શહેર: ${soc.city}".tr,
                 style: const TextStyle(fontSize: 12, color: Color(0xFF14B8A6), fontWeight: FontWeight.w600),
               ),
               const Divider(color: Colors.white12, height: 24),
 
-              _buildInspectionRow("સોસાયટી આઈડી", soc.id),
-              _buildInspectionRow("મુખ્ય એડમિન", "${soc.adminName} (${soc.adminPhone})"),
-              _buildInspectionRow("એડમિન ઈમેલ", soc.adminEmail),
-              _buildInspectionRow("કુલ એકમો", "${soc.totalUnits} ફ્લેટ્સ/દુકાનો"),
-              _buildInspectionRow("સભ્યો સંખ્યા", "${soc.totalMembers} સભ્યો"),
-              _buildInspectionRow("સિક્યોરિટી સ્ટાફ", "${soc.totalWatchmen} ગાર્ડ્સ"),
-              _buildInspectionRow("ચાલુ મહિને બિલિંગ", _currency.format(soc.totalBilledMonth.toInt())),
-              _buildInspectionRow("ચાલુ મહિને કલેક્શન", _currency.format(soc.totalCollectedMonth.toInt())),
-              _buildInspectionRow("પેન્ડિંગ ફરિયાદો", "${soc.pendingComplaints} ફરિયાદો"),
-              _buildInspectionRow("સ્ટેટસ", soc.isActive ? "એક્ટિવ (ચાલુ)" : "સસ્પેન્ડેડ (ફ્રીઝ)"),
+              _buildInspectionRow("સોસાયટી આઈડી".tr, soc.id),
+              _buildInspectionRow("મુખ્ય એડમિન".tr, "${soc.adminName} (${soc.adminPhone})"),
+              _buildInspectionRow("એડમિન ઈમેલ".tr, soc.adminEmail),
+              _buildInspectionRow("કુલ એકમો".tr, "${soc.totalUnits} ${'units_suffix'.tr}"),
+              _buildInspectionRow("સભ્યો સંખ્યા".tr, "${soc.totalMembers} ${'members_suffix'.tr}"),
+              _buildInspectionRow("સિક્યોરિટી સ્ટાફ".tr, "${soc.totalWatchmen} ${'guards_suffix'.tr}"),
+              _buildInspectionRow("ચાલુ મહિને બિલિંગ".tr, _currency.format(soc.totalBilledMonth.toInt())),
+              _buildInspectionRow("ચાલુ મહિને કલેક્શન".tr, _currency.format(soc.totalCollectedMonth.toInt())),
+              _buildInspectionRow("પેન્ડિંગ ફરિયાદો".tr, "${soc.pendingComplaints} ${'complaints_suffix'.tr}"),
+              _buildInspectionRow("સ્ટેટસ".tr, soc.isActive ? "એક્ટિવ (ચાલુ)".tr : "સસ્પેન્ડેડ (ફ્રીઝ)".tr),
 
               const SizedBox(height: 20),
               SizedBox(
@@ -1589,7 +1830,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                     _shadowLogin(soc);
                   },
                   icon: const Icon(Icons.remove_red_eye_rounded),
-                  label: const Text("આ સોસાયટીમાં એડમિન તરીકે પ્રવેશ કરો (View As Admin)"),
+                  label: Text("આ સોસાયટીમાં એડમિન તરીકે પ્રવેશ કરો (View As Admin)".tr),
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF0F766E),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -1620,8 +1861,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                     );
                   },
                   icon: const Icon(Icons.send_rounded, color: Color(0xFF38BDF8), size: 18),
-                  label: const Text(
-                    "એડમિન ક્રેડેન્શિયલ્સ મોકલો (Email / WhatsApp)",
+                  label: Text(
+                    "એડમિન ક્રેડેન્શિયલ્સ મોકલો (Email / WhatsApp)".tr,
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
                   ),
                   style: OutlinedButton.styleFrom(
@@ -1645,8 +1886,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                     );
                   },
                   icon: const Icon(Icons.send_rounded, size: 16),
-                  label: const Text(
-                    "એડમિનને ડાયરેક્ટ નોટિફિકેશન મોકલો (Notify Admin)",
+                  label: Text(
+                    "એડમિનને ડાયરેક્ટ નોટિફિકેશન મોકલો (Notify Admin)".tr,
                     style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                   ),
                   style: FilledButton.styleFrom(
@@ -1669,7 +1910,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                         SnackBar(
                           backgroundColor: const Color(0xFF0D9488),
                           behavior: SnackBarBehavior.floating,
-                          content: Text("🔑 '${soc.adminEmail}' પર પાસવર્ડ રીસેટ લિંક સફળતાપૂર્વક મોકલાઈ ગઈ છે!"),
+                          content: Text("🔑 '${soc.adminEmail}' પર પાસવર્ડ રીસેટ લિંક સફળતાપૂર્વક મોકલાઈ ગઈ છે!".tr),
                         ),
                       );
                     } catch (e) {
@@ -1677,14 +1918,14 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                         SnackBar(
                           backgroundColor: Colors.redAccent,
                           behavior: SnackBarBehavior.floating,
-                          content: Text("લિંક મોકલવામાં ભૂલ: $e"),
+                          content: Text("લિંક મોકલવામાં ભૂલ: $e".tr),
                         ),
                       );
                     }
                   },
                   icon: const Icon(Icons.lock_reset_rounded, color: Color(0xFFF59E0B), size: 18),
-                  label: const Text(
-                    "એડમિનને પાસવર્ડ રીસેટ લિંક મોકલો (Reset Password)",
+                  label: Text(
+                    "એડમિનને પાસવર્ડ રીસેટ લિંક મોકલો (Reset Password)".tr,
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
                   ),
                   style: OutlinedButton.styleFrom(
@@ -1722,16 +1963,16 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
     String? recipientName,
     bool canTargetWholeSociety = true,
   }) {
-    final titleCtrl = TextEditingController(text: 'હેડ ઓફિસ સત્તાવાર સૂચના');
+    final titleCtrl = TextEditingController(text: 'હેડ ઓફિસ સત્તાવાર સૂચના'.tr);
     final msgCtrl = TextEditingController();
     bool targetAll = false;
     bool isSending = false;
 
     final List<String> quickPresets = [
-      '📊 વાર્ષિક ઓડિટ રિપોર્ટ સબમિટ કરવા બાબત',
-      '⚠️ સિસ્ટમ મેન્ટેનન્સ & સિક્યોરિટી અપડેટ',
-      '📋 એકાઉન્ટ/મેમ્બર ડેટા વેરિફિકેશન સૂચના',
-      '💼 કમિટી મિટિંગ અને ઠરાવ અપલોડ કરવા બાબત',
+      '📊 વાર્ષિક ઓડિટ રિપોર્ટ સબમિટ કરવા બાબત'.tr,
+      '⚠️ સિસ્ટમ મેન્ટેનન્સ & સિક્યોરિટી અપડેટ'.tr,
+      '📋 એકાઉન્ટ/મેમ્બર ડેટા વેરિફિકેશન સૂચના'.tr,
+      '💼 કમિટી મિટિંગ અને ઠરાવ અપલોડ કરવા બાબત'.tr,
     ];
 
     showModalBottomSheet(
@@ -1781,8 +2022,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              "ચોક્કસ સોસાયટી / એડમિનને નોટિફિકેશન",
+                            Text(
+                              "ચોક્કસ સોસાયટી / એડમિનને નોટિફિકેશન".tr,
                               style: TextStyle(
                                 fontWeight: FontWeight.w900,
                                 fontSize: 16,
@@ -1820,11 +2061,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                targetAll ? "📢 આખી સોસાયટીના તમામ સભ્યોને" : "👤 માત્ર સોસાયટી એડમિનને",
+                                targetAll ? "📢 આખી સોસાયટીના તમામ સભ્યોને".tr : "👤 માત્ર સોસાયટી એડમિનને".tr,
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
                               ),
                               Text(
-                                targetAll ? "તમામ ફ્લેટ માલિકોને પુશ જશે" : "માત્ર કમિટી/એડમિનના ફોનમાં પુશ જશે",
+                                targetAll ? "તમામ ફ્લેટ માલિકોને પુશ જશે".tr : "માત્ર કમિટી/એડમિનના ફોનમાં પુશ જશે".tr,
                                 style: const TextStyle(fontSize: 11, color: Colors.white60),
                               ),
                             ],
@@ -1839,7 +2080,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                     ),
                     const SizedBox(height: 14),
                   ],
-                  const Text("ઝડપી ટેમ્પલેટ:", style: TextStyle(fontSize: 11, color: Colors.white60)),
+                  Text("ઝડપી ટેમ્પલેટ:".tr, style: TextStyle(fontSize: 11, color: Colors.white60)),
                   const SizedBox(height: 6),
                   Wrap(
                     spacing: 6,
@@ -1866,7 +2107,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                     controller: titleCtrl,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      labelText: "સૂચના શીર્ષક *",
+                      labelText: "સૂચના શીર્ષક *".tr,
                       labelStyle: const TextStyle(color: Color(0xFF38BDF8)),
                       filled: true,
                       fillColor: const Color(0xFF1E293B),
@@ -1879,9 +2120,9 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                     maxLines: 3,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      labelText: "સંદેશ / વિગત *",
+                      labelText: "સંદેશ / વિગત *".tr,
                       labelStyle: const TextStyle(color: Color(0xFF38BDF8)),
-                      hintText: "સુપર એડમિન તરફથી અગત્યની સૂચના લખો...",
+                      hintText: "સુપર એડમિન તરફથી અગત્યની સૂચના લખો...".tr,
                       hintStyle: const TextStyle(color: Colors.white38),
                       filled: true,
                       fillColor: const Color(0xFF1E293B),
@@ -1898,7 +2139,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                         final msg = msgCtrl.text.trim();
                         if (title.isEmpty || msg.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("કૃપા કરીને શીર્ષક અને સંદેશ બંને ભરો."), backgroundColor: Colors.orange),
+                            SnackBar(content: Text("કૃપા કરીને શીર્ષક અને સંદેશ બંને ભરો.".tr), backgroundColor: Colors.orange),
                           );
                           return;
                         }
@@ -1922,15 +2163,15 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                               backgroundColor: const Color(0xFF0284C7),
                               content: Text(
                                 targetAll
-                                    ? "✅ '$societyName' ના તમામ સભ્યોને નોટિફિકેશન મોકલાઈ ગયું!"
-                                    : "✅ '$societyName' ના એડમિનને પુશ નોટિફિકેશન સફળતાપૂર્વક મોકલાઈ ગયું!",
+                                    ? "✅ '$societyName' ના તમામ સભ્યોને નોટિફિકેશન મોકલાઈ ગયું!".tr
+                                    : "✅ '$societyName' ના એડમિનને પુશ નોટિફિકેશન સફળતાપૂર્વક મોકલાઈ ગયું!".tr,
                               ),
                             ),
                           );
                         } catch (e) {
                           setModalState(() => isSending = false);
                           messenger.showSnackBar(
-                            SnackBar(content: Text("નોટિફિકેશન મોકલવામાં ભૂલ: $e"), backgroundColor: Colors.red),
+                            SnackBar(content: Text("નોટિફિકેશન મોકલવામાં ભૂલ: $e".tr), backgroundColor: Colors.red),
                           );
                         }
                       },
@@ -1938,7 +2179,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                           ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                           : const Icon(Icons.send_rounded, size: 18),
                       label: Text(
-                        isSending ? "મોકલાઈ રહ્યું છે..." : "પુશ નોટિફિકેશન મોકલો (Send Push)",
+                        isSending ? "મોકલાઈ રહ્યું છે...".tr : "પુશ નોટિફિકેશન મોકલો (Send Push)".tr,
                         style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
                       ),
                       style: FilledButton.styleFrom(
@@ -1968,7 +2209,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: const Color(0xFF0F766E),
-        content: Text("તમે '${soc.name}' માં એડમિન વ્યુ તરીકે પ્રવેશ કર્યો છે."),
+        content: Text("તમે '${soc.name}' માં એડમિન વ્યુ તરીકે પ્રવેશ કર્યો છે.".tr),
       ),
     );
 
@@ -1986,19 +2227,19 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          newStatus ? "સોસાયટી સક્રિય કરવી છે?" : "સોસાયટી ફ્રીઝ (સસ્પેન્ડ) કરવી છે?",
+          newStatus ? "સોસાયટી સક્રિય કરવી છે?".tr : "સોસાયટી ફ્રીઝ (સસ્પેન્ડ) કરવી છે?".tr,
           style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white),
         ),
         content: Text(
           newStatus
-              ? "'${soc.name}' ફરીથી સક્રિય થશે અને તમામ સભ્યો તથા એડમિન એપ વાપરી શકશે."
-              : "'${soc.name}' ફ્રીઝ થશે. કોઈ પણ સભ્ય કે એડમિન એપમાં પ્રવેશ નહીં કરી શકે જ્યાં સુધી તમે ફરી ચાલુ ન કરો.",
+              ? "'${soc.name}' ફરીથી સક્રિય થશે અને તમામ સભ્યો તથા એડમિન એપ વાપરી શકશે.".tr
+              : "'${soc.name}' ફ્રીઝ થશે. કોઈ પણ સભ્ય કે એડમિન એપમાં પ્રવેશ નહીં કરી શકે જ્યાં સુધી તમે ફરી ચાલુ ન કરો.".tr,
           style: const TextStyle(color: Colors.white70, fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("રદ કરો", style: TextStyle(color: Colors.white54)),
+            child: Text("રદ કરો".tr, style: TextStyle(color: Colors.white54)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -2009,7 +2250,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
               await _service.toggleSocietyStatus(soc.id, newStatus);
               _loadAllData();
             },
-            child: Text(newStatus ? "હા, સક્રિય કરો" : "હા, ફ્રીઝ કરો"),
+            child: Text(newStatus ? "હા, સક્રિય કરો".tr : "હા, ફ્રીઝ કરો".tr),
           ),
         ],
       ),
@@ -2024,7 +2265,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(newStatus ? "${u.name} સક્રિય થઈ ગયા છે." : "${u.name} ને બ્લોક કર્યા છે."),
+          content: Text(newStatus ? "${u.name} સક્રિય થઈ ગયા છે.".tr : "${u.name} ને બ્લોક કર્યા છે.".tr),
         ),
       );
     }
@@ -2066,165 +2307,412 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
     );
   }
 
-  // ૭.૧ સોસાયટી અપીલ વિનંતીઓ લિસ્ટ મોડલ શીટ (Society Appeals List)
+  // ૭.૧ સુપર એડમિન સૂચનાઓ & અપીલ કેન્દ્ર (Super Admin Notification & Appeals Hub)
   void _showAppealsListDialog() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        height: MediaQuery.of(ctx).size.height * 0.85,
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        decoration: const BoxDecoration(
-          color: Color(0xFF0F172A),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF475569),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Row(
-              children: [
-                Icon(Icons.gavel_rounded, color: Color(0xFFEF4444), size: 22),
-                SizedBox(width: 8),
-                Text(
-                  "સોસાયટી અપીલ વિનંતીઓ",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
+      builder: (ctx) => DefaultTabController(
+        length: 2,
+        child: Container(
+          height: MediaQuery.of(ctx).size.height * 0.88,
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+          decoration: const BoxDecoration(
+            color: Color(0xFF0F172A),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF475569),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Expanded(
-              child: StreamBuilder<List<Map<String, dynamic>>>(
-                stream: SocietyAppealService.instance.streamAllAppeals(),
-                builder: (ctx, snap) {
-                  if (snap.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator(color: Colors.white));
-                  }
-                  final appeals = snap.data ?? [];
-                  if (appeals.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.notifications_active_rounded, color: Color(0xFFF59E0B), size: 22),
+                      const SizedBox(width: 8),
+                      Text(
+                        'super_admin_notifications_title'.tr,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Segmented Capsule Tabs
+              Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: TabBar(
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0D9488), Color(0xFF059669)],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white60,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                  dividerColor: Colors.transparent,
+                  tabs: [
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.inbox_rounded, size: 48, color: Colors.grey.shade600),
-                          const SizedBox(height: 10),
-                          const Text(
-                            "હાલ કોઈ અપીલ વિનંતી પેન્ડિંગ નથી.",
-                            style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600),
-                          ),
+                          const Icon(Icons.gavel_rounded, size: 14),
+                          const SizedBox(width: 6),
+                          Text("society_appeals_tab".tr),
                         ],
                       ),
-                    );
-                  }
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.campaign_rounded, size: 14),
+                          const SizedBox(width: 6),
+                          Text("admin_messages_tab".tr),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
 
-                  return ListView.separated(
-                    itemCount: appeals.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 10),
-                    itemBuilder: (ctx, i) {
-                      final item = appeals[i];
-                      final sName = (item['societyName'] ?? 'સોસાયટી').toString();
-                      final aName = (item['adminName'] ?? 'એડમિન').toString();
-                      final msg = (item['appealMessage'] ?? '').toString();
-                      final status = (item['status'] ?? 'pending').toString();
-                      final appealId = (item['appealId'] ?? item['docId'] ?? '').toString();
-
-                      final (statusLabel, statusColor, statusBg) = switch (status) {
-                        'resolved' => ('મંજૂર', const Color(0xFF10B981), const Color(0xFF064E3B)),
-                        'rejected' => ('અસ્વીકૃત', const Color(0xFFEF4444), const Color(0xFF7F1D1D)),
-                        _ => ('પેન્ડિંગ', const Color(0xFFF59E0B), const Color(0xFF78350F)),
-                      };
-
-                      return InkWell(
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => SuperAdminAppealDetailScreen(
-                                appealId: appealId,
-                                initialData: item,
-                              ),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    // Tab 1: Society Appeals
+                    StreamBuilder<List<Map<String, dynamic>>>(
+                      stream: SocietyAppealService.instance.streamAllAppeals(),
+                      builder: (ctx, snap) {
+                        if (snap.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator(color: Colors.white));
+                        }
+                        final appeals = snap.data ?? [];
+                        if (appeals.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.inbox_rounded, size: 46, color: Colors.grey.shade600),
+                                const SizedBox(height: 10),
+                                Text(
+                                  "no_pending_appeals_yet".tr,
+                                  style: const TextStyle(color: Colors.white70, fontSize: 13.5, fontWeight: FontWeight.w600),
+                                ),
+                              ],
                             ),
                           );
-                        },
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1E293B),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFF334155)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        }
+
+                        return ListView.separated(
+                          itemCount: appeals.length,
+                          separatorBuilder: (context, index) => const SizedBox(height: 10),
+                          itemBuilder: (ctx, i) {
+                            final item = appeals[i];
+                            final sName = (item['societyName'] ?? 'society'.tr).toString();
+                            final aName = (item['adminName'] ?? 'admin'.tr).toString();
+                            final aPhone = (item['adminPhone'] ?? '').toString();
+                            final msg = (item['appealMessage'] ?? '').toString();
+                            final status = (item['status'] ?? 'pending').toString();
+                            final appealId = (item['appealId'] ?? item['docId'] ?? '').toString();
+
+                            final (statusLabel, statusColor, statusBg) = switch (status) {
+                              'resolved' => ('મંજૂર'.tr, const Color(0xFF10B981), const Color(0xFF064E3B)),
+                              'rejected' => ('અસ્વીકૃત'.tr, const Color(0xFFEF4444), const Color(0xFF7F1D1D)),
+                              _ => ('પેન્ડિંગ'.tr, const Color(0xFFF59E0B), const Color(0xFF78350F)),
+                            };
+
+                            return InkWell(
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => SuperAdminAppealDetailScreen(
+                                      appealId: appealId,
+                                      initialData: item,
+                                    ),
+                                  ),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1E293B),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: const Color(0xFF334155)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            sName,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14.5,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                                          decoration: BoxDecoration(
+                                            color: statusBg,
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                                          ),
+                                          child: Text(
+                                            statusLabel,
+                                            style: TextStyle(
+                                              color: statusColor,
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            "${'admins_label'.tr}: $aName ${aPhone.isNotEmpty ? '($aPhone)' : ''}",
+                                            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11.5, fontWeight: FontWeight.w600),
+                                          ),
+                                        ),
+                                        if (aPhone.isNotEmpty)
+                                          InkWell(
+                                            onTap: () => _makePhoneCall(aPhone),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF059669).withValues(alpha: 0.2),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  const Icon(Icons.call_rounded, size: 12, color: Color(0xFF34D399)),
+                                                  const SizedBox(width: 3),
+                                                  Text("call_short".tr, style: const TextStyle(color: Color(0xFF34D399), fontSize: 10.5, fontWeight: FontWeight.bold)),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      msg,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12.5),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+
+                    // Tab 2: Admin Direct Notifications
+                    StreamBuilder<QuerySnapshot>(
+                      stream: AppFirestore.instance
+                          .collection('notifications')
+                          .where(
+                            'targetUID',
+                            whereIn: FirebaseAuth.instance.currentUser?.uid != null &&
+                                    FirebaseAuth.instance.currentUser!.uid.isNotEmpty
+                                ? ['SUPER_ADMIN', FirebaseAuth.instance.currentUser!.uid]
+                                : ['SUPER_ADMIN'],
+                          )
+                          .limit(50)
+                          .snapshots(),
+                      builder: (ctx, snap) {
+                        if (snap.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator(color: Colors.white));
+                        }
+                        if (snap.hasError) {
+                          debugPrint('Error loading notifications: ${snap.error}');
+                        }
+                        final docs = (snap.data?.docs ?? []).toList();
+                        docs.sort((a, b) {
+                          final aData = a.data() as Map<String, dynamic>;
+                          final bData = b.data() as Map<String, dynamic>;
+                          final aTime = aData['createdAt'];
+                          final bTime = bData['createdAt'];
+                          if (aTime is Timestamp && bTime is Timestamp) {
+                            return bTime.compareTo(aTime);
+                          }
+                          return 0;
+                        });
+
+                        if (docs.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.notifications_off_rounded, size: 46, color: Colors.grey.shade600),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'no_admin_notifications_yet'.tr,
+                                  style: const TextStyle(color: Colors.white70, fontSize: 13.5, fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return ListView.separated(
+                          itemCount: docs.length,
+                          separatorBuilder: (context, index) => const SizedBox(height: 10),
+                          itemBuilder: (ctx, i) {
+                            final data = docs[i].data() as Map<String, dynamic>;
+                            final title = (data['title'] ?? 'સૂચના'.tr).toString();
+                            final body = (data['body'] ?? '').toString();
+                            final sName = (data['societyName'] ?? '').toString();
+                            final aName = (data['adminName'] ?? '').toString();
+                            final aPhone = (data['adminPhone'] ?? '').toString();
+                            final appealId = (data['appealId'] ?? '').toString();
+                            final type = (data['type'] ?? '').toString();
+
+                            final displayBody = (type == 'admin_appeal_request' && sName.isNotEmpty)
+                                ? "$sName ${aName.isNotEmpty ? '($aName) ' : ''}${'appeal_notif_suffix'.tr}"
+                                : (body.isNotEmpty ? body.tr : '');
+
+                            return Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E293B),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: const Color(0xFF334155)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Expanded(
-                                    child: Text(
-                                      sName,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14.5,
-                                        fontWeight: FontWeight.w800,
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.campaign_rounded, color: Color(0xFF38BDF8), size: 18),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          title.tr,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                                    decoration: BoxDecoration(
-                                      color: statusBg,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                                  if (sName.isNotEmpty || aName.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "$sName • $aName ${aPhone.isNotEmpty ? '($aPhone)' : ''}",
+                                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11.5, fontWeight: FontWeight.w600),
                                     ),
-                                    child: Text(
-                                      statusLabel,
-                                      style: TextStyle(
-                                        color: statusColor,
-                                        fontSize: 10.5,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
+                                  ],
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    displayBody,
+                                    style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12.5),
                                   ),
+                                  if (aPhone.isNotEmpty || appealId.isNotEmpty) ...[
+                                    const SizedBox(height: 10),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        if (aPhone.isNotEmpty)
+                                          ElevatedButton.icon(
+                                            onPressed: () => _makePhoneCall(aPhone),
+                                            icon: const Icon(Icons.call_rounded, size: 13),
+                                            label: Text("call_btn".tr, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFF059669),
+                                              foregroundColor: Colors.white,
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                              elevation: 0,
+                                            ),
+                                          ),
+                                        if (appealId.isNotEmpty) ...[
+                                          const SizedBox(width: 8),
+                                          ElevatedButton.icon(
+                                            onPressed: () {
+                                              Navigator.pop(ctx);
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) => SuperAdminAppealDetailScreen(
+                                                    appealId: appealId,
+                                                    initialData: data,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            icon: const Icon(Icons.open_in_new_rounded, size: 13),
+                                            label: Text("view_appeal_btn".tr, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFF0284C7),
+                                              foregroundColor: Colors.white,
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                              elevation: 0,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ],
                                 ],
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "એડમિન: $aName",
-                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11.5, fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                msg,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12.5),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -2237,21 +2725,21 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.workspace_premium_rounded, color: Color(0xFFF59E0B)),
             SizedBox(width: 8),
-            Text("સુપર એડમિન બનાવો છો?", style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
+            Text("સુપર એડમિન બનાવો છો?".tr, style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
           ],
         ),
         content: Text(
-          "શું તમે ખરેખર '${u.name}' ને સંપૂર્ણ સુપર એડમિન અધિકાર આપવા માંગો છો?\nતેઓ તમામ સોસાયટીઓ, યુઝર્સ અને હિસાબો જોઈ તથા નિયંત્રિત કરી શકશે.",
+          "શું તમે ખરેખર '${u.name}' ને સંપૂર્ણ સુપર એડમિન અધિકાર આપવા માંગો છો?\nતેઓ તમામ સોસાયટીઓ, યુઝર્સ અને હિસાબો જોઈ તથા નિયંત્રિત કરી શકશે.".tr,
           style: const TextStyle(color: Colors.white70, fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("રદ કરો", style: TextStyle(color: Colors.white54)),
+            child: Text("રદ કરો".tr, style: TextStyle(color: Colors.white54)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFFF59E0B)),
@@ -2263,11 +2751,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
               messenger.showSnackBar(
                 SnackBar(
                   backgroundColor: const Color(0xFFF59E0B),
-                  content: Text("${u.name} હવે સુપર એડમિન બની ગયા છે!"),
+                  content: Text("${u.name} હવે સુપર એડમિન બની ગયા છે!".tr),
                 ),
               );
             },
-            child: const Text("હા, સુપર એડમિન બનાવો"),
+            child: Text("હા, સુપર એડમિન બનાવો".tr),
           ),
         ],
       ),
@@ -2281,18 +2769,18 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          "સુપર એડમિન અધિકાર રદ્દ કરવો છે?",
+        title: Text(
+          "સુપર એડમિન અધિકાર રદ્દ કરવો છે?".tr,
           style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white),
         ),
         content: Text(
-          "શું તમે '${u.name}' પાસેથી સુપર એડમિન સત્તા પાછી ખેંચવા માંગો છો?",
+          "શું તમે '${u.name}' પાસેથી સુપર એડમિન સત્તા પાછી ખેંચવા માંગો છો?".tr,
           style: const TextStyle(color: Colors.white70, fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("ના", style: TextStyle(color: Colors.white54)),
+            child: Text("ના".tr, style: TextStyle(color: Colors.white54)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
@@ -2302,10 +2790,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
               await _service.revokeSuperAdmin(u.uid);
               _loadAllData();
               messenger.showSnackBar(
-                SnackBar(content: Text("${u.name} પાસેથી સુપર એડમિન સત્તા રદ્દ કરવામાં આવી છે.")),
+                SnackBar(content: Text("${u.name} પાસેથી સુપર એડમિન સત્તા રદ્દ કરવામાં આવી છે.".tr)),
               );
             },
-            child: const Text("હા, સત્તા રદ્દ કરો"),
+            child: Text("હા, સત્તા રદ્દ કરો".tr),
           ),
         ],
       ),
@@ -2319,37 +2807,31 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.logout_rounded, color: Colors.redAccent),
             SizedBox(width: 8),
-            Text("લૉગઆઉટ કરવું છે?", style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
+            Text("લૉગઆઉટ કરવું છે?".tr, style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
           ],
         ),
-        content: const Text(
-          "શું તમે ખરેખર સુપર એડમિન કમાન્ડ સેન્ટરમાંથી લૉગઆઉટ કરવા માંગો છો?",
+        content: Text(
+          "શું તમે ખરેખર સુપર એડમિન કમાન્ડ સેન્ટરમાંથી લૉગઆઉટ કરવા માંગો છો?".tr,
           style: TextStyle(color: Colors.white70, fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("ના", style: TextStyle(color: Colors.white54)),
+            child: Text("ના".tr, style: TextStyle(color: Colors.white54)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () async {
               Navigator.pop(ctx);
-              await FirebaseAuth.instance.signOut();
-              SocietyService.instance.clear();
               if (mounted) {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
+                await SessionGuardService.performAppLogout(context);
               }
             },
-            child: const Text("હા, લૉગઆઉટ કરો"),
+            child: Text("હા, લૉગઆઉટ કરો".tr),
           ),
         ],
       ),
