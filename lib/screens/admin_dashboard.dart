@@ -32,6 +32,7 @@ import 'admin_polls_screen.dart';
 import 'admin_amenities_screen.dart';
 import 'admin_patrol_screen.dart';
 import 'architecture_preview.dart';
+import '../widgets/app_navigation_drawer.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -232,6 +233,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget _buildMainDashboard() {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      drawer: const AppNavigationDrawer(role: 'admin'),
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
@@ -241,7 +243,30 @@ class _AdminDashboardState extends State<AdminDashboard> {
           statusBarIconBrightness: Brightness.dark,
           statusBarBrightness: Brightness.light,
         ),
-        titleSpacing: 16,
+        leading: Builder(
+          builder: (ctx) => Center(
+            child: InkWell(
+              onTap: () => Scaffold.of(ctx).openDrawer(),
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+                ),
+                child: const Icon(
+                  Icons.menu_rounded,
+                  color: Color(0xFF1E293B),
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+        ),
+        leadingWidth: 52,
+        titleSpacing: 0,
         shape: const Border(
           bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.2),
         ),

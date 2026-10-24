@@ -25,6 +25,7 @@ import '../services/amenity_booking_service.dart';
 import '../models/patrol_model.dart';
 import '../services/guard_patrol_service.dart';
 import 'watchman_patrol_screen.dart';
+import '../widgets/app_navigation_drawer.dart';
 
 /// Cloud Functions v2 `sendMemberPush` નું રીજન — [GCP Console] → Functions માં ચેક કરો (ઘણી વખત `us-central1`).
 const String _kSendMemberPushRegion = 'us-central1';
@@ -1566,6 +1567,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       ),
       child: Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
+        drawer: const AppNavigationDrawer(role: 'watchman', isDark: true),
         body: Column(
           children: [
             _buildPremiumHeader(),
@@ -1615,6 +1617,23 @@ class _WatchmanScreenState extends State<WatchmanScreen>
           // Single Compact Row: Title + Live Status Badge + Action Buttons
           Row(
             children: [
+              Builder(
+                builder: (ctx) => InkWell(
+                  onTap: () => Scaffold.of(ctx).openDrawer(),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.18), width: 1),
+                    ),
+                    child: const Icon(Icons.menu_rounded, color: Colors.white, size: 20),
+                  ),
+                ),
+              ),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

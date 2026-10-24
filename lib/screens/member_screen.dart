@@ -30,6 +30,7 @@ import '../services/amenity_booking_service.dart';
 import '../models/patrol_model.dart';
 import '../services/guard_patrol_service.dart';
 import '../widgets/visitor_detail_sheet.dart';
+import '../widgets/app_navigation_drawer.dart';
 
 const String _kMemberFunctionsRegion = 'us-central1';
 
@@ -432,6 +433,7 @@ class _MemberScreenState extends State<MemberScreen> {
 
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
+          drawer: const AppNavigationDrawer(role: 'member'),
           appBar: _buildMemberAppBar(flatDisplay, blockName),
           body: StreamBuilder<QuerySnapshot>(
             stream: _getVisitorsStream(effectiveSocietyId),
@@ -648,7 +650,30 @@ class _MemberScreenState extends State<MemberScreen> {
       elevation: 0,
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
-      titleSpacing: 12,
+      leading: Builder(
+        builder: (ctx) => Center(
+          child: InkWell(
+            onTap: () => Scaffold.of(ctx).openDrawer(),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+              ),
+              child: const Icon(
+                Icons.menu_rounded,
+                color: Color(0xFF1E293B),
+                size: 20,
+              ),
+            ),
+          ),
+        ),
+      ),
+      leadingWidth: 50,
+      titleSpacing: 0,
       shape: const Border(
         bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.2),
       ),

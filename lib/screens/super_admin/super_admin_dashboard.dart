@@ -19,6 +19,7 @@ import '../../services/society_appeal_service.dart';
 import '../../widgets/admin_credentials_modal.dart';
 import '../../services/localization_service.dart';
 import '../../l10n/app_strings.dart';
+import '../../widgets/app_navigation_drawer.dart';
 
 
 class SuperAdminDashboard extends StatefulWidget {
@@ -167,6 +168,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
       ),
       child: Scaffold(
         backgroundColor: const Color(0xFF070B14), // Deep Midnight Obsidian
+        drawer: const AppNavigationDrawer(role: 'super_admin', isDark: true),
         body: Stack(
         children: [
           // Ambient Glow Effect (Cyber Mint top left, Royal Gold top right)
@@ -236,6 +238,23 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
         padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
         child: Row(
           children: [
+            Builder(
+              builder: (ctx) => InkWell(
+                onTap: () => Scaffold.of(ctx).openDrawer(),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF111827),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1),
+                  ),
+                  child: const Icon(Icons.menu_rounded, color: Colors.white, size: 20),
+                ),
+              ),
+            ),
             // ગોલ્ડન ક્રાઉન લોગો વિથ ગ્લો
             Container(
               padding: const EdgeInsets.all(8),
