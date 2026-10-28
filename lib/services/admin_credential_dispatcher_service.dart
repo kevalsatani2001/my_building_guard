@@ -157,7 +157,7 @@ MyBuildingGuard સપોર્ટ ટીમ
     required String text,
     required String subject,
   }) async {
-    await Share.share(text, subject: subject);
+    await SharePlus.instance.share(ShareParams(text: text, subject: subject));
   }
 
   /// ક્લિપબોર્ડમાં કોપી કરવી

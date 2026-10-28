@@ -47,7 +47,7 @@ class AdminEmergencyContactsDialog extends StatefulWidget {
 
   final List<Map<String, dynamic>> initialContacts;
 
-  AdminEmergencyContactsDialog._({
+  const AdminEmergencyContactsDialog._({
     required this.initialContacts,
   });
 

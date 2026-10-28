@@ -4,6 +4,7 @@ export '../l10n/app_strings.dart';
 export '../services/localization_service.dart';
 export 'premium_app_bar.dart';
 export 'app_back_button.dart';
+export 'data_animations.dart';
 
 class PremiumSectionHeader extends StatelessWidget {
   const PremiumSectionHeader({
@@ -232,7 +233,7 @@ class PremiumStatCard extends StatelessWidget {
 
 /// A luxury, unified confirmation dialog
 class PremiumConfirmationDialog extends StatelessWidget {
-  PremiumConfirmationDialog({
+  const PremiumConfirmationDialog({
     super.key,
     required this.title,
     required this.message,

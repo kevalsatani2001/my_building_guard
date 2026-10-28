@@ -8,22 +8,22 @@ import '../services/session_guard_service.dart';
 import '../widgets/premium_ui.dart';
 
 // Role-specific screens
-import '../screens/admin_society_bank_settings_screen.dart';
-import '../screens/admin_users_directory_screen.dart';
-import '../screens/admin_complaints_screen.dart';
-import '../screens/admin_maintenance_screen.dart';
-import '../screens/admin_accounts_screen.dart';
-import '../screens/admin_broadcast_screen.dart';
-import '../screens/admin_emergency_contacts_screen.dart';
-import '../screens/admin_polls_screen.dart';
-import '../screens/admin_patrol_screen.dart';
+import '../screens/admin/admin_society_bank_settings_screen.dart';
+import '../screens/admin/admin_users_directory_screen.dart';
+import '../screens/admin/admin_complaints_screen.dart';
+import '../screens/admin/admin_maintenance_screen.dart';
+import '../screens/admin/admin_accounts_screen.dart';
+import '../screens/admin/admin_broadcast_screen.dart';
+import '../screens/admin/admin_emergency_contacts_screen.dart';
+import '../screens/admin/admin_polls_screen.dart';
+import '../screens/admin/admin_patrol_screen.dart';
 
-import '../screens/member_vehicles_screen.dart';
-import '../screens/member_pre_approve_screen.dart';
-import '../screens/member_daily_staff_screen.dart';
-import '../screens/member_complaint_register_screen.dart';
-import '../screens/member_accounts_screen.dart';
-import '../screens/member_polls_screen.dart';
+import '../screens/member/member_vehicles_screen.dart';
+import '../screens/member/member_pre_approve_screen.dart';
+import '../screens/member/member_daily_staff_screen.dart';
+import '../screens/member/member_complaint_register_screen.dart';
+import '../screens/member/member_accounts_screen.dart';
+import '../screens/member/member_polls_screen.dart';
 
 /// An ultra-premium, role-aware Navigation Drawer for the Building Guard app.
 /// Seamlessly adapts its theme, shortcuts, and header to:
@@ -80,13 +80,13 @@ class AppNavigationDrawer extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 children: [
                   // GENERAL SECTION
-                  _buildSectionLabel('સામાન્ય સેટિંગ્સ'.tr, dark),
+                  _buildSectionLabel('drawer_general_settings'.tr, dark),
                   const SizedBox(height: 6),
 
                   _buildDrawerTile(
                     icon: Icons.person_outline_rounded,
-                    title: 'મારી પ્રોફાઇલ & સોસાયટી'.tr,
-                    subtitle: 'વ્યક્તિગત & ફ્લેટ વિગતો જુઓ'.tr,
+                    title: 'drawer_my_profile'.tr,
+                    subtitle: 'drawer_view_personal_flat'.tr,
                     dark: dark,
                     accentColor: _getRoleAccent(roleType),
                     onTap: () {
@@ -97,7 +97,7 @@ class AppNavigationDrawer extends StatelessWidget {
 
                   _buildDrawerTile(
                     icon: Icons.translate_rounded,
-                    title: 'ભાષા બદલો (Language)'.tr,
+                    title: 'drawer_change_language'.tr,
                     subtitle: _getCurrentLanguageLabel(),
                     trailingBadge: _getCurrentLanguageBadge(),
                     dark: dark,
@@ -113,12 +113,12 @@ class AppNavigationDrawer extends StatelessWidget {
                   // ROLE-SPECIFIC SHORTCUTS SECTION
                   _buildSectionLabel(
                     roleType == 'admin'
-                        ? 'એડમિન કંટ્રોલ & શોર્ટકટ્સ'.tr
+                        ? 'drawer_admin_shortcuts'.tr
                         : roleType == 'member'
-                            ? 'મારા શોર્ટકટ્સ'.tr
+                            ? 'drawer_my_shortcuts'.tr
                             : roleType == 'watchman'
-                                ? 'સિક્યોરિટી શોર્ટકટ્સ'.tr
-                                : 'સુપર એડમિન શોર્ટકટ્સ'.tr,
+                                ? 'drawer_security_shortcuts'.tr
+                                : 'drawer_super_admin_shortcuts'.tr,
                     dark,
                   ),
                   const SizedBox(height: 6),
@@ -131,13 +131,13 @@ class AppNavigationDrawer extends StatelessWidget {
                   const SizedBox(height: 16),
 
                   // SUPPORT & SECURITY SECTION
-                  _buildSectionLabel('સહાય & સુરક્ષા'.tr, dark),
+                  _buildSectionLabel('drawer_support_security'.tr, dark),
                   const SizedBox(height: 6),
 
                   _buildDrawerTile(
                     icon: Icons.contact_phone_outlined,
-                    title: 'ઇમરજન્સી હેલ્પલાઇન નંબર્સ'.tr,
-                    subtitle: 'પોલીસ, ફાયર, એમ્બ્યુલન્સ'.tr,
+                    title: 'drawer_emergency_numbers'.tr,
+                    subtitle: 'drawer_emergency_subtitle'.tr,
                     dark: dark,
                     accentColor: const Color(0xFFEF4444),
                     onTap: () {
@@ -153,8 +153,8 @@ class AppNavigationDrawer extends StatelessWidget {
 
                   _buildDrawerTile(
                     icon: Icons.verified_user_outlined,
-                    title: 'એપ સુરક્ષા & ગોપનીયતા'.tr,
-                    subtitle: 'એન્ડ-ટુ-એન્ડ સુરક્ષિત'.tr,
+                    title: 'drawer_app_security'.tr,
+                    subtitle: 'drawer_end_to_end_secure'.tr,
                     dark: dark,
                     accentColor: const Color(0xFF10B981),
                     onTap: () {
@@ -475,8 +475,8 @@ class AppNavigationDrawer extends StatelessWidget {
     return [
       _buildDrawerTile(
         icon: Icons.account_balance_outlined,
-        title: 'સોસાયટી બેંક & UPI સેટિંગ્સ'.tr,
-        subtitle: 'QR કોડ & બેંક એકાઉન્ટ માહિતી'.tr,
+        title: 'drawer_bank_settings'.tr,
+        subtitle: 'drawer_bank_subtitle'.tr,
         dark: dark,
         accentColor: const Color(0xFF4338CA),
         onTap: () {
@@ -489,8 +489,8 @@ class AppNavigationDrawer extends StatelessWidget {
       ),
       _buildDrawerTile(
         icon: Icons.people_outline_rounded,
-        title: 'મેમ્બર્સ & સ્ટાફ ડિરેક્ટરી'.tr,
-        subtitle: 'તમામ સભ્યો અને સ્ટાફની યાદી'.tr,
+        title: 'drawer_members_directory'.tr,
+        subtitle: 'drawer_members_subtitle'.tr,
         dark: dark,
         accentColor: const Color(0xFF0284C7),
         onTap: () {
@@ -503,8 +503,8 @@ class AppNavigationDrawer extends StatelessWidget {
       ),
       _buildDrawerTile(
         icon: Icons.receipt_long_outlined,
-        title: 'મેઇન્ટેનન્સ મેનેજમેન્ટ'.tr,
-        subtitle: 'બિલિંગ, પેમેન્ટ્સ & રસીદો'.tr,
+        title: 'drawer_maintenance_mgmt'.tr,
+        subtitle: 'drawer_maintenance_subtitle'.tr,
         dark: dark,
         accentColor: const Color(0xFF0D9488),
         onTap: () {
@@ -517,8 +517,8 @@ class AppNavigationDrawer extends StatelessWidget {
       ),
       _buildDrawerTile(
         icon: Icons.report_problem_outlined,
-        title: 'ફરિયાદો & નિરાકરણ'.tr,
-        subtitle: 'સભ્યોની ફરિયાદો તપાસો'.tr,
+        title: 'drawer_complaints_res'.tr,
+        subtitle: 'drawer_complaints_subtitle'.tr,
         dark: dark,
         accentColor: const Color(0xFFEA580C),
         onTap: () {
@@ -531,8 +531,8 @@ class AppNavigationDrawer extends StatelessWidget {
       ),
       _buildDrawerTile(
         icon: Icons.campaign_outlined,
-        title: 'બ્રોડકાસ્ટ & નોટિસ બોર્ડ'.tr,
-        subtitle: 'સોસાયટીમાં મહત્વની સૂચના મોકલો'.tr,
+        title: 'drawer_broadcast_notice'.tr,
+        subtitle: 'drawer_broadcast_subtitle'.tr,
         dark: dark,
         accentColor: const Color(0xFF8B5CF6),
         onTap: () {
@@ -545,8 +545,8 @@ class AppNavigationDrawer extends StatelessWidget {
       ),
       _buildDrawerTile(
         icon: Icons.account_balance_wallet_outlined,
-        title: 'સોસાયટી એકાઉન્ટ્સ & ઓડિટ'.tr,
-        subtitle: 'આવક, ખર્ચ & બેલેન્સ શીટ'.tr,
+        title: 'drawer_society_accounts'.tr,
+        subtitle: 'drawer_society_accounts_subtitle'.tr,
         dark: dark,
         accentColor: const Color(0xFF059669),
         onTap: () {
@@ -559,8 +559,8 @@ class AppNavigationDrawer extends StatelessWidget {
       ),
       _buildDrawerTile(
         icon: Icons.how_to_vote_outlined,
-        title: 'પોલ્સ & મંતવ્યો (Polls)'.tr,
-        subtitle: 'સોસાયટી વોટિંગ & સર્વે'.tr,
+        title: 'drawer_polls_opinions'.tr,
+        subtitle: 'drawer_polls_subtitle'.tr,
         dark: dark,
         accentColor: const Color(0xFFD97706),
         onTap: () {
@@ -778,7 +778,7 @@ class AppNavigationDrawer extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'લૉગઆઉટ (Logout)'.tr,
+                      'drawer_logout'.tr,
                       style: const TextStyle(
                         color: Color(0xFFEF4444),
                         fontSize: 13.5,
@@ -1048,14 +1048,14 @@ class AppNavigationDrawer extends StatelessWidget {
   String _getRoleBadgeTitle(String role) {
     switch (role) {
       case 'super_admin':
-        return 'સુપર એડમિન'.tr;
+        return 'role_super_admin'.tr;
       case 'admin':
-        return 'સોસાયટી એડમિન'.tr;
+        return 'role_admin'.tr;
       case 'watchman':
-        return 'વોચમેન / સિક્યોરિટી'.tr;
+        return 'role_guard'.tr;
       case 'member':
       default:
-        return 'સોસાયટી સભ્ય (Member)'.tr;
+        return 'role_member'.tr;
     }
   }
 

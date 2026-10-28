@@ -5,12 +5,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/app_firestore.dart';
-import '../screens/login_screen.dart';
+import '../screens/auth/login_screen.dart';
 import 'society_service.dart';
 import 'package:building_guard/l10n/app_strings.dart';
 
-import '../screens/admin_suspended_screen.dart';
-import '../screens/society_suspended_notice_screen.dart';
+import '../screens/auth/admin_suspended_screen.dart';
+import '../screens/auth/society_suspended_notice_screen.dart';
 
 /// Global navigator key allowing the SessionGuardService to present
 /// non-dismissible kick-out dialogs regardless of current route or open modal.

@@ -12964,6 +12964,1064 @@ class AppStrings {
       'hi': 'पुनर्विचार अपील फॉर्म',
       'en': 'Reconsideration Appeal Form',
     },
+
+    // Bottom Navigation Tabs
+    'nav_home': {
+      'gu': 'હોમ',
+      'hi': 'होम',
+      'en': 'Home',
+    },
+    'nav_security': {
+      'gu': 'સિક્યોરિટી',
+      'hi': 'सुरक्षा',
+      'en': 'Security',
+    },
+    'nav_finance': {
+      'gu': 'હિસાબ',
+      'hi': 'हिसाब',
+      'en': 'Finance',
+    },
+    'nav_society': {
+      'gu': 'સોસાયટી',
+      'hi': 'सोसायटी',
+      'en': 'Society',
+    },
+
+    // Drawer - General Section
+    'drawer_general_settings': {
+      'gu': 'સામાન્ય સેટિંગ્સ',
+      'hi': 'सामान्य सेटिंग्स',
+      'en': 'General Settings',
+    },
+    'drawer_my_profile': {
+      'gu': 'મારી પ્રોફાઇલ & સોસાયટી',
+      'hi': 'मेरी प्रोफ़ाइल और सोसायटी',
+      'en': 'My Profile & Society',
+    },
+    'drawer_my_profile_sub': {
+      'gu': 'વ્યક્તિગત & ફ્લેટ વિગતો જુઓ',
+      'hi': 'व्यक्तिगत और फ्लैट विवरण देखें',
+      'en': 'View personal & unit details',
+    },
+    'drawer_change_language': {
+      'gu': 'ભાષા બદલો (Language)',
+      'hi': 'भाषा बदलें (Language)',
+      'en': 'Change Language',
+    },
+    'drawer_admin_shortcuts': {
+      'gu': 'એડમિન કંટ્રોલ & શોર્ટકટ્સ',
+      'hi': 'एडमिन कंट्रोल और शॉर्टकट',
+      'en': 'Admin Controls & Shortcuts',
+    },
+    'drawer_member_shortcuts': {
+      'gu': 'મારા શોર્ટકટ્સ',
+      'hi': 'मेरे शॉर्टकट',
+      'en': 'My Shortcuts',
+    },
+    'drawer_security_shortcuts': {
+      'gu': 'સિક્યોરિટી શોર્ટકટ્સ',
+      'hi': 'सुरक्षा शॉर्टकट',
+      'en': 'Security Shortcuts',
+    },
+    'drawer_super_admin_shortcuts': {
+      'gu': 'સુપર એડમિન શોર્ટકટ્સ',
+      'hi': 'सुपर एडमिन शॉर्टकट',
+      'en': 'Super Admin Shortcuts',
+    },
+
+    // Drawer Admin items
+    'drawer_bank_settings': {
+      'gu': 'સોસાયટી બેંક & UPI સેટિંગ્સ',
+      'hi': 'सोसायटी बैंक और UPI सेटिंग्स',
+      'en': 'Society Bank & UPI Settings',
+    },
+    'drawer_bank_settings_sub': {
+      'gu': 'QR કોડ & બેંક એકાઉન્ટ માહિતી',
+      'hi': 'QR कोड और बैंक खाता विवरण',
+      'en': 'QR Code & Bank Account Info',
+    },
+    'drawer_directory': {
+      'gu': 'મેમ્બર્સ & સ્ટાફ ડિરેક્ટરી',
+      'hi': 'सदस्य एवं स्टाफ डायरेक्टरी',
+      'en': 'Members & Staff Directory',
+    },
+    'drawer_directory_sub': {
+      'gu': 'તમામ સભ્યો અને સ્ટાફની યાદી',
+      'hi': 'सभी सदस्यों और कर्मचारियों की सूची',
+      'en': 'List of all members & staff',
+    },
+    'drawer_maintenance': {
+      'gu': 'મેઇન્ટેનન્સ મેનેજમેન્ટ',
+      'hi': 'रखरखाव प्रबंधन',
+      'en': 'Maintenance Management',
+    },
+    'drawer_maintenance_sub': {
+      'gu': 'બિલિંગ, પેમેન્ટ્સ & રસીદો',
+      'hi': 'बिलिंग, भुगतान एवं रसीदें',
+      'en': 'Billing, Payments & Receipts',
+    },
+    'drawer_complaints': {
+      'gu': 'ફરિયાદો & નિરાકરણ',
+      'hi': 'शिकायतें एवं निवारण',
+      'en': 'Complaints & Resolutions',
+    },
+    'drawer_complaints_sub': {
+      'gu': 'સભ્યોની ફરિયાદો તપાસો',
+      'hi': 'सदस्यों की शिकायतों की जाँच करें',
+      'en': 'Review member complaints',
+    },
+    'drawer_broadcast': {
+      'gu': 'બ્રોડકાસ્ટ & નોટિસ બોર્ડ',
+      'hi': 'प्रसारण एवं नोटिस बोर्ड',
+      'en': 'Broadcast & Notice Board',
+    },
+    'drawer_broadcast_sub': {
+      'gu': 'સોસાયટીમાં મહત્વની સૂચના મોકલો',
+      'hi': 'सोसायटी में महत्वपूर्ण सूचना भेजें',
+      'en': 'Send notices to society',
+    },
+    'drawer_accounts': {
+      'gu': 'સોસાયટી એકાઉન્ટ્સ & ઑડિટ',
+      'hi': 'सोसायटी खाते एवं ऑडिट',
+      'en': 'Society Accounts & Audit',
+    },
+    'drawer_accounts_sub': {
+      'gu': 'આવક, ખર્ચ & બેલેન્સ શીટ',
+      'hi': 'आय, व्यय एवं बैलेंस शीट',
+      'en': 'Income, Expense & Balance Sheet',
+    },
+    'drawer_help_security': {
+      'gu': 'સહાય & સુરક્ષા',
+      'hi': 'सहायता एवं सुरक्षा',
+      'en': 'Help & Security',
+    },
+    'drawer_emergency_helpline': {
+      'gu': 'ઇમરજન્સી હેલ્પલાઇન નંબર્સ',
+      'hi': 'आपातकालीन हेल्पलाइन नंबर',
+      'en': 'Emergency Helpline Numbers',
+    },
+    'drawer_emergency_helpline_sub': {
+      'gu': 'પોલીસ, ફાયર, એમ્બ્યુલન્સ',
+      'hi': 'पुलिस, फायर, एम्बुलेंस',
+      'en': 'Police, Fire, Ambulance',
+    },
+    'drawer_app_security': {
+      'gu': 'એપ સુરક્ષા & ગોપનીયતા',
+      'hi': 'ऐप सुरक्षा और गोपनीयता',
+      'en': 'App Security & Privacy',
+    },
+    'drawer_app_security_sub': {
+      'gu': 'એન્ડ-ટુ-એન્ડ સુરક્ષિત',
+      'hi': 'एंड-टू-एंड सुरक्षित',
+      'en': 'End-to-End Secure',
+    },
+    'drawer_logout': {
+      'gu': 'લૉગઆઉટ',
+      'hi': 'लॉगआउट',
+      'en': 'Logout',
+    },
+    'drawer_active_status': {
+      'gu': 'સક્રિય',
+      'hi': 'सक्रिय',
+      'en': 'Active',
+    },
+
+    // Security Tab
+    'sec_gate_control_title': {
+      'gu': 'સિક્યોરિટી & ગેટ કંટ્રોલ',
+      'hi': 'सुरक्षा एवं गेट नियंत्रण',
+      'en': 'Security & Gate Control',
+    },
+    'sec_night_patrol': {
+      'gu': 'રાત્રિ પેટ્રોલિંગ',
+      'hi': 'रात्रि गश्त (पेट्रोलिंग)',
+      'en': 'Night Patrol',
+    },
+    'sec_qr_checkpoints': {
+      'gu': 'QR ચેકપોઇન્ટ્સ',
+      'hi': 'QR चेकपॉइंट्स',
+      'en': 'QR Checkpoints',
+    },
+    'sec_watchmen_staff': {
+      'gu': 'વોચમેન સ્ટાફ',
+      'hi': 'वॉचमैन स्टाफ',
+      'en': 'Guard Staff',
+    },
+    'sec_on_duty_pin': {
+      'gu': 'ઓન-ડ્યુટી & પિન',
+      'hi': 'ऑन-ड्यूटी एवं पिन',
+      'en': 'On-Duty & PIN',
+    },
+    'sec_visitor_report': {
+      'gu': 'વિઝિટર રિપોર્ટ',
+      'hi': 'आगंतुक रिपोर्ट',
+      'en': 'Visitor Report',
+    },
+    'sec_history_excel': {
+      'gu': 'હિસ્ટ્રી & એક્સેલ',
+      'hi': 'इतिहास एवं एक्सेल',
+      'en': 'History & Excel',
+    },
+    'sec_emergency_help': {
+      'gu': 'ઇમરજન્સી હેલ્પ',
+      'hi': 'आपातकालीन सहायता',
+      'en': 'Emergency Help',
+    },
+    'sec_contact_numbers': {
+      'gu': 'સંપર્ક નંબર',
+      'hi': 'संपर्क नंबर',
+      'en': 'Contact Numbers',
+    },
+    'sec_live_gate_feed': {
+      'gu': 'લાઇવ ગેટ ગતિવિધિ',
+      'hi': 'लाइव गेट गतिविधि',
+      'en': 'Live Gate Activity',
+    },
+    'sec_filter_all': {
+      'gu': 'બધા',
+      'hi': 'सभी',
+      'en': 'All',
+    },
+    'sec_filter_at_gate': {
+      'gu': 'ગેટ પર',
+      'hi': 'गेट पर',
+      'en': 'At Gate',
+    },
+    'sec_filter_inside': {
+      'gu': 'અંદર છે',
+      'hi': 'अंदर हैं',
+      'en': 'Inside',
+    },
+    'sec_filter_out': {
+      'gu': 'બહાર ગયા',
+      'hi': 'प्रस्थान किया',
+      'en': 'Checked Out',
+    },
+
+    // Accounts / Finance Tab
+    'fin_accounts_title': {
+      'gu': 'હિસાબ & બેંક સેટિંગ્સ',
+      'hi': 'हिसाब एवं बैंक सेटिंग्स',
+      'en': 'Accounts & Bank Settings',
+    },
+    'fin_society_ledger': {
+      'gu': 'સોસાયટી ખાતાવહી',
+      'hi': 'सोसायटी बहीखाता',
+      'en': 'Society Ledger',
+    },
+    'fin_expense_passbook': {
+      'gu': 'ખર્ચ & પાસબુક',
+      'hi': 'खर्च एवं पासबुक',
+      'en': 'Expense & Passbook',
+    },
+    'fin_maintenance_desk': {
+      'gu': 'મેઇન્ટેનન્સ ડેસ્ક',
+      'hi': 'रखरखाव डेस्क',
+      'en': 'Maintenance Desk',
+    },
+    'fin_bills_payments': {
+      'gu': 'બિલ & પેમેન્ટ',
+      'hi': 'बिल एवं भुगतान',
+      'en': 'Bills & Payments',
+    },
+    'fin_bulk_billing': {
+      'gu': 'બલ્ક બિલિંગ',
+      'hi': 'बल्क बिलिंग',
+      'en': 'Bulk Billing',
+    },
+    'fin_all_flats_together': {
+      'gu': 'બધા ફ્લેટ એકસાથે',
+      'hi': 'सभी फ्लैट एक साथ',
+      'en': 'All Flats Together',
+    },
+    'fin_bank_upi': {
+      'gu': 'બેંક / UPI સેટિંગ',
+      'hi': 'बैंक / UPI सेटिंग',
+      'en': 'Bank / UPI Setting',
+    },
+    'fin_qr_account_info': {
+      'gu': 'QR & એકાઉન્ટ માહિતી',
+      'hi': 'QR एवं खाता जानकारी',
+      'en': 'QR & Account Info',
+    },
+    'fin_member_signature_sheet': {
+      'gu': 'સદસ્ય સહી પત્રક (PDF)',
+      'hi': 'सदस्य हस्ताक्षर प्रपत्र (PDF)',
+      'en': 'Member Signature Sheet (PDF)',
+    },
+    'fin_annual_sign_verification': {
+      'gu': 'વાર્ષિક સહી લિસ્ટ વેરિફિકેશન',
+      'hi': 'वार्षिक हस्ताक्षर सत्यापन',
+      'en': 'Annual Sign Verification',
+    },
+
+    // Analytics Card
+    'analytics_visitor_title': {
+      'gu': 'મુલાકાતી વિશ્લેષણ',
+      'hi': 'आगंतुक विश्लेषण',
+      'en': 'Visitor Analytics',
+    },
+    'analytics_visitor_subtitle': {
+      'gu': 'ગેટ ટ્રાફિક & એન્ટ્રી આંકડા',
+      'hi': 'गेट यातायात और प्रवेश आँकड़े',
+      'en': 'Gate traffic & entry statistics',
+    },
+    'analytics_total_prefix': {
+      'gu': 'કુલ',
+      'hi': 'कुल',
+      'en': 'Total',
+    },
+    'analytics_approved': {
+      'gu': 'સ્વીકૃત',
+      'hi': 'स्वीकृत',
+      'en': 'Approved',
+    },
+    'analytics_pending': {
+      'gu': 'બાકી',
+      'hi': 'शेष',
+      'en': 'Pending',
+    },
+    'analytics_rejected': {
+      'gu': 'અસ્વીકૃત',
+      'hi': 'अस्वीकृत',
+      'en': 'Rejected',
+    },
+    'analytics_checked_out': {
+      'gu': 'પ્રસ્થાન કર્યું',
+      'hi': 'प्रस्थान किया',
+      'en': 'Checked Out',
+    },
+    'analytics_top_blocks': {
+      'gu': 'સૌથી વધુ વિઝિટર્સ ધરાવતા બ્લોક્સ',
+      'hi': 'सर्वाधिक विज़िटर वाले ब्लॉक',
+      'en': 'Top Visitor Blocks',
+    },
+
+    // =============================================================
+    // Drawer & Role Shortcuts (Canonical Keys)
+    // =============================================================
+    'drawer_members_directory': {
+      'gu': 'મેમ્બર્સ & સ્ટાફ ડિરેક્ટરી',
+      'hi': 'सदस्य एवं स्टाफ डायरेक्टरी',
+      'en': 'Members & Staff Directory',
+    },
+    'drawer_members_subtitle': {
+      'gu': 'તમામ સભ્યો અને સ્ટાફની યાદી',
+      'hi': 'सभी सदस्यों और कर्मचारियों की सूची',
+      'en': 'List of all members & staff',
+    },
+    'drawer_maintenance_mgmt': {
+      'gu': 'મેઇન્ટેનન્સ મેનેજમેન્ટ',
+      'hi': 'रखरखाव प्रबंधन',
+      'en': 'Maintenance Management',
+    },
+    'drawer_maintenance_subtitle': {
+      'gu': 'બિલિંગ, પેમેન્ટ્સ & રસીદો',
+      'hi': 'बिलिंग, भुगतान एवं रसीदें',
+      'en': 'Billing, Payments & Receipts',
+    },
+    'drawer_complaints_res': {
+      'gu': 'ફરિયાદો & નિરાકરણ',
+      'hi': 'शिकायतें एवं निवारण',
+      'en': 'Complaints & Resolutions',
+    },
+    'drawer_complaints_subtitle': {
+      'gu': 'સભ્યોની ફરિયાદો તપાસો',
+      'hi': 'सदस्यों की शिकायतों की जाँच करें',
+      'en': 'Review member complaints',
+    },
+    'drawer_broadcast_notice': {
+      'gu': 'બ્રોડકાસ્ટ & નોટિસ બોર્ડ',
+      'hi': 'प्रसारण एवं नोटिस बोर्ड',
+      'en': 'Broadcast & Notice Board',
+    },
+    'drawer_broadcast_subtitle': {
+      'gu': 'સોસાયટીમાં મહત્વની સૂચના મોકલો',
+      'hi': 'सोसायटी में महत्वपूर्ण सूचना भेजें',
+      'en': 'Send notices to society',
+    },
+    'drawer_society_accounts': {
+      'gu': 'સોસાયટી એકાઉન્ટ્સ & ઓડિટ',
+      'hi': 'सोसायटी खाते एवं ऑडिट',
+      'en': 'Society Accounts & Audit',
+    },
+    'drawer_society_accounts_subtitle': {
+      'gu': 'આવક, ખર્ચ & બેલેન્સ શીટ',
+      'hi': 'आय, व्यय एवं बैलेंस शीट',
+      'en': 'Income, Expense & Balance Sheet',
+    },
+    'drawer_polls_opinions': {
+      'gu': 'પોલ્સ & મંતવ્યો (Polls)',
+      'hi': 'पोल एवं राय (Polls)',
+      'en': 'Polls & Opinions',
+    },
+    'drawer_polls_subtitle': {
+      'gu': 'સોસાયટી વોટિંગ & સર્વે',
+      'hi': 'सोसायटी वोटिंग एवं सर्वेक्षण',
+      'en': 'Society Voting & Survey',
+    },
+    'drawer_view_personal_flat': {
+      'gu': 'વ્યક્તિગત & ફ્લેટ વિગતો જુઓ',
+      'hi': 'व्यक्तिगत और फ्लैट विवरण देखें',
+      'en': 'View personal & unit details',
+    },
+    'drawer_bank_subtitle': {
+      'gu': 'QR કોડ & બેંક એકાઉન્ટ માહિતી',
+      'hi': 'QR कोड और बैंक खाता विवरण',
+      'en': 'QR Code & Bank Account Info',
+    },
+    'drawer_support_security': {
+      'gu': 'સહાય & સુરક્ષા',
+      'hi': 'सहायता एवं सुरक्षा',
+      'en': 'Help & Security',
+    },
+    'drawer_emergency_numbers': {
+      'gu': 'ઇમરજન્સી હેલ્પલાઇન નંબર્સ',
+      'hi': 'आपातकालीन हेल्पलाइन नंबर',
+      'en': 'Emergency Helpline Numbers',
+    },
+    'drawer_emergency_subtitle': {
+      'gu': 'પોલીસ, ફાયર, એમ્બ્યુલન્સ',
+      'hi': 'पुलिस, फायर, एम्बुलेंस',
+      'en': 'Police, Fire, Ambulance',
+    },
+    'drawer_end_to_end_secure': {
+      'gu': 'એન્ડ-ટુ-એન્ડ સુરક્ષિત',
+      'hi': 'एंड-टू-एंड सुरक्षित',
+      'en': 'End-to-End Secure',
+    },
+    'drawer_my_shortcuts': {
+      'gu': 'મારા શોર્ટકટ્સ',
+      'hi': 'मेरे शॉर्टकट',
+      'en': 'My Shortcuts',
+    },
+    'sign_out': {
+      'gu': 'સાઇન આઉટ',
+      'hi': 'साइन आउट',
+      'en': 'Sign Out',
+    },
+
+    // =============================================================
+    // Drawer Shortcuts (Role Based Phrases)
+    // =============================================================
+    'ગાર્ડ પેટ્રોલીંગ (QR Patrol)': {
+      'gu': 'ગાર્ડ પેટ્રોલીંગ (QR Patrol)',
+      'hi': 'गार्ड गश्त (QR Patrol)',
+      'en': 'Guard Patrol (QR Patrol)',
+    },
+    'ચોકીદાર પેટ્રોલિંગ લોગ્સ': {
+      'gu': 'ચોકીદાર પેટ્રોલિંગ લોગ્સ',
+      'hi': 'चौकीदार गश्त लॉग',
+      'en': 'Watchman patrol logs',
+    },
+    'મારા વાહનો (My Vehicles)': {
+      'gu': 'મારા વાહનો (My Vehicles)',
+      'hi': 'मेरे वाहन (My Vehicles)',
+      'en': 'My Vehicles',
+    },
+    'રજિસ્ટર્ડ વાહનો & પાર્કિંગ': {
+      'gu': 'રજિસ્ટર્ડ વાહનો & પાર્કિંગ',
+      'hi': 'पंजीकृत वाहन एवं पार्किंग',
+      'en': 'Registered Vehicles & Parking',
+    },
+    'પ્રિ-અપ્રૂવ્ડ વિઝિટર્સ': {
+      'gu': 'પ્રિ-અપ્રૂવ્ડ વિઝિટર્સ',
+      'hi': 'पूर्व-स्वीकृत आगंतुक',
+      'en': 'Pre-Approved Visitors',
+    },
+    'મહેમાન અથવા ડિલિવરી પાસ બનાવો': {
+      'gu': 'મહેમાન અથવા ડિલિવરી પાસ બનાવો',
+      'hi': 'अतिथि या डिलीवरी पास बनाएं',
+      'en': 'Create guest or delivery pass',
+    },
+    'ડેઇલી સ્ટાફ & હેલ્પર્સ': {
+      'gu': 'ડેઇલી સ્ટાફ & હેલ્પર્સ',
+      'hi': 'दैनिक स्टाफ एवं सहायक',
+      'en': 'Daily Staff & Helpers',
+    },
+    'કામવાળા બાઈ, ડ્રાઈવર, કૂક': {
+      'gu': 'કામવાળા બાઈ, ડ્રાઈવર, કૂક',
+      'hi': 'घरेलू सहायिका, ड्राइवर, कुक',
+      'en': 'Housekeeper, driver, cook',
+    },
+    'ફરિયાદ નોંધાવો (Complaints)': {
+      'gu': 'ફરિયાદ નોંધાવો (Complaints)',
+      'hi': 'शिकायत दर्ज करें (Complaints)',
+      'en': 'Register Complaint',
+    },
+    'સોસાયટી કમિટીને ફરિયાદ મોકલો': {
+      'gu': 'સોસાયટી કમિટીને ફરિયાદ મોકલો',
+      'hi': 'सोसायटी समिति को शिकायत भेजें',
+      'en': 'Send complaint to society committee',
+    },
+    'સોસાયટી એકાઉન્ટ સ્ટેટમેન્ટ': {
+      'gu': 'સોસાયટી એકાઉન્ટ સ્ટેટમેન્ટ',
+      'hi': 'सोसायटी खाता विवरण',
+      'en': 'Society Account Statement',
+    },
+    'સોસાયટીના ખર્ચ અને ફંડ વિગતો': {
+      'gu': 'સોસાયટીના ખર્ચ અને ફંડ વિગતો',
+      'hi': 'सोसायटी के व्यय और फंड का विवरण',
+      'en': 'Society expense and fund details',
+    },
+    'પોલ્સ & વોટિંગ (Polls)': {
+      'gu': 'પોલ્સ & વોટિંગ (Polls)',
+      'hi': 'पोल एवं वोटिंग (Polls)',
+      'en': 'Polls & Voting',
+    },
+    'તમારો કિંમતી મત આપો': {
+      'gu': 'તમારો કિંમતી મત આપો',
+      'hi': 'अपना बहुमूल्य वोट दें',
+      'en': 'Cast your valuable vote',
+    },
+    'વાહન નંબર સર્ચ (Vehicle Search)': {
+      'gu': 'વાહન નંબર સર્ચ (Vehicle Search)',
+      'hi': 'वाहन नंबर खोज (Vehicle Search)',
+      'en': 'Vehicle Search',
+    },
+    'વાહન માલિકની ફ્લેટ વિગતો જાણો': {
+      'gu': 'વાહન માલિકની ફ્લેટ વિગતો જાણો',
+      'hi': 'वाहन मालिक के फ्लैट का विवरण जानें',
+      'en': 'Find vehicle owner flat details',
+    },
+    'કૃપા કરીને હોમ સ્ક્રીન પરથી વાહન સર્ચ આયકન દબાવો': {
+      'gu': 'કૃપા કરીને હોમ સ્ક્રીન પરથી વાહન સર્ચ આયકન દબાવો',
+      'hi': 'कृपया होम स्क्रीन से वाहन खोज आइकन दबाएं',
+      'en': 'Please tap the vehicle search icon on home screen',
+    },
+    'ઇમરજન્સી SOS મોકલો': {
+      'gu': 'ઇમરજન્સી SOS મોકલો',
+      'hi': 'आपातकालीन SOS भेजें',
+      'en': 'Send Emergency SOS',
+    },
+    'તમામ એડમિન અને સભ્યોને તાત્કાલિક એલર્ટ': {
+      'gu': 'તમામ એડમિન અને સભ્યોને તાત્કાલિક એલર્ટ',
+      'hi': 'सभी एडमिन और सदस्यों को तत्काल अलर्ट',
+      'en': 'Immediate alert to all admins and members',
+    },
+    'ઇમરજન્સી SOS હેડર આયકન પર ઉપલબ્ધ છે': {
+      'gu': 'ઇમરજન્સી SOS હેડર આયકન પર ઉપલબ્ધ છે',
+      'hi': 'आपातकालीन SOS हेडर आइकन पर उपलब्ध है',
+      'en': 'Emergency SOS is available on the header icon',
+    },
+    'તમામ સોસાયટી ડિરેક્ટરી': {
+      'gu': 'તમામ સોસાયટી ડિરેક્ટરી',
+      'hi': 'सभी सोसायटी डायरेक्टरी',
+      'en': 'All Societies Directory',
+    },
+    'રજિસ્ટર્ડ સોસાયટીઓ તપાસો': {
+      'gu': 'રજિસ્ટર્ડ સોસાયટીઓ તપાસો',
+      'hi': 'पंजीकृत सोसायटियों की जाँच करें',
+      'en': 'Check registered societies',
+    },
+    'લાઈવ અપીલ્સ & વિનંતીઓ': {
+      'gu': 'લાઈવ અપીલ્સ & વિનંતીઓ',
+      'hi': 'लाइव अपील और अनुरोध',
+      'en': 'Live Appeals & Requests',
+    },
+    'એડમિન્સ દ્વારા આવેલી અપીલ': {
+      'gu': 'એડમિન્સ દ્વારા આવેલી અપીલ',
+      'hi': 'एडमिन द्वारा भेजी गई अपील',
+      'en': 'Appeals submitted by admins',
+    },
+
+    // =============================================================
+    // Profile & Info Modal Labels
+    // =============================================================
+    'પ્રોફાઇલ & એકાઉન્ટ માહિતી': {
+      'gu': 'પ્રોફાઇલ & એકાઉન્ટ માહિતી',
+      'hi': 'प्रोफ़ाइल और खाता जानकारी',
+      'en': 'Profile & Account Info',
+    },
+    'નામ:': {
+      'gu': 'નામ:',
+      'hi': 'नाम:',
+      'en': 'Name:',
+    },
+    'મોબાઇલ:': {
+      'gu': 'મોબાઇલ:',
+      'hi': 'मोबाइल:',
+      'en': 'Mobile:',
+    },
+    'સોસાયટી:': {
+      'gu': 'સોસાયટી:',
+      'hi': 'सोसायटी:',
+      'en': 'Society:',
+    },
+    'ફ્લેટ / યુનિટ:': {
+      'gu': 'ફ્લેટ / યુનિટ:',
+      'hi': 'फ्लैट / यूनिट:',
+      'en': 'Flat / Unit:',
+    },
+    'યુઝર આઈડી:': {
+      'gu': 'યુઝર આઈડી:',
+      'hi': 'यूज़र आईडी:',
+      'en': 'User ID:',
+    },
+    'સુરક્ષા & ગોપનીયતા': {
+      'gu': 'સુરક્ષા & ગોપનીયતા',
+      'hi': 'सुरक्षा एवं गोपनीयता',
+      'en': 'Security & Privacy',
+    },
+    'બરાબર છે': {
+      'gu': 'બરાબર છે',
+      'hi': 'ठीक है',
+      'en': 'OK',
+    },
+    'સમજાઈ ગયું': {
+      'gu': 'સમજાઈ ગયું',
+      'hi': 'समझ गया',
+      'en': 'Understood',
+    },
+    'વોચમેન / સિક્યોરિટી': {
+      'gu': 'વોચમેન / સિક્યોરિટી',
+      'hi': 'चौकीदार / सुरक्षा',
+      'en': 'Watchman / Security',
+    },
+    'સોસાયટી સભ્ય (Member)': {
+      'gu': 'સોસાયટી સભ્ય',
+      'hi': 'सोसायटी सदस्य',
+      'en': 'Society Member',
+    },
+
+    // =============================================================
+    // Pre-Approve & Visitor Reasons
+    // =============================================================
+    'દા.ત. ટ્યુશન, ડોક્ટર, ઇન્ટરવ્યુ...': {
+      'gu': 'દા.ત. ટ્યુશન, ડોક્ટર, ઇન્ટરવ્યુ...',
+      'hi': 'उदा. ट्यूशन, डॉक्टर, इंटरव्यू...',
+      'en': 'e.g. Tuition, Doctor, Interview...',
+    },
+    'નવો હેતુ ઉમેરો': {
+      'gu': 'નવો હેતુ ઉમેરો',
+      'hi': 'नया उद्देश्य जोड़ें',
+      'en': 'Add New Purpose',
+    },
+    'હેતુનું નામ લખો *': {
+      'gu': 'હેતુનું નામ લખો *',
+      'hi': 'उद्देश्य का नाम लिखें *',
+      'en': 'Enter purpose name *',
+    },
+    'હેતુ તરીકે પસંદ કર્યો.': {
+      'gu': 'હેતુ તરીકે પસંદ કર્યો.',
+      'hi': 'उद्देश्य के रूप में चुना गया।',
+      'en': 'selected as purpose.',
+    },
+    '+ નવો હેતુ': {
+      'gu': '+ નવો હેતુ',
+      'hi': '+ नया उद्देश्य',
+      'en': '+ New Purpose',
+    },
+    'ઉમેરો અને પસંદ કરો': {
+      'gu': 'ઉમેરો અને પસંદ કરો',
+      'hi': 'जोड़ें और चुनें',
+      'en': 'Add and Select',
+    },
+    'ઝડપી સૂચનોમાંથી પસંદ કરો:': {
+      'gu': 'ઝડપી સૂચનોમાંથી પસંદ કરો:',
+      'hi': 'त्वरित सुझावों में से चुनें:',
+      'en': 'Choose from quick suggestions:',
+    },
+    'મહેમાનના આવવાનું કારણ પસંદ કરો અથવા નવું લખો': {
+      'gu': 'મહેમાનના આવવાનું કારણ પસંદ કરો અથવા નવું લખો',
+      'hi': 'आगंतुक के आने का कारण चुनें या नया लिखें',
+      'en': 'Select visit reason or type a new one',
+    },
+    '📚 ટ્યુશન / ક્લાસિસ': {
+      'gu': '📚 ટ્યુશન / ક્લાસિસ',
+      'hi': '📚 ट्यूशन / क्लासेज',
+      'en': '📚 Tuition / Classes',
+    },
+    '🩺 ડોક્ટર / મેડિકલ': {
+      'gu': '🩺 ડોક્ટર / મેડિકલ',
+      'hi': '🩺 डॉक्टर / मेडिकल',
+      'en': '🩺 Doctor / Medical',
+    },
+    '💼 ઓફિસ / ઇન્ટરવ્યુ': {
+      'gu': '💼 ઓફિસ / ઇન્ટરવ્યુ',
+      'hi': '💼 ऑफिस / इंटरव्यू',
+      'en': '💼 Office / Interview',
+    },
+    '🎉 ઇવેન્ટ / પાર્ટી': {
+      'gu': '🎉 ઇવેન્ટ / પાર્ટી',
+      'hi': '🎉 इवेंट / पार्टी',
+      'en': '🎉 Event / Party',
+    },
+    '🍽️ કેટરિંગ / રસોઈ': {
+      'gu': '🍽️ કેટરિંગ / રસોઈ',
+      'hi': '🍽️ कैटरिंग / रसोइया',
+      'en': '🍽️ Catering / Cooking',
+    },
+    '🎨 પેઇન્ટર / સુથાર': {
+      'gu': '🎨 પેઇન્ટર / સુથાર',
+      'hi': '🎨 पेंटर / बढ़ई',
+      'en': '🎨 Painter / Carpenter',
+    },
+    '🛒 શિફ્ટિંગ / સામાન': {
+      'gu': '🛒 શિફ્ટિંગ / સામાન',
+      'hi': '🛒 शिफ्टिंग / सामान',
+      'en': '🛒 Shifting / Luggage',
+    },
+    '🧹 ઘરકામ / હેલ્પર': {
+      'gu': '🧹 ઘરકામ / હેલ્પર',
+      'hi': '🧹 घरेलू काम / सहायक',
+      'en': '🧹 Maid / Helper',
+    },
+
+    // =============================================================
+    // Member Dashboard & Actions
+    // =============================================================
+    'વિઝિટર્સ': {
+      'gu': 'વિઝિટર્સ',
+      'hi': 'आगंतुक',
+      'en': 'Visitors',
+    },
+    'સેવાઓ': {
+      'gu': 'સેવાઓ',
+      'hi': 'सेवाएं',
+      'en': 'Services',
+    },
+    'મેઇન્ટેનન્સ બિલ & રસીદ': {
+      'gu': 'મેઇન્ટેનન્સ બિલ & રસીદ',
+      'hi': 'रखरखाव बिल एवं रसीद',
+      'en': 'Maintenance Bill & Receipt',
+    },
+    'પ્રી-એપ્રૂવ અતિથિ': {
+      'gu': 'પ્રી-એપ્રૂવ અતિથિ',
+      'hi': 'पूर्व-स्वीकृत अतिथि',
+      'en': 'Pre-Approve Guest',
+    },
+    'સોસાયટી સેવાઓ & સુવિધાઓ': {
+      'gu': 'સોસાયટી સેવાઓ & સુવિધાઓ',
+      'hi': 'सोसायटी सेवाएं एवं सुविधाएं',
+      'en': 'Society Services & Amenities',
+    },
+    'સોસાયટી પાસબુક (ખાતાવહી)': {
+      'gu': 'સોસાયટી પાસબુક (ખાતાવહી)',
+      'hi': 'सोसायटी पासबुक (खाताबही)',
+      'en': 'Society Passbook (Ledger)',
+    },
+    'સોસાયટીના તમામ ખર્ચ & આવકનું ટ્રાન્સપરન્ટ સ્ટેટમેન્ટ': {
+      'gu': 'સોસાયટીના તમામ ખર્ચ & આવકનું ટ્રાન્સપરન્ટ સ્ટેટમેન્ટ',
+      'hi': 'सोसायटी के सभी खर्च और आय का पारदर्शी विवरण',
+      'en': 'Transparent statement of all society income & expenses',
+    },
+    'UPI પેમેન્ટ, પાછલી રસીદો & બાકી સ્ટેટમેન્ટ': {
+      'gu': 'UPI પેમેન્ટ, પાછલી રસીદો & બાકી સ્ટેટમેન્ટ',
+      'hi': 'UPI भुगतान, पिछली रसीदें एवं बकाया विवरण',
+      'en': 'UPI payments, past receipts & dues',
+    },
+    'ગેટ સિક્યોરિટી અને એડમિનને તાત્કાલિક એલર્ટ મોકલો': {
+      'gu': 'ગેટ સિક્યોરિટી અને એડમિનને તાત્કાલિક એલર્ટ મોકલો',
+      'hi': 'गेट सुरक्षा और एडमिन को तत्काल अलर्ट भेजें',
+      'en': 'Send immediate alert to gate security & admin',
+    },
+
+    // =============================================================
+    // Amenities, Booking, Staff, Guard
+    // =============================================================
+    'સોસાયટી રિઝર્વેશન હબ': {
+      'gu': 'સોસાયટી રિઝર્વેશન હબ',
+      'hi': 'सोसायटी आरक्षण हब',
+      'en': 'Society Reservation Hub',
+    },
+    'સ્લોટ્સ': {
+      'gu': 'સ્લોટ્સ',
+      'hi': 'स्लॉट्स',
+      'en': 'Slots',
+    },
+    'પ્રસંગ': {
+      'gu': 'પ્રસંગ',
+      'hi': 'अवसर / प्रसंग',
+      'en': 'Event / Occasion',
+    },
+    'કોપી': {
+      'gu': 'કોપી',
+      'hi': 'कॉपी',
+      'en': 'Copy',
+    },
+    'બુકિંગ': {
+      'gu': 'બુકિંગ',
+      'hi': 'बुकिंग',
+      'en': 'Booking',
+    },
+    'નોંધાયેલ સ્ટાફ': {
+      'gu': 'નોંધાયેલ સ્ટાફ',
+      'hi': 'पंजीकृत स्टाफ',
+      'en': 'Registered Staff',
+    },
+    'વિઝિટર લોગ': {
+      'gu': 'વિઝિટર લોગ',
+      'hi': 'आगंतुक लॉग',
+      'en': 'Visitor Log',
+    },
+    'પેટ્રોલિંગ': {
+      'gu': 'પેટ્રોલિંગ',
+      'hi': 'गश्त (पेट्रोलिंग)',
+      'en': 'Patrolling',
+    },
+    'ગેટ એન્ટ્રી': {
+      'gu': 'ગેટ એન્ટ્રી',
+      'hi': 'गेट प्रवेश',
+      'en': 'Gate Entry',
+    },
+
+    // =============================================================
+    // Super Admin Operations
+    // =============================================================
+    'ઓડિટ': {
+      'gu': 'ઓડિટ',
+      'hi': 'ऑडिट',
+      'en': 'Audit',
+    },
+    'ઓપરેશન્સ': {
+      'gu': 'ઓપરેશન્સ',
+      'hi': 'संचालन (Operations)',
+      'en': 'Operations',
+    },
+    'સૂચનાઓ & અપીલ્સ': {
+      'gu': 'સૂચનાઓ & અપીલ્સ',
+      'hi': 'सूचनाएं और अपील',
+      'en': 'Notices & Appeals',
+    },
+    'રિવ્યુ કરો': {
+      'gu': 'રિવ્યુ કરો',
+      'hi': 'समीक्षा करें',
+      'en': 'Review',
+    },
+    'સોસાયટી પુનઃસક્રિય (Unblocked) કરવામાં આવી છે.': {
+      'gu': 'સોસાયટી પુનઃસક્રિય (Unblocked) કરવામાં આવી છે.',
+      'hi': 'सोसायटी पुनः सक्रिय (Unblock) कर दी गई है।',
+      'en': 'Society has been unblocked and reactivated.',
+    },
+    'એડમિન એકાઉન્ટ પુનઃસક્રિય (Unblocked) કરવામાં આવ્યું છે.': {
+      'gu': 'એડમિન એકાઉન્ટ પુનઃસક્રિય (Unblocked) કરવામાં આવ્યું છે.',
+      'hi': 'एडमिन खाता पुनः सक्रिय (Unblock) कर दिया गया है।',
+      'en': 'Admin account has been unblocked and reactivated.',
+    },
+
+    // =============================================================
+    // Suspended Notices & Alerts
+    // =============================================================
+    'સોસાયટી સ્થગિત': {
+      'gu': 'સોસાયટી સ્થગિત',
+      'hi': 'सोसायटी निलंबित / स्थगित',
+      'en': 'Society Suspended',
+    },
+    'હજુ સેવાઓ સ્થગિત છે. કૃપા કરીને થોડી વાર પછી તપાસો.': {
+      'gu': 'હજુ સેવાઓ સ્થગિત છે. કૃપા કરીને થોડી વાર પછી તપાસો.',
+      'hi': 'सेवाएं अभी भी निलंबित हैं। कृपया थोड़ी देर बाद जांचें।',
+      'en': 'Services are still suspended. Please check back after some time.',
+    },
+    'સુધારેલી / વધારાની અપીલ નોંધ': {
+      'gu': 'સુધારેલી / વધારાની અપીલ નોંધ',
+      'hi': 'संशोधित / अतिरिक्त अपील नोट',
+      'en': 'Revised / Additional Appeal Note',
+    },
+    'અગાઉનો ઇતિહાસ': {
+      'gu': 'અગાઉનો ઇતિહાસ',
+      'hi': 'पिछला इतिहास',
+      'en': 'Previous History',
+    },
+    'અગાઉ મોકલેલી અપીલ વિગત:': {
+      'gu': 'અગાઉ મોકલેલી અપીલ વિગત:',
+      'hi': 'पहले भेजी गई अपील का विवरण:',
+      'en': 'Previously submitted appeal details:',
+    },
+    'સુપર એડમિનનો અગાઉનો પ્રત્યુત્તર:': {
+      'gu': 'સુપર એડમિનનો અગાઉનો પ્રત્યુત્તર:',
+      'hi': 'सुपर एडमिन का पिछला उत्तर:',
+      'en': 'Super admin previous response:',
+    },
+    'આ અગાઉના સસ્પેન્શનનો ઉકેલાયેલ ઇતિહાસ છે. વર્તમાન સસ્પેન્શન માટે ઉપરનું ફોર્મ ભરીને નવી અપીલ મોકલો.': {
+      'gu': 'આ અગાઉના સસ્પેન્શનનો ઉકેલાયેલ ઇતિહાસ છે. વર્તમાન સસ્પેન્શન માટે ઉપરનું ફોર્મ ભરીને નવી અપીલ મોકલો.',
+      'hi': 'यह पिछले निलंबन का सुलझा हुआ इतिहास है। वर्तमान निलंबन के लिए ऊपर दिया गया फ़ॉर्म भरकर नई अपील भेजें।',
+      'en': 'This is a resolved history of previous suspension. For the current suspension, submit a new appeal using the form above.',
+    },
+
+    // =============================================================
+    // Emergency & Parking Warnings
+    // =============================================================
+    'હજુ કોઈ ઈમરજન્સી નંબર ઉમેરાયો નથી.\nઉપરના સૂચન બટન પર ક્લિક કરીને ઉમેરો.': {
+      'gu': 'હજુ કોઈ ઈમરજન્સી નંબર ઉમેરાયો નથી.\nઉપરના સૂચન બટન પર ક્લિક કરીને ઉમેરો.',
+      'hi': 'अभी तक कोई आपातकालीन नंबर नहीं जोड़ा गया है।\nऊपर दिए गए सुझाव बटन पर क्लिक करके जोड़ें।',
+      'en': 'No emergency contact added yet.\nTap the suggestions button above to add.',
+    },
+    'હજુ સુધી કોઈ ઈમરજન્સી નંબર ઉમેરાયો નથી.\nઉપરના પ્રીસેટ પર ટેપ કરીને નંબર ઉમેરો.': {
+      'gu': 'હજુ સુધી કોઈ ઈમરજન્સી નંબર ઉમેરાયો નથી.\nઉપરના પ્રીસેટ પર ટેપ કરીને નંબર ઉમેરો.',
+      'hi': 'अभी तक कोई आपातकालीन नंबर नहीं जोड़ा गया है।\nऊपर दिए गए प्रीसेट पर टैप करके नंबर जोड़ें।',
+      'en': 'No emergency number added yet.\nTap on the presets above to add.',
+    },
+    'હજુ સુધી કોઈ કોમન પ્લોટ સ્લોટ્સ બનાવવામાં આવ્યા નથી.\n(શેરી સોસાયટીમાં દરેક સભ્ય ઘર આગળ પાર્ક કરે છે).': {
+      'gu': 'હજુ સુધી કોઈ કોમન પ્લોટ સ્લોટ્સ બનાવવામાં આવ્યા નથી.\n(શેરી સોસાયટીમાં દરેક સભ્ય ઘર આગળ પાર્ક કરે છે).',
+      'hi': 'अभी तक कोई कॉमन प्लॉट स्लॉट नहीं बनाया गया है।\n(स्ट्रीट सोसायटी में प्रत्येक सदस्य घर के आगे पार्क करते हैं)।',
+      'en': 'No common plot slots created yet.\n(In street societies, members park in front of their houses).',
+    },
+    'હજુ સુધી કોઈ વિંગ્સ સ્લોટ્સ બનાવવામાં આવ્યા નથી.\nઉપરના બટનથી સ્લોટ્સ જનરેટ કરો.': {
+      'gu': 'હજુ સુધી કોઈ વિંગ્સ સ્લોટ્સ બનાવવામાં આવ્યા નથી.\nઉપરના બટનથી સ્લોટ્સ જનરેટ કરો.',
+      'hi': 'अभी तक कोई विंग स्लॉट नहीं बनाया गया है।\nऊपर दिए गए बटन से स्लॉट जनरेट करें।',
+      'en': 'No wing slots created yet.\nGenerate slots using the button above.',
+    },
+    'છેલ્લી તારીખ:': {
+      'gu': 'છેલ્લી તારીખ:',
+      'hi': 'अंतिम तिथि:',
+      'en': 'Due Date:',
+    },
+    'તમારી સોસાયટી શાંતિપૂર્ણ અને સુવ્યવસ્થિત છે.\nજો કોઈ પ્રશ્ન જણાય તો ઉપરથી સરળતાથી નોંધાવો.': {
+      'gu': 'તમારી સોસાયટી શાંતિપૂર્ણ અને સુવ્યવસ્થિત છે.\nજો કોઈ પ્રશ્ન જણાય તો ઉપરથી સરળતાથી નોંધાવો.',
+      'hi': 'आपकी सोसायटी शांत और व्यवस्थित है।\nयदि कोई समस्या दिखे तो ऊपर से आसानी से दर्ज करें।',
+      'en': 'Your society is peaceful and well-organized.\nIf any issue arises, submit it easily above.',
+    },
+    'તમારું એકાઉન્ટ અન્ય ડિવાઇસ પર લૉગિન કરવામાં આવ્યું હોવાથી આ ડિવાઇસમાંથી સુરક્ષિત રીતે લૉગઆઉટ કરવામાં આવ્યું છે.\n\nસુરક્ષાના નિયમ મુજબ એક સમયે માત્ર ૧ જ ડિવાઇસમાં લૉગિન રહી શકાય છે.': {
+      'gu': 'તમારું એકાઉન્ટ અન્ય ડિવાઇસ પર લૉગિન કરવામાં આવ્યું હોવાથી આ ડિવાઇસમાંથી સુરક્ષિત રીતે લૉગઆઉટ કરવામાં આવ્યું છે.\n\nસુરક્ષાના નિયમ મુજબ એક સમયે માત્ર ૧ જ ડિવાઇસમાં લૉગિન રહી શકાય છે.',
+      'hi': 'आपका खाता किसी अन्य डिवाइस पर लॉग इन होने के कारण इस डिवाइस से सुरक्षित रूप से लॉग आउट कर दिया गया है।\n\nसुरक्षा नियमों के अनुसार एक समय में केवल 1 डिवाइस पर लॉग इन रहा जा सकता है।',
+      'en': 'Your account was logged in on another device, so this device has been safely logged out.\n\nAs per security policies, only 1 device can be active at a time.',
+    },
+    'મેમ્બર તેમના મોબાઈલની કોઈપણ UPI એપ\n(Google Pay, PhonePe, Paytm, BHIM)\nથી આ QR સ્કેન કરી શકે છે.': {
+      'gu': 'મેમ્બર તેમના મોબાઈલની કોઈપણ UPI એપ\n(Google Pay, PhonePe, Paytm, BHIM)\nથી આ QR સ્કેન કરી શકે છે.',
+      'hi': 'सदस्य अपने मोबाइल के किसी भी UPI ऐप\n(Google Pay, PhonePe, Paytm, BHIM)\nसे इस QR को स्कैन कर सकते हैं।',
+      'en': 'Members can scan this QR code with any UPI app\n(Google Pay, PhonePe, Paytm, BHIM).',
+    },
+    '૧. નીચે "UPI એપ ખોલો" દબાવતા Google Pay / PhonePe ખુલશે.\n': {
+      'gu': '૧. નીચે "UPI એપ ખોલો" દબાવતા Google Pay / PhonePe ખુલશે.\n',
+      'hi': '१. नीचे "UPI ऐप खोलें" दबाने पर Google Pay / PhonePe खुलेगा।\n',
+      'en': '1. Tapping "Open UPI App" below will launch Google Pay / PhonePe.\n',
+    },
+    '૨. એપમાં "Pay UPI ID" અથવા Search બારમાં આ કૉપી કરેલ ID Paste કરો.\n': {
+      'gu': '૨. એપમાં "Pay UPI ID" અથવા Search બારમાં આ કૉપી કરેલ ID Paste કરો.\n',
+      'hi': '२. ऐप में "Pay UPI ID" या खोज बार में कॉपी की गई ID पेस्ट करें।\n',
+      'en': '2. Paste this copied ID into "Pay UPI ID" or Search in the app.\n',
+    },
+    '૩. NPCI બેંક સર્વર સીધું જ રજીસ્ટર્ડ બેંક ખાતાધારકનું સાચું નામ (Verified Name) બતાવશે.\n': {
+      'gu': '૩. NPCI બેંક સર્વર સીધું જ રજીસ્ટર્ડ બેંક ખાતાધારકનું સાચું નામ (Verified Name) બતાવશે.\n',
+      'hi': '३. NPCI बैंक सर्वर सीधे पंजीकृत बैंक खाताधारक का सत्यापित नाम (Verified Name) दिखाएगा।\n',
+      'en': '3. The NPCI bank server will directly show the registered account holder verified name.\n',
+    },
+    '🌟 તમામ': {
+      'gu': '🌟 તમામ',
+      'hi': '🌟 सभी',
+      'en': '🌟 All',
+    },
+    '🟢 કબજેદાર': {
+      'gu': '🟢 કબજેદાર',
+      'hi': '🟢 अधिकृत',
+      'en': '🟢 Occupied',
+    },
+    '⚪ ખાલી': {
+      'gu': '⚪ ખાલી',
+      'hi': '⚪ रिक्त',
+      'en': '⚪ Vacant',
+    },
+    '🟢 મંજૂર': {
+      'gu': '🟢 મંજૂર',
+      'hi': '🟢 स्वीकृत',
+      'en': '🟢 Approved',
+    },
+    '⏳ પેન્ડિંગ': {
+      'gu': '⏳ પેન્ડિંગ',
+      'hi': '⏳ लंबित',
+      'en': '⏳ Pending',
+    },
+    '🔴 નકારેલ': {
+      'gu': '🔴 નકારેલ',
+      'hi': '🔴 अस्वीकृत',
+      'en': '🔴 Rejected',
+    },
+    'બધા': {
+      'gu': 'બધા',
+      'hi': 'सभी',
+      'en': 'All',
+    },
+    'ખર્ચાઓ': {
+      'gu': 'ખર્ચાઓ',
+      'hi': 'खर्च',
+      'en': 'Expenses',
+    },
+    'એકમો': {
+      'gu': 'એકમો',
+      'hi': 'इकाइयाँ',
+      'en': 'Units',
+    },
+    'સક્રિય': {
+      'gu': 'સક્રિય',
+      'hi': 'सक्रिय',
+      'en': 'Active',
+    },
+    '[અહીં તમારો સંદેશો લખો]': {
+      'gu': '[અહીં તમારો સંદેશો લખો]',
+      'hi': '[यहाँ अपना संदेश लिखें]',
+      'en': '[Write your message here]',
+    },
+    'આભાર,': {
+      'gu': 'આભાર,',
+      'hi': 'धन्यवाद,',
+      'en': 'Thanks,',
+    },
+    'તમને મળવા આવ્યા છે': {
+      'gu': 'તમને મળવા આવ્યા છે',
+      'hi': 'आपसे मिलने आए हैं',
+      'en': 'is here to see you',
+    },
+    'સોસાયટી પુનઃસક્રિયતા અપીલ સંદર્ભે': {
+      'gu': 'સોસાયટી પુનઃસક્રિયતા અપીલ સંદર્ભે',
+      'hi': 'सोसायटी पुनःसक्रियता अपील के संदर्भ में',
+      'en': 'Regarding Society Reactivation Appeal',
+    },
+    'કુલ ફ્લેટ્સ': {
+      'gu': 'કુલ ફ્લેટ્સ',
+      'hi': 'कुल फ्लैट्स',
+      'en': 'Total Flats',
+    },
+    'ફ્લેટ્સ ચૂકવેલ': {
+      'gu': 'ફ્લેટ્સ ચૂકવેલ',
+      'hi': 'फ्लैट्स भुगतान',
+      'en': 'Flats Paid',
+    },
+    'ફ્લેટ્સ બાકી': {
+      'gu': 'ફ્લેટ્સ બાકી',
+      'hi': 'फ्लैट्स बकाया',
+      'en': 'Flats Due',
+    },
+    'માર્ક પેઇડ': {
+      'gu': 'માર્ક પેઇડ',
+      'hi': 'भुगतान दर्ज',
+      'en': 'Mark Paid',
+    },
+    'કલેક્શન પ્રગતિ': {
+      'gu': 'કલેક્શન પ્રગતિ',
+      'hi': 'कलेक्शन प्रगति',
+      'en': 'Collection Progress',
+    },
+    'સોસાયટી બિલિંગ & કલેક્શન': {
+      'gu': 'સોસાયટી બિલિંગ & કલેક્શન',
+      'hi': 'सोसायटी बिलिंग एवं कलेक्शन',
+      'en': 'Society Billing & Collection',
+    },
+    'ડ્યુ': {
+      'gu': 'ડ્યુ',
+      'hi': 'देय',
+      'en': 'Due',
+    },
+    'ચૂકવ્યા': {
+      'gu': 'ચૂકવ્યા',
+      'hi': 'भुगतान',
+      'en': 'Paid',
+    },
+    'QR પે': {
+      'gu': 'QR પે',
+      'hi': 'QR भुगतान',
+      'en': 'QR Pay',
+    },
+    'રસીદ ડાઉનલોડ': {
+      'gu': 'રસીદ ડાઉનલોડ',
+      'hi': 'रसीद डाउनलोड',
+      'en': 'Download Receipt',
+    },
+    'પૂર્ણ': {
+      'gu': 'પૂર્ણ',
+      'hi': 'पूर्ण',
+      'en': 'Complete',
+    },
   };
 
   /// Precomputed reverse lookup map that indexes all translations & English keys
@@ -12990,7 +14048,7 @@ class AppStrings {
     if (text.isEmpty) return text;
     final code = langCode ?? LocalizationService.instance.currentCode;
 
-    // 1. Direct match on English key
+    // 1. Direct match on English key or exact phrase
     var mapEntry = _localizedValues[text];
 
     // 2. Phrase reverse match (Gujarati/Hindi/English phrase to English key)
@@ -13012,7 +14070,52 @@ class AppStrings {
       return res;
     }
 
-    // 3. Fallback to original text
+    // 3. Smart Pattern Matching for dynamic expressions:
+    // (A) Matches strings ending with parenthesized numbers: e.g. "બધા (12)", "🟢 મંજૂર (5)", "🌟 તમામ (20)"
+    final parenMatch = RegExp(r'^(.+?)(\s*\([0-9]+\))$').firstMatch(text);
+    if (parenMatch != null) {
+      final prefix = parenMatch.group(1)!;
+      final count = parenMatch.group(2)!;
+      final transPrefix = translate(prefix, code);
+      if (transPrefix != prefix) {
+        return '$transPrefix$count';
+      }
+    }
+
+    // (B) Matches error / exception prefixes: e.g. "ભૂલ આવી: ...", "ભૂલ: ...", "ક્ષતિ: ..."
+    for (final errPrefix in ['ભૂલ આવી: ', 'ભૂલ: ', 'ક્ષતિ: ', 'એરર આવી: ', 'Error: ']) {
+      if (text.startsWith(errPrefix)) {
+        final rest = text.substring(errPrefix.length);
+        final localizedPrefix = code == 'hi'
+            ? 'त्रुटि: '
+            : code == 'en'
+                ? 'Error: '
+                : 'ભૂલ આવી: ';
+        return '$localizedPrefix$rest';
+      }
+    }
+
+    // (C) Matches count + noun: e.g. "5 ખર્ચાઓ", "12 એકમો"
+    final countNounMatch = RegExp(r'^([0-9]+)\s+([^\d]+)$').firstMatch(text);
+    if (countNounMatch != null) {
+      final count = countNounMatch.group(1)!;
+      final noun = countNounMatch.group(2)!;
+      final transNoun = translate(noun, code);
+      if (transNoun != noun) {
+        return '$count $transNoun';
+      }
+    }
+
+    // (D) Matches floor representations: e.g. "3 મો માળ", "2 લો માળ"
+    final floorMatch = RegExp(r'^([0-9]+)\s*(?:મો|જો|લો)?\s*માળ.*$').firstMatch(text);
+    if (floorMatch != null) {
+      final fNum = floorMatch.group(1)!;
+      if (code == 'hi') return '$fNumवीं मंजिल';
+      if (code == 'en') return 'Floor $fNum';
+      return '$fNum જો માળ';
+    }
+
+    // 4. Fallback to original text
     return text;
   }
 

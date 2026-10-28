@@ -7,7 +7,7 @@ import '../../services/super_admin_service.dart';
 import '../../services/society_service.dart';
 import '../../services/session_guard_service.dart';
 import '../../services/notification_service.dart';
-import '../../screens/admin_dashboard.dart';
+import '../admin/admin_dashboard.dart';
 import 'super_admin_create_admin_screen.dart';
 import 'super_admin_onboard_society_screen.dart';
 import 'super_admin_broadcast_screen.dart';
@@ -17,9 +17,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/app_firestore.dart';
 import '../../services/society_appeal_service.dart';
 import '../../widgets/admin_credentials_modal.dart';
-import '../../services/localization_service.dart';
-import '../../l10n/app_strings.dart';
 import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/animated_bottom_nav_bar.dart';
+import '../../widgets/premium_ui.dart';
 
 
 class SuperAdminDashboard extends StatefulWidget {
@@ -169,6 +169,38 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
       child: Scaffold(
         backgroundColor: const Color(0xFF070B14), // Deep Midnight Obsidian
         drawer: const AppNavigationDrawer(role: 'super_admin', isDark: true),
+        extendBody: true,
+        bottomNavigationBar: FloatingGlassmorphicNavBar(
+          currentIndex: _currentTabIndex,
+          isDark: true,
+          primaryColor: const Color(0xFF14B8A6),
+          onTap: (index) {
+            _tabController.animateTo(index);
+            setState(() => _currentTabIndex = index);
+          },
+          items: [
+            FloatingNavItem(
+              icon: Icons.domain_outlined,
+              activeIcon: Icons.domain_rounded,
+              label: 'સોસાયટી'.tr,
+            ),
+            FloatingNavItem(
+              icon: Icons.people_outline_rounded,
+              activeIcon: Icons.people_rounded,
+              label: 'યુઝર્સ'.tr,
+            ),
+            FloatingNavItem(
+              icon: Icons.account_balance_wallet_outlined,
+              activeIcon: Icons.account_balance_wallet_rounded,
+              label: 'ઓડિટ'.tr,
+            ),
+            FloatingNavItem(
+              icon: Icons.shield_outlined,
+              activeIcon: Icons.shield_rounded,
+              label: 'ઓપરેશન્સ'.tr,
+            ),
+          ],
+        ),
         body: Stack(
         children: [
           // Ambient Glow Effect (Cyber Mint top left, Royal Gold top right)
@@ -522,8 +554,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
                         children: [
                           Row(
                             children: [
+                              const PulsingStatusDot(color: Color(0xFFFBBF24), size: 7),
+                              const SizedBox(width: 7),
                               Text(
-                                "🚨 પેન્ડિંગ પુનઃસક્રિયતા અપીલ ($count)".tr,
+                                "પેન્ડિંગ પુનઃસક્રિયતા અપીલ ($count)".tr,
                                 style: const TextStyle(
                                   color: Color(0xFFFDE68A),
                                   fontSize: 13,
@@ -597,40 +631,52 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
           physics: const BouncingScrollPhysics(),
           child: Row(
             children: [
-              _buildBentoKpiCard(
-                title: "કુલ કલેક્શન વોલ્યુમ".tr,
-                value: _currency.format(_stats.totalPlatformCollected.toInt()),
-                trend: "આ મહિને જમા".tr,
-                icon: Icons.currency_rupee_rounded,
-                gradient: const [Color(0xFF0F766E), Color(0xFF042F2E)],
-                accentColor: const Color(0xFF34D399),
+              StaggeredEntrance(
+                index: 0,
+                child: _buildBentoKpiCard(
+                  title: "કુલ કલેક્શન વોલ્યુમ".tr,
+                  value: _currency.format(_stats.totalPlatformCollected.toInt()),
+                  trend: "આ મહિને જમા".tr,
+                  icon: Icons.currency_rupee_rounded,
+                  gradient: const [Color(0xFF0F766E), Color(0xFF042F2E)],
+                  accentColor: const Color(0xFF34D399),
+                ),
               ),
               const SizedBox(width: 10),
-              _buildBentoKpiCard(
-                title: "રજિસ્ટર્ડ પરિસરો".tr,
-                value: "${_stats.totalSocieties} ${'complexes_label'.tr}",
-                trend: "${_allSocieties.where((s) => s.isActive).length} ${'active'.tr}",
-                icon: Icons.apartment_rounded,
-                gradient: const [Color(0xFF1E3A8A), Color(0xFF0F172A)],
-                accentColor: const Color(0xFF38BDF8),
+              StaggeredEntrance(
+                index: 1,
+                child: _buildBentoKpiCard(
+                  title: "રજિસ્ટર્ડ પરિસરો".tr,
+                  value: "${_stats.totalSocieties} ${'complexes_label'.tr}",
+                  trend: "${_allSocieties.where((s) => s.isActive).length} ${'active'.tr}",
+                  icon: Icons.apartment_rounded,
+                  gradient: const [Color(0xFF1E3A8A), Color(0xFF0F172A)],
+                  accentColor: const Color(0xFF38BDF8),
+                ),
               ),
               const SizedBox(width: 10),
-              _buildBentoKpiCard(
-                title: "કુલ યુઝર્સ & સભ્યો".tr,
-                value: "${_stats.totalMembers} ${'label_members'.tr}",
-                trend: "${_stats.totalAdmins} ${'admins_label'.tr}",
-                icon: Icons.groups_rounded,
-                gradient: const [Color(0xFF581C87), Color(0xFF1E1B4B)],
-                accentColor: const Color(0xFFA78BFA),
+              StaggeredEntrance(
+                index: 2,
+                child: _buildBentoKpiCard(
+                  title: "કુલ યુઝર્સ & સભ્યો".tr,
+                  value: "${_stats.totalMembers} ${'label_members'.tr}",
+                  trend: "${_stats.totalAdmins} ${'admins_label'.tr}",
+                  icon: Icons.groups_rounded,
+                  gradient: const [Color(0xFF581C87), Color(0xFF1E1B4B)],
+                  accentColor: const Color(0xFFA78BFA),
+                ),
               ),
               const SizedBox(width: 10),
-              _buildBentoKpiCard(
-                title: "ગેટ સિક્યોરિટી પલ્સ".tr,
-                value: "${_stats.todayTotalVisitors} ${'visitors_label'.tr}",
-                trend: "${_stats.totalWatchmen} ${'guards_on_duty_label'.tr}",
-                icon: Icons.shield_rounded,
-                gradient: const [Color(0xFF78350F), Color(0xFF1C1917)],
-                accentColor: const Color(0xFFFBBF24),
+              StaggeredEntrance(
+                index: 3,
+                child: _buildBentoKpiCard(
+                  title: "ગેટ સિક્યોરિટી પલ્સ".tr,
+                  value: "${_stats.todayTotalVisitors} ${'visitors_label'.tr}",
+                  trend: "${_stats.totalWatchmen} ${'guards_on_duty_label'.tr}",
+                  icon: Icons.shield_rounded,
+                  gradient: const [Color(0xFF78350F), Color(0xFF1C1917)],
+                  accentColor: const Color(0xFFFBBF24),
+                ),
               ),
             ],
           ),
@@ -647,66 +693,68 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
     required List<Color> gradient,
     required Color accentColor,
   }) {
-    return Container(
-      width: 175,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accentColor.withValues(alpha: 0.35), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: accentColor.withValues(alpha: 0.12),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Colors.white70),
-              ),
-              Container(
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+    return InteractiveBounce(
+      child: Container(
+        width: 175,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: accentColor.withValues(alpha: 0.35), width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: accentColor.withValues(alpha: 0.12),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Colors.white70),
                 ),
-                child: Icon(icon, size: 14, color: accentColor),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-                letterSpacing: -0.5,
+                Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, size: 14, color: accentColor),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  letterSpacing: -0.5,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Icon(Icons.check_circle_outline_rounded, size: 11, color: accentColor),
-              const SizedBox(width: 4),
-              Text(
-                trend,
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: accentColor),
-              ),
-            ],
-          ),
-        ],
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(Icons.check_circle_outline_rounded, size: 11, color: accentColor),
+                const SizedBox(width: 4),
+                Text(
+                  trend,
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: accentColor),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -883,7 +931,13 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
         if (list.isEmpty)
           _buildEmptyState("કોઈ પરિસર મળ્યું નથી".tr, "સર્ચ ક્વેરી અથવા ફિલ્ટર બદલીને પ્રયાસ કરો.".tr)
         else
-          ...list.map((soc) => _buildLuxurySocietyCard(soc)),
+          ...List.generate(
+            list.length,
+            (i) => StaggeredEntrance(
+              index: i,
+              child: _buildLuxurySocietyCard(list[i]),
+            ),
+          ),
       ],
     );
   }
@@ -1272,7 +1326,13 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> with SingleTi
         if (list.isEmpty)
           _buildEmptyState("કોઈ યુઝર મળ્યા નથી".tr, "સર્ચ ક્વેરી અથવા રોલ ફિલ્ટર બદલીને પ્રયાસ કરો.".tr)
         else
-          ...list.map((u) => _buildLuxuryUserCard(u)),
+          ...List.generate(
+            list.length,
+            (i) => StaggeredEntrance(
+              index: i,
+              child: _buildLuxuryUserCard(list[i]),
+            ),
+          ),
       ],
     );
   }

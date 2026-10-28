@@ -29,13 +29,19 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
       _showToast("ઈમેલ સરનામું ઉપલબ્ધ નથી.".tr);
       return;
     }
-    final subject = Uri.encodeComponent("BuildingGuard: સોસાયટી પુનઃસક્રિયતા અપીલ સંદર્ભે ($societyName)".tr);
+    final subject = Uri.encodeComponent("BuildingGuard: ${'સોસાયટી પુનઃસક્રિયતા અપીલ સંદર્ભે'.tr} ($societyName)");
+    final greeting = 'નમસ્તે'.tr;
+    final appealRef = "તમારી સોસાયટી '$societyName' ની સસ્પેન્શન અપીલ સંદર્ભે જણાવવાનું કે,".tr;
+    final writeMsg = '[અહીં તમારો સંદેશો લખો]'.tr;
+    final thanks = 'આભાર,'.tr;
+    final office = 'સુપર એડમિન હેડ ઓફિસ - BuildingGuard'.tr;
+
     final body = Uri.encodeComponent(
-      "નમસ્તે $adminName,\n\n".tr +
-      "તમારી સોસાયટી '$societyName' ની સસ્પેન્શન અપીલ સંદર્ભે જણાવવાનું કે,\n\n".tr +
-      "[અહીં તમારો સંદેશો લખો]\n\n".tr +
-      "આભાર,\n".tr +
-      "સુપર એડમિન હેડ ઓફિસ - BuildingGuard".tr,
+      '$greeting $adminName,\n\n'
+      '$appealRef\n\n'
+      '$writeMsg\n\n'
+      '$thanks\n'
+      '$office',
     );
     final uri = Uri.parse("mailto:$email?subject=$subject&body=$body");
     if (await canLaunchUrl(uri)) {
@@ -52,10 +58,14 @@ class _SuperAdminAppealDetailScreenState extends State<SuperAdminAppealDetailScr
       return;
     }
     final formattedPhone = cleanPhone.length == 10 ? '91$cleanPhone' : cleanPhone;
+    final greeting = 'નમસ્તે'.tr;
+    final waMsg = 'તમારી સોસાયટી *$societyName* ની અપીલ વિનંતી સંદર્ભે સુપર એડમિન ટીમ તરફથી સંપર્ક કરવામાં આવ્યો છે.'.tr;
+    final detail = '[અહીં વિગત લખો]'.tr;
+
     final msg = Uri.encodeComponent(
-      "નમસ્તે $adminName,\n".tr +
-      "તમારી સોસાયટી *$societyName* ની અપીલ વિનંતી સંદર્ભે સુપર એડમિન ટીમ તરફથી સંપર્ક કરવામાં આવ્યો છે.\n\n".tr +
-      "[અહીં વિગત લખો]".tr,
+      '$greeting $adminName,\n'
+      '$waMsg\n\n'
+      '$detail',
     );
     final uri = Uri.parse("https://wa.me/$formattedPhone?text=$msg");
     if (await canLaunchUrl(uri)) {

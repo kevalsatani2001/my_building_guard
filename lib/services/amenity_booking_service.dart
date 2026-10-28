@@ -275,27 +275,34 @@ class AmenityBookingService {
     final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
 
     return _bookingsRef
-        .where('status', isEqualTo: 'approved')
-        .where('bookingDate', isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart))
-        .where('bookingDate', isLessThanOrEqualTo: Timestamp.fromDate(todayEnd))
         .snapshots()
-        .map((snap) => snap.docs.map((d) => AmenityBookingModel.fromFirestore(d)).toList());
+        .map((snap) => snap.docs
+            .map((d) => AmenityBookingModel.fromFirestore(d))
+            .where((b) =>
+                b.status == 'approved' &&
+                !b.bookingDate.isBefore(todayStart) &&
+                !b.bookingDate.isAfter(todayEnd))
+            .toList());
   }
 
   /// ૭. સભ્યના પોતાના બુકિંગ્સ
   Stream<List<AmenityBookingModel>> getMemberBookingsStream(String memberUid) {
     return _bookingsRef
         .where('memberUid', isEqualTo: memberUid)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map((d) => AmenityBookingModel.fromFirestore(d)).toList());
+        .map((snap) {
+      final list = snap.docs.map((d) => AmenityBookingModel.fromFirestore(d)).toList();
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return list;
+    });
   }
 
   /// ૮. એડમિન માટે તમામ બુકિંગ્સ
   Stream<List<AmenityBookingModel>> getAllBookingsAdminStream() {
-    return _bookingsRef
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snap) => snap.docs.map((d) => AmenityBookingModel.fromFirestore(d)).toList());
+    return _bookingsRef.snapshots().map((snap) {
+      final list = snap.docs.map((d) => AmenityBookingModel.fromFirestore(d)).toList();
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return list;
+    });
   }
 }

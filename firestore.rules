@@ -292,5 +292,47 @@ service cloud.firestore {
       // Delete: Only Society Admin
       allow delete: if isAdmin() && docBelongsToCallerSociety(resource.data);
     }
+
+    // ==========================================
+    // 11. Society Subcollections (Amenities, Bookings, Polls, Patrol, Parking)
+    // ==========================================
+    match /societies/{societyId} {
+      allow read: if isAuthenticated() && matchesCallerSociety(societyId);
+      allow write: if isAdmin() && matchesCallerSociety(societyId);
+
+      match /amenities/{amenityId} {
+        allow read: if isAuthenticated() && matchesCallerSociety(societyId);
+        allow write: if isAdmin() && matchesCallerSociety(societyId);
+      }
+
+      match /amenity_bookings/{bookingId} {
+        allow read: if isAuthenticated() && matchesCallerSociety(societyId);
+        allow create: if isAuthenticated() && matchesCallerSociety(societyId);
+        allow update: if isAuthenticated() && matchesCallerSociety(societyId) && (
+          isAdmin() || resource.data.memberUid == request.auth.uid
+        );
+        allow delete: if isAdmin() && matchesCallerSociety(societyId);
+      }
+
+      match /polls/{pollId} {
+        allow read: if isAuthenticated() && matchesCallerSociety(societyId);
+        allow create, update: if isAuthenticated() && matchesCallerSociety(societyId);
+        allow delete: if isAdmin() && matchesCallerSociety(societyId);
+      }
+
+      match /patrol_checkpoints/{checkpointId} {
+        allow read: if isAuthenticated() && matchesCallerSociety(societyId);
+        allow write: if (isAdmin() || isWatchman()) && matchesCallerSociety(societyId);
+      }
+
+      match /parking_slots/{slotId} {
+        allow read: if isAuthenticated() && matchesCallerSociety(societyId);
+        allow write: if isAdmin() && matchesCallerSociety(societyId);
+      }
+
+      match /{allSubcollections=**} {
+        allow read, write: if isAuthenticated() && matchesCallerSociety(societyId);
+      }
+    }
   }
 }
