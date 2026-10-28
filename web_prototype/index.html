@@ -1,0 +1,1870 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Building Guard — 100% Exact Flutter App Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Noto+Sans+Gujarati:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-light">
+
+  <!-- ================= TOP PRESENTATION SWITCHER BAR ================= -->
+  <header class="presentation-header" id="presentationHeader">
+    <div class="header-left">
+      <div class="brand-badge">
+        <span class="brand-icon">🏢</span>
+        <div class="brand-info">
+          <div class="brand-title">
+            <span class="title-primary">My Building</span>
+            <span class="title-accent">Guard</span>
+          </div>
+          <span class="brand-subtitle" data-i18n="tagline">સત્તાવાર Flutter એપ્લિકેશન • 100% Same-to-Same UI & ફંક્શનાલિટી</span>
+        </div>
+      </div>
+      <div class="status-live-chip">
+        <span class="pulsing-dot"></span>
+        <span>EXACT FLUTTER APP REPLICA</span>
+      </div>
+    </div>
+
+    <!-- Active Persona Switcher (Top Controls) -->
+    <div class="header-center">
+      <div class="role-switcher-deck">
+        <button class="role-tab active" data-role="admin" id="tabAdmin" onclick="PrototypeApp.switchRole('admin')">
+          <span class="tab-icon">🏛️</span>
+          <div class="tab-meta">
+            <span class="tab-title">સોસાયટી એડમિન</span>
+            <span class="tab-tag">AdminDashboard</span>
+          </div>
+        </button>
+
+        <button class="role-tab" data-role="member" id="tabMember" onclick="PrototypeApp.switchRole('member')">
+          <span class="tab-icon">🏠</span>
+          <div class="tab-meta">
+            <span class="tab-title">સભ્ય (A-402)</span>
+            <span class="tab-tag">MemberScreen</span>
+          </div>
+          <span class="tab-alert-badge" id="memberAlertBadge" style="display:none;">1</span>
+        </button>
+
+        <button class="role-tab" data-role="watchman" id="tabWatchman" onclick="PrototypeApp.switchRole('watchman')">
+          <span class="tab-icon">🛡️</span>
+          <div class="tab-meta">
+            <span class="tab-title">વોચમેન (ગેટ ૧)</span>
+            <span class="tab-tag">WatchmanScreen</span>
+          </div>
+        </button>
+
+        <button class="role-tab" data-role="super_admin" id="tabSuperAdmin" onclick="PrototypeApp.switchRole('super_admin')">
+          <span class="tab-icon">👑</span>
+          <div class="tab-meta">
+            <span class="tab-title">સુપર એડમિન</span>
+            <span class="tab-tag">SuperAdminDashboard</span>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Controls -->
+    <div class="header-right">
+      <button class="btn-live-walkthrough" id="btnLiveDemo" onclick="PrototypeApp.runInteractiveDemoFlow()" title="Run Auto Demo Walkthrough">
+        <span class="demo-sparkle">⚡</span>
+        <span>લાઈવ ડેમો (1-Click)</span>
+      </button>
+
+      <button class="btn-hotkeys-help" id="btnHotkeysHelp" onclick="PrototypeApp.openModal('modalHotkeysHelp')" title="Keyboard Shortcuts">
+        <span>⌨️ [1-4]</span>
+      </button>
+
+      <div class="dropdown-wrapper">
+        <select id="languageSelector" class="control-select" onchange="PrototypeApp.applyLanguage(this.value)">
+          <option value="gu" selected>🇮🇳 ગુજરાતી</option>
+          <option value="en">🇬🇧 English</option>
+          <option value="hi">🇮🇳 हिन्दी</option>
+        </select>
+      </div>
+
+      <div class="view-toggle-group">
+        <button class="btn-toggle active" id="btnViewMobile" title="Mobile Frame">📱 મોબાઈલ</button>
+        <button class="btn-toggle" id="btnViewDesktop" title="Full Width">💻 ડેસ્કટોપ</button>
+      </div>
+
+      <button class="btn-icon" id="btnAudioToggle" title="Audio Chimes">🔊</button>
+    </div>
+  </header>
+
+  <!-- ================= STAGE AREA ================= -->
+  <main class="prototype-stage" id="prototypeStage">
+    
+    <div class="device-frame-container" id="deviceContainer">
+      <div class="phone-chassis" id="phoneChassis">
+        
+        <!-- Mobile Status Bar -->
+        <div class="phone-top-bar" id="phoneTopBar">
+          <div class="status-time" id="statusClock">10:45</div>
+          <div class="dynamic-island">
+            <span class="speaker-slit"></span>
+            <span class="island-camera"></span>
+            <span class="island-sensor"></span>
+            <div class="island-pill-indicator" id="islandIndicator"></div>
+          </div>
+          <div class="status-icons">
+            <span>📶 5G</span>
+            <span>🛜</span>
+            <span>🔋 98%</span>
+          </div>
+        </div>
+
+        <!-- ================= FLUTTER APP ROOT SCAFFOLD ================= -->
+        <div class="flutter-scaffold" id="flutterScaffold">
+
+          <!-- ---------------------------------------------------- -->
+          <!-- 1. FLUTTER APPBAR (WITH HAMBURGER & BACK BUTTON)     -->
+          <!-- ---------------------------------------------------- -->
+          <header class="flutter-app-bar" id="flutterAppBar">
+            <div class="appbar-leading" id="appBarLeading">
+              <!-- Default: Hamburger button opening Drawer -->
+              <button class="appbar-btn-icon" id="btnDrawerHamburger" onclick="PrototypeApp.openDrawer()" title="Open App Navigation Drawer">
+                <span class="icon-menu">☰</span>
+              </button>
+              <!-- Back button (active when navigated to sub-screen via Navigator.push) -->
+              <button class="appbar-btn-icon" id="btnAppBack" onclick="PrototypeApp.popNavigation()" style="display:none;" title="Back">
+                <span class="icon-back">❮</span>
+              </button>
+            </div>
+
+            <div class="appbar-title-wrap" id="appBarTitleWrap">
+              <div class="appbar-brand-icon" id="appBarBrandIcon">🛡️</div>
+              <div class="appbar-title-column">
+                <div class="title-row-flex">
+                  <h2 class="appbar-title" id="appBarTitle">સોસાયટી મેનેજર</h2>
+                  <span class="title-sub-tag" id="appBarSubTag" style="display:none;">A-402</span>
+                </div>
+                <span class="appbar-subtitle" id="appBarSubtitle">શ્રી શ્યામ રેસીડેન્સી • કમિટી ડેસ્ક</span>
+              </div>
+            </div>
+
+            <div class="appbar-actions" id="appBarActions">
+              <button class="appbar-action-pill" id="btnAppBarAction" onclick="PrototypeApp.triggerAppBarAction()">
+                <span id="appBarActionIcon">📊</span>
+                <span id="appBarActionLabel">રિપોર્ટ</span>
+              </button>
+              <button class="appbar-btn-icon" id="btnAppBarNotif" onclick="PrototypeApp.openNotificationsModal()" title="Notifications">
+                <span class="icon-bell">🔔</span>
+                <span class="notif-badge-dot" id="appBarNotifDot"></span>
+              </button>
+            </div>
+          </header>
+
+          <!-- ---------------------------------------------------- -->
+          <!-- 2. FLUTTER SCREEN VIEWPORT (DYNAMICALLY ROUTED)      -->
+          <!-- ---------------------------------------------------- -->
+          <main class="flutter-body-viewport scrollable" id="flutterViewport">
+
+            <!-- ============================================== -->
+            <!-- ROLE 1: ADMIN DASHBOARD (admin_dashboard.dart) -->
+            <!-- 4 IndexedStack Tabs: Home, Security, Finance, Society -->
+            <!-- ============================================== -->
+            <div class="flutter-screen active" id="screen-admin-dashboard">
+              
+              <!-- Tab 0: Home Tab (_buildAdminHomeTab) -->
+              <div class="admin-tab-content active" id="admin-tab-home">
+                
+                <!-- Hero Summary Card -->
+                <div class="society-header-hero">
+                  <div class="soc-hero-badge">🏛️ શ્રી શ્યામ રેસીડેન્સી (Ahmedabad)</div>
+                  <h3 class="soc-hero-name">હરેશભાઈ પટેલ (ચેરમેન/એડમિન)</h3>
+                  <p class="soc-hero-info">વિંગ A, B, C • ૫૦ ફ્લેટ્સ • ઓક્ટોબર ૨૦૨૬</p>
+                  <div class="soc-hero-tags">
+                    <span class="hero-chip">● લાઈવ કલેક્શન ૯૨%</span>
+                    <span class="hero-chip">● ૨ વોચમેન ઓન-ડ્યુટી</span>
+                    <span class="hero-chip">● ૧૦૦% પેપરલેસ</span>
+                  </div>
+                </div>
+
+                <!-- Pending Complaints Alert Banner -->
+                <div class="alert-banner-card warning" onclick="PrototypeApp.pushScreen('admin-complaints', 'ફરિયાદ નિવારણ ડેસ્ક')">
+                  <div class="alert-banner-icon">⚠️</div>
+                  <div class="alert-banner-text">
+                    <strong>૧ રહીશ ફરિયાદ પેન્ડિંગ છે!</strong>
+                    <span>વિંગ A ૪થા માળે લિફ્ટ ડોરનો અવાજ (રાજેશ પટેલ - A-402)</span>
+                  </div>
+                  <span class="banner-arrow">➔</span>
+                </div>
+
+                <!-- Live Metrics Grid -->
+                <div class="kpi-grid-row">
+                  <div class="kpi-tile" onclick="PrototypeApp.pushScreen('admin-maintenance', 'મેન્ટેનન્સ મેનેજમેન્ટ')">
+                    <span class="kpi-icon">💰</span>
+                    <span class="kpi-val">₹ ૪.૮૫L</span>
+                    <span class="kpi-lbl">કુલ કલેક્શન (૯૨%)</span>
+                  </div>
+                  <div class="kpi-tile" onclick="PrototypeApp.pushScreen('admin-patrol', 'ગાર્ડ પેટ્રોલિંગ લોગ્સ')">
+                    <span class="kpi-icon">🛡️</span>
+                    <span class="kpi-val">૧૦૦%</span>
+                    <span class="kpi-lbl">QR પેટ્રોલિંગ સ્કોર</span>
+                  </div>
+                  <div class="kpi-tile" onclick="PrototypeApp.pushScreen('admin-members-directory', 'સભ્યો ડિરેક્ટરી')">
+                    <span class="kpi-icon">👥</span>
+                    <span class="kpi-val">૫૦ / ૫૦</span>
+                    <span class="kpi-lbl">રજીસ્ટર્ડ સભ્યો</span>
+                  </div>
+                  <div class="kpi-tile" onclick="PrototypeApp.pushScreen('admin-accounts', 'સોસાયટી બેલેન્સ શીટ')">
+                    <span class="kpi-icon">🏦</span>
+                    <span class="kpi-val">₹ ૧૪.૮૨L</span>
+                    <span class="kpi-lbl">સોસાયટી બેંક ફંડ</span>
+                  </div>
+                </div>
+
+                <!-- Visitor Insights Card -->
+                <div class="flutter-card">
+                  <div class="card-head-row">
+                    <div class="head-left-group">
+                      <span class="card-icon-emblem">📊</span>
+                      <h4>મુલાકાતી એનાલિટિક્સ (Visitor Insights)</h4>
+                    </div>
+                    <span class="badge-approved">ઓક્ટોબર ૨૦૨૬</span>
+                  </div>
+                  <div class="chart-stats-summary">
+                    <div><strong>૪૨૮</strong> <span>આ મહિનાના મુલાકાતીઓ</span></div>
+                    <div><strong>૩૮૫</strong> <span>અગાઉથી મંજૂર</span></div>
+                    <div><strong>૧૮</strong> <span>નકારેલ</span></div>
+                  </div>
+                  <div class="mini-bar-chart">
+                    <div class="bar-col"><div class="bar-fill" style="height:60%;"></div><span>સોમ</span></div>
+                    <div class="bar-col"><div class="bar-fill" style="height:75%;"></div><span>મંગળ</span></div>
+                    <div class="bar-col"><div class="bar-fill" style="height:50%;"></div><span>બુધ</span></div>
+                    <div class="bar-col"><div class="bar-fill" style="height:90%;"></div><span>ગુરુ</span></div>
+                    <div class="bar-col"><div class="bar-fill" style="height:85%;"></div><span>શુક્ર</span></div>
+                    <div class="bar-col active"><div class="bar-fill" style="height:100%;"></div><span>શનિ</span></div>
+                    <div class="bar-col"><div class="bar-fill" style="height:70%;"></div><span>રવિ</span></div>
+                  </div>
+                </div>
+
+                <!-- Recent Members Preview with "View All" -->
+                <div class="flutter-card">
+                  <div class="card-head-row">
+                    <div class="head-left-group">
+                      <span class="card-icon-emblem">👥</span>
+                      <h4>તાજેતરના સભ્યો (Recent Members)</h4>
+                    </div>
+                    <button class="btn-link-xs" onclick="PrototypeApp.pushScreen('admin-members-directory', 'સભ્યો ડિરેક્ટરી')">બધા જુઓ ➔</button>
+                  </div>
+                  <div class="members-preview-list" id="adminRecentMembersList">
+                    <!-- Dynamic -->
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Tab 1: Security Tab (_buildAdminSecurityTab) -->
+              <div class="admin-tab-content" id="admin-tab-security">
+                <div class="section-title-strip">
+                  <span class="icon-accent">🛡️</span>
+                  <h3>ગેટ સિક્યોરિટી & ગાર્ડ કંટ્રોલ</h3>
+                </div>
+
+                <!-- 4 Bento Security Cards -->
+                <div class="bento-2x2-grid">
+                  <div class="bento-card bg-indigo" onclick="PrototypeApp.pushScreen('admin-patrol', 'રાત્રિ QR પેટ્રોલિંગ')">
+                    <div class="bento-icon">🚶‍♂️</div>
+                    <strong>રાત્રિ QR પેટ્રોલિંગ</strong>
+                    <span>૧૦૦% ચેકપોઇન્ટ્સ ટાઇમ-લોક્ડ</span>
+                  </div>
+                  <div class="bento-card bg-emerald" onclick="PrototypeApp.showWatchmanManageSheet()">
+                    <div class="bento-icon">👮</div>
+                    <strong>વોચમેન સ્ટાફ</strong>
+                    <span>૨ ગાર્ડ ઓન-ડ્યુટી (ગેટ ૧ & ૨)</span>
+                  </div>
+                  <div class="bento-card bg-sky" onclick="PrototypeApp.pushScreen('admin-patrol', 'વિઝિટર રિપોર્ટ')">
+                    <div class="bento-icon">📑</div>
+                    <strong>વિઝિટર રિપોર્ટ (Excel)</strong>
+                    <span>સંપૂર્ણ ડેટા ડાઉનલોડ & ઓડિટ</span>
+                  </div>
+                  <div class="bento-card bg-rose" onclick="PrototypeApp.showEmergencyContactsSheet()">
+                    <div class="bento-icon">🚨</div>
+                    <strong>ઇમરજન્સી હેલ્પલાઇન</strong>
+                    <span>પોલીસ, ફાયર, એમ્બ્યુલન્સ, લિફ્ટ</span>
+                  </div>
+                </div>
+
+                <!-- Live Gate Feed -->
+                <div class="flutter-card" style="margin-top:14px;">
+                  <div class="card-head-row">
+                    <div class="head-left-group">
+                      <span class="live-blip-green"></span>
+                      <h4>લાઈવ ગેટ એન્ટ્રી ફીડ (Real-time Gate Feed)</h4>
+                    </div>
+                    <span class="badge-tag">ગેટ ૧</span>
+                  </div>
+                  <div class="gate-feed-list" id="adminLiveGateFeed">
+                    <!-- Dynamic Feed Items -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab 2: Finance Tab (_buildAdminFinanceTab) -->
+              <div class="admin-tab-content" id="admin-tab-finance">
+                
+                <!-- Featured Maintenance Banner -->
+                <div class="finance-hero-banner">
+                  <div class="fin-badge">⚡ ઓક્ટોબર ૨૦૨૬ મેન્ટેનન્સ કલેક્શન</div>
+                  <div class="fin-amount-row">
+                    <div>
+                      <span class="fin-big-val">₹ ૪,૮૫,૦૦૦</span>
+                      <span class="fin-sub-text">જમા થયેલ (૪૬ / ૫૦ ફ્લેટ્સ)</span>
+                    </div>
+                    <button class="btn-bulk-bill-cta" onclick="PrototypeApp.pushScreen('admin-bulk-bill', '૧-ક્લિક બલ્ક બિલિંગ')">
+                      ⚡ બલ્ક બિલ જનરેટ
+                    </button>
+                  </div>
+                  <div class="collection-progress-bar">
+                    <div class="progress-fill" style="width:92%;"></div>
+                  </div>
+                  <div class="progress-labels">
+                    <span>૯૨% કલેક્શન પૂર્ણ</span>
+                    <span>બાકી: ₹ ૧૦,૦૦૦ (૪ ફ્લેટ્સ)</span>
+                  </div>
+                </div>
+
+                <!-- Finance Bento Cards -->
+                <div class="bento-2x2-grid" style="margin-top:14px;">
+                  <div class="bento-card bg-teal" onclick="PrototypeApp.pushScreen('admin-accounts', 'સોસાયટી ખાતાવહી & બેલેન્સ શીટ')">
+                    <div class="bento-icon">💼</div>
+                    <strong>સોસાયટી ખાતાવહી</strong>
+                    <span>આવક, ખર્ચ & પાસબુક સ્ટેટમેન્ટ</span>
+                  </div>
+                  <div class="bento-card bg-amber" onclick="PrototypeApp.pushScreen('admin-maintenance', 'મેન્ટેનન્સ ડેસ્ક')">
+                    <div class="bento-icon">🧾</div>
+                    <strong>મેન્ટેનન્સ ડેસ્ક</strong>
+                    <span>ફ્લેટ-વાઇઝ સ્ટેટસ & રસીદો</span>
+                  </div>
+                  <div class="bento-card bg-purple" onclick="PrototypeApp.pushScreen('admin-bulk-bill', '૧-ક્લિક બલ્ક બિલિંગ')">
+                    <div class="bento-icon">⚡</div>
+                    <strong>૧-ક્લિક બલ્ક બિલ</strong>
+                    <span>WhatsApp PDF ઓટો મોકલો</span>
+                  </div>
+                  <div class="bento-card bg-sky" onclick="PrototypeApp.pushScreen('admin-bank-settings', 'સોસાયટી બેંક & ૦% UPI')">
+                    <div class="bento-icon">🏦</div>
+                    <strong>બેંક & ૦% UPI</strong>
+                    <span>ડાયરેક્ટ સોસાયટી ખાતામાં જમા</span>
+                  </div>
+                </div>
+
+                <!-- AGM Signature Sheet Full Card -->
+                <div class="full-hub-card" onclick="PrototypeApp.pushScreen('admin-agm', 'વાર્ષિક સભા (AGM) સહી પત્રક')">
+                  <div class="hub-icon-circle">✍️</div>
+                  <div class="hub-text">
+                    <strong>વાર્ષિક સભા (AGM) સહી પત્રક</strong>
+                    <span>સત્તાવાર સહી શીટ જનરેટ કરો & PDF પ્રિન્ટ લો</span>
+                  </div>
+                  <span class="hub-arrow">➔</span>
+                </div>
+              </div>
+
+              <!-- Tab 3: Society Tab (_buildAdminSocietyTab) -->
+              <div class="admin-tab-content" id="admin-tab-society">
+                <div class="section-title-strip">
+                  <span class="icon-accent">🏛️</span>
+                  <h3>સોસાયટી સંચાલન & સર્વિસીસ</h3>
+                </div>
+
+                <div class="society-services-grid">
+                  <div class="soc-service-tile" onclick="PrototypeApp.pushScreen('admin-members-directory', 'સભ્યો ડિરેક્ટરી')">
+                    <div class="tile-icon text-indigo">👥</div>
+                    <strong>સભ્યો ડિરેક્ટરી</strong>
+                    <span>૫૦ ફ્લેટ્સ, માલિક/ભાડુઆત</span>
+                  </div>
+                  <div class="soc-service-tile" onclick="PrototypeApp.openModal('modalPublishNotice')">
+                    <div class="tile-icon text-purple">📢</div>
+                    <strong>પરિપત્ર પ્રસિદ્ધ કરો</strong>
+                    <span>WhatsApp & પુશ નોટિસ</span>
+                  </div>
+                  <div class="soc-service-tile" onclick="PrototypeApp.openModal('modalCreatePoll')">
+                    <div class="tile-icon text-amber">🗳️</div>
+                    <strong>પોલ્સ & લોકશાહી</strong>
+                    <span>સભ્યોનું ઓનલાઈન મતદાન</span>
+                  </div>
+                  <div class="soc-service-tile" onclick="PrototypeApp.pushScreen('admin-complaints', 'ફરિયાદ નિવારણ')">
+                    <div class="tile-icon text-rose">⚠️</div>
+                    <strong>ફરિયાદ નિવારણ</strong>
+                    <span>રહીશોની ફરિયાદો & સ્ટેટસ</span>
+                  </div>
+                  <div class="soc-service-tile" onclick="PrototypeApp.pushScreen('admin-parking', 'પાર્કિંગ વ્યવસ્થાપન')">
+                    <div class="tile-icon text-sky">🚗</div>
+                    <strong>પાર્કિંગ વ્યવસ્થાપન</strong>
+                    <span>સ્લોટ એલોટમેન્ટ & રોંગ પાર્કિંગ</span>
+                  </div>
+                  <div class="soc-service-tile" onclick="PrototypeApp.pushScreen('admin-amenities', 'ક્લબહાઉસ & એમેનિટીઝ')">
+                    <div class="tile-icon text-emerald">🎉</div>
+                    <strong>એમેનિટીઝ સ્લોટ્સ</strong>
+                    <span>હોલ & પાર્ટી પ્લોટ બુકિંગ</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- ============================================== -->
+            <!-- ROLE 2: MEMBER SCREEN (member_screen.dart)     -->
+            <!-- 4 IndexedStack Tabs: Home, Visitors, Bills, Services -->
+            <!-- ============================================== -->
+            <div class="flutter-screen" id="screen-member-home">
+              
+              <!-- Tab 0: Member Home (_buildMemberHomeTab) -->
+              <div class="member-tab-content active" id="member-tab-home">
+                
+                <!-- Member Profile Hero Card -->
+                <div class="member-profile-hero">
+                  <div class="mem-avatar-wrap">
+                    <div class="mem-avatar-big">R</div>
+                    <span class="mem-online-dot"></span>
+                  </div>
+                  <div class="mem-details">
+                    <div class="flat-badge-row">
+                      <span class="flat-badge">ફ્લેટ A-402</span>
+                      <span class="owner-badge">માલિક (Owner)</span>
+                    </div>
+                    <h3 class="mem-name">રાજેશભાઈ ડી. પટેલ</h3>
+                    <p class="mem-society">શ્રી શ્યામ રેસીડેન્સી • વિંગ A (૪થો માળ)</p>
+                  </div>
+                </div>
+
+                <!-- Executive Stats Row -->
+                <div class="exec-stats-row">
+                  <div class="exec-stat-box" onclick="PrototypeApp.switchMemberTab(1)">
+                    <span class="stat-number text-amber">૧</span>
+                    <span class="stat-label">પેન્ડિંગ વિઝિટર</span>
+                  </div>
+                  <div class="exec-stat-box" onclick="PrototypeApp.switchMemberTab(1)">
+                    <span class="stat-number text-emerald">૧૨</span>
+                    <span class="stat-label">મંજૂર થયેલ</span>
+                  </div>
+                  <div class="exec-stat-box" onclick="PrototypeApp.switchMemberTab(1)">
+                    <span class="stat-number text-slate">૮</span>
+                    <span class="stat-label">બહાર ગયા</span>
+                  </div>
+                </div>
+
+                <!-- Digital Notice Board Ticker -->
+                <div class="notice-ticker-card" onclick="PrototypeApp.openNoticeModal()">
+                  <div class="ticker-head">
+                    <span class="ticker-badge">📢 તાજો પરિપત્ર</span>
+                    <span class="ticker-date">૨૭-૧૦-૨૦૨૬</span>
+                  </div>
+                  <h4 class="ticker-title">દિવાળી સ્નેહમિલન & રંગોળી સ્પર્ધા ૨૦૨૬</h4>
+                  <p class="ticker-desc">તારીખ ૩૧-૧૦ ના રોજ સોસાયટી ક્લબહાઉસ ખાતે ભવ્ય સ્નેહમિલન રાખવામાં આવેલ છે...</p>
+                </div>
+
+                <!-- Emergency SOS Banner Card -->
+                <div class="emergency-card-crimson" onclick="PrototypeApp.showMemberEmergencyDialog()">
+                  <div class="sos-icon-circle">🚨</div>
+                  <div class="sos-text">
+                    <strong>ઇમરજન્સી SOS મદદ</strong>
+                    <span>ગેટ સિક્યોરિટી અને એડમિનને તાત્કાલિક એલર્ટ મોકલો</span>
+                  </div>
+                  <span class="sos-arrow">➔</span>
+                </div>
+
+              </div>
+
+              <!-- Tab 1: Member Visitors (_buildMemberVisitorsTab) -->
+              <div class="member-tab-content" id="member-tab-visitors">
+                <div class="visitors-tab-header">
+                  <div class="head-left-group">
+                    <span class="shield-tag-icon">🛡️</span>
+                    <h3>તાજેતરના મુલાકાતીઓ</h3>
+                  </div>
+                  <button class="btn-preapprove-icon" onclick="PrototypeApp.pushScreen('member-pre-approve', 'પ્રિ-અપ્રૂવ્ડ મહેમાન પાસ')">
+                    🎟️ પ્રિ-અપ્રૂવ QR
+                  </button>
+                </div>
+
+                <!-- Scope Switcher: My Flat vs All Society -->
+                <div class="scope-switcher-pill">
+                  <button class="scope-btn active" id="btnScopeMyFlat" onclick="PrototypeApp.switchVisitorScope('my_flat')">
+                    મારા ફ્લેટના (A-402)
+                  </button>
+                  <button class="scope-btn" id="btnScopeAllSoc" onclick="PrototypeApp.switchVisitorScope('all_society')">
+                    આખી સોસાયટી ગેટ ફીડ
+                  </button>
+                </div>
+
+                <!-- Status Filter Tabs -->
+                <div class="visitor-status-filters scrollable-x">
+                  <button class="status-tab active" onclick="PrototypeApp.filterVisitorsByStatus('all')">બધા (૧૫)</button>
+                  <button class="status-tab" onclick="PrototypeApp.filterVisitorsByStatus('pending')">પેન્ડિંગ (૧)</button>
+                  <button class="status-tab" onclick="PrototypeApp.filterVisitorsByStatus('approved')">મંજૂર (૧૨)</button>
+                  <button class="status-tab" onclick="PrototypeApp.filterVisitorsByStatus('checked_out')">બહાર ગયા (૮)</button>
+                </div>
+
+                <!-- Visitors List -->
+                <div class="visitors-stream-list" id="memberVisitorsStreamList">
+                  <!-- Dynamic Visitor Cards -->
+                </div>
+              </div>
+
+              <!-- Tab 2: Member Bills (_buildMemberBillsTab) -->
+              <div class="member-tab-content" id="member-tab-bills">
+                
+                <!-- Maintenance Due Banner -->
+                <div class="maintenance-due-hero">
+                  <div class="due-badge">ઓક્ટોબર ૨૦૨૬ મેન્ટેનન્સ</div>
+                  <div class="due-amount-row">
+                    <div>
+                      <span class="amount-val" id="memDueAmount">₹ ૨,૫૦૦</span>
+                      <span class="due-date">છેલ્લી તારીખ: ૦૫ નવેમ્બર ૨૦૨૬</span>
+                    </div>
+                    <button class="btn-pay-upi-hero" id="btnMemPayUpi" onclick="PrototypeApp.openUpiPaymentModal()">
+                      ⚡ ૦% ફી UPI ચૂકવો
+                    </button>
+                    <button class="btn-receipt-hero" id="btnMemViewReceipt" onclick="PrototypeApp.showReceiptModal()" style="display:none;">
+                      📄 રસીદ જુઓ
+                    </button>
+                  </div>
+                  <div class="zero-fee-note">
+                    <span>✓ 0% ગેટવે ફી • ડાયરેક્ટ સોસાયટી HDFC બેંક ખાતામાં જમા</span>
+                  </div>
+                </div>
+
+                <!-- Finance Hub Cards -->
+                <div class="finance-hub-card" onclick="PrototypeApp.openUpiPaymentModal()">
+                  <div class="hub-icon text-teal">🧾</div>
+                  <div class="hub-info">
+                    <strong>મેઇન્ટેનન્સ બિલ & રસીદ</strong>
+                    <span>UPI પેમેન્ટ, પાછલી રસીદો & બાકી સ્ટેટમેન્ટ</span>
+                  </div>
+                  <span class="hub-chevron">➔</span>
+                </div>
+
+                <div class="finance-hub-card" onclick="PrototypeApp.pushScreen('member-accounts', 'સોસાયટી પાસબુક (ખાતાવહી)')">
+                  <div class="hub-icon text-amber">💼</div>
+                  <div class="hub-info">
+                    <strong>સોસાયટી પાસબુક (ખાતાવહી)</strong>
+                    <span>સોસાયટીના તમામ ખર્ચ & આવકનું ટ્રાન્સપરન્ટ સ્ટેટમેન્ટ</span>
+                  </div>
+                  <span class="hub-chevron">➔</span>
+                </div>
+
+              </div>
+
+              <!-- Tab 3: Member Services (_buildMemberServicesTab) -->
+              <div class="member-tab-content" id="member-tab-services">
+                <div class="section-title-strip">
+                  <span class="icon-accent">📱</span>
+                  <h3>સોસાયટી સેવાઓ & સુવિધાઓ</h3>
+                </div>
+
+                <div class="services-8-grid">
+                  <div class="service-item" onclick="PrototypeApp.pushScreen('member-vehicles', 'મારા વાહનો & પાર્કિંગ')">
+                    <div class="s-icon text-sky">🚗</div>
+                    <span>મારા વાહનો & પાર્કિંગ</span>
+                  </div>
+                  <div class="service-item" onclick="PrototypeApp.pushScreen('member-pre-approve', 'પ્રિ-અપ્રૂવ્ડ વિઝિટર્સ')">
+                    <div class="s-icon text-teal">🎟️</div>
+                    <span>પ્રિ-અપ્રૂવ્ડ પાસ</span>
+                  </div>
+                  <div class="service-item" onclick="PrototypeApp.pushScreen('member-daily-staff', 'ડેઇલી સ્ટાફ & હેલ્પર્સ')">
+                    <div class="s-icon text-purple">👤</div>
+                    <span>ડેઇલી સ્ટાફ & મેઇડ</span>
+                  </div>
+                  <div class="service-item" onclick="PrototypeApp.openModal('modalNewComplaint')">
+                    <div class="s-icon text-rose">📝</div>
+                    <span>ફરિયાદ નોંધાવો</span>
+                  </div>
+                  <div class="service-item" onclick="PrototypeApp.pushScreen('member-accounts', 'સોસાયટી એકાઉન્ટ્સ')">
+                    <div class="s-icon text-emerald">💼</div>
+                    <span>સોસાયટી હિસાબ</span>
+                  </div>
+                  <div class="service-item" onclick="PrototypeApp.openModal('modalCreatePoll')">
+                    <div class="s-icon text-amber">🗳️</div>
+                    <span>પોલ્સ & વોટિંગ</span>
+                  </div>
+                  <div class="service-item" onclick="PrototypeApp.pushScreen('member-amenities', 'ક્લબહાઉસ & એમેનિટીઝ')">
+                    <div class="s-icon text-indigo">🎉</div>
+                    <span>ક્લબહાઉસ બુકિંગ</span>
+                  </div>
+                  <div class="service-item" onclick="PrototypeApp.pushScreen('member-visitors', 'મુલાકાતી હિસ્ટ્રી')">
+                    <div class="s-icon text-slate">📜</div>
+                    <span>મુલાકાતી હિસ્ટ્રી</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- ============================================== -->
+            <!-- ROLE 3: WATCHMAN SCREEN (watchmen_screen.dart) -->
+            <!-- Royal Indigo Header + 2 Segmented Tabs + Patrol -->
+            <!-- ============================================== -->
+            <div class="flutter-screen" id="screen-watchman-gate">
+              
+              <!-- Royal Indigo Ultra Premium Header -->
+              <div class="watchman-royal-header">
+                <div class="w-header-top-row">
+                  <div class="w-title-wrap">
+                    <button class="w-btn-menu" onclick="PrototypeApp.openDrawer()">☰</button>
+                    <h3>ગેટ કન્ટ્રોલ</h3>
+                    <div class="live-pill"><span class="live-green-dot"></span> LIVE</div>
+                  </div>
+                  <div class="w-header-actions">
+                    <button class="w-action-circle" onclick="PrototypeApp.openModal('modalVehicleLookup')" title="Vehicle Search">🚗</button>
+                    <button class="w-action-circle" onclick="PrototypeApp.showWatchmanStaffSheet()" title="Emergency & Staff">📞</button>
+                    <button class="w-action-circle sos-amber" onclick="PrototypeApp.sendWatchmanSOS()" title="Emergency SOS">⚠️</button>
+                    <button class="w-action-circle" onclick="PrototypeApp.applyLanguage('gu')" title="Language">🌐</button>
+                  </div>
+                </div>
+
+                <!-- Segmented Tabs: New Entry vs Logs -->
+                <div class="watchman-segmented-bar">
+                  <button class="w-seg-btn active" id="btnWSegEntry" onclick="PrototypeApp.switchWatchmanTab(0)">
+                    <span>👤</span> નવી એન્ટ્રી (New Entry)
+                  </button>
+                  <button class="w-seg-btn" id="btnWSegLogs" onclick="PrototypeApp.switchWatchmanTab(1)">
+                    <span>📋</span> મુલાકાત હિસ્ટ્રી (Logs)
+                  </button>
+                </div>
+              </div>
+
+              <!-- Watchman Tab 0: New Entry (_buildEntryForm) -->
+              <div class="watchman-tab-content active" id="watchman-tab-entry">
+                
+                <!-- Quick 1-Tap Delivery Partners -->
+                <div class="quick-delivery-strip">
+                  <div class="strip-label">⚡ ૧-ટેપ ક્વિક ડિલિવરી એન્ટ્રી</div>
+                  <div class="quick-partners-row scrollable-x">
+                    <button class="q-btn zomato" onclick="PrototypeApp.quickTagVisitor('Zomato Rider', 'Food Delivery')">🔴 Zomato</button>
+                    <button class="q-btn swiggy" onclick="PrototypeApp.quickTagVisitor('Swiggy Rider', 'Food Delivery')">🟠 Swiggy</button>
+                    <button class="q-btn blinkit" onclick="PrototypeApp.quickTagVisitor('Blinkit Rider', 'Grocery Quick')">🟡 Blinkit</button>
+                    <button class="q-btn zepto" onclick="PrototypeApp.quickTagVisitor('Zepto Rider', 'Grocery Delivery')">🟣 Zepto</button>
+                    <button class="q-btn amazon" onclick="PrototypeApp.quickTagVisitor('Amazon Courier', 'Parcel Delivery')">📦 Amazon</button>
+                    <button class="q-btn flipkart" onclick="PrototypeApp.quickTagVisitor('Flipkart Delivery', 'Parcel Delivery')">🔵 Flipkart</button>
+                    <button class="q-btn uber" onclick="PrototypeApp.quickTagVisitor('Uber Cab Driver', 'Cab Pickup')">🚕 Uber / Ola</button>
+                    <button class="q-btn repair" onclick="PrototypeApp.quickTagVisitor('પ્લમ્બર / ટેકનિશિયન', 'Service Repair')">🔧 સર્વિસ/રિપેર</button>
+                  </div>
+                </div>
+
+                <!-- Live Camera Photo Box -->
+                <div class="flutter-card">
+                  <div class="camera-card-wrap">
+                    <div class="camera-lens-box">
+                      <img id="watchmanLivePhoto" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80" alt="Visitor Live Photo">
+                      <span class="live-lens-indicator">● LIVE CAMERA FEED</span>
+                      <button class="btn-shutter-switch" onclick="PrototypeApp.shuffleVisitorPhoto()">🔄 ફોટો બદલો</button>
+                    </div>
+                  </div>
+
+                  <!-- Form Fields -->
+                  <div class="form-row" style="margin-top:12px;">
+                    <div class="form-group flex-2">
+                      <label>મુલાકાતીનું પૂરું નામ:</label>
+                      <input type="text" id="watchmanVisitorName" value="સુરેશભાઈ મહેતા" class="input-styled">
+                    </div>
+                    <div class="form-group flex-1">
+                      <label>લક્ષ્ય ફ્લેટ:</label>
+                      <select id="watchmanTargetFlat" class="input-styled font-bold">
+                        <option value="A-402" selected>A-402 (રાજેશ પટેલ)</option>
+                        <option value="A-101">A-101 (હસમુખ પટેલ)</option>
+                        <option value="B-201">B-201 (કિરીટ શાહ)</option>
+                        <option value="B-301">B-301 (અમિત શાહ)</option>
+                        <option value="C-104">C-104 (નરેશ જોશી)</option>
+                        <option value="__all_society__">આખી સોસાયટી (All)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group flex-1">
+                      <label>આવવાનું કારણ / હેતુ:</label>
+                      <input type="text" id="watchmanVisitorPurpose" value="મહેમાન / અંગત મુલાકાત" class="input-styled">
+                    </div>
+                    <div class="form-group flex-1">
+                      <label>મોબાઈલ નંબર:</label>
+                      <input type="text" id="watchmanVisitorPhone" value="+91 98250 12345" class="input-styled">
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>વાહન નંબર (જો હોય તો):</label>
+                    <input type="text" id="watchmanVehiclePlate" value="GJ-01-AB-1234" class="input-styled uppercase">
+                  </div>
+
+                  <!-- Main High-Energy Ring CTA -->
+                  <button class="btn-ring-resident" onclick="PrototypeApp.triggerVisitorAlert()">
+                    <span>🔔</span> સભ્યના મોબાઈલમાં રીંગ વગાડો (Alert Resident)
+                  </button>
+                </div>
+
+                <!-- Quick Utility Tools -->
+                <div class="gate-tools-deck">
+                  <button class="tool-btn" onclick="PrototypeApp.openModal('modalScanQrPass')">
+                    <span>📱</span> QR પાસ સ્કેન કરો
+                  </button>
+                  <button class="tool-btn" onclick="PrototypeApp.openModal('modalVehicleLookup')">
+                    <span>🚗</span> વાહન પાર્કિંગ રડાર
+                  </button>
+                  <button class="tool-btn" onclick="PrototypeApp.pushScreen('watchman-patrol', 'રાત્રિ QR પેટ્રોલિંગ')">
+                    <span>🚶‍♂️</span> પેટ્રોલિંગ રૂટ
+                  </button>
+                </div>
+
+              </div>
+
+              <!-- Watchman Tab 1: Visitor Logs (_buildVisitorHistory) -->
+              <div class="watchman-tab-content" id="watchman-tab-history">
+                <div class="log-filter-bar">
+                  <span>આજના તમામ મુલાકાતીઓ (Today's Logs)</span>
+                  <span class="badge-approved">૨૪ એન્ટ્રીઝ</span>
+                </div>
+                <div class="watchman-history-list" id="watchmanHistoryList">
+                  <!-- Dynamic Watchman Log Items -->
+                </div>
+              </div>
+
+            </div>
+
+            <!-- ============================================== -->
+            <!-- ROLE 4: SUPER ADMIN (super_admin_dashboard.dart) -->
+            <!-- Deep Midnight Obsidian + KPI Deck + 4 Tabs     -->
+            <!-- ============================================== -->
+            <div class="flutter-screen dark-theme-screen" id="screen-superadmin-dashboard">
+              
+              <!-- Executive Command Header -->
+              <div class="sa-command-header">
+                <div class="sa-head-top">
+                  <div class="sa-title-group">
+                    <button class="w-btn-menu" onclick="PrototypeApp.openDrawer()">☰</button>
+                    <div>
+                      <div class="sa-brand-row">
+                        <h3>SUPER ADMIN</h3>
+                        <span class="badge-pro">PRO</span>
+                      </div>
+                      <span class="sa-live-engine">● LIVE ENGINE • કમાન્ડ સેન્ટર</span>
+                    </div>
+                  </div>
+                  <div class="sa-head-actions">
+                    <button class="sa-icon-btn" onclick="PrototypeApp.showAppealsModal()" title="Pending Appeals">
+                      <span>🔔</span>
+                      <span class="sa-badge-count">૧</span>
+                    </button>
+                    <button class="sa-icon-btn" onclick="PrototypeApp.showToast('ડેટા સફળતાપૂર્વક રિફ્રેશ થયો!', 'success')">🔄</button>
+                    <button class="sa-icon-btn" onclick="PrototypeApp.showToast('સુપર એડમિન સત્ર સુરક્ષિત છે', 'info')">🛡️</button>
+                  </div>
+                </div>
+
+                <!-- Pending Appeals Live Alert Banner -->
+                <div class="sa-appeal-banner" onclick="PrototypeApp.pushScreen('sa-appeal-detail', 'અપીલ સમીક્ષા: શિવ શક્તિ એન્ક્લેવ')">
+                  <div class="appeal-icon">⚠️</div>
+                  <div class="appeal-meta">
+                    <strong>પેન્ડિંગ પુનઃસક્રિયતા અપીલ (1)</strong>
+                    <span>શિવ શક્તિ એન્ક્લેવ (રાજકોટ) • ડીએક્ટિવેશન રિવર્સલ વિનંતી</span>
+                  </div>
+                  <span class="btn-review-pill">રિવ્યુ કરો ➔</span>
+                </div>
+
+                <!-- Horizontal Scrolling Bento KPI Deck -->
+                <div class="sa-kpi-scroll-deck scrollable-x">
+                  <div class="sa-kpi-bento bg-teal-dark">
+                    <span class="k-label">કુલ કલેક્શન વોલ્યુમ</span>
+                    <span class="k-val">₹ ૪.૮૫ Cr</span>
+                    <span class="k-sub">આ મહિને જમા</span>
+                  </div>
+                  <div class="sa-kpi-bento bg-blue-dark">
+                    <span class="k-label">રજિસ્ટર્ડ પરિસરો</span>
+                    <span class="k-val">૪૨ પરિસરો</span>
+                    <span class="k-sub">૩૯ સક્રિય સોસાયટીઓ</span>
+                  </div>
+                  <div class="sa-kpi-bento bg-purple-dark">
+                    <span class="k-label">કુલ યુઝર્સ & સભ્યો</span>
+                    <span class="k-val">૧,૨૫૦ સભ્યો</span>
+                    <span class="k-sub">૪૨ સોસાયટી એડમિન્સ</span>
+                  </div>
+                  <div class="sa-kpi-bento bg-amber-dark">
+                    <span class="k-label">ગેટ સિક્યોરિટી પલ્સ</span>
+                    <span class="k-val">૧૫૪ મુલાકાતીઓ</span>
+                    <span class="k-sub">૮૪ ગાર્ડ્સ ઓન ડ્યુટી</span>
+                  </div>
+                </div>
+
+                <!-- Tab Buttons: Societies, Users, Audit, Operations -->
+                <div class="sa-tab-nav-bar">
+                  <button class="sa-nav-tab active" id="saTab0" onclick="PrototypeApp.switchSuperAdminTab(0)">સોસાયટી</button>
+                  <button class="sa-nav-tab" id="saTab1" onclick="PrototypeApp.switchSuperAdminTab(1)">યુઝર્સ</button>
+                  <button class="sa-nav-tab" id="saTab2" onclick="PrototypeApp.switchSuperAdminTab(2)">ઓડિટ</button>
+                  <button class="sa-nav-tab" id="saTab3" onclick="PrototypeApp.switchSuperAdminTab(3)">ઓપરેશન્સ</button>
+                </div>
+              </div>
+
+              <!-- Super Admin Tab 0: Societies (_buildSocietiesTab) -->
+              <div class="sa-tab-content active" id="sa-tab-societies">
+                <div class="sa-filter-row">
+                  <input type="text" placeholder="સોસાયટી નામ, શહેર કે એડમિન શોધો..." class="input-styled dark-input">
+                  <button class="btn-xs-teal" onclick="PrototypeApp.pushScreen('sa-onboard', 'નવી સોસાયટી ઓનબોર્ડ કરો')">+ નવી સોસાયટી</button>
+                </div>
+                <div class="sa-societies-list" id="saSocietiesList">
+                  <!-- Dynamic Societies -->
+                </div>
+              </div>
+
+              <!-- Super Admin Tab 1: Users (_buildUsersTab) -->
+              <div class="sa-tab-content" id="sa-tab-users">
+                <div class="sa-users-list" id="saUsersList">
+                  <!-- Dynamic Users -->
+                </div>
+              </div>
+
+              <!-- Super Admin Tab 2: Audit (_buildFinanceAuditTab) -->
+              <div class="sa-tab-content" id="sa-tab-audit">
+                <div class="flutter-card dark-card">
+                  <h4>પ્લેટફોર્મ ફાઇનાન્શિયલ ઓડિટ</h4>
+                  <p class="text-muted-xs">તમામ ૪૨ સોસાયટીઓના કલેક્શન અને ૦% પેમેન્ટ ગેટવે ટ્રાન્ઝેક્શન્સ</p>
+                  <div class="sa-audit-summary">
+                    <div><span>કુલ સોસાયટીઓ:</span> <strong>૪૨</strong></div>
+                    <div><span>કુલ પેમેન્ટ વોલ્યુમ:</span> <strong>₹ ૪,૮૫,૦૦,૦૦૦</strong></div>
+                    <div><span>પ્લેટફોર્મ ગેટવે ફી:</span> <strong>₹ ૦ (૧૦૦% ફ્રી)</strong></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Super Admin Tab 3: Operations (_buildSuperActionsTab) -->
+              <div class="sa-tab-content" id="sa-tab-operations">
+                <div class="flutter-card dark-card">
+                  <h4>સિસ્ટમ ઓપરેશન્સ & સુરક્ષા કંટ્રોલ</h4>
+                  <button class="btn-flutter-rose" style="margin-top:10px;" onclick="PrototypeApp.pushScreen('sa-broadcast', 'ઇમરજન્સી ગ્લોબલ બ્રોડકાસ્ટ')">
+                    📢 તમામ ૧,૨૫૦ સભ્યોને ગ્લોબલ એલર્ટ મોકલો
+                  </button>
+                  <button class="btn-flutter-teal" style="margin-top:8px;" onclick="PrototypeApp.showToast('Single-Device Session Guard ૧૦૦% સુરક્ષિત છે', 'success')">
+                    🛡️ Session Guard RBAC ઓડિટ ચલાવો
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+
+            <!-- ============================================== -->
+            <!-- SUB-SCREENS (PUSHED VIA Navigator.push)         -->
+            <!-- ============================================== -->
+
+            <!-- 1. ADMIN: BANK & 0% UPI SETTINGS -->
+            <div class="flutter-screen" id="screen-admin-bank-settings">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <span class="tag-accent">🏦 સોસાયટી બેંક & ૦% UPI સેટિંગ્સ</span>
+                  <span class="badge-approved">0% GATEWAY FEE</span>
+                </div>
+                <div class="form-row">
+                  <div class="form-group flex-1">
+                    <label>સત્તાવાર સોસાયટી UPI ID (VPA):</label>
+                    <input type="text" value="shreeshyam.society@okhdfcbank" class="input-styled" readonly>
+                  </div>
+                  <div class="form-group flex-1">
+                    <label>બેંક એકાઉન્ટ નંબર:</label>
+                    <input type="text" value="50200084920192" class="input-styled" readonly>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group flex-1">
+                    <label>IFSC કોડ:</label>
+                    <input type="text" value="HDFC0001024" class="input-styled" readonly>
+                  </div>
+                  <div class="form-group flex-1">
+                    <label>બેંક શાખા:</label>
+                    <input type="text" value="HDFC Bank, S.G. Highway, Ahmedabad" class="input-styled" readonly>
+                  </div>
+                </div>
+                <button class="btn-flutter-primary" onclick="PrototypeApp.showToast('બેંક વિગતો સાચવવામાં આવી!', 'success')">
+                  💾 બેંક વિગતો સેવ કરો
+                </button>
+              </div>
+
+              <!-- Pending UTR Verification -->
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>પેન્ડિંગ UTR વેરિફિકેશન (1 Pending)</h4>
+                </div>
+                <div class="utr-approval-box">
+                  <div>
+                    <strong>ફ્લેટ C-104 (નરેશ જોશી)</strong>
+                    <span class="text-muted-xs">₹ ૨,૫૦૦ • UTR: <code>628109348124</code></span>
+                  </div>
+                  <button class="btn-xs-emerald" onclick="PrototypeApp.approvePendingUtr('C-104')">✓ ૧-ક્લિક Approve</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. ADMIN: MEMBERS DIRECTORY -->
+            <div class="flutter-screen" id="screen-admin-members-directory">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>સભ્યો & સ્ટાફ ડિરેક્ટરી (૫૦ ફ્લેટ્સ)</h4>
+                  <button class="btn-xs-primary" onclick="PrototypeApp.openModal('modalAddMember')">+ નવો સભ્ય</button>
+                </div>
+                <input type="text" placeholder="ફ્લેટ નંબર કે નામથી શોધો..." class="input-styled" style="margin-bottom:10px;">
+                <div class="members-dir-list" id="adminMembersDirList">
+                  <!-- Dynamic -->
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. ADMIN: MAINTENANCE DESK -->
+            <div class="flutter-screen" id="screen-admin-maintenance">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>ઓક્ટોબર ૨૦૨૬ મેન્ટેનન્સ કલેક્શન</h4>
+                  <button class="btn-xs-primary" onclick="PrototypeApp.pushScreen('admin-bulk-bill', '૧-ક્લિક બલ્ક બિલિંગ')">⚡ બલ્ક બિલ</button>
+                </div>
+                <div class="bill-row-item">
+                  <div><strong>A-402 (રાજેશ પટેલ)</strong><span class="text-muted-xs">₹ ૨,૫૦૦ • Paid on 28-10 via UPI</span></div>
+                  <span class="badge-approved">PAID</span>
+                </div>
+                <div class="bill-row-item">
+                  <div><strong>B-201 (કિરીટ શાહ)</strong><span class="text-muted-xs">₹ ૨,૫૦૦ • Paid via Cash</span></div>
+                  <span class="badge-approved">PAID</span>
+                </div>
+                <div class="bill-row-item">
+                  <div><strong>C-104 (નરેશ જોશી)</strong><span class="text-muted-xs">₹ ૨,૫૦૦ • Due since 10-10</span></div>
+                  <span class="badge-pending">DUE</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. ADMIN: 1-CLICK BULK BILL -->
+            <div class="flutter-screen" id="screen-admin-bulk-bill">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>૧-ક્લિક બલ્ક મેન્ટેનન્સ બિલિંગ વિઝાર્ડ</h4>
+                </div>
+                <p class="text-muted-xs">સોસાયટીના તમામ ૫૦ ફ્લેટ્સને એકસાથે માસિક મેન્ટેનન્સ બિલ જનરેટ કરી WhatsApp અને SMS દ્વારા મોકલો.</p>
+                <div class="form-row" style="margin-top:10px;">
+                  <div class="form-group flex-1"><label>મહિનો:</label><input type="text" value="ઓક્ટોબર ૨૦૨૬" class="input-styled" readonly></div>
+                  <div class="form-group flex-1"><label>રકમ પ્રતિ ફ્લેટ:</label><input type="text" value="₹ ૨,૫૦૦" class="input-styled" readonly></div>
+                </div>
+                <button class="btn-flutter-primary" style="margin-top:10px;" onclick="PrototypeApp.triggerBulkBillAlert()">
+                  ⚡ તમામ ૫૦ ફ્લેટ્સને ડિજિટલ બિલ મોકલો
+                </button>
+              </div>
+            </div>
+
+            <!-- 5. ADMIN: ACCOUNTS & AUDIT -->
+            <div class="flutter-screen" id="screen-admin-accounts">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>સોસાયટી વાર્ષિક ઓડિટ બેલેન્સ શીટ</h4>
+                  <button class="btn-xs-teal" onclick="PrototypeApp.showAccountsPdfModal()">📄 Audit PDF જુઓ</button>
+                </div>
+                <div class="accounts-summary-table">
+                  <div class="table-row head"><span>વિગત</span><span>આવક (+)</span><span>ખર્ચ (-)</span></div>
+                  <div class="table-row"><span>મેન્ટેનન્સ કલેક્શન</span><span class="text-emerald">+ ₹ ૪,૮૫,૦૦૦</span><span>-</span></div>
+                  <div class="table-row"><span>સિક્યુરિટી ગાર્ડ્સ પગાર</span><span>-</span><span class="text-rose">- ₹ ૪૫,૦૦૦</span></div>
+                  <div class="table-row"><span>કોમન લાઇટ બિલ & લિફ્ટ AMC</span><span>-</span><span class="text-rose">- ₹ ૨૮,૪૦૦</span></div>
+                  <div class="table-row total"><span>ચોખ્ખું સોસાયટી બેંક બેલેન્સ</span><span class="text-indigo"><strong>₹ ૧૪,૮૨,૬૫૦</strong></span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. ADMIN: COMPLAINTS DESK -->
+            <div class="flutter-screen" id="screen-admin-complaints">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>રહીશ ફરિયાદ નિવારણ ડેસ્ક</h4>
+                </div>
+                <div class="complaint-item">
+                  <div class="comp-head">
+                    <strong>વિંગ A ૪થા માળે લિફ્ટનો ડોર અવાજ કરે છે</strong>
+                    <button class="btn-xs-emerald" onclick="PrototypeApp.resolveComplaint(this)">✓ ઉકેલાઈ (Resolve)</button>
+                  </div>
+                  <p class="text-muted-xs">ફરિયાદી: રાજેશ પટેલ (A-402) • મોબાઈલ: +91 98250 12345</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 7. ADMIN: BROADCAST NOTICES -->
+            <div class="flutter-screen" id="screen-admin-broadcast">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>ડિજિટલ નોટિસ બોર્ડ & પરિપત્રો</h4>
+                  <button class="btn-xs-primary" onclick="PrototypeApp.openModal('modalPublishNotice')">+ નવો પરિપત્ર</button>
+                </div>
+                <div class="notice-item-card">
+                  <strong>દિવાળી સ્નેહમિલન & રંગોળી સ્પર્ધા ૨૦૨૬</strong>
+                  <p class="text-muted-xs">પ્રસિદ્ધ: ૨૭-૧૦-૨૦૨૬ • તમામ સભ્યોને WhatsApp & પુશ નોટિસ ગયેલ છે.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 8. ADMIN: POLLS -->
+            <div class="flutter-screen" id="screen-admin-polls">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>સોસાયટી લોકશાહી પોલ્સ</h4>
+                  <button class="btn-xs-primary" onclick="PrototypeApp.openModal('modalCreatePoll')">+ નવો પોલ</button>
+                </div>
+                <div class="poll-item-admin">
+                  <strong>EV ફાસ્ટ ચાર્જિંગ સ્ટેશન ઇન્સ્ટોલેશન</strong>
+                  <p class="text-muted-xs">મતદાન: ૪૨/૫૦ (૮૪% મતદાન પૂર્ણ)</p>
+                  <div class="admin-poll-bar">
+                    <div class="bar-yes" style="width:78%;">હા (78%)</div>
+                    <div class="bar-no" style="width:22%;">ના (22%)</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 9. ADMIN: PATROL LOGS -->
+            <div class="flutter-screen" id="screen-admin-patrol">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>ગાર્ડ QR પેટ્રોલિંગ લોગ્સ</h4>
+                  <span class="badge-approved">૧૦૦% પૂર્ણ</span>
+                </div>
+                <div class="patrol-route-steps" id="adminPatrolSteps">
+                  <!-- Dynamic -->
+                </div>
+              </div>
+            </div>
+
+            <!-- 10. ADMIN: AGM SIGNATURE SHEET -->
+            <div class="flutter-screen" id="screen-admin-agm">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>વાર્ષિક સાધારણ સભા (AGM) સહી શીટ</h4>
+                  <button class="btn-xs-teal" onclick="window.print()">🖨️ PDF પ્રિન્ટ</button>
+                </div>
+                <table class="receipt-items-table">
+                  <thead><tr><th>ફ્લેટ</th><th>સભ્યનું નામ</th><th>સહી (Signature)</th></tr></thead>
+                  <tbody>
+                    <tr><td>A-101</td><td>હસમુખભાઈ પટેલ</td><td>[________________]</td></tr>
+                    <tr><td>A-102</td><td>પ્રવીણભાઈ શાહ</td><td>[________________]</td></tr>
+                    <tr><td>A-402</td><td>રાજેશભાઈ પટેલ</td><td>[________________]</td></tr>
+                    <tr><td>B-201</td><td>કિરીટભાઈ શાહ</td><td>[________________]</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 11. ADMIN: PARKING MANAGEMENT -->
+            <div class="flutter-screen" id="screen-admin-parking">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>સોસાયટી પાર્કિંગ સ્લોટ વ્યવસ્થાપન</h4>
+                  <span class="badge-tag">૫૦ સ્લોટ્સ</span>
+                </div>
+                <div class="veh-card">
+                  <div class="veh-icon">🚗</div>
+                  <div class="veh-meta">
+                    <strong>B2 - Slot #14 (Covered 4-Wheeler)</strong>
+                    <span>અલોટેડ: <strong>રાજેશ પટેલ (A-402) • GJ-01-AB-1234</strong></span>
+                  </div>
+                  <span class="badge-approved">ACTIVE</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 12. ADMIN: AMENITIES SLOTS -->
+            <div class="flutter-screen" id="screen-admin-amenities">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>ક્લબહાઉસ & એમેનિટીઝ સ્લોટ વ્યવસ્થાપન</h4>
+                </div>
+                <div class="amenity-item-card">
+                  <strong>🎉 પાર્ટી પ્લોટ & એર-કન્ડિશન્ડ હોલ</strong>
+                  <p class="text-muted-xs">૩૧ ઓક્ટોબર: દિવાળી સ્નેહમિલન માટે કમિટી દ્વારા બુક</p>
+                  <span class="badge-approved">BOOKED</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 13. MEMBER: PRE-APPROVE -->
+            <div class="flutter-screen" id="screen-member-pre-approve">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>મહેમાન QR પાસ બનાવો</h4>
+                </div>
+                <div class="form-group">
+                  <label>મહેમાનનું પૂરું નામ:</label>
+                  <input type="text" id="preApproveGuestName" value="વિનોદભાઈ જોશી" class="input-styled">
+                </div>
+                <button class="btn-flutter-teal" style="margin-top:8px;" onclick="PrototypeApp.generatePreApprovePass()">
+                  🎟️ ડિજિટલ QR પાસ બનાવો & WhatsApp મોકલો
+                </button>
+              </div>
+
+              <div class="flutter-card" id="preApproveCardResult" style="display:none;">
+                <div class="pass-visual-card">
+                  <div class="pass-head"><span>શ્રી શ્યામ રેસીડેન્સી ગેટ પાસ</span><span class="badge-approved">VALID</span></div>
+                  <p>મહેમાન: <strong id="passGuestDisp">વિનોદભાઈ જોશી</strong></p>
+                  <p>લક્ષ્ય: <strong>A-402 (રાજેશ પટેલ)</strong></p>
+                  <button class="btn-whatsapp" onclick="PrototypeApp.showToast('WhatsApp પર પાસ લિંક મોકલી!', 'success')">🟢 WhatsApp શેર</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 14. MEMBER: VEHICLES -->
+            <div class="flutter-screen" id="screen-member-vehicles">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>મારા રજીસ્ટર્ડ વાહનો & પાર્કિંગ</h4>
+                </div>
+                <div class="veh-card">
+                  <div class="veh-icon">🚗</div>
+                  <div class="veh-meta">
+                    <strong>GJ-01-AB-1234 (Hyundai Creta)</strong>
+                    <span>અલોટેડ સ્લોટ: <strong>B2 - Slot #14 (Covered)</strong></span>
+                  </div>
+                  <span class="badge-approved">4-WHEELER</span>
+                </div>
+                <div class="veh-card">
+                  <div class="veh-icon">🛵</div>
+                  <div class="veh-meta">
+                    <strong>GJ-01-EQ-5678 (Honda Activa 6G)</strong>
+                    <span>અલોટેડ સ્લોટ: <strong>A1 - 2W Slot #08</strong></span>
+                  </div>
+                  <span class="badge-approved">2-WHEELER</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 15. MEMBER: DAILY STAFF -->
+            <div class="flutter-screen" id="screen-member-daily-staff">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>મારા ઘરના ડેઇલી સ્ટાફ & હેલ્પર્સ</h4>
+                </div>
+                <div class="staff-card-row">
+                  <div class="avatar-guard">👤</div>
+                  <div class="staff-meta">
+                    <strong>ગીતાબેન સોલંકી (ઘરકામ / મેઇડ)</strong>
+                    <span>સમય: સવારે ૯ થી ૧૧ • મોબાઈલ: +91 97230 44551</span>
+                  </div>
+                  <span class="badge-approved">● કેમ્પસમાં છે</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 16. MEMBER: COMPLAINTS -->
+            <div class="flutter-screen" id="screen-member-complaints">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>ફરિયાદ નિવારણ ડેસ્ક</h4>
+                  <button class="btn-xs-primary" onclick="PrototypeApp.openModal('modalNewComplaint')">+ નવી ફરિયાદ</button>
+                </div>
+                <div class="complaint-item">
+                  <strong>વિંગ A ૪થા માળે લિફ્ટનો ડોર અવાજ કરે છે</strong>
+                  <p class="text-muted-xs">તારીખ: ૨૬-૧૦-૨૦૨૬ • સ્ટેટસ: ઇન-પ્રોગ્રેસ</p>
+                  <div class="comp-note">સેક્રેટરી નોંધ: લિફ્ટ ટેકનિશિયનને બોલાવેલ છે.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 17. MEMBER: ACCOUNTS -->
+            <div class="flutter-screen" id="screen-member-accounts">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>સોસાયટી હિસાબ & નાણાકીય પારદર્શિતા</h4>
+                </div>
+                <div class="accounts-summary-table">
+                  <div class="table-row head"><span>વિગત</span><span>આવક (+)</span><span>ખર્ચ (-)</span></div>
+                  <div class="table-row"><span>મેન્ટેનન્સ ફંડ કલેક્શન</span><span class="text-emerald">+ ₹ ૪,૮૫,૦૦૦</span><span>-</span></div>
+                  <div class="table-row"><span>સિક્યુરિટી ગાર્ડ્સ પગાર</span><span>-</span><span class="text-rose">- ₹ ૪૫,૦૦૦</span></div>
+                  <div class="table-row total"><span>કુલ ચોખ્ખું બેંક બેલેન્સ</span><span class="text-indigo"><strong>₹ ૧૪,૮૨,૬૫૦</strong></span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 18. MEMBER: AMENITIES -->
+            <div class="flutter-screen" id="screen-member-amenities">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>ક્લબહાઉસ & એમેનિટીઝ સ્લોટ બુકિંગ</h4>
+                </div>
+                <div class="amenity-item-card">
+                  <strong>🎉 એર-કન્ડિશન્ડ પાર્ટી પ્લોટ & હોલ</strong>
+                  <p class="text-muted-xs">લગ્ન કે બર્થડે પાર્ટી માટે (ક્ષમતા: ૧૫૦ વ્યક્તિ) • ₹ ૩,૫૦૦/દિવસ</p>
+                  <button class="btn-xs-primary" onclick="PrototypeApp.showToast('પાર્ટી પ્લોટ સ્લોટ બુકિંગ રિક્વેસ્ટ મોકલાઈ!', 'success')">સ્લોટ બુક કરો</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 19. MEMBER: FULL VISITORS -->
+            <div class="flutter-screen" id="screen-member-visitors">
+              <div class="flutter-card">
+                <div class="card-head-row">
+                  <h4>તમામ મુલાકાતીઓ (વિઝિટર હિસ્ટ્રી)</h4>
+                </div>
+                <div class="visitor-list" id="memberFullVisitorsList">
+                  <!-- Dynamic -->
+                </div>
+              </div>
+            </div>
+
+            <!-- 20. WATCHMAN: PATROL SCREEN -->
+            <div class="flutter-screen dark-theme-screen" id="screen-watchman-patrol">
+              <div class="flutter-card dark-card">
+                <div class="card-head-row">
+                  <h4>રાત્રિ QR પેટ્રોલિંગ (Night Watch)</h4>
+                  <span class="badge-approved">SHIFT ON</span>
+                </div>
+                <div class="patrol-route-steps" id="watchmanPatrolSteps">
+                  <!-- Dynamic -->
+                </div>
+                <div class="checkpoint-selector-row" style="margin-top:10px;">
+                  <button class="btn-checkpoint" onclick="PrototypeApp.simulatePatrolScan('Main Gate')">📍 ૧. મેઇન ગેટ સ્કેન કરો</button>
+                  <button class="btn-checkpoint" onclick="PrototypeApp.simulatePatrolScan('Basement B-2')">📍 ૨. બેઝમેન્ટ B-2 સ્કેન કરો</button>
+                  <button class="btn-checkpoint" onclick="PrototypeApp.simulatePatrolScan('Terrace Wing A')">📍 ૩. વિંગ A ટેરેસ સ્કેન કરો</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 21. SUPER ADMIN: ONBOARD SOCIETY -->
+            <div class="flutter-screen dark-theme-screen" id="screen-sa-onboard">
+              <div class="flutter-card dark-card">
+                <div class="card-head-row">
+                  <h4>નવી સોસાયટી ઓનબોર્ડિંગ વિઝાર્ડ</h4>
+                </div>
+                <div class="form-row">
+                  <div class="form-group flex-2">
+                    <label>સોસાયટીનું નામ:</label>
+                    <input type="text" id="saNewSocName" value="રાધે ક્રિષ્ના હાઇટ્સ" class="input-styled dark-input">
+                  </div>
+                  <div class="form-group flex-1">
+                    <label>શહેર:</label>
+                    <input type="text" value="અમદાવાદ" class="input-styled dark-input">
+                  </div>
+                </div>
+                <button class="btn-flutter-teal" style="margin-top:10px;" onclick="PrototypeApp.onboardNewSocietySubmit()">
+                  🚀 સોસાયટી ઇન્સ્ટન્ટ પ્રોવિઝન કરો & એડમિન બનાવો
+                </button>
+              </div>
+            </div>
+
+            <!-- 22. SUPER ADMIN: GLOBAL BROADCAST -->
+            <div class="flutter-screen dark-theme-screen" id="screen-sa-broadcast">
+              <div class="flutter-card dark-card">
+                <div class="card-head-row">
+                  <h4>ઇમરજન્સી ગ્લોબલ સિસ્ટમ બ્રોડકાસ્ટ</h4>
+                </div>
+                <p class="text-muted-xs">આ બ્રોડકાસ્ટ તમામ ૪૨ સોસાયટીઓના તમામ ૧,૨૫૦ સભ્યોના મોબાઇલ પર ઇમરજન્સી પુશ નોટિફિકેશન તરીકે જશે.</p>
+                <div class="form-group" style="margin-top:10px;">
+                  <label>મેસેજ:</label>
+                  <textarea class="input-styled dark-input" rows="3">સિસ્ટમ મેન્ટેનન્સ: આજે રાત્રે ૨:૦૦ થી ૨:૩૦ કલાકે સર્વર અપગ્રેડ થશે.</textarea>
+                </div>
+                <button class="btn-flutter-rose" onclick="PrototypeApp.sendGlobalBroadcast()">
+                  📢 તમામ ૧,૨૫૦ સભ્યોને મોકલો
+                </button>
+              </div>
+            </div>
+
+            <!-- 23. SUPER ADMIN: APPEAL DETAIL -->
+            <div class="flutter-screen dark-theme-screen" id="screen-sa-appeal-detail">
+              <div class="flutter-card dark-card">
+                <div class="card-head-row">
+                  <h4>પુનઃસક્રિયતા અપીલ સમીક્ષા</h4>
+                  <span class="badge-pending">PENDING</span>
+                </div>
+                <p>સોસાયટી: <strong>શિવ શક્તિ એન્ક્લેવ (રાજકોટ)</strong></p>
+                <p>એડમિન: <strong>દિનેશભાઈ સોલંકી (+91 98251 00000)</strong></p>
+                <p class="text-muted-xs">અપીલ કારણ: વાર્ષિક રિન્યુઅલ પેમેન્ટ ક્લિયર થયું છે. કૃપા કરીને સોસાયટી સક્રિય કરો.</p>
+                <button class="btn-flutter-teal" style="margin-top:12px;" onclick="PrototypeApp.showToast('✓ અપીલ મંજૂર થઈ! સોસાયટી સક્રિય કરાઈ.', 'success')">
+                  ✓ અપીલ મંજૂર કરો & એકાઉન્ટ સક્રિય કરો
+                </button>
+              </div>
+            </div>
+
+          </main>
+
+          <!-- ---------------------------------------------------- -->
+          <!-- 3. FLUTTER FLOATING GLASSMORPHIC BOTTOM NAV BAR     -->
+          <!-- Active Tab switcher for all 4 roles                  -->
+          <!-- ---------------------------------------------------- -->
+          <nav class="floating-glass-nav" id="floatingGlassNav">
+            
+            <!-- Admin Tabs (Home, Security, Finance, Society) -->
+            <div class="nav-items-row admin-nav-items" id="adminNavItems">
+              <button class="nav-item-btn active" onclick="PrototypeApp.switchAdminTab(0)">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">હોમ</span>
+              </button>
+              <button class="nav-item-btn" onclick="PrototypeApp.switchAdminTab(1)">
+                <span class="nav-icon">🛡️</span>
+                <span class="nav-label">સિક્યુરિટી</span>
+              </button>
+              <button class="nav-item-btn" onclick="PrototypeApp.switchAdminTab(2)">
+                <span class="nav-icon">💰</span>
+                <span class="nav-label">નાણાં</span>
+              </button>
+              <button class="nav-item-btn" onclick="PrototypeApp.switchAdminTab(3)">
+                <span class="nav-icon">🏛️</span>
+                <span class="nav-label">સોસાયટી</span>
+              </button>
+            </div>
+
+            <!-- Member Tabs (Home, Visitors, Bills, Services) -->
+            <div class="nav-items-row member-nav-items" id="memberNavItems" style="display:none;">
+              <button class="nav-item-btn active" onclick="PrototypeApp.switchMemberTab(0)">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">હોમ</span>
+              </button>
+              <button class="nav-item-btn" onclick="PrototypeApp.switchMemberTab(1)">
+                <span class="nav-icon">🛡️</span>
+                <span class="nav-label">વિઝિટર્સ</span>
+                <span class="nav-badge" id="navVisitorBadge" style="display:none;">1</span>
+              </button>
+              <button class="nav-item-btn" onclick="PrototypeApp.switchMemberTab(2)">
+                <span class="nav-icon">💳</span>
+                <span class="nav-label">બિલ</span>
+              </button>
+              <button class="nav-item-btn" onclick="PrototypeApp.switchMemberTab(3)">
+                <span class="nav-icon">📱</span>
+                <span class="nav-label">સેવાઓ</span>
+              </button>
+            </div>
+
+            <!-- Watchman Tabs (Gate Entry, Visitor Log, Patrol) -->
+            <div class="nav-items-row watchman-nav-items" id="watchmanNavItems" style="display:none;">
+              <button class="nav-item-btn active" onclick="PrototypeApp.switchWatchmanBottomTab(0)">
+                <span class="nav-icon">🚪</span>
+                <span class="nav-label">ગેટ એન્ટ્રી</span>
+              </button>
+              <button class="nav-item-btn" onclick="PrototypeApp.switchWatchmanBottomTab(1)">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">વિઝિટર લોગ</span>
+              </button>
+              <button class="nav-item-btn" onclick="PrototypeApp.switchWatchmanBottomTab(2)">
+                <span class="nav-icon">🚶‍♂️</span>
+                <span class="nav-label">પેટ્રોલિંગ</span>
+              </button>
+            </div>
+
+            <!-- Super Admin Tabs (Societies, Users, Audit, Operations) -->
+            <div class="nav-items-row superadmin-nav-items" id="superAdminNavItems" style="display:none;">
+              <button class="nav-item-btn active" onclick="PrototypeApp.switchSuperAdminTab(0)">
+                <span class="nav-icon">🏢</span>
+                <span class="nav-label">સોસાયટી</span>
+              </button>
+              <button class="nav-item-btn" onclick="PrototypeApp.switchSuperAdminTab(1)">
+                <span class="nav-icon">👥</span>
+                <span class="nav-label">યુઝર્સ</span>
+              </button>
+              <button class="nav-item-btn" onclick="PrototypeApp.switchSuperAdminTab(2)">
+                <span class="nav-icon">💼</span>
+                <span class="nav-label">ઓડિટ</span>
+              </button>
+              <button class="nav-item-btn" onclick="PrototypeApp.switchSuperAdminTab(3)">
+                <span class="nav-icon">🛡️</span>
+                <span class="nav-label">ઓપરેશન્સ</span>
+              </button>
+            </div>
+
+          </nav>
+
+
+          <!-- ---------------------------------------------------- -->
+          <!-- 4. AUTHENTIC FLUTTER AppNavigationDrawer             -->
+          <!-- ---------------------------------------------------- -->
+          <div class="drawer-scrim" id="drawerScrim" onclick="PrototypeApp.closeDrawer()"></div>
+          
+          <aside class="app-navigation-drawer" id="appNavigationDrawer">
+            <!-- Drawer Header (Matches _buildDrawerHeader) -->
+            <div class="drawer-header-gradient" id="drawerHeaderGradient">
+              <div class="drawer-header-top">
+                <div class="drawer-avatar-circle" id="drawerAvatar">H</div>
+                <div class="drawer-live-chip">
+                  <span class="pulsing-green"></span>
+                  <span>સક્રિય</span>
+                </div>
+              </div>
+              <h3 class="drawer-user-name" id="drawerUserName">હરેશભાઈ પટેલ</h3>
+              <div class="drawer-sub-meta">
+                <span id="drawerSocName">શ્રી શ્યામ રેસીડેન્સી</span>
+                <span class="drawer-unit-badge" id="drawerUnitBadge" style="display:none;">A-402</span>
+              </div>
+              <div class="drawer-role-pill" id="drawerRolePill">સોસાયટી એડમિન</div>
+            </div>
+
+            <!-- Drawer Menu List -->
+            <div class="drawer-menu-list scrollable">
+              
+              <!-- GENERAL SECTION -->
+              <div class="drawer-section-label">સામાન્ય સેટિંગ્સ</div>
+              
+              <div class="drawer-tile" onclick="PrototypeApp.drawerAction('profile')">
+                <span class="drawer-tile-icon text-indigo">👤</span>
+                <div class="drawer-tile-text">
+                  <strong>મારી પ્રોફાઇલ (My Profile)</strong>
+                  <span>વ્યક્તિગત વિગતો જુઓ</span>
+                </div>
+                <span class="drawer-chevron">❯</span>
+              </div>
+
+              <div class="drawer-tile" onclick="PrototypeApp.drawerAction('language')">
+                <span class="drawer-tile-icon text-sky">🌐</span>
+                <div class="drawer-tile-text">
+                  <strong>ભાષા બદલો (Language)</strong>
+                  <span id="drawerLangLabel">ગુજરાતી</span>
+                </div>
+                <span class="drawer-chevron">❯</span>
+              </div>
+
+              <!-- ROLE-SPECIFIC SHORTCUTS (Dynamically populated) -->
+              <div class="drawer-section-label" id="drawerRoleShortcutsLabel">એડમિન શોર્ટકટ્સ</div>
+              <div id="drawerRoleItemsContainer">
+                <!-- Injected via JavaScript -->
+              </div>
+
+              <!-- SUPPORT & SECURITY -->
+              <div class="drawer-section-label">સપોર્ટ & સિક્યુરિટી</div>
+
+              <div class="drawer-tile" onclick="PrototypeApp.drawerAction('emergency')">
+                <span class="drawer-tile-icon text-rose">🚨</span>
+                <div class="drawer-tile-text">
+                  <strong>ઇમરજન્સી હેલ્પલાઇન નંબર્સ</strong>
+                  <span>પોલીસ, ફાયર, એમ્બ્યુલન્સ, લિફ્ટ</span>
+                </div>
+                <span class="drawer-chevron">❯</span>
+              </div>
+
+              <div class="drawer-tile" onclick="PrototypeApp.drawerAction('security')">
+                <span class="drawer-tile-icon text-emerald">🛡️</span>
+                <div class="drawer-tile-text">
+                  <strong>એપ સિક્યુરિટી & RBAC</strong>
+                  <span>Single-Device Session Guard</span>
+                </div>
+                <span class="drawer-chevron">❯</span>
+              </div>
+
+              <!-- Drawer Footer -->
+              <div class="drawer-footer">
+                <button class="btn-drawer-logout" onclick="PrototypeApp.showToast('લોગઆઉટ કન્ફર્મેશન', 'info')">
+                  <span>🚪</span> લોગઆઉટ (Sign Out)
+                </button>
+                <span class="drawer-version">My Building Guard v2.4.0</span>
+              </div>
+
+            </div>
+          </aside>
+
+        </div>
+        <!-- /flutter-scaffold -->
+
+        <div class="phone-bottom-bar">
+          <div class="home-indicator"></div>
+        </div>
+
+      </div>
+      <!-- /phone-chassis -->
+
+      <!-- SIDEBAR FOR PRESENTATION & DEMO FLOWS -->
+      <aside class="desktop-side-inspector">
+        <div class="inspector-card">
+          <div class="inspector-card-header">
+            <span class="inspector-badge">FLUTTER NATIVE NAVIGATION FLOW</span>
+            <button class="btn-link" onclick="PrototypeApp.resetAllData()">રીસેટ</button>
+          </div>
+          <h4 class="inspector-title">લાઈવ ફ્લો & ગાઈડ</h4>
+          <p class="inspector-desc">
+            આ પ્રોટોટાઇપ ફ્લટર કોડબેઝના <strong>AppBar, AppNavigationDrawer, FloatingNavBar અને Navigator Stack</strong> ને 100% ફોલો કરે છે.
+          </p>
+
+          <div class="demo-flow-actions">
+            <button class="flow-action-card" onclick="PrototypeApp.runScenario('visitor_flow')">
+              <div class="flow-icon">🔔</div>
+              <div class="flow-text">
+                <strong>૧. ગેટ રીંગ ➔ ચાઇમ ➔ સભ્ય મંજૂરી</strong>
+                <span>વોચમેન રીંગ વગાડે છે, સભ્યના ફોનમાં પોપ-અપ આવે છે.</span>
+              </div>
+            </button>
+
+            <button class="flow-action-card" onclick="PrototypeApp.runScenario('upi_flow')">
+              <div class="flow-icon">💳</div>
+              <div class="flow-text">
+                <strong>૨. ૦% ફી UPI ➔ લીલી સ્ટેમ્પ્ડ PDF રસીદ</strong>
+                <span>સભ્ય UPI થી પેમેન્ટ કરી સત્તાવાર રસીદ ડાઉનલોડ કરે છે.</span>
+              </div>
+            </button>
+
+            <button class="flow-action-card" onclick="PrototypeApp.runScenario('open_drawer')">
+              <div class="flow-icon">☰</div>
+              <div class="flow-text">
+                <strong>૩. AppNavigationDrawer જુઓ</strong>
+                <span>ડાબેથી સ્લાઇડ થતો નેવિગેશન ડ્રોઅર ચેક કરો.</span>
+              </div>
+            </button>
+
+            <button class="flow-action-card" onclick="PrototypeApp.runScenario('wrong_parking')">
+              <div class="flow-icon">🚗</div>
+              <div class="flow-text">
+                <strong>૪. વાહન સર્ચ & રોંગ પાર્કિંગ એલર્ટ</strong>
+                <span>ગાડી નંબરથી ફ્લેટ માલિકની શોધ.</span>
+              </div>
+            </button>
+          </div>
+
+          <div class="comparison-box">
+            <div class="comp-title">💡 આ પ્રોટોટાઇપ ફ્લટર એપ જેવો કેમ છે?</div>
+            <ul class="comp-list">
+              <li>✓ <strong>Role-aware Floating NavBar</strong>: એડમિન (૪ ટેબ્સ), મેમ્બર (૪ ટેબ્સ), વોચમેન (૩ ટેબ્સ), સુપર એડમિન (૪ ટેબ્સ).</li>
+              <li>✓ <strong>AppNavigationDrawer</strong>: અસલ એપ જેવો સ્લાઇડિંગ ડ્રોઅર.</li>
+              <li>✓ <strong>Navigator.push & pop</strong>: સબ-પેજ પર જવા માટે Back Button (❮).</li>
+              <li>✓ <strong>૧૦૦% ત્રિભાષી</strong>: ગુજરાતી, હિન્દી, અંગ્રેજી.</li>
+            </ul>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+
+  <!-- ============================================== -->
+  <!-- MODAL DIALOGS                                  -->
+  <!-- ============================================== -->
+
+  <!-- VISITOR INCOMING ALERT MODAL -->
+  <div class="modal-overlay" id="modalVisitorAlert">
+    <div class="modal-dialog alert-dialog">
+      <div class="alert-dialog-header">
+        <span class="pulsing-bell">🔔</span>
+        <div>
+          <h3>મુલાકાતી ગેટ પર છે!</h3>
+          <p>ગેટ ૧ પરથી સિક્યુરિટી ગાર્ડે એન્ટ્રી મોકલી છે</p>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="visitor-alert-card">
+          <div class="visitor-alert-photo-wrap">
+            <img id="alertVisitorPhoto" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80" alt="Visitor">
+            <span class="badge-photo-live">● LIVE CAPTURE</span>
+          </div>
+          <div class="visitor-alert-meta">
+            <h4 id="alertVisitorName">સુરેશભાઈ મહેતા</h4>
+            <p id="alertVisitorPurpose">હેતુ: મહેમાન / અંગત મુલાકાત</p>
+            <p id="alertVisitorPhone">ફોન: +91 98250 12345</p>
+            <div class="alert-flat-tag">લક્ષ્ય: <strong>A-402 (તમારો ફ્લેટ)</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions alert-actions">
+        <button class="btn-deny" onclick="PrototypeApp.respondToVisitor(false)">❌ અસ્વીકાર કરો (Deny)</button>
+        <button class="btn-approve" onclick="PrototypeApp.respondToVisitor(true)">✓ મંજૂરી આપો (Approve)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPI PAYMENT MODAL -->
+  <div class="modal-overlay" id="modalUpiPayment">
+    <div class="modal-dialog upi-dialog">
+      <div class="modal-dialog-header">
+        <div class="header-with-badge">
+          <span>⚡ ડાયરેક્ટ સોસાયટી UPI પેમેન્ટ</span>
+          <span class="badge-zero-fee">૦% ગેટવે ફી • Direct to Society Bank</span>
+        </div>
+        <button class="btn-close-modal" onclick="PrototypeApp.closeModal('modalUpiPayment')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="upi-amount-hero">
+          <span class="amount">₹ ૨,૫૦૦</span>
+          <span class="period">ઓક્ટોબર ૨૦૨૬ મેન્ટેનન્સ બિલ • A-402</span>
+        </div>
+        <div class="qr-code-box">
+          <div class="qr-graphic">
+            <svg viewBox="0 0 100 100" class="qr-svg">
+              <rect width="100" height="100" fill="#ffffff" rx="10"/>
+              <rect x="10" y="10" width="24" height="24" fill="#0f172a" rx="4"/>
+              <rect x="14" y="14" width="16" height="16" fill="#ffffff" rx="2"/>
+              <rect x="18" y="18" width="8" height="8" fill="#4338ca"/>
+              <rect x="66" y="10" width="24" height="24" fill="#0f172a" rx="4"/>
+              <rect x="70" y="14" width="16" height="16" fill="#ffffff" rx="2"/>
+              <rect x="74" y="18" width="8" height="8" fill="#4338ca"/>
+              <rect x="10" y="66" width="24" height="24" fill="#0f172a" rx="4"/>
+              <rect x="14" y="70" width="16" height="16" fill="#ffffff" rx="2"/>
+              <rect x="18" y="74" width="8" height="8" fill="#4338ca"/>
+            </svg>
+            <div class="qr-center-icon">🏢</div>
+          </div>
+          <div class="qr-bank-details">
+            <span class="vpa-label">સોસાયટી UPI ID:</span>
+            <div class="vpa-copy-row">
+              <code>shreeshyam.society@okhdfcbank</code>
+              <button class="btn-copy" onclick="PrototypeApp.showToast('UPI ID Copied!')">કૉપી</button>
+            </div>
+            <span class="vpa-hint">કોઈપણ UPI એપથી સ્કેન કરી શકાય છે</span>
+          </div>
+        </div>
+        <div class="upi-apps-row">
+          <button class="upi-app-btn" onclick="PrototypeApp.simulateUpiAppPay('Google Pay')">🟢 Google Pay</button>
+          <button class="upi-app-btn" onclick="PrototypeApp.simulateUpiAppPay('PhonePe')">🟣 PhonePe</button>
+          <button class="upi-app-btn" onclick="PrototypeApp.simulateUpiAppPay('Paytm')">🔵 Paytm</button>
+        </div>
+        <div class="manual-utr-box">
+          <label>૧૨ આંકડાનો UTR નંબર:</label>
+          <div class="utr-input-row">
+            <input type="text" id="manualUtrInput" value="628109348124" class="input-styled">
+            <button class="btn-confirm-utr" onclick="PrototypeApp.confirmUpiPayment()">પેમેન્ટ કન્ફર્મ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF RECEIPT MODAL -->
+  <div class="modal-overlay" id="modalPdfReceipt">
+    <div class="modal-dialog pdf-receipt-dialog">
+      <div class="modal-dialog-header">
+        <span>📄 સત્તાવાર ડિજિટલ મેન્ટેનન્સ રસીદ</span>
+        <div class="receipt-header-actions">
+          <button class="btn-print" onclick="window.print()">🖨️ PDF પ્રિન્ટ</button>
+          <button class="btn-close-modal" onclick="PrototypeApp.closeModal('modalPdfReceipt')">✕</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="printable-receipt-card" id="printableReceipt">
+          <div class="receipt-letterhead">
+            <div class="soc-logo-box">🏢</div>
+            <div class="soc-details">
+              <h2>શ્રી શ્યામ રેસીડેન્સી કો-ઓપરેટિવ હાઉસિંગ સોસાયટી લી.</h2>
+              <p>રજી. નં: GUJ/AHM/2022/98421 • ૧૦૦ ફીટ રોડ, ન્યુ એસ.જી. હાઇવે, અમદાવાદ</p>
+              <div class="receipt-title-banner">સત્તાવાર મેન્ટેનન્સ ચુકવણી રસીદ (OFFICIAL RECEIPT)</div>
+            </div>
+          </div>
+          <div class="receipt-meta-grid">
+            <div>રસીદ નં: <strong id="receiptNoText">SSR-2026-OCT-A402</strong></div>
+            <div>તારીખ: <strong id="receiptDateText">૨૮-૧૦-૨૦૨૬</strong></div>
+            <div>સભ્યનું નામ: <strong>રાજેશભાઈ ડી. પટેલ</strong></div>
+            <div>ફ્લેટ: <strong>A-402 (૪થો માળ)</strong></div>
+          </div>
+          <table class="receipt-items-table">
+            <thead><tr><th>ક્રમ</th><th>વિગત</th><th>રકમ (₹)</th></tr></thead>
+            <tbody>
+              <tr><td>૧</td><td>માસિક સામાન્ય મેન્ટેનન્સ & સિક્યુરિટી ફંડ</td><td class="text-right">₹ ૨,૨૦૦.૦૦</td></tr>
+              <tr><td>૨</td><td>લિફ્ટ AMC & જનરેટર બેકઅપ ફંડ</td><td class="text-right">₹ ૨૦૦.૦૦</td></tr>
+              <tr><td>૩</td><td>ફેસ્ટિવલ એન્ડ કલ્ચરલ ફંડ</td><td class="text-right">₹ ૧૦૦.૦૦</td></tr>
+            </tbody>
+            <tfoot>
+              <tr><th colspan="2" class="text-right">કુલ ચૂકવેલ રકમ:</th><th class="text-right grand-total">₹ ૨,૫૦૦.૦૦</th></tr>
+            </tfoot>
+          </table>
+          <div class="receipt-footer-stamp-row">
+            <div>
+              <div>UTR: <code id="receiptUtrText">628109348124</code></div>
+              <div>સ્ટેટસ: <strong class="text-emerald">VERIFIED BY BANK</strong></div>
+            </div>
+            <div class="official-rubber-stamp green-stamp">
+              <div class="stamp-outer-ring">
+                <div class="stamp-inner-text">SHREE SHYAM RESIDENCY</div>
+                <div class="stamp-center-bold">PAID</div>
+                <div class="stamp-date">28 OCT 2026</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VEHICLE LOOKUP MODAL -->
+  <div class="modal-overlay" id="modalVehicleLookup">
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>🚗 વાહન સર્ચ & રોંગ પાર્કિંગ રડાર</h3>
+        <button class="btn-close-modal" onclick="PrototypeApp.closeModal('modalVehicleLookup')">✕</button>
+      </div>
+      <div class="modal-body">
+        <label>ગાડી નંબર:</label>
+        <div class="input-search-row">
+          <input type="text" id="vehSearchInput" value="GJ-01-AB-1234" class="input-styled uppercase">
+          <button class="btn-search-vehicle" onclick="PrototypeApp.showToast('વાહન ડેટા મળ્યો!', 'success')">શોધો</button>
+        </div>
+        <div class="vehicle-result-card" style="margin-top:10px;">
+          <p>વાહન: <strong>Hyundai Creta (White)</strong></p>
+          <p>માલિક: <strong>અમિતભાઈ શાહ (ફ્લેટ B-301)</strong></p>
+          <p>સ્લોટ: <strong>B2 - Slot #14</strong></p>
+          <button class="btn-send-wrong-parking" onclick="PrototypeApp.sendWrongParkingNotification()">
+            🚨 ફ્લેટ B-301 ને 'ખોટું પાર્કિંગ' પુશ એલર્ટ મોકલો
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR SCANNER MODAL -->
+  <div class="modal-overlay" id="modalScanQrPass">
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>📱 QR ગેટ પાસ સ્કેનર</h3>
+        <button class="btn-close-modal" onclick="PrototypeApp.closeModal('modalScanQrPass')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="patrol-scanner-preview">
+          <div class="scanner-laser-line"></div>
+          <div class="scanner-reticle"></div>
+          <span class="scanner-text">POINT AT VISITOR PHONE QR PASS</span>
+        </div>
+        <button class="btn-flutter-teal" onclick="PrototypeApp.simulateValidQrScan()">
+          ⚡ સ્કેન ટેસ્ટ: વિનોદભાઈ જોશી (A-402) - PASS VALID
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD MEMBER MODAL -->
+  <div class="modal-overlay" id="modalAddMember">
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>👤 નવો સભ્ય ઉમેરો</h3>
+        <button class="btn-close-modal" onclick="PrototypeApp.closeModal('modalAddMember')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group"><label>પૂરું નામ:</label><input type="text" id="addMemName" value="ભાવેશભાઈ પંડ્યા" class="input-styled"></div>
+        <div class="form-group"><label>ફ્લેટ નંબર:</label><input type="text" id="addMemFlat" value="A-501" class="input-styled"></div>
+        <button class="btn-flutter-primary" onclick="PrototypeApp.submitNewMember()">✓ સભ્ય રજીસ્ટર કરો</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PUBLISH NOTICE MODAL -->
+  <div class="modal-overlay" id="modalPublishNotice">
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>📜 નવો પરિપત્ર પ્રસિદ્ધ કરો</h3>
+        <button class="btn-close-modal" onclick="PrototypeApp.closeModal('modalPublishNotice')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group"><label>શીર્ષક:</label><input type="text" value="દિવાળી વેકેશન સિક્યુરિટી ગાઇડલાઇન" class="input-styled"></div>
+        <div class="form-group"><label>વર્ણન:</label><textarea class="input-styled" rows="3">બહારગામ જતા સભ્યોએ મેઇન ગેસ વાલ્વ બંધ રાખવો.</textarea></div>
+        <button class="btn-flutter-primary" onclick="PrototypeApp.submitPublishNotice()">📢 તમામ સભ્યોને પરિપત્ર મોકલો</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE POLL MODAL -->
+  <div class="modal-overlay" id="modalCreatePoll">
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>🗳️ નવો વોટિંગ પોલ બનાવો</h3>
+        <button class="btn-close-modal" onclick="PrototypeApp.closeModal('modalCreatePoll')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group"><label>પોલ પ્રશ્ન:</label><input type="text" value="શું ટેરેસ પર સોલાર પેનલ લગાવવી જોઈએ?" class="input-styled"></div>
+        <button class="btn-flutter-primary" onclick="PrototypeApp.submitNewPoll()">🚀 મતદાન શરૂ કરો</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW COMPLAINT MODAL -->
+  <div class="modal-overlay" id="modalNewComplaint">
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>📢 નવી ફરિયાદ નોંધાવો</h3>
+        <button class="btn-close-modal" onclick="PrototypeApp.closeModal('modalNewComplaint')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group"><label>કેટેગરી:</label><select class="input-styled"><option>પ્લમ્બિંગ / પાણી</option><option>લિફ્ટ</option></select></div>
+        <div class="form-group"><label>વર્ણન:</label><textarea class="input-styled" rows="3" placeholder="વિગત લખો..."></textarea></div>
+        <button class="btn-flutter-primary" onclick="PrototypeApp.submitComplaint()">📩 ફરિયાદ સબમિટ કરો</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTICE DETAIL MODAL -->
+  <div class="modal-overlay" id="modalNoticeDetail">
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>📢 પરિપત્ર વિગત</h3>
+        <button class="btn-close-modal" onclick="PrototypeApp.closeModal('modalNoticeDetail')">✕</button>
+      </div>
+      <div class="modal-body">
+        <h4>દિવાળી સ્નેહમિલન & રંગોળી સ્પર્ધા ૨૦૨૬</h4>
+        <p style="font-size:12px; color:#475569; margin-top:6px; line-height:1.4;">
+          આગામી તારીખ ૩૧-૧૦ ના રોજ સોસાયટી ક્લબહાઉસ ખાતે ભવ્ય સ્નેહમિલન રાખવામાં આવેલ છે. વિજેતાઓને આકર્ષક ઇનામો અપાશે.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS MODAL -->
+  <div class="modal-overlay" id="modalNotifications">
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>🔔 સૂચનાઓ & નોટિફિકેશન્સ</h3>
+        <button class="btn-close-modal" onclick="PrototypeApp.closeModal('modalNotifications')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="notif-item-row">
+          <span class="notif-icon-circle text-emerald">💳</span>
+          <div>
+            <strong>મેન્ટેનન્સ રસીદ જનરેટ થઈ</strong>
+            <p>ઓક્ટોબર ૨૦૨૬ બિલ સફળતાપૂર્વક ચૂકવાયું.</p>
+          </div>
+        </div>
+        <div class="notif-item-row">
+          <span class="notif-icon-circle text-amber">🔔</span>
+          <div>
+            <strong>નવો પરિપત્ર પ્રસિદ્ધ થયો</strong>
+            <p>દિવાળી સ્નેહમિલન કાર્યક્રમ અંગે સૂચના.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  <!-- 12. Modal: Keyboard Shortcuts & Presentation Cheat Sheet -->
+  <div class="modal-overlay" id="modalHotkeysHelp">
+    <div class="modal-dialog">
+      <div class="modal-head">
+        <h4>⌨️ પ્રેઝન્ટેશન કીબોર્ડ શોર્ટકટ્સ</h4>
+        <button class="btn-modal-close" onclick="PrototypeApp.closeModal('modalHotkeysHelp')">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+          લાઈવ ક્લાયન્ટ ડેમો દરમિયાન કીબોર્ડથી સીધું કોઈપણ પેજ કે રોલ પર સ્વિચ કરવા માટે નીચેના શોર્ટકટ્સ વાપરો:
+        </p>
+        <div class="hotkeys-grid">
+          <div class="hotkey-item">
+            <span class="hotkey-kbd">1</span>
+            <span class="hotkey-desc">🏛️ સોસાયટી એડમિન રોલ</span>
+          </div>
+          <div class="hotkey-item">
+            <span class="hotkey-kbd">2</span>
+            <span class="hotkey-desc">🏠 સભ્ય (Member A-402)</span>
+          </div>
+          <div class="hotkey-item">
+            <span class="hotkey-kbd">3</span>
+            <span class="hotkey-desc">🛡️ સિક્યોરિટી વોચમેન (ગેટ ૧)</span>
+          </div>
+          <div class="hotkey-item">
+            <span class="hotkey-kbd">4</span>
+            <span class="hotkey-desc">👑 સુપર એડમિન ડેશબોર્ડ</span>
+          </div>
+          <div class="hotkey-item">
+            <span class="hotkey-kbd">D</span>
+            <span class="hotkey-desc">⚡ 1-Click લાઈવ ડેમો ફ્લો</span>
+          </div>
+          <div class="hotkey-item">
+            <span class="hotkey-kbd">P</span>
+            <span class="hotkey-desc">💳 0% UPI પેમેન્ટ QR & રસીદ</span>
+          </div>
+          <div class="hotkey-item">
+            <span class="hotkey-kbd">S</span>
+            <span class="hotkey-desc">🚨 ઈમરજન્સી SOS એલર્ટ</span>
+          </div>
+          <div class="hotkey-item">
+            <span class="hotkey-kbd">ESC</span>
+            <span class="hotkey-desc">✕ કોઈપણ મોડલ બંધ કરો</span>
+          </div>
+        </div>
+        <button class="btn-primary-block" onclick="PrototypeApp.closeModal('modalHotkeysHelp')" style="margin-top:14px;">
+          સમજાઈ ગયું (Close)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Prototype JavaScript Engine -->
+  <script src="app.js"></script>
+</body>
+</html>

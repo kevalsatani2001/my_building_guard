@@ -1636,14 +1636,14 @@ class AppStrings {
       'en': 'Member issues and resolution status',
     },
     'screen_member_signature_generator': {
-      'gu': 'સભ્ય સહી પત્રક જનરેટર',
-      'hi': 'सदस्य हस्ताक्षर पत्रक जनरेटर',
-      'en': 'Member Signature Sheet Generator',
+      'gu': 'સભ્ય સહી પત્રક',
+      'hi': 'सदस्य हस्ताक्षर पत्रक',
+      'en': 'Member Signature Sheet',
     },
     'sub_member_signature_generator': {
-      'gu': 'વિષય & સહી કોલમ સાથે વિંગ-વાઇઝ PDF એક્સપોર્ટ',
-      'hi': 'विषय व हस्ताक्षर कॉलम के साथ विंग-वार PDF निर्यात',
-      'en': 'Wing-wise PDF export with resolution & sign columns',
+      'gu': 'પીડીએફ એક્સપોર્ટ & સહી પત્રક',
+      'hi': 'पीडीएफ निर्यात व हस्ताक्षर पत्रक',
+      'en': 'PDF Export & Signature Sheet',
     },
     'screen_live_broadcast': {
       'gu': 'લાઈવ બ્રોડકાસ્ટ',
@@ -3962,13 +3962,23 @@ class AppStrings {
     },
     'assign_the_post_of_president': {
       'gu': 'પ્રમુખ પદ સોંપો',
-      'hi': 'अध्यक्ष का पद सौंपें',
-      'en': 'Assign the post of president',
+      'hi': 'अध्यक्ष पद सौंपें',
+      'en': 'Appoint as President',
+    },
+    'transfer_admin_leadership': {
+      'gu': 'એડમિન સત્તા સોંપો',
+      'hi': 'प्रशासन अधिकार सौंपें',
+      'en': 'Transfer admin leadership',
     },
     'send_a_notification': {
       'gu': 'સૂચના મોકલો',
-      'hi': 'एक सूचना भेजें',
-      'en': 'Send a notification',
+      'hi': 'सूचना भेजें',
+      'en': 'Send Notification',
+    },
+    'send_personal_alert_to_member': {
+      'gu': 'સભ્યને વ્યક્તિગત સંદેશ',
+      'hi': 'सदस्य को व्यक्तिगत संदेश',
+      'en': 'Direct alert message',
     },
     'delegation_of_admin_authority': {
       'gu': 'એડમિન સત્તા સોંપણી',
@@ -4455,10 +4465,10 @@ class AppStrings {
       'hi': 'सामान्य सभा के प्रस्ताव को मंजूरी',
       'en': 'General Assembly resolution approved',
     },
-    'formatdatetimenow01': {
-      'gu': ').format(DateTime.now())}/૦૧',
-      'hi': '.format(DateTime.now())}/01',
-      'en': ').format(DateTime.now())}/01',
+    'total_included_units': {
+      'gu': 'કુલ સમાવિષ્ટ સભ્યો/યુનિટ્સ',
+      'hi': 'कुल शामिल सदस्य/यूनिट्स',
+      'en': 'Total Included Units',
     },
     'therefore_we_all_the_members_of': {
       'gu': 'આથી અમે નીચે સહી કરનાર સોસાયટીના તમામ સભ્યો ઉપરોક્ત વિષય/ઠરાવ સાથે સંપૂર્ણ સંમત છીએ અને અમારી સ્વેચ્છાએ નીચે સહી કરીએ છીએ.',
@@ -4597,8 +4607,8 @@ class AppStrings {
     },
     'resolution_reference_no': {
       'gu': 'ઠરાવ / સંદર્ભ નં.',
-      'hi': 'संकल्प/संदर्भ क्रमांक.',
-      'en': 'Resolution / Reference no.',
+      'hi': 'प्रस्ताव / संदर्भ नं.',
+      'en': 'Resolution / Ref No.',
     },
     'eg_202601': {
       'gu': 'દા.ત. ૨૦૨૬/૦૧',
@@ -4616,9 +4626,9 @@ class AppStrings {
       'en': 'All units',
     },
     'declaration_text': {
-      'gu': 'જાહેરનામું / સંમતિ નોંધ (Declaration Text)',
-      'hi': 'घोषणा पाठ',
-      'en': 'Declaration Text',
+      'gu': 'જાહેરનામું / સંમતિ નોંધ',
+      'hi': 'घोषणा / सहमति टिप्पणी',
+      'en': 'Declaration / Consent Note',
     },
     'conditions_of_consent_printed_on_the': {
       'gu': 'સહી પત્રક ઉપર છપાતી સંમતિની શરતો...',
@@ -4656,23 +4666,23 @@ class AppStrings {
       'en': 'Phone number for member verification',
     },
     'all_the_wings': {
-      'gu': 'બધી વિંગ્સ',
-      'hi': 'सारे पंख',
-      'en': 'All the wings',
+      'gu': 'તમામ વિંગ્સ / બ્લોક',
+      'hi': 'सभी विंग / ब्लॉक',
+      'en': 'All Wings / Blocks',
     },
     'pdf_preview_export_preview_pdf': {
-      'gu': '📄 પીડીએફ પ્રિવ્યૂ & એક્સપોર્ટ (Preview PDF)',
-      'hi': '📄 पीडीएफ पूर्वावलोकन और निर्यात (पूर्वावलोकन पीडीएफ)',
-      'en': '📄 PDF Preview & Export (Preview PDF)',
+      'gu': 'પીડીએફ પ્રિવ્યૂ & એક્સપોર્ટ',
+      'hi': 'पीडीएफ पूर्वावलोकन और निर्यात',
+      'en': 'PDF Preview & Export',
     },
     'print': {
-      'gu': 'પ્રિન્ટ (Print)',
+      'gu': 'પ્રિન્ટ કરો',
       'hi': 'प्रिंट करें',
       'en': 'Print',
     },
     'share_whatsapp': {
-      'gu': 'શેર (WhatsApp)',
-      'hi': 'साझा करें (व्हाट्सएप)',
+      'gu': 'વોટ્સએપ શેર',
+      'hi': 'व्हाट्सएप पर शेयर करें',
       'en': 'Share (WhatsApp)',
     },
     'member_signature_sheet_preview': {
@@ -13196,6 +13206,21 @@ class AppStrings {
       'gu': 'બહાર ગયા',
       'hi': 'प्रस्थान किया',
       'en': 'Checked Out',
+    },
+    'pre_approved_guest': {
+      'gu': 'પ્રી-એપ્રૂવ્ડ મહેમાન',
+      'hi': 'पूर्व-स्वीकृत अतिथि',
+      'en': 'Pre-Approved Guest',
+    },
+    'merchant_shop_staff': {
+      'gu': 'વેપારી / શોપ સ્ટાફ',
+      'hi': 'व्यापारी / दुकान कर्मचारी',
+      'en': 'Merchant / Shop Staff',
+    },
+    'visiting_member_host': {
+      'gu': 'મળવા આવ્યા',
+      'hi': 'मिलने आए',
+      'en': 'Visiting',
     },
 
     // Accounts / Finance Tab

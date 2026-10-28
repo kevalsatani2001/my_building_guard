@@ -1,6 +1,7 @@
 import 'package:building_guard/core/app_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/premise_type.dart';
+import 'localization_service.dart';
 
 /// એક Firebase પ્રોજેક્ટમાં ઘણી સોસાયટી — દરે ડૉક્યુમેન્ટ પર `societyId`.
 /// લૉગિન પછી [bindFromUserMap] ચોક્કસ કરો (જુઓ [AuthWrapper] / લોગિન).
@@ -177,8 +178,8 @@ class SocietyService {
     return n == 'G' || n == '0';
   }
 
-  /// યુઝર ઇન્ટરફેસ (UI) માટે સચોટ, સુંદર ગુજરાતી લેબલ.
-  /// દા.ત. G -> 'ગ્રાઉન્ડ ફ્લોર (G)', Commercial 1 -> '૧ લો માળ (1)', Wing A -> 'વિંગ A'.
+  /// યુઝર ઇન્ટરફેસ (UI) માટે સચોટ, સુંદર લોકલાઇઝ્ડ લેબલ.
+  /// દા.ત. Street 1 -> 'શેરી નં. 1' (GU), 'Street No. 1' (EN), 'गली नं. 1' (HI)
   String formatBlockDisplayName(
     String raw, {
     String? architectureType,
@@ -189,8 +190,18 @@ class SocietyService {
 
     final arch = (architectureType ?? _architectureType).toLowerCase();
     final cat = (category ?? '').toLowerCase();
+    final lang = LocalizationService.instance.currentCode;
 
     if (isGroundBlock(clean)) {
+      if (lang == 'en') {
+        if (arch == 'commercial' || cat == 'commercial') return 'Ground Floor (G)';
+        if (arch == 'mixed') return 'Ground Floor / Shops (G)';
+        return 'Ground Floor (G)';
+      } else if (lang == 'hi') {
+        if (arch == 'commercial' || cat == 'commercial') return 'ग्राउंड फ्लोर (G)';
+        if (arch == 'mixed') return 'ग्राउंड फ्लोर / दुकानें (G)';
+        return 'ग्राउंड फ्लोर (G)';
+      }
       if (arch == 'commercial' || cat == 'commercial') {
         return 'ગ્રાઉન્ડ ફ્લોર (G)';
       } else if (arch == 'mixed') {
@@ -201,17 +212,29 @@ class SocietyService {
 
     if (arch == 'commercial') {
       if (clean.startsWith('B') || clean.contains('BASEMENT')) {
+        if (lang == 'en') return 'Basement $clean';
+        if (lang == 'hi') return 'बेसमेंट $clean';
         return 'બેઝમેન્ટ $clean';
       }
+      if (lang == 'en') return 'Floor $clean';
+      if (lang == 'hi') return 'फ्लोर $clean';
       return 'ફ્લોર $clean';
     } else if (arch == 'street') {
+      if (lang == 'en') return 'Street No. $clean';
+      if (lang == 'hi') return 'गली नं. $clean';
       return 'શેરી નં. $clean';
     } else if (arch == 'mixed') {
       if (cat == 'commercial') {
+        if (lang == 'en') return 'Shops: Floor $clean';
+        if (lang == 'hi') return 'दुकानें: फ्लोर $clean';
         return 'શોપ્સ: ફ્લોર $clean';
       }
+      if (lang == 'en') return 'Wing $clean';
+      if (lang == 'hi') return 'विंग $clean';
       return 'વિંગ $clean';
     } else {
+      if (lang == 'en') return 'Wing $clean';
+      if (lang == 'hi') return 'विंग $clean';
       return 'વિંગ $clean';
     }
   }

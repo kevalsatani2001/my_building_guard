@@ -154,30 +154,44 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
               ),
               labelColor: Colors.white,
               unselectedLabelColor: const Color(0xFF64748B),
-              labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-              unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
               dividerColor: Colors.transparent,
               tabs: [
                 Tab(
                   height: 38,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.shield_outlined, size: 17),
-                      SizedBox(width: 8),
-                      Text('ઓડિટ રિપોર્ટ લોગ'.tr),
-                    ],
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.shield_outlined, size: 16),
+                          const SizedBox(width: 6),
+                          Text('ઓડિટ રિપોર્ટ લોગ'.tr),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
                 Tab(
                   height: 38,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.qr_code_2_rounded, size: 17),
-                      SizedBox(width: 8),
-                      Text('ચેકપોઇન્ટ્સ & QR કોડ'.tr),
-                    ],
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.qr_code_2_rounded, size: 16),
+                          const SizedBox(width: 6),
+                          Text('ચેકપોઇન્ટ્સ & QR કોડ'.tr),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -222,16 +236,20 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                  colors: [Color(0xFF0F172A), Color(0xFF1E1B4B)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: const Color(0xFF312E81).withValues(alpha: 0.6),
+                  width: 1.2,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.25),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
@@ -239,32 +257,58 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF6366F1).withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(Icons.verified_user_rounded,
-                                color: Color(0xFF818CF8), size: 20),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'સુરક્ષા કમ્પ્લાયન્સ સ્કોર'.tr,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.all(9),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.security_rounded,
+                            color: Colors.white, size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'સુરક્ષા કમ્પ્લાયન્સ સ્કોર'.tr,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              statusMsg,
+                              style: const TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
                           color: compliancePercent >= 75
                               ? const Color(0xFF10B981).withValues(alpha: 0.2)
@@ -272,8 +316,9 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: compliancePercent >= 75
-                                ? const Color(0xFF10B981)
-                                : const Color(0xFFF59E0B),
+                                ? const Color(0xFF34D399)
+                                : const Color(0xFFFBBF24),
+                            width: 1.2,
                           ),
                         ),
                         child: Text(
@@ -282,7 +327,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                             color: compliancePercent >= 75
                                 ? const Color(0xFF34D399)
                                 : const Color(0xFFFBBF24),
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w900,
                             fontSize: 12,
                           ),
                         ),
@@ -290,26 +335,34 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                     ],
                   ),
                   const SizedBox(height: 14),
-                  Text(
-                    statusMsg,
-                    style: const TextStyle(
-                      color: Color(0xFFCBD5E1),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(
+                      value: targetRounds > 0
+                          ? (completedRounds / targetRounds).clamp(0.0, 1.0)
+                          : 0,
+                      minHeight: 5,
+                      backgroundColor: Colors.white.withValues(alpha: 0.1),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        compliancePercent >= 75
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFFF59E0B),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   Row(
                     children: [
                       Expanded(
                         child: _buildMetricTile(
-                          icon: Icons.check_circle_outline,
+                          icon: Icons.check_circle_rounded,
                           label: 'પૂર્ણ રાઉન્ડ'.tr,
                           value: '$completedRounds / $targetRounds',
                           color: const Color(0xFF34D399),
+                          bgColor: const Color(0xFF064E3B).withValues(alpha: 0.35),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: _buildMetricTile(
                           icon: Icons.warning_amber_rounded,
@@ -318,6 +371,9 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                           color: totalIncidents > 0
                               ? const Color(0xFFF87171)
                               : const Color(0xFF94A3B8),
+                          bgColor: totalIncidents > 0
+                              ? const Color(0xFF7F1D1D).withValues(alpha: 0.35)
+                              : Colors.white.withValues(alpha: 0.05),
                         ),
                       ),
                     ],
@@ -326,59 +382,62 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
               ),
             ),
 
-            // Date Filters Bar
+            // Date Filters Bar with Smooth Horizontal Scrolling
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
               child: Row(
                 children: [
                   Text(
                     'રાઉન્ડ હિસ્ટ્રી:'.tr,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: Color(0xFF334155),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13.5,
+                      color: Color(0xFF1E293B),
                     ),
                   ),
-                  const Spacer(),
-                  ChoiceChip(
-                    label: Text('બધા'.tr),
-                    selected: _selectedDateFilter == null,
-                    onSelected: (val) {
-                      if (val) setState(() => _selectedDateFilter = null);
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  ChoiceChip(
-                    label: Text('આજે'.tr),
-                    selected: _selectedDateFilter ==
-                        DateFormat('yyyy-MM-dd').format(DateTime.now()),
-                    onSelected: (val) {
-                      setState(() {
-                        _selectedDateFilter = val
-                            ? DateFormat('yyyy-MM-dd').format(DateTime.now())
-                            : null;
-                      });
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  ChoiceChip(
-                    label: Text('ગઈકાલે'.tr),
-                    selected: _selectedDateFilter ==
-                        DateFormat('yyyy-MM-dd').format(
-                            DateTime.now().subtract(const Duration(days: 1))),
-                    onSelected: (val) {
-                      setState(() {
-                        _selectedDateFilter = val
-                            ? DateFormat('yyyy-MM-dd').format(
-                                DateTime.now().subtract(const Duration(days: 1)))
-                            : null;
-                      });
-                    },
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildDateFilterPill(
+                            label: 'બધા'.tr,
+                            isSelected: _selectedDateFilter == null,
+                            onTap: () => setState(() => _selectedDateFilter = null),
+                          ),
+                          const SizedBox(width: 6),
+                          _buildDateFilterPill(
+                            label: 'આજે'.tr,
+                            isSelected: _selectedDateFilter ==
+                                DateFormat('yyyy-MM-dd').format(DateTime.now()),
+                            onTap: () {
+                              final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+                              setState(() => _selectedDateFilter =
+                                  _selectedDateFilter == today ? null : today);
+                            },
+                          ),
+                          const SizedBox(width: 6),
+                          _buildDateFilterPill(
+                            label: 'ગઈકાલે'.tr,
+                            isSelected: _selectedDateFilter ==
+                                DateFormat('yyyy-MM-dd').format(
+                                    DateTime.now().subtract(const Duration(days: 1))),
+                            onTap: () {
+                              final yest = DateFormat('yyyy-MM-dd').format(
+                                  DateTime.now().subtract(const Duration(days: 1)));
+                              setState(() => _selectedDateFilter =
+                                  _selectedDateFilter == yest ? null : yest);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
 
             // Stream List of Sessions
             Expanded(
@@ -398,21 +457,29 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.nightlight_round,
-                              size: 52, color: Colors.grey.shade400),
-                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4F46E5).withValues(alpha: 0.08),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.nightlight_round,
+                                size: 44, color: Color(0xFF6366F1)),
+                          ),
+                          const SizedBox(height: 14),
                           Text(
                             'કોઈ પેટ્રોલિંગ રાઉન્ડ મળ્યા નથી'.tr,
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF64748B),
+                            style: const TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF334155),
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'વોચમેન એપમાંથી રાઉન્ડ શરૂ કરશે ત્યારે અહીં લાઈવ જોવા મળશે.'.tr,
-                            style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                           ),
                         ],
                       ),
@@ -420,7 +487,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
                     itemCount: sessions.length,
                     itemBuilder: (context, index) {
                       final s = sessions[index];
@@ -436,43 +503,98 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
     );
   }
 
+  Widget _buildDateFilterPill({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF4F46E5) : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF4F46E5) : const Color(0xFFE2E8F0),
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF4F46E5).withValues(alpha: 0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            color: isSelected ? Colors.white : const Color(0xFF475569),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMetricTile({
     required IconData icon,
     required String label,
     required String value,
     required Color color,
+    Color? bgColor,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        color: bgColor ?? Colors.white.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF94A3B8),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
+                const SizedBox(height: 1),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -496,49 +618,79 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
             ? 'રાઉન્ડ ચાલુ છે'.tr
             : 'અધૂરો / છૂટી ગયેલ'.tr;
 
+    final roundTitle = s.roundLabel.isNotEmpty
+        ? s.roundLabel
+        : 'રાઉન્ડ ${s.roundNumber}'.tr;
+
+    final timeRangeStr = s.endTime != null
+        ? '${timeFormat.format(s.startTime)} - ${timeFormat.format(s.endTime!)}'
+        : timeFormat.format(s.startTime);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: s.hasIncident ? const Color(0xFFFCA5A5) : const Color(0xFFE2E8F0),
+          width: s.hasIncident ? 1.4 : 1.1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: s.hasIncident
+                ? const Color(0xFFEF4444).withValues(alpha: 0.06)
+                : const Color(0xFF0F172A).withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: ExpansionTile(
         shape: const Border(),
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        leading: CircleAvatar(
-          backgroundColor: statusColor.withValues(alpha: 0.15),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        leading: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: statusColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: statusColor.withValues(alpha: 0.25)),
+          ),
+          alignment: Alignment.center,
           child: Icon(
-            isDone ? Icons.check_circle_rounded : Icons.radar_rounded,
+            isDone ? Icons.verified_rounded : (s.isInProgress ? Icons.radar_rounded : Icons.warning_rounded),
             color: statusColor,
             size: 22,
           ),
         ),
         title: Row(
           children: [
-            Text(
-              s.roundLabel.isNotEmpty ? s.roundLabel : 'રાઉન્ડ ${s.roundNumber}'.tr,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            Expanded(
+              child: Text(
+                roundTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                  color: Color(0xFF0F172A),
+                  letterSpacing: -0.2,
+                ),
+              ),
             ),
             const SizedBox(width: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: statusColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: statusColor.withValues(alpha: 0.25)),
               ),
               child: Text(
                 statusText,
                 style: TextStyle(
                   fontSize: 10,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
                   color: statusColor,
                 ),
               ),
@@ -546,41 +698,100 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
           ],
         ),
         subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
+          padding: const EdgeInsets.only(top: 5),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'તારીખ: ${dateFormat.format(s.startTime)} • સમય: ${timeFormat.format(s.startTime)}${s.endTime != null ? '.tr થી ${timeFormat.format(s.endTime!)}' : ''}',
-                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+              Row(
+                children: [
+                  const Icon(Icons.schedule_rounded, size: 12, color: Color(0xFF64748B)),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      '${dateFormat.format(s.startTime)} • $timeRangeStr',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 2),
-              Text(
-                'ગાર્ડ: ${s.guardName} (${s.guardPhone}) • ચેકપોઇન્ટ્સ: ${s.scannedCount}/${s.totalCheckpoints}'.tr,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF334155),
-                ),
+              const SizedBox(height: 5),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.person_rounded, size: 11, color: Color(0xFF475569)),
+                        const SizedBox(width: 3.5),
+                        Text(
+                          s.guardName.isNotEmpty ? s.guardName : 'સુરક્ષા ગાર્ડ'.tr,
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF334155),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEF2FF),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFC7D2FE)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.qr_code_scanner_rounded, size: 11, color: Color(0xFF4F46E5)),
+                        const SizedBox(width: 3.5),
+                        Text(
+                          '${s.scannedCount}/${s.totalCheckpoints} ${'ચેકપોઇન્ટ્સ'.tr}',
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF4338CA),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               if (s.hasIncident) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: 5),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEE2E2),
-                    borderRadius: BorderRadius.circular(8),
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(7),
+                    border: Border.all(color: const Color(0xFFFECACA)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.report_problem, size: 13, color: Color(0xFFDC2626)),
-                      SizedBox(width: 4),
+                      const Icon(Icons.warning_amber_rounded, size: 13, color: Color(0xFFDC2626)),
+                      const SizedBox(width: 4),
                       Text(
                         'નોંધાયેલ સમસ્યા છે (વિગત જુઓ)'.tr,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w800,
                           color: Color(0xFFDC2626),
                         ),
                       ),
@@ -709,45 +920,85 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
           children: [
             // Top Action bar
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+              ),
               child: Row(
                 children: [
+                  Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF4F46E5), size: 20),
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'કુલ ${checkpoints.length} સિક્યોરિટી ચેકપોઇન્ટ્સ'.tr,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: Color(0xFF0F172A),
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              'સિક્યોરિટી ચેકપોઇન્ટ્સ'.tr,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14.5,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEEF2FF),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFC7D2FE)),
+                              ),
+                              child: Text(
+                                '${checkpoints.length}',
+                                style: const TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF4F46E5),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
+                        const SizedBox(height: 1),
                         Text(
-                          'ચેકપોઇન્ટના QR કોડ પ્રિન્ટ કરીને સંબંધિત જગ્યાએ ચોંટાડો'.tr,
-                          style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          'QR કોડ પ્રિન્ટ કરીને સોસાયટીના સ્થળો પર ચોંટાડો'.tr,
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   FilledButton.icon(
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFF4F46E5),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                      elevation: 1,
                     ),
                     onPressed: () => _showAddCheckpointSheet(checkpoints.length + 1),
-                    icon: const Icon(Icons.add_location_alt_rounded, size: 16),
-                    label: Text('નવો ઉમેરો'.tr, style: TextStyle(fontSize: 12)),
+                    icon: const Icon(Icons.add_rounded, size: 16),
+                    label: Text(
+                      'નવો ઉમેરો'.tr,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                    ),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1),
 
             // Checkpoints List
             Expanded(
@@ -777,7 +1028,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                             const SizedBox(height: 16),
                             Text(
                               'હજુ કોઈ ચેકપોઇન્ટ ઉમેરેલ નથી'.tr,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
                                 color: Color(0xFF0F172A),
@@ -787,7 +1038,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                             Text(
                               'વોચમેન નાઈટ પેટ્રોલિંગ માટે સોસાયટીના ગેટ, ટેરેસ, બેઝમેન્ટ જેવા સ્થળો ઉમેરો અને QR સ્ટીકર પ્રિન્ટ કરો.'.tr,
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 12.5,
                                 color: Color(0xFF64748B),
                                 height: 1.4,
@@ -807,7 +1058,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                               icon: const Icon(Icons.add_location_alt_rounded, size: 18),
                               label: Text(
                                 '+ પ્રથમ ચેકપોઇન્ટ ઉમેરો'.tr,
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
                               ),
                             ),
                           ],
@@ -836,154 +1087,185 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.035),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Order sequence badge
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF4F46E5).withValues(alpha: 0.25),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+          // Row 1: Sequence squircle, code badge, name, delete button
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4F46E5).withValues(alpha: 0.28),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '$seqNumber',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 16,
+                alignment: Alignment.center,
+                child: Text(
+                  '$seqNumber',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEF2FF),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFC7D2FE)),
+                          ),
+                          child: Text(
+                            cp.code,
+                            style: const TextStyle(
+                              color: Color(0xFF4338CA),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 10.5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            cp.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14.5,
+                              color: Color(0xFF0F172A),
+                              letterSpacing: -0.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        const Icon(Icons.place_rounded, size: 12.5, color: Color(0xFF64748B)),
+                        const SizedBox(width: 3),
+                        Expanded(
+                          child: Text(
+                            cp.location,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
+                ),
+                tooltip: 'કાઢી નાખો'.tr,
+                onPressed: () => _confirmDeleteCheckpoint(cp),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          // Details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEEF2FF),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFFC7D2FE)),
+
+          if (cp.notes != null && cp.notes!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.shield_outlined, size: 13, color: Color(0xFF6366F1)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'સૂચના: ${cp.notes}'.tr,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF475569),
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w500,
                       ),
-                      child: Text(
-                        cp.code,
-                        style: const TextStyle(
-                          color: Color(0xFF4F46E5),
-                          fontWeight: FontWeight.w800,
-                          fontSize: 11,
-                        ),
-                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        cp.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 5),
-                Row(
-                  children: [
-                    const Icon(Icons.pin_drop_rounded, size: 14, color: Color(0xFF64748B)),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        'સ્થળ: ${cp.location}'.tr,
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF475569), fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                  ],
-                ),
-                if (cp.notes != null && cp.notes!.isNotEmpty) ...[
-                  const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      const Icon(Icons.shield_outlined, size: 13, color: Color(0xFF94A3B8)),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          'સૂચના: ${cp.notes}'.tr,
-                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
-                        ),
-                      ),
-                    ],
                   ),
                 ],
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    FilledButton.tonalIcon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFEEF2FF),
-                        foregroundColor: const Color(0xFF4F46E5),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          side: const BorderSide(color: Color(0xFFC7D2FE)),
-                        ),
-                      ),
-                      onPressed: () => _showPrintableQrDialog(cp),
-                      icon: const Icon(Icons.qr_code_2_rounded,
-                          size: 16, color: Color(0xFF4F46E5)),
-                      label: Text(
-                        'QR કોડ જુઓ / પ્રિન્ટ'.tr,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF4F46E5),
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEE2E2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.delete_outline_rounded,
-                            size: 17, color: Color(0xFFEF4444)),
-                      ),
-                      tooltip: 'કાઢી નાખો'.tr,
-                      onPressed: () => _confirmDeleteCheckpoint(cp),
-                    ),
-                  ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 12),
+
+          // Bottom Action: View/Print QR Full Width
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFEEF2FF),
+                foregroundColor: const Color(0xFF4338CA),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: Color(0xFFC7D2FE)),
                 ),
-              ],
+                elevation: 0,
+              ),
+              onPressed: () => _showPrintableQrDialog(cp),
+              icon: const Icon(Icons.qr_code_2_rounded, size: 17, color: Color(0xFF4338CA)),
+              label: Text(
+                'QR કોડ જુઓ / પ્રિન્ટ (View / Print QR Code)'.tr,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF4338CA),
+                ),
+              ),
             ),
           ),
         ],
@@ -1166,8 +1448,8 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                           ),
                           const SizedBox(height: 6),
                           Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
+                            spacing: 8,
+                            runSpacing: 8,
                             children: suggestions.map((s) {
                               return InkWell(
                                 onTap: () {
@@ -1176,17 +1458,21 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
                                     locCtrl.text = s['loc']!;
                                   });
                                 },
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(20),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFEEF2FF),
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(20),
                                     border: Border.all(color: const Color(0xFFC7D2FE)),
                                   ),
                                   child: Text(
                                     s['name']!,
-                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF4F46E5)),
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF4338CA),
+                                    ),
                                   ),
                                 ),
                               );
@@ -1244,7 +1530,7 @@ class _AdminPatrolScreenState extends State<AdminPatrolScreen>
 
                   // Bottom pinned button
                   Container(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                    padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(ctx).padding.bottom + 16),
                     decoration: const BoxDecoration(
                       color: Colors.white,
                       border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),

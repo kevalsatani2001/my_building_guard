@@ -60,6 +60,16 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
       _selectedBlock != 'all' ||
       _searchQuery.isNotEmpty;
 
+  int get _activeFiltersCount {
+    int count = 0;
+    if (_selectedFilter != 'all') count++;
+    if (_selectedDateFilter != 'all') count++;
+    if (_selectedPurpose != 'all') count++;
+    if (_selectedBlock != 'all') count++;
+    if (_searchQuery.isNotEmpty) count++;
+    return count;
+  }
+
   Future<void> _pickCustomDateRange() async {
     final now = DateTime.now();
     final picked = await showDateRangePicker(
@@ -182,7 +192,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                 color: _selectedDateFilter != 'all' ? const Color(0xFF2563EB) : const Color(0xFF475569),
               ),
             ),
-            onPressed: _pickCustomDateRange,
+            onPressed: _showDateFilterSheet,
           ),
           const SizedBox(width: 8),
         ],
@@ -348,7 +358,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
 
           return Column(
             children: [
-              // Top KPI Summary Container with Interactive Cards
+              // Executive KPI Metric Deck
               _buildTopKpiSection(
                 total: total,
                 approved: approved,
@@ -357,130 +367,10 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                 checkedOut: checkedOut,
               ),
 
-              // Search Bar
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: _searchQuery.isNotEmpty ? const Color(0xFF6366F1) : const Color(0xFFE2E8F0),
-                      width: _searchQuery.isNotEmpty ? 1.5 : 1.0,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
-                    decoration: InputDecoration(
-                      hintText: "નામ, ફોન, વાહન અથવા ફ્લેટ નંબર શોધો...".tr,
-                      hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400, fontWeight: FontWeight.normal),
-                      prefixIcon: const Icon(Icons.search_rounded, size: 21, color: Color(0xFF6366F1)),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.cancel_rounded, size: 18, color: Color(0xFF94A3B8)),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _searchQuery = '');
-                              },
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    ),
-                    onChanged: (val) => setState(() => _searchQuery = val.trim()),
-                  ),
-                ),
-              ),
+              // Professional Unified Control Console (Search + Segmented Time Slider + Dropdowns)
+              _buildUnifiedControlConsole(sortedBlocks, filtered.length),
 
-              // Date Range Filter Horizon
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: Row(
-                  children: [
-                    _dateFilterChip('all', '📅 બધા સમય'.tr),
-                    const SizedBox(width: 6),
-                    _dateFilterChip('today', '⚡ આજે'.tr),
-                    const SizedBox(width: 6),
-                    _dateFilterChip('yesterday', '⏮️ ગઈકાલે'.tr),
-                    const SizedBox(width: 6),
-                    _dateFilterChip('this_week', '📆 આ સપ્તાહ'.tr),
-                    const SizedBox(width: 6),
-                    _dateFilterChip('this_month', '🗓️ આ મહિનો'.tr),
-                    const SizedBox(width: 6),
-                    _customDateChip(),
-                  ],
-                ),
-              ),
-
-              // Status Filter Pills (Row 1)
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-                child: Row(
-                  children: [
-                    _filterChip('all', 'બધા ($total)'.tr, Icons.people_outline_rounded, const Color(0xFF0F172A)),
-                    const SizedBox(width: 6),
-                    _filterChip('approved', '🟢 મંજૂર ($approved)'.tr, Icons.check_circle_rounded, const Color(0xFF10B981)),
-                    const SizedBox(width: 6),
-                    _filterChip('pending', '⏳ પેન્ડિંગ ($pending)'.tr, Icons.hourglass_top_rounded, const Color(0xFFF59E0B)),
-                    const SizedBox(width: 6),
-                    _filterChip('rejected', '🔴 નકારેલ ($rejected)'.tr, Icons.cancel_rounded, const Color(0xFFEF4444)),
-                    const SizedBox(width: 6),
-                    _filterChip('checked_out', '🚪 બહાર ગયા ($checkedOut)'.tr, Icons.logout_rounded, const Color(0xFF0D9488)),
-                  ],
-                ),
-              ),
-
-              // Purpose / Category Filter Chips (Row 2)
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-                child: Row(
-                  children: [
-                    _purposeChip('all', '✨ બધા હેતુ'.tr),
-                    const SizedBox(width: 6),
-                    _purposeChip('food', '🍔 ફૂડ & ગ્રોસરી'.tr),
-                    const SizedBox(width: 6),
-                    _purposeChip('parcel', '📦 પાર્સલ & કુરિયર'.tr),
-                    const SizedBox(width: 6),
-                    _purposeChip('cab', '🚕 કેબ & રાઈડ'.tr),
-                    const SizedBox(width: 6),
-                    _purposeChip('service', '🔧 સર્વિસ & રિપેર'.tr),
-                    const SizedBox(width: 6),
-                    _purposeChip('guest', '👥 મહેમાન (Guest)'.tr),
-                  ],
-                ),
-              ),
-
-              // Wing Filter Pills (Row 3 - shown if multiple wings exist)
-              if (sortedBlocks.length > 1)
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-                  child: Row(
-                    children: [
-                      _wingChip('all', 'બધા બ્લોક્સ'.tr),
-                      ...sortedBlocks.map((b) => Padding(
-                            padding: const EdgeInsets.only(left: 6),
-                            child: _wingChip(b, 'વિંગ $b'.tr),
-                          )),
-                    ],
-                  ),
-                ),
-
-              // Active Filters Summary Bar
-              if (_hasActiveFilters) _buildActiveFilterSummary(filtered.length),
-
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
 
               // Visitors List
               Expanded(
@@ -506,7 +396,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
     );
   }
 
-  // Top KPI Section with Interactive Cards
+  // Executive KPI Section with Live Gate Activity Indicator
   Widget _buildTopKpiSection({
     required int total,
     required int approved,
@@ -517,16 +407,16 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
     final isAllSelected = _selectedFilter == 'all';
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.025),
-            blurRadius: 10,
+            color: const Color(0xFF0F172A).withValues(alpha: 0.035),
+            blurRadius: 14,
             offset: const Offset(0, 3),
           ),
         ],
@@ -538,13 +428,27 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.query_stats_rounded, size: 18, color: Color(0xFF0F172A)),
-                  SizedBox(width: 6),
+                  Container(
+                    width: 9,
+                    height: 9,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.45),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Text(
-                    "મુલાકાતી આંકડા".tr,
-                    style: TextStyle(
+                    "ગેટ એક્ટિવિટી આંકડા".tr,
+                    style: const TextStyle(
                       fontWeight: FontWeight.w900,
-                      fontSize: 14.5,
+                      fontSize: 15,
                       color: Color(0xFF0F172A),
                       letterSpacing: -0.2,
                     ),
@@ -571,13 +475,13 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        Icons.filter_list_rounded,
+                        Icons.people_alt_rounded,
                         size: 13,
                         color: isAllSelected ? Colors.white : const Color(0xFF475569),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 5),
                       Text(
-                        "કુલ મુલાકાતીઓ: $total".tr,
+                        "કુલ: $total".tr,
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 11.5,
@@ -722,355 +626,1440 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
     );
   }
 
-  Widget _dateFilterChip(String key, String label) {
-    final isSelected = _selectedDateFilter == key;
-    return InkWell(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() {
-          _selectedDateFilter = key;
-          if (key != 'custom') _customDateRange = null;
-        });
-      },
-      borderRadius: BorderRadius.circular(20),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6.5),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF2563EB) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
-            width: isSelected ? 1.5 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF2563EB).withValues(alpha: 0.25),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
-            fontSize: 11,
-            color: isSelected ? Colors.white : const Color(0xFF475569),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _customDateChip() {
-    final isSelected = _selectedDateFilter == 'custom' && _customDateRange != null;
-    final label = isSelected
-        ? "${DateFormat('dd MMM').format(_customDateRange!.start)} - ${DateFormat('dd MMM').format(_customDateRange!.end)}"
-        : "🔍 તારીખ પસંદ કરો".tr;
-
-    return InkWell(
-      onTap: _pickCustomDateRange,
-      borderRadius: BorderRadius.circular(20),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6.5),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF2563EB) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
-            width: isSelected ? 1.5 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF2563EB).withValues(alpha: 0.25),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
-                fontSize: 11,
-                color: isSelected ? Colors.white : const Color(0xFF475569),
-              ),
-            ),
-            if (isSelected) ...[
-              const SizedBox(width: 4),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedDateFilter = 'all';
-                    _customDateRange = null;
-                  });
-                },
-                child: const Icon(Icons.close_rounded, size: 14, color: Colors.white),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _filterChip(String key, String label, IconData icon, Color color) {
-    final isSelected = _selectedFilter == key;
-    return InkWell(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() => _selectedFilter = key);
-      },
-      borderRadius: BorderRadius.circular(20),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6.5),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0F172A) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0),
-            width: isSelected ? 1.5 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isSelected) ...[
-              const Icon(Icons.check_rounded, size: 12, color: Colors.white),
-              const SizedBox(width: 4),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
-                fontSize: 11.5,
-                color: isSelected ? Colors.white : const Color(0xFF334155),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _purposeChip(String key, String label) {
-    final isSelected = _selectedPurpose == key;
-    return InkWell(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() => _selectedPurpose = key);
-      },
-      borderRadius: BorderRadius.circular(20),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF4338CA).withValues(alpha: 0.1) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF4338CA) : const Color(0xFFE2E8F0),
-            width: isSelected ? 1.5 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF4338CA).withValues(alpha: 0.15),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isSelected) ...[
-              const Icon(Icons.check_rounded, size: 12, color: Color(0xFF4338CA)),
-              const SizedBox(width: 4),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                fontSize: 11,
-                color: isSelected ? const Color(0xFF4338CA) : const Color(0xFF475569),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _wingChip(String key, String label) {
-    final isSelected = _selectedBlock == key;
-    return InkWell(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() => _selectedBlock = key);
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0F766E) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF0F766E) : const Color(0xFFE2E8F0),
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
-            fontSize: 10.5,
-            color: isSelected ? Colors.white : const Color(0xFF475569),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActiveFilterSummary(int resultCount) {
+  // Professional Unified Control Console (Search + Segmented Slider + Dropdowns)
+  Widget _buildUnifiedControlConsole(List<String> sortedBlocks, int filteredCount) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 6, 16, 2),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              "$resultCount",
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              "ફિલ્ટર સક્રિય છે".tr,
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF334155),
-              ),
-            ),
-          ),
-          InkWell(
-            onTap: _clearAllFilters,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.refresh_rounded, size: 14, color: Color(0xFFEF4444)),
-                SizedBox(width: 4),
-                Text(
-                  "બધા સાફ કરો".tr,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFFEF4444),
+          // 1. Search Bar with Integrated Master Filter Button
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: _searchQuery.isNotEmpty ? const Color(0xFF6366F1) : const Color(0xFFE2E8F0),
+                      width: _searchQuery.isNotEmpty ? 1.4 : 1.0,
+                    ),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                    decoration: InputDecoration(
+                      hintText: "નામ, ફોન, વાહન અથવા ફ્લેટ નંબર શોધો...".tr,
+                      hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.normal),
+                      prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF6366F1)),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.cancel_rounded, size: 16, color: Color(0xFF94A3B8)),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                    ),
+                    onChanged: (val) => setState(() => _searchQuery = val.trim()),
                   ),
                 ),
-              ],
+              ),
+              const SizedBox(width: 8),
+              _buildFilterLauncherButton(sortedBlocks),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // 2. iOS/Linear Style Segmented Timeframe Slider
+          Container(
+            height: 38,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(12),
             ),
+            padding: const EdgeInsets.all(3),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildTimeSegment(
+                    key: 'today',
+                    label: 'આજે'.tr,
+                    icon: Icons.bolt_rounded,
+                    iconColor: const Color(0xFFF59E0B),
+                  ),
+                  _buildTimeSegment(
+                    key: 'yesterday',
+                    label: 'ગઈકાલે'.tr,
+                  ),
+                  _buildTimeSegment(
+                    key: 'this_week',
+                    label: 'આ સપ્તાહ'.tr,
+                  ),
+                  _buildTimeSegment(
+                    key: 'this_month',
+                    label: 'આ મહિનો'.tr,
+                  ),
+                  _buildTimeSegment(
+                    key: 'custom',
+                    label: _selectedDateFilter == 'custom' && _customDateRange != null
+                        ? "${DateFormat('dd/MM').format(_customDateRange!.start)}-${DateFormat('dd/MM').format(_customDateRange!.end)}"
+                        : 'કસ્ટમ 📅'.tr,
+                  ),
+                  _buildTimeSegment(
+                    key: 'all',
+                    label: 'બધા સમય'.tr,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // 3. Contextual Filter Row (Purpose + Wing + Active Status)
+          Row(
+            children: [
+              _buildPurposeFilterDropdownPill(),
+              if (sortedBlocks.length > 1) ...[
+                const SizedBox(width: 8),
+                _buildWingFilterDropdownPill(sortedBlocks),
+              ],
+              const Spacer(),
+              if (_hasActiveFilters)
+                InkWell(
+                  onTap: _clearAllFilters,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFFECACA)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.close_rounded, size: 12, color: Color(0xFFDC2626)),
+                        const SizedBox(width: 3),
+                        Text(
+                          "સાફ કરો".tr,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFFDC2626),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  "પરિણામ: $filteredCount".tr,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
+  // Segment Tab Helper
+  Widget _buildTimeSegment({
+    required String key,
+    required String label,
+    IconData? icon,
+    Color? iconColor,
+  }) {
+    final isSelected = _selectedDateFilter == key;
+    return InkWell(
+      onTap: () async {
+        HapticFeedback.selectionClick();
+        if (key == 'custom') {
+          await _pickCustomDateRange();
+        } else {
+          setState(() {
+            _selectedDateFilter = key;
+            _customDateRange = null;
+          });
+        }
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+        margin: const EdgeInsets.only(right: 3),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 13,
+                color: isSelected ? const Color(0xFF2563EB) : (iconColor ?? const Color(0xFF64748B)),
               ),
-              child: Icon(
-                _hasActiveFilters ? Icons.filter_alt_off_rounded : Icons.person_search_rounded,
-                size: 48,
-                color: Colors.grey.shade400,
+              const SizedBox(width: 3),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF64748B),
               ),
             ),
-            const SizedBox(height: 14),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Purpose Dropdown Pill inside Console
+  Widget _buildPurposeFilterDropdownPill() {
+    String purposeLabel;
+    if (_selectedPurpose == 'all') {
+      purposeLabel = "હેતુ: બધા".tr;
+    } else if (_selectedPurpose == 'food') {
+      purposeLabel = "🍔 ફૂડ".tr;
+    } else if (_selectedPurpose == 'parcel') {
+      purposeLabel = "📦 પાર્સલ".tr;
+    } else if (_selectedPurpose == 'cab') {
+      purposeLabel = "🚕 કેબ".tr;
+    } else if (_selectedPurpose == 'service') {
+      purposeLabel = "🔧 સર્વિસ".tr;
+    } else if (_selectedPurpose == 'guest') {
+      purposeLabel = "👥 મહેમાન".tr;
+    } else {
+      purposeLabel = "હેતુ".tr;
+    }
+
+    final isPurposeActive = _selectedPurpose != 'all';
+
+    return InkWell(
+      onTap: _showPurposeFilterSheet,
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isPurposeActive ? const Color(0xFFFAF5FF) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isPurposeActive ? const Color(0xFF9333EA) : const Color(0xFFE2E8F0),
+            width: isPurposeActive ? 1.4 : 1.0,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.category_rounded,
+              size: 13,
+              color: isPurposeActive ? const Color(0xFF9333EA) : const Color(0xFF64748B),
+            ),
+            const SizedBox(width: 4),
             Text(
-              _searchQuery.isNotEmpty
-                  ? "'$_searchQuery' માટે કોઈ રેકોર્ડ મળ્યો નથી".tr
-                  : _hasActiveFilters
-                      ? "આ ફિલ્ટર્સ મુજબ કોઈ વિઝિટર મળ્યા નથી".tr
-                      : "આ કેટેગરીમાં કોઈ વિઝિટર નથી".tr,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14.5,
-                color: Color(0xFF0F172A),
-                fontWeight: FontWeight.w800,
+              purposeLabel,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: isPurposeActive ? FontWeight.w900 : FontWeight.w700,
+                color: isPurposeActive ? const Color(0xFF9333EA) : const Color(0xFF334155),
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(width: 3),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 15,
+              color: isPurposeActive ? const Color(0xFF9333EA) : const Color(0xFF94A3B8),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Wing Dropdown Pill inside Console
+  Widget _buildWingFilterDropdownPill(List<String> sortedBlocks) {
+    String wingLabel;
+    if (_selectedBlock == 'all') {
+      wingLabel = "વિંગ: બધા".tr;
+    } else {
+      wingLabel = "વિંગ $_selectedBlock".tr;
+    }
+
+    final isWingActive = _selectedBlock != 'all';
+
+    return InkWell(
+      onTap: () => _showWingFilterSheet(sortedBlocks),
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isWingActive ? const Color(0xFFF0FDFA) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isWingActive ? const Color(0xFF0D9488) : const Color(0xFFE2E8F0),
+            width: isWingActive ? 1.4 : 1.0,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.apartment_rounded,
+              size: 13,
+              color: isWingActive ? const Color(0xFF0D9488) : const Color(0xFF64748B),
+            ),
+            const SizedBox(width: 4),
             Text(
-              "ફિલ્ટર બદલો અથવા બધા ફિલ્ટર્સ સાફ કરો".tr,
-              textAlign: TextAlign.center,
+              wingLabel,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: isWingActive ? FontWeight.w900 : FontWeight.w700,
+                color: isWingActive ? const Color(0xFF0D9488) : const Color(0xFF334155),
+              ),
+            ),
+            const SizedBox(width: 3),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 15,
+              color: isWingActive ? const Color(0xFF0D9488) : const Color(0xFF94A3B8),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Filter Launcher Button with Badge Counter
+  Widget _buildFilterLauncherButton(List<String> sortedBlocks) {
+    final count = _activeFiltersCount;
+    final hasFilters = count > 0;
+
+    return InkWell(
+      onTap: () => _showAllFiltersSheet(sortedBlocks),
+      borderRadius: BorderRadius.circular(14),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: hasFilters ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: hasFilters ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0),
+            width: 1.2,
+          ),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Icon(
+              Icons.tune_rounded,
+              size: 19,
+              color: hasFilters ? Colors.white : const Color(0xFF475569),
+            ),
+            if (hasFilters)
+              Positioned(
+                top: 6,
+                right: 6,
+                child: Container(
+                  width: 15,
+                  height: 15,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFDC2626),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      "$count",
+                      style: const TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Bottom Sheet Option Tile Helper
+  Widget _buildSheetOptionTile({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: isSelected ? iconColor.withValues(alpha: 0.08) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isSelected ? iconColor : const Color(0xFFE2E8F0),
+          width: isSelected ? 1.5 : 1.0,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onTap();
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isSelected ? iconColor : iconColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 18, color: isSelected ? Colors.white : iconColor),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                          color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF334155),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isSelected)
+                  Icon(Icons.check_circle_rounded, color: iconColor, size: 20)
+                else
+                  Icon(Icons.circle_outlined, color: Colors.grey.shade300, size: 18),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Modal Chip for Master Filter Sheet
+  Widget _buildModalChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    IconData? icon,
+    Color activeColor = const Color(0xFF0F172A),
+  }) {
+    return InkWell(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor.withValues(alpha: 0.1) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? activeColor : const Color(0xFFCBD5E1),
+            width: isSelected ? 1.6 : 1.0,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 14, color: isSelected ? activeColor : const Color(0xFF64748B)),
+              const SizedBox(width: 5),
+            ],
+            Text(
+              label,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w500,
+                fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                color: isSelected ? activeColor : const Color(0xFF334155),
               ),
             ),
-            if (_hasActiveFilters) ...[
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: _clearAllFilters,
-                icon: const Icon(Icons.refresh_rounded, size: 15),
-                label: Text(
-                  "બધા ફિલ્ટર્સ સાફ કરો".tr,
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0F172A),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
+            if (isSelected) ...[
+              const SizedBox(width: 5),
+              Icon(Icons.check_rounded, size: 13, color: activeColor),
             ],
           ],
+        ),
+      ),
+    );
+  }
+
+  // Date Filter Bottom Sheet
+  void _showDateFilterSheet() {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4.5,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.calendar_month_rounded, color: Color(0xFF2563EB), size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "તારીખ ફિલ્ટર પસંદ કરો".tr,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        Text(
+                          "મુલાકાતી એન્ટ્રી તારીખ મુજબ ફિલ્ટર કરો".tr,
+                          style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_selectedDateFilter != 'all')
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedDateFilter = 'all';
+                          _customDateRange = null;
+                        });
+                        Navigator.pop(ctx);
+                      },
+                      child: Text(
+                        "રીસેટ".tr,
+                        style: const TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildSheetOptionTile(
+                icon: Icons.all_inclusive_rounded,
+                iconColor: const Color(0xFF475569),
+                title: "બધા સમય".tr,
+                subtitle: "શરૂઆતથી અત્યાર સુધીની તમામ એન્ટ્રીઓ".tr,
+                isSelected: _selectedDateFilter == 'all',
+                onTap: () {
+                  setState(() {
+                    _selectedDateFilter = 'all';
+                    _customDateRange = null;
+                  });
+                  Navigator.pop(ctx);
+                },
+              ),
+              _buildSheetOptionTile(
+                icon: Icons.bolt_rounded,
+                iconColor: const Color(0xFFF59E0B),
+                title: "આજે (Today)".tr,
+                subtitle: "આજના દિવસમાં આવેલ તમામ વિઝિટર્સ".tr,
+                isSelected: _selectedDateFilter == 'today',
+                onTap: () {
+                  setState(() {
+                    _selectedDateFilter = 'today';
+                    _customDateRange = null;
+                  });
+                  Navigator.pop(ctx);
+                },
+              ),
+              _buildSheetOptionTile(
+                icon: Icons.history_rounded,
+                iconColor: const Color(0xFF6366F1),
+                title: "ગઈકાલે (Yesterday)".tr,
+                subtitle: "ગઈકાલના દિવસની એન્ટ્રીઓ".tr,
+                isSelected: _selectedDateFilter == 'yesterday',
+                onTap: () {
+                  setState(() {
+                    _selectedDateFilter = 'yesterday';
+                    _customDateRange = null;
+                  });
+                  Navigator.pop(ctx);
+                },
+              ),
+              _buildSheetOptionTile(
+                icon: Icons.date_range_rounded,
+                iconColor: const Color(0xFF0D9488),
+                title: "આ સપ્તાહ (This Week)".tr,
+                subtitle: "આ સપ્તાહની તમામ મુલાકાતો".tr,
+                isSelected: _selectedDateFilter == 'this_week',
+                onTap: () {
+                  setState(() {
+                    _selectedDateFilter = 'this_week';
+                    _customDateRange = null;
+                  });
+                  Navigator.pop(ctx);
+                },
+              ),
+              _buildSheetOptionTile(
+                icon: Icons.calendar_view_month_rounded,
+                iconColor: const Color(0xFF8B5CF6),
+                title: "આ મહિનો (This Month)".tr,
+                subtitle: "આ મહિનાની તમામ વિઝિટર એન્ટ્રીઓ".tr,
+                isSelected: _selectedDateFilter == 'this_month',
+                onTap: () {
+                  setState(() {
+                    _selectedDateFilter = 'this_month';
+                    _customDateRange = null;
+                  });
+                  Navigator.pop(ctx);
+                },
+              ),
+              _buildSheetOptionTile(
+                icon: Icons.edit_calendar_rounded,
+                iconColor: const Color(0xFFEA580C),
+                title: _selectedDateFilter == 'custom' && _customDateRange != null
+                    ? "${DateFormat('dd MMM yyyy').format(_customDateRange!.start)} - ${DateFormat('dd MMM yyyy').format(_customDateRange!.end)}"
+                    : "કસ્ટમ તારીખ પસંદ કરો...".tr,
+                subtitle: "તમારી પસંદ મુજબની તારીખ રેન્જ સેટ કરો".tr,
+                isSelected: _selectedDateFilter == 'custom',
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await _pickCustomDateRange();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Purpose Filter Bottom Sheet
+  void _showPurposeFilterSheet() {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4.5,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFAF5FF),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.category_rounded, color: Color(0xFF9333EA), size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "મુલાકાતનો હેતુ (Purpose)".tr,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        Text(
+                          "ડિલિવરી, કેબ, સર્વિસ કે મહેમાન મુજબ ફિલ્ટર".tr,
+                          style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_selectedPurpose != 'all')
+                    TextButton(
+                      onPressed: () {
+                        setState(() => _selectedPurpose = 'all');
+                        Navigator.pop(ctx);
+                      },
+                      child: Text(
+                        "રીસેટ".tr,
+                        style: const TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildSheetOptionTile(
+                icon: Icons.all_inclusive_rounded,
+                iconColor: const Color(0xFF475569),
+                title: "બધા હેતુ (All Purposes)".tr,
+                subtitle: "કોઈપણ પ્રકારના મુલાકાતીઓ".tr,
+                isSelected: _selectedPurpose == 'all',
+                onTap: () {
+                  setState(() => _selectedPurpose = 'all');
+                  Navigator.pop(ctx);
+                },
+              ),
+              _buildSheetOptionTile(
+                icon: Icons.fastfood_rounded,
+                iconColor: const Color(0xFFEA580C),
+                title: "ફૂડ & ગ્રોસરી ડિલિવરી".tr,
+                subtitle: "Zomato, Swiggy, Blinkit, Zepto, ઇત્યાદિ".tr,
+                isSelected: _selectedPurpose == 'food',
+                onTap: () {
+                  setState(() => _selectedPurpose = 'food');
+                  Navigator.pop(ctx);
+                },
+              ),
+              _buildSheetOptionTile(
+                icon: Icons.inventory_2_rounded,
+                iconColor: const Color(0xFFB45309),
+                title: "પાર્સલ & કુરિયર".tr,
+                subtitle: "Amazon, Flipkart, Bluedart, વગેરે".tr,
+                isSelected: _selectedPurpose == 'parcel',
+                onTap: () {
+                  setState(() => _selectedPurpose = 'parcel');
+                  Navigator.pop(ctx);
+                },
+              ),
+              _buildSheetOptionTile(
+                icon: Icons.local_taxi_rounded,
+                iconColor: const Color(0xFFEAB308),
+                title: "કેબ & રાઈડ".tr,
+                subtitle: "Uber, Ola, Rapido, Taxi".tr,
+                isSelected: _selectedPurpose == 'cab',
+                onTap: () {
+                  setState(() => _selectedPurpose = 'cab');
+                  Navigator.pop(ctx);
+                },
+              ),
+              _buildSheetOptionTile(
+                icon: Icons.build_rounded,
+                iconColor: const Color(0xFF0284C7),
+                title: "સર્વિસ & રિપેર".tr,
+                subtitle: "ઇલેક્ટ્રિશિયન, પ્લમ્બર, કારપેન્ટર, વગેરે".tr,
+                isSelected: _selectedPurpose == 'service',
+                onTap: () {
+                  setState(() => _selectedPurpose = 'service');
+                  Navigator.pop(ctx);
+                },
+              ),
+              _buildSheetOptionTile(
+                icon: Icons.group_rounded,
+                iconColor: const Color(0xFF059669),
+                title: "મહેમાન (Guest / Personal)".tr,
+                subtitle: "રહેવાસીઓના અંગત સગાસંબંધી અને મિત્રો".tr,
+                isSelected: _selectedPurpose == 'guest',
+                onTap: () {
+                  setState(() => _selectedPurpose = 'guest');
+                  Navigator.pop(ctx);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Wing Filter Bottom Sheet
+  void _showWingFilterSheet(List<String> sortedBlocks) {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4.5,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0FDFA),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.apartment_rounded, color: Color(0xFF0D9488), size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "વિંગ / બ્લોક ફિલ્ટર".tr,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        Text(
+                          "ચોક્કસ બિલ્ડિંગ અથવા વિંગના મુલાકાતીઓ".tr,
+                          style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_selectedBlock != 'all')
+                    TextButton(
+                      onPressed: () {
+                        setState(() => _selectedBlock = 'all');
+                        Navigator.pop(ctx);
+                      },
+                      child: Text(
+                        "રીસેટ".tr,
+                        style: const TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildSheetOptionTile(
+                icon: Icons.domain_rounded,
+                iconColor: const Color(0xFF475569),
+                title: "બધા બ્લોક્સ (All Wings)".tr,
+                subtitle: "સમગ્ર સોસાયટીના વિઝિટર્સ".tr,
+                isSelected: _selectedBlock == 'all',
+                onTap: () {
+                  setState(() => _selectedBlock = 'all');
+                  Navigator.pop(ctx);
+                },
+              ),
+              ...sortedBlocks.map((b) => _buildSheetOptionTile(
+                    icon: Icons.apartment_rounded,
+                    iconColor: const Color(0xFF0D9488),
+                    title: "વિંગ $b".tr,
+                    subtitle: "$b બ્લોકમાં આવેલ મુલાકાતીઓ".tr,
+                    isSelected: _selectedBlock == b,
+                    onTap: () {
+                      setState(() => _selectedBlock = b);
+                      Navigator.pop(ctx);
+                    },
+                  )),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Master Filter Sheet (All Controls in One View)
+  void _showAllFiltersSheet(List<String> sortedBlocks) {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.85,
+              ),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Handle
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 4.5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F172A).withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.tune_rounded, color: Color(0xFF0F172A), size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            "મુલાકાતી ફિલ્ટર્સ".tr,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                        ),
+                        if (_hasActiveFilters)
+                          TextButton(
+                            onPressed: () {
+                              _clearAllFilters();
+                              setSheetState(() {});
+                            },
+                            child: Text(
+                              "બધા સાફ કરો".tr,
+                              style: const TextStyle(
+                                color: Color(0xFFDC2626),
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 20, color: Color(0xFFF1F5F9)),
+
+                  // Scrollable Filter Sections
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 1. Status Section
+                          Text(
+                            "સ્ટેટસ (Status)".tr,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _buildModalChip(
+                                label: "બધા".tr,
+                                isSelected: _selectedFilter == 'all',
+                                onTap: () {
+                                  setState(() => _selectedFilter = 'all');
+                                  setSheetState(() {});
+                                },
+                              ),
+                              _buildModalChip(
+                                label: "મંજૂર".tr,
+                                isSelected: _selectedFilter == 'approved',
+                                icon: Icons.check_circle_rounded,
+                                activeColor: const Color(0xFF10B981),
+                                onTap: () {
+                                  setState(() => _selectedFilter = 'approved');
+                                  setSheetState(() {});
+                                },
+                              ),
+                              _buildModalChip(
+                                label: "પેન્ડિંગ".tr,
+                                isSelected: _selectedFilter == 'pending',
+                                icon: Icons.hourglass_top_rounded,
+                                activeColor: const Color(0xFFF59E0B),
+                                onTap: () {
+                                  setState(() => _selectedFilter = 'pending');
+                                  setSheetState(() {});
+                                },
+                              ),
+                              _buildModalChip(
+                                label: "નકારેલ".tr,
+                                isSelected: _selectedFilter == 'rejected',
+                                icon: Icons.cancel_rounded,
+                                activeColor: const Color(0xFFEF4444),
+                                onTap: () {
+                                  setState(() => _selectedFilter = 'rejected');
+                                  setSheetState(() {});
+                                },
+                              ),
+                              _buildModalChip(
+                                label: "બહાર ગયા".tr,
+                                isSelected: _selectedFilter == 'checked_out',
+                                icon: Icons.logout_rounded,
+                                activeColor: const Color(0xFF0D9488),
+                                onTap: () {
+                                  setState(() => _selectedFilter = 'checked_out');
+                                  setSheetState(() {});
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+
+                          // 2. Date Section
+                          Text(
+                            "તારીખ રેન્જ (Date Range)".tr,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _buildModalChip(
+                                label: "બધા સમય".tr,
+                                isSelected: _selectedDateFilter == 'all',
+                                onTap: () {
+                                  setState(() {
+                                    _selectedDateFilter = 'all';
+                                    _customDateRange = null;
+                                  });
+                                  setSheetState(() {});
+                                },
+                              ),
+                              _buildModalChip(
+                                label: "આજે".tr,
+                                isSelected: _selectedDateFilter == 'today',
+                                icon: Icons.bolt_rounded,
+                                activeColor: const Color(0xFF2563EB),
+                                onTap: () {
+                                  setState(() {
+                                    _selectedDateFilter = 'today';
+                                    _customDateRange = null;
+                                  });
+                                  setSheetState(() {});
+                                },
+                              ),
+                              _buildModalChip(
+                                label: "ગઈકાલે".tr,
+                                isSelected: _selectedDateFilter == 'yesterday',
+                                icon: Icons.history_rounded,
+                                activeColor: const Color(0xFF2563EB),
+                                onTap: () {
+                                  setState(() {
+                                    _selectedDateFilter = 'yesterday';
+                                    _customDateRange = null;
+                                  });
+                                  setSheetState(() {});
+                                },
+                              ),
+                              _buildModalChip(
+                                label: "આ સપ્તાહ".tr,
+                                isSelected: _selectedDateFilter == 'this_week',
+                                icon: Icons.date_range_rounded,
+                                activeColor: const Color(0xFF2563EB),
+                                onTap: () {
+                                  setState(() {
+                                    _selectedDateFilter = 'this_week';
+                                    _customDateRange = null;
+                                  });
+                                  setSheetState(() {});
+                                },
+                              ),
+                              _buildModalChip(
+                                label: "આ મહિનો".tr,
+                                isSelected: _selectedDateFilter == 'this_month',
+                                icon: Icons.calendar_view_month_rounded,
+                                activeColor: const Color(0xFF2563EB),
+                                onTap: () {
+                                  setState(() {
+                                    _selectedDateFilter = 'this_month';
+                                    _customDateRange = null;
+                                  });
+                                  setSheetState(() {});
+                                },
+                              ),
+                              _buildModalChip(
+                                label: _selectedDateFilter == 'custom' && _customDateRange != null
+                                    ? "${DateFormat('dd MMM').format(_customDateRange!.start)} - ${DateFormat('dd MMM').format(_customDateRange!.end)}"
+                                    : "કસ્ટમ તારીખ...".tr,
+                                isSelected: _selectedDateFilter == 'custom',
+                                icon: Icons.edit_calendar_rounded,
+                                activeColor: const Color(0xFFEA580C),
+                                onTap: () async {
+                                  Navigator.pop(ctx);
+                                  await _pickCustomDateRange();
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+
+                          // 3. Purpose Section
+                          Text(
+                            "મુલાકાતનો હેતુ (Purpose)".tr,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _buildModalChip(
+                                label: "બધા હેતુ".tr,
+                                isSelected: _selectedPurpose == 'all',
+                                onTap: () {
+                                  setState(() => _selectedPurpose = 'all');
+                                  setSheetState(() {});
+                                },
+                              ),
+                              _buildModalChip(
+                                label: "🍔 ફૂડ & ગ્રોસરી".tr,
+                                isSelected: _selectedPurpose == 'food',
+                                activeColor: const Color(0xFFEA580C),
+                                onTap: () {
+                                  setState(() => _selectedPurpose = 'food');
+                                  setSheetState(() {});
+                                },
+                              ),
+                              _buildModalChip(
+                                label: "📦 પાર્સલ & કુરિયર".tr,
+                                isSelected: _selectedPurpose == 'parcel',
+                                activeColor: const Color(0xFFB45309),
+                                onTap: () {
+                                  setState(() => _selectedPurpose = 'parcel');
+                                  setSheetState(() {});
+                                },
+                              ),
+                              _buildModalChip(
+                                label: "🚕 કેબ & રાઈડ".tr,
+                                isSelected: _selectedPurpose == 'cab',
+                                activeColor: const Color(0xFFCA8A04),
+                                onTap: () {
+                                  setState(() => _selectedPurpose = 'cab');
+                                  setSheetState(() {});
+                                },
+                              ),
+                              _buildModalChip(
+                                label: "🔧 સર્વિસ & રિપેર".tr,
+                                isSelected: _selectedPurpose == 'service',
+                                activeColor: const Color(0xFF0284C7),
+                                onTap: () {
+                                  setState(() => _selectedPurpose = 'service');
+                                  setSheetState(() {});
+                                },
+                              ),
+                              _buildModalChip(
+                                label: "👥 મહેમાન (Guest)".tr,
+                                isSelected: _selectedPurpose == 'guest',
+                                activeColor: const Color(0xFF059669),
+                                onTap: () {
+                                  setState(() => _selectedPurpose = 'guest');
+                                  setSheetState(() {});
+                                },
+                              ),
+                            ],
+                          ),
+
+                          // 4. Wing Section (if available)
+                          if (sortedBlocks.length > 1) ...[
+                            const SizedBox(height: 20),
+                            Text(
+                              "વિંગ / બ્લોક (Wing / Block)".tr,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _buildModalChip(
+                                  label: "બધા બ્લોક્સ".tr,
+                                  isSelected: _selectedBlock == 'all',
+                                  onTap: () {
+                                    setState(() => _selectedBlock = 'all');
+                                    setSheetState(() {});
+                                  },
+                                ),
+                                ...sortedBlocks.map((b) => _buildModalChip(
+                                      label: "વિંગ $b".tr,
+                                      isSelected: _selectedBlock == b,
+                                      activeColor: const Color(0xFF0D9488),
+                                      onTap: () {
+                                        setState(() => _selectedBlock = b);
+                                        setSheetState(() {});
+                                      },
+                                    )),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Bottom Apply Button
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: FilledButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF0F172A),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: Text(
+                          "લાગુ કરો (Apply)".tr,
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState() {
+    final isToday = _selectedDateFilter == 'today';
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 68,
+                height: 68,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isToday
+                        ? [const Color(0xFFEFF6FF), const Color(0xFFDBEAFE)]
+                        : [const Color(0xFFF8FAFC), const Color(0xFFF1F5F9)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isToday ? const Color(0xFF93C5FD) : const Color(0xFFE2E8F0),
+                    width: 1.5,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    isToday ? Icons.shield_rounded : Icons.search_off_rounded,
+                    size: 32,
+                    color: isToday ? const Color(0xFF2563EB) : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                isToday
+                    ? "આજના દિવસમાં હજુ કોઈ મુલાકાતી નથી".tr
+                    : _searchQuery.isNotEmpty
+                        ? "'$_searchQuery' માટે કોઈ પરિણામ મળ્યું નથી".tr
+                        : _hasActiveFilters
+                            ? "પસંદ કરેલા ફિલ્ટર્સ મુજબ કોઈ વિઝિટર નથી".tr
+                            : "આ કેટેગરીમાં કોઈ વિઝિટર નોંધાયેલ નથી".tr,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 15.5,
+                  color: Color(0xFF0F172A),
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                isToday
+                    ? "સિક્યોરિટી ગાર્ડ ગેટ પરથી નવી એન્ટ્રી કરશે ત્યારે તે અહીં તરત લાઈવ દેખાશે.".tr
+                    : "ફિલ્ટર બદલો અથવા બધા સમયની હિસ્ટ્રી જોવા માટે નીચે ટેપ કરો.".tr,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  color: Color(0xFF64748B),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 20),
+              if (isToday) ...[
+                FilledButton.icon(
+                  onPressed: () {
+                    HapticFeedback.selectionClick();
+                    setState(() {
+                      _selectedDateFilter = 'all';
+                      _customDateRange = null;
+                    });
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F172A),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  ),
+                  icon: const Icon(Icons.history_rounded, size: 16),
+                  label: Text(
+                    "બધા સમયનો રિપોર્ટ જુઓ".tr,
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                  ),
+                ),
+              ] else if (_hasActiveFilters) ...[
+                FilledButton.icon(
+                  onPressed: _clearAllFilters,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F172A),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  ),
+                  icon: const Icon(Icons.refresh_rounded, size: 16),
+                  label: Text(
+                    "બધા ફિલ્ટર્સ સાફ કરો".tr,
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
