@@ -354,15 +354,21 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                                 children: [
                                   const Icon(Icons.arrow_downward_rounded, size: 13, color: Color(0xFF34D399)),
                                   const SizedBox(width: 4),
-                                  Text(
-                                    "કુલ મેન્ટેનન્સ જમા".tr,
-                                    style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700),
+                                  Flexible(
+                                    child: Text(
+                                      "કુલ મેન્ટેનન્સ જમા".tr,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700),
+                                    ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 3),
                               Text(
                                 currencyFmt.format(_summary.totalIncome),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w800,
@@ -382,15 +388,21 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                                 children: [
                                   const Icon(Icons.arrow_upward_rounded, size: 13, color: Color(0xFFF87171)),
                                   const SizedBox(width: 4),
-                                  Text(
-                                    "કુલ થયેલ ખર્ચ".tr,
-                                    style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700),
+                                  Flexible(
+                                    child: Text(
+                                      "કુલ થયેલ ખર્ચ".tr,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700),
+                                    ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 3),
                               Text(
                                 currencyFmt.format(_summary.totalExpenses),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w800,
@@ -423,11 +435,11 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
       children: [
         Row(
           children: [
-            Icon(Icons.pie_chart_rounded, size: 16, color: Color(0xFF0F766E)),
-            SizedBox(width: 6),
+            const Icon(Icons.pie_chart_rounded, size: 16, color: Color(0xFF0F766E)),
+            const SizedBox(width: 6),
             Text(
               "મુખ્ય ખર્ચાઓની વહેંચણી (Where Money Goes)".tr,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w800,
                 color: Color(0xFF0F172A),
@@ -445,20 +457,29 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
               final percent = _summary.totalExpenses > 0
                   ? ((entry.value / _summary.totalExpenses) * 100).toStringAsFixed(0)
                   : '0';
+              final pctVal = double.tryParse(percent) ?? 0.0;
 
               return Container(
-                width: 145,
-                margin: const EdgeInsets.only(right: 10),
-                padding: const EdgeInsets.all(12),
+                width: 168,
+                margin: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.all(13),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: cat.color.withValues(alpha: 0.18),
+                    width: 1.2,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
+                      color: cat.color.withValues(alpha: 0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
                     ),
                   ],
                 ),
@@ -469,48 +490,70 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(7),
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: cat.color.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
+                            gradient: LinearGradient(
+                              colors: [
+                                cat.color.withValues(alpha: 0.18),
+                                cat.color.withValues(alpha: 0.06),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(11),
                           ),
-                          child: Icon(cat.icon, size: 16, color: cat.color),
+                          child: Icon(cat.icon, size: 17, color: cat.color),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(6),
+                            color: cat.color.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             "$percent%",
-                            style: const TextStyle(
-                              fontSize: 10.5,
+                            style: TextStyle(
+                              fontSize: 11,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF475569),
+                              color: cat.color,
                             ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
-                    Text(
-                      cat.title,
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1E293B),
+                    SizedBox(
+                      height: 32,
+                      child: Text(
+                        cat.title,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1E293B),
+                          height: 1.25,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Text(
                       currencyFmt.format(entry.value),
-                      style: TextStyle(
-                        fontSize: 13.5,
+                      style: const TextStyle(
+                        fontSize: 14.5,
                         fontWeight: FontWeight.w900,
-                        color: cat.color,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(3),
+                      child: LinearProgressIndicator(
+                        value: (pctVal / 100.0).clamp(0.0, 1.0),
+                        backgroundColor: const Color(0xFFF1F5F9),
+                        valueColor: AlwaysStoppedAnimation<Color>(cat.color),
+                        minHeight: 3.5,
                       ),
                     ),
                   ],
@@ -649,31 +692,62 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
 
   Widget _buildExpenseCard(SocietyExpense exp) {
     final cat = exp.category;
+    final modeLower = exp.paymentMode.toLowerCase();
+    IconData modeIcon = Icons.payment_rounded;
+    Color modeColor = const Color(0xFF475569);
+    Color modeBg = const Color(0xFFF1F5F9);
+
+    if (modeLower.contains('cash')) {
+      modeIcon = Icons.payments_rounded;
+      modeColor = const Color(0xFFB45309);
+      modeBg = const Color(0xFFFEF3C7);
+    } else if (modeLower.contains('online') || modeLower.contains('upi')) {
+      modeIcon = Icons.account_balance_rounded;
+      modeColor = const Color(0xFF0284C7);
+      modeBg = const Color(0xFFE0F2FE);
+    } else if (modeLower.contains('cheque')) {
+      modeIcon = Icons.receipt_long_rounded;
+      modeColor = const Color(0xFF7E22CE);
+      modeBg = const Color(0xFFF3E8FF);
+    }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: cat.color.withValues(alpha: 0.18), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: cat.color.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: cat.color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  colors: [
+                    cat.color.withValues(alpha: 0.18),
+                    cat.color.withValues(alpha: 0.06),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(13),
               ),
               child: Icon(cat.icon, color: cat.color, size: 22),
             ),
@@ -685,9 +759,10 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                   Text(
                     exp.title,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 14.5,
                       fontWeight: FontWeight.w800,
                       color: Color(0xFF0F172A),
+                      letterSpacing: -0.2,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -702,31 +777,39 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                             color: Color(0xFF475569),
                           ),
                         ),
-                        Text(" • ", style: TextStyle(color: Color(0xFF94A3B8))),
+                        const Text(" • ", style: TextStyle(color: Color(0xFF94A3B8))),
                       ],
                       Text(
                         dateFmt.format(exp.expenseDate),
                         style: const TextStyle(
                           fontSize: 11.5,
                           color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 5),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+                      color: modeBg,
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Text(
-                      exp.paymentModeLabel,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF475569),
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(modeIcon, size: 10, color: modeColor),
+                        const SizedBox(width: 3.5),
+                        Text(
+                          exp.paymentModeLabel,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: modeColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -736,9 +819,10 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
             Text(
               "- ${currencyFmt.format(exp.amount)}",
               style: const TextStyle(
-                fontSize: 15,
+                fontSize: 16,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFFDC2626),
+                letterSpacing: -0.3,
               ),
             ),
           ],
@@ -954,41 +1038,73 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('શરૂઆતની સિલક'.tr, style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 2),
-                  Text('₹ 0', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
-                ],
-              ),
-              Container(width: 1, height: 28, color: const Color(0xFFCBD5E1)),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text('કુલ જમા / ખર્ચ'.tr, style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 2),
-                  Text(
-                    '+${currencyFmt.format(_summary.totalIncome)} / -${currencyFmt.format(_summary.totalExpenses)}',
-                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
-                  ),
-                ],
-              ),
-              Container(width: 1, height: 28, color: const Color(0xFFCBD5E1)),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text('વર્તમાન આખર સિલક'.tr, style: TextStyle(fontSize: 11, color: Color(0xFF0F766E), fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  Text(
-                    currencyFmt.format(_summary.currentSavings),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: _summary.currentSavings >= 0 ? const Color(0xFF047857) : const Color(0xFFDC2626),
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'શરૂઆતની સિલક'.tr,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    const Text('₹ 0', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                  ],
+                ),
+              ),
+              Container(width: 1, height: 28, color: const Color(0xFFCBD5E1)),
+              const SizedBox(width: 6),
+              Expanded(
+                flex: 4,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'કુલ જમા / ખર્ચ'.tr,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        '+${currencyFmt.format(_summary.totalIncome)} / -${currencyFmt.format(_summary.totalExpenses)}',
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(width: 1, height: 28, color: const Color(0xFFCBD5E1)),
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'વર્તમાન આખર સિલક'.tr,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF0F766E), fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        currencyFmt.format(_summary.currentSavings),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: _summary.currentSavings >= 0 ? const Color(0xFF047857) : const Color(0xFFDC2626),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -1017,27 +1133,59 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
 
   Widget _buildPassbookEntryCard(SocietyLedgerEntry entry) {
     final isCredit = entry.isCredit;
+    final cat = SocietyExpenseCategory.fromKey(entry.categoryKey.isNotEmpty ? entry.categoryKey : null);
+    final isBalPositive = entry.runningBalance >= 0;
+
+    // Helper for payment mode badge
+    final modeLower = entry.paymentMode.toLowerCase().trim();
+    IconData modeIcon = Icons.payment_rounded;
+    Color modeColor = const Color(0xFF475569);
+    Color modeBg = const Color(0xFFF1F5F9);
+
+    if (modeLower.contains('cash')) {
+      modeIcon = Icons.payments_rounded;
+      modeColor = const Color(0xFFB45309);
+      modeBg = const Color(0xFFFEF3C7);
+    } else if (modeLower.contains('online') || modeLower.contains('upi')) {
+      modeIcon = Icons.account_balance_rounded;
+      modeColor = const Color(0xFF0284C7);
+      modeBg = const Color(0xFFE0F2FE);
+    } else if (modeLower.contains('cheque')) {
+      modeIcon = Icons.receipt_long_rounded;
+      modeColor = const Color(0xFF7E22CE);
+      modeBg = const Color(0xFFF3E8FF);
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isCredit ? const Color(0xFFA7F3D0).withValues(alpha: 0.6) : const Color(0xFFFECACA).withValues(alpha: 0.6),
+          color: isCredit
+              ? const Color(0xFFA7F3D0).withValues(alpha: 0.8)
+              : const Color(0xFFFECACA).withValues(alpha: 0.8),
+          width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: isCredit
+                ? const Color(0xFF10B981).withValues(alpha: 0.05)
+                : const Color(0xFFEF4444).withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1047,112 +1195,169 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(6),
+                          width: 34,
+                          height: 34,
                           decoration: BoxDecoration(
-                            color: isCredit ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
-                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: isCredit
+                                  ? const [Color(0xFFDCFCE7), Color(0xFFBBF7D0)]
+                                  : const [Color(0xFFFEE2E2), Color(0xFFFECACA)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
                             isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                            size: 14,
-                            color: isCredit ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                            size: 17,
+                            color: isCredit ? const Color(0xFF059669) : const Color(0xFFDC2626),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          dateFmt.format(entry.date),
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF334155),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            entry.paymentMode,
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
-                          ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              dateFmt.format(entry.date),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: modeBg,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(modeIcon, size: 10, color: modeColor),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    entry.paymentMode.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: modeColor,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                     Text(
                       '${isCredit ? "+" : "-"} ${currencyFmt.format(entry.amount)}',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 17,
                         fontWeight: FontWeight.w900,
-                        color: isCredit ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                        color: isCredit ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                        letterSpacing: -0.3,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
                   entry.title.tr,
                   style: const TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
                     color: Color(0xFF0F172A),
+                    letterSpacing: -0.1,
                   ),
                 ),
                 if (entry.subtitle.isNotEmpty && entry.subtitle != '-') ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Builder(
                     builder: (context) {
                       String sub = entry.subtitle;
                       if (sub.startsWith('ચૂકવ્યા: ')) {
                         sub = '${'paid_to_label'.tr}: ${sub.substring(9)}';
                       }
-                      return Text(
-                        sub,
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      return Row(
+                        children: [
+                          const Icon(Icons.person_pin_circle_outlined, size: 13, color: Color(0xFF64748B)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              sub,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF64748B),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       );
                     },
                   ),
                 ],
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: cat.color.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    border: Border.all(color: cat.color.withValues(alpha: 0.2)),
                   ),
-                  child: Text(
-                    entry.categoryLabel.tr,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(cat.icon, size: 12, color: cat.color),
+                      const SizedBox(width: 5),
+                      Text(
+                        cat.title,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: cat.color,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          // Running Balance bar on that exact date
+          // Running Balance bar with dynamic positive / negative styling
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8.5),
             decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
+              color: isBalPositive ? const Color(0xFFF0FDF4) : const Color(0xFFFFF1F2),
               borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(15),
-                bottomRight: Radius.circular(15),
+                bottomLeft: Radius.circular(17),
+                bottomRight: Radius.circular(17),
               ),
               border: Border(
-                top: BorderSide(color: const Color(0xFFDCFCE7).withValues(alpha: 0.8)),
+                top: BorderSide(
+                  color: isBalPositive ? const Color(0xFFDCFCE7) : const Color(0xFFFECDD3),
+                ),
               ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.account_balance_wallet_rounded, size: 14, color: Color(0xFF059669)),
+                Icon(
+                  isBalPositive ? Icons.account_balance_wallet_rounded : Icons.account_balance_wallet_outlined,
+                  size: 14,
+                  color: isBalPositive ? const Color(0xFF059669) : const Color(0xFFE11D48),
+                ),
                 const SizedBox(width: 6),
                 Text(
                   'તે તારીખે તિજોરી સિલક (Balance):'.tr,
                   style: TextStyle(
                     fontSize: 11.5,
-                    color: Color(0xFF065F46),
+                    color: isBalPositive ? const Color(0xFF065F46) : const Color(0xFF9F1239),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1161,8 +1366,8 @@ class _MemberAccountsScreenState extends State<MemberAccountsScreen> {
                   currencyFmt.format(entry.runningBalance),
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: entry.runningBalance >= 0 ? const Color(0xFF047857) : const Color(0xFFDC2626),
+                    fontWeight: FontWeight.w900,
+                    color: isBalPositive ? const Color(0xFF047857) : const Color(0xFFE11D48),
                   ),
                 ),
               ],

@@ -266,12 +266,16 @@ class _AdminAmenitiesScreenState extends State<AdminAmenitiesScreen> with Single
                       ),
                     ),
                     const SizedBox(width: 5),
-                    Text(
-                      _hasAmenities ? 'સક્રિય • સમગ્ર એપમાં બુકિંગ ઉપલબ્ધ'.tr : 'અદ્રશ્ય • બુકિંગ મોડ્યુલ છુપાયેલું છે'.tr,
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: _hasAmenities ? const Color(0xFF0D9488) : const Color(0xFF64748B),
+                    Expanded(
+                      child: Text(
+                        _hasAmenities ? 'સક્રિય • સમગ્ર એપમાં બુકિંગ ઉપલબ્ધ'.tr : 'અદ્રશ્ય • બુકિંગ મોડ્યુલ છુપાયેલું છે'.tr,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: _hasAmenities ? const Color(0xFF0D9488) : const Color(0xFF64748B),
+                        ),
                       ),
                     ),
                   ],

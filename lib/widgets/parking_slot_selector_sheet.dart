@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/parking_slot_service.dart';
@@ -164,6 +165,45 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
             _buildVehicleTypeChips(),
             const SizedBox(height: 6),
           ],
+
+          // Visual Status Legend Bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF8FAFC),
+              border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildLegendIndicator(
+                    color: const Color(0xFF10B981),
+                    bg: const Color(0xFFDCFCE7),
+                    label: 'ઉપલબ્ધ'.tr,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildLegendIndicator(
+                    color: const Color(0xFF0284C7),
+                    bg: const Color(0xFFE0F2FE),
+                    label: 'તમારો સ્લોટ'.tr,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildLegendIndicator(
+                    color: const Color(0xFFD97706),
+                    bg: const Color(0xFFFEF3C7),
+                    label: 'તમારું અન્ય વાહન'.tr,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildLegendIndicator(
+                    color: const Color(0xFFDC2626),
+                    bg: const Color(0xFFFEE2E2),
+                    label: 'રોકાયેલ સ્લોટ'.tr,
+                  ),
+                ],
+              ),
+            ),
+          ),
 
           // Stream of Real Slots from Firestore
           Expanded(
@@ -338,6 +378,8 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
   }
 
   Widget _buildSlotsGrid(List<ParkingSlotModel> slots, Map<String, OccupiedSlotInfo> occupiedMap) {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: slots.length,
@@ -349,56 +391,171 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
       ),
       itemBuilder: (context, index) {
         final slot = slots[index];
-        final cleanSlot = slot.slotNumber.toUpperCase();
+        final cleanSlot = slot.slotNumber.trim().toUpperCase();
+        final normSlot = ParkingSlotService.normalizeSlotKey(cleanSlot);
 
-        final status = ParkingSlotService.instance.checkSlotStatus(
-          slotName: cleanSlot,
-          occupiedSlots: occupiedMap,
-          currentVehiclePlate: widget.vehiclePlate,
+        // Fallback: If not in occupiedMap from users collection, check slot.isAssigned in Firestore
+        final occInfo = occupiedMap[cleanSlot] ??
+            occupiedMap[normSlot] ??
+            (slot.isAssigned
+                ? OccupiedSlotInfo(
+                    slotName: slot.slotNumber,
+                    vehicleNumber: (slot.assignedVehiclePlate ?? '').toUpperCase(),
+                    vehicleModel: slot.assignedVehicleModel ?? '',
+                    vehicleType: slot.slotType,
+                    ownerName: slot.assignedMemberName ?? '',
+                    ownerPhone: '',
+                    flatDisplay: (slot.assignedFlat != null && slot.assignedFlat!.isNotEmpty)
+                        ? slot.assignedFlat!
+                        : 'સોસાયટી સભ્ય'.tr,
+                    ownerUid: slot.assignedMemberId ?? '',
+                    isCurrentMember: (slot.assignedMemberId?.isNotEmpty == true) &&
+                        slot.assignedMemberId == currentUid,
+                  )
+                : null);
+
+        final bool isOccupied = occInfo != null;
+        final bool isMySlot = occInfo?.isCurrentMember == true;
+
+        // Check if this slot belongs specifically to the vehicle being managed/edited
+        final bool isThisVehicle = isMySlot && (
+          (widget.vehiclePlate != null &&
+           widget.vehiclePlate!.trim().isNotEmpty &&
+           occInfo != null &&
+           VehiclePlateValidator.clean(widget.vehiclePlate!) == VehiclePlateValidator.clean(occInfo.vehicleNumber)) ||
+          (widget.initialSlot != null &&
+           widget.initialSlot!.trim().toUpperCase() == cleanSlot)
         );
 
-        final isOccupied = status == ParkingSlotStatus.occupied;
-        final isSelected = _selectedSlot?.toUpperCase() == cleanSlot;
-        final occInfo = occupiedMap[cleanSlot];
+        final bool isMyOtherVehicle = isMySlot && !isThisVehicle;
+        final bool isOccupiedByOther = isOccupied && !isMySlot;
+        final bool isSelected = _selectedSlot?.trim().toUpperCase() == cleanSlot;
+
+        final String assignedPlate = occInfo?.vehicleNumber ?? '';
+        final String assignedFlat = occInfo?.flatDisplay ?? 'અન્ય સભ્ય'.tr;
+
+        // Interaction
+        VoidCallback? onTap;
+        if (isOccupiedByOther) {
+          onTap = () {
+            HapticFeedback.heavyImpact();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'સ્લોટ "$cleanSlot" પહેલેથી $assignedFlat ને ફાળવેલ છે!'.tr,
+                ),
+                backgroundColor: const Color(0xFFDC2626),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            );
+          };
+        } else if (isMyOtherVehicle) {
+          onTap = () {
+            HapticFeedback.heavyImpact();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'સ્લોટ "$cleanSlot" પહેલેથી તમારા વાહન ($assignedPlate) માટે ફાળવેલ છે! ૧ સ્લોટ માત્ર ૧ વાહનને જ મળી શકે.'.tr,
+                ),
+                backgroundColor: const Color(0xFFD97706),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            );
+          };
+        } else {
+          // Available or current vehicle's slot
+          onTap = () {
+            HapticFeedback.selectionClick();
+            setState(() => _selectedSlot = cleanSlot);
+          };
+        }
+
+        // Color & badge tokens
+        final Color cardBg;
+        final Color borderColor;
+        final double borderWidth;
+        final Color iconColor;
+        final IconData iconData;
+        final Color titleColor;
+        final Color badgeBg;
+        final Color badgeTextColor;
+        final String badgeText;
+
+        if (isSelected) {
+          cardBg = const Color(0xFFE0F2FE);
+          borderColor = const Color(0xFF0284C7);
+          borderWidth = 2.0;
+          iconColor = const Color(0xFF0284C7);
+          iconData = Icons.check_circle_rounded;
+          titleColor = const Color(0xFF0369A1);
+          if (isThisVehicle) {
+            badgeBg = const Color(0xFFBAE6FD);
+            badgeTextColor = const Color(0xFF0369A1);
+            badgeText = 'તમારો હાલનો સ્લોટ'.tr;
+          } else {
+            badgeBg = const Color(0xFFBAE6FD);
+            badgeTextColor = const Color(0xFF0284C7);
+            badgeText = 'પસંદ કરેલ'.tr;
+          }
+        } else if (isOccupiedByOther) {
+          cardBg = const Color(0xFFFEF2F2);
+          borderColor = const Color(0xFFFECACA);
+          borderWidth = 1.2;
+          iconColor = const Color(0xFFDC2626);
+          iconData = Icons.lock_rounded;
+          titleColor = const Color(0xFF991B1B);
+          badgeBg = const Color(0xFFFEE2E2);
+          badgeTextColor = const Color(0xFFB91C1C);
+          badgeText = '🔴 રોકાયેલ ($assignedFlat)'.tr;
+        } else if (isMyOtherVehicle) {
+          cardBg = const Color(0xFFFFFBEB);
+          borderColor = const Color(0xFFFDE68A);
+          borderWidth = 1.2;
+          iconColor = const Color(0xFFD97706);
+          iconData = Icons.lock_rounded;
+          titleColor = const Color(0xFF92400E);
+          badgeBg = const Color(0xFFFEF3C7);
+          badgeTextColor = const Color(0xFFB45309);
+          badgeText = '🔒 બુક ($assignedPlate)'.tr;
+        } else if (isThisVehicle) {
+          cardBg = const Color(0xFFF0F9FF);
+          borderColor = const Color(0xFF93C5FD);
+          borderWidth = 1.4;
+          iconColor = const Color(0xFF2563EB);
+          iconData = Icons.verified_user_rounded;
+          titleColor = const Color(0xFF1E40AF);
+          badgeBg = const Color(0xFFDBEAFE);
+          badgeTextColor = const Color(0xFF1D4ED8);
+          badgeText = '🔵 તમારો સ્લોટ'.tr;
+        } else {
+          // Available
+          cardBg = Colors.white;
+          borderColor = const Color(0xFFE2E8F0);
+          borderWidth = 1.2;
+          iconColor = const Color(0xFF10B981);
+          iconData = Icons.local_parking_rounded;
+          titleColor = const Color(0xFF0F172A);
+          badgeBg = const Color(0xFFDCFCE7);
+          badgeTextColor = const Color(0xFF15803D);
+          badgeText = '🟢 ઉપલબ્ધ (Available)'.tr;
+        }
 
         return Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: isOccupied
-                ? () {
-                    HapticFeedback.heavyImpact();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'સ્લોટ "$cleanSlot" પહેલેથી ફ્લેટ ${occInfo?.flatDisplay ?? '.trઅન્ય સભ્ય'} ને ફાળવેલ છે!'.tr,
-                        ),
-                        backgroundColor: const Color(0xFFDC2626),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
-                : () {
-                    HapticFeedback.selectionClick();
-                    setState(() => _selectedSlot = cleanSlot);
-                  },
+            onTap: onTap,
             borderRadius: BorderRadius.circular(16),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? const Color(0xFFE0F2FE)
-                    : isOccupied
-                        ? const Color(0xFFFEF2F2)
-                        : Colors.white,
+                color: cardBg,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isSelected
-                      ? const Color(0xFF0284C7)
-                      : isOccupied
-                          ? const Color(0xFFFECACA)
-                          : const Color(0xFFE2E8F0),
-                  width: isSelected ? 2.0 : 1.2,
+                  color: borderColor,
+                  width: borderWidth,
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -417,13 +574,9 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
                   Row(
                     children: [
                       Icon(
-                        isOccupied ? Icons.lock_rounded : Icons.local_parking_rounded,
+                        iconData,
                         size: 16,
-                        color: isSelected
-                            ? const Color(0xFF0284C7)
-                            : isOccupied
-                                ? const Color(0xFFDC2626)
-                                : const Color(0xFF10B981),
+                        color: iconColor,
                       ),
                       const SizedBox(width: 6),
                       Expanded(
@@ -434,7 +587,7 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w900,
-                            color: isOccupied ? const Color(0xFF991B1B) : const Color(0xFF0F172A),
+                            color: titleColor,
                           ),
                         ),
                       ),
@@ -443,21 +596,17 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
                     decoration: BoxDecoration(
-                      color: isOccupied
-                          ? const Color(0xFFFEE2E2)
-                          : const Color(0xFFDCFCE7),
+                      color: badgeBg,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      isOccupied
-                          ? 'રોકાયેલ (${occInfo?.flatDisplay ?? '.trબુક'})'
-                          : '🟢 ઉપલબ્ધ (Available)'.tr,
+                      badgeText,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
-                        color: isOccupied ? const Color(0xFFB91C1C) : const Color(0xFF15803D),
+                        color: badgeTextColor,
                       ),
                     ),
                   ),
@@ -505,4 +654,42 @@ class _ParkingSlotSelectorSheetState extends State<ParkingSlotSelectorSheet> {
       ),
     );
   }
+
+  Widget _buildLegendIndicator({
+    required Color color,
+    required Color bg,
+    required String label,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(color: color.withValues(alpha: 0.35), width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6.5,
+            height: 6.5,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:building_guard/core/app_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -1200,7 +1201,7 @@ class _MemberMaintenanceSheetContentState
                     children: [
                       Text(
                         'બધી જૂની રસીદો & ઇતિહાસ જુઓ'.tr,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF0F172A),
@@ -1242,21 +1243,51 @@ class _MemberMaintenanceSheetContentState
         ? DateFormat('dd MMM yyyy, hh:mm a').format(bill.paidAt!)
         : DateFormat('dd MMM yyyy').format(bill.dueDate);
 
+    // Payment mode styling
+    final modeLower = bill.paymentMode.toLowerCase().trim();
+    IconData modeIcon = Icons.payment_rounded;
+    Color modeColor = const Color(0xFF475569);
+    Color modeBg = const Color(0xFFF1F5F9);
+
+    if (modeLower.contains('cash')) {
+      modeIcon = Icons.payments_rounded;
+      modeColor = const Color(0xFFB45309);
+      modeBg = const Color(0xFFFEF3C7);
+    } else if (modeLower.contains('online') || modeLower.contains('upi')) {
+      modeIcon = Icons.account_balance_rounded;
+      modeColor = const Color(0xFF0284C7);
+      modeBg = const Color(0xFFE0F2FE);
+    } else if (modeLower.contains('cheque')) {
+      modeIcon = Icons.receipt_long_rounded;
+      modeColor = const Color(0xFF7E22CE);
+      modeBg = const Color(0xFFF3E8FF);
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isPaid
-              ? const Color(0xFFE2E8F0)
-              : (isReview ? Colors.blue.shade200 : Colors.orange.shade200),
+              ? const Color(0xFF0F766E).withValues(alpha: 0.18)
+              : (isReview
+                  ? const Color(0xFF3B82F6).withValues(alpha: 0.25)
+                  : const Color(0xFFEF4444).withValues(alpha: 0.25)),
+          width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: isPaid
+                ? const Color(0xFF0F766E).withValues(alpha: 0.06)
+                : const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -1265,27 +1296,38 @@ class _MemberMaintenanceSheetContentState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Row
+            // Top Row: Status Icon, Title & Date, Amount
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: isPaid
-                      ? const Color(0xFFCCFBF1)
-                      : (isReview ? Colors.blue.shade50 : Colors.red.shade50),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isPaid
+                          ? const [Color(0xFFE6FFFA), Color(0xFFCCFBF1)]
+                          : (isReview
+                              ? [Colors.blue.shade50, Colors.blue.shade100]
+                              : [Colors.red.shade50, Colors.red.shade100]),
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Icon(
                     isPaid
-                        ? Icons.check_circle_rounded
+                        ? Icons.verified_rounded
                         : (isReview
                             ? Icons.hourglass_top_rounded
                             : Icons.warning_amber_rounded),
                     color: isPaid
                         ? const Color(0xFF0F766E)
                         : (isReview ? Colors.blue.shade800 : Colors.red.shade700),
-                    size: 18,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1293,107 +1335,197 @@ class _MemberMaintenanceSheetContentState
                       Text(
                         bill.billTitle,
                         style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14.5,
                           color: Color(0xFF0F172A),
+                          letterSpacing: -0.2,
                         ),
                       ),
-                      Text(
-                        isPaid
-                            ? (bill.receiptNumber.isNotEmpty
-                                ? 'રસીદ નં: ${bill.receiptNumber}'.tr
-                                : 'ચૂકવેલ: $paidDate'.tr)
-                            : 'મુદત: $paidDate'.tr,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade600,
-                        ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(
+                            isPaid
+                                ? Icons.event_available_rounded
+                                : Icons.schedule_rounded,
+                            size: 12,
+                            color: const Color(0xFF64748B),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              isPaid ? paidDate : 'મુદત: $paidDate'.tr,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF64748B),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                Text(
-                  currencyFmt.format(bill.totalPayable),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: isPaid
-                        ? const Color(0xFF0F766E)
-                        : (isReview ? Colors.blue.shade900 : Colors.red.shade800),
-                  ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      isPaid
+                          ? 'ચૂકવેલ'.tr
+                          : (isReview ? 'ચકાસણી હેઠળ'.tr : 'બાકી રકમ'.tr),
+                      style: const TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF94A3B8),
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      currencyFmt.format(bill.totalPayable),
+                      style: TextStyle(
+                        fontSize: 16.5,
+                        fontWeight: FontWeight.w900,
+                        color: isPaid
+                            ? const Color(0xFF0F766E)
+                            : (isReview
+                                ? Colors.blue.shade900
+                                : Colors.red.shade800),
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
 
-            if (isPaid) ...[
-              const Divider(height: 18),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            const SizedBox(height: 10),
+
+            // Receipt & Payment Details Bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
+                  const Icon(
+                    Icons.receipt_long_rounded,
+                    size: 13,
+                    color: Color(0xFF0D9488),
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      bill.receiptNumber.isNotEmpty
+                          ? 'રસીદ: ${bill.receiptNumber}'.tr
+                          : (bill.isPaid
+                              ? 'ડિજિટલ વેરિફાઇડ રસીદ'.tr
+                              : 'બિલ નં: ${bill.id.length > 8 ? bill.id.substring(0, 8) : bill.id}'),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF334155),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: modeBg,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(modeIcon, size: 10, color: modeColor),
+                        const SizedBox(width: 3),
+                        Text(
                           bill.paymentMode.isNotEmpty
                               ? bill.paymentMode.toUpperCase()
                               : 'ONLINE',
                           style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
-                      ),
-                      if (bill.utrNumber.isNotEmpty) ...[
-                        const SizedBox(width: 6),
-                        Text(
-                          'UTR: ${bill.utrNumber.length > 8 ? "${bill.utrNumber.substring(0, 8)}..." : bill.utrNumber}',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey.shade600,
-                            fontFamily: 'monospace',
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            color: modeColor,
                           ),
                         ),
                       ],
-                    ],
+                    ),
                   ),
-                  Row(
-                    children: [
-                      // View PDF
-                      InkWell(
+                  if (bill.utrNumber.isNotEmpty) ...[
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'UTR: ${bill.utrNumber.length > 6 ? "${bill.utrNumber.substring(0, 6)}.." : bill.utrNumber}',
+                        style: const TextStyle(
+                          fontSize: 9.5,
+                          fontFamily: 'monospace',
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            if (isPaid) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  // View Receipt PDF
+                  Expanded(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
                         onTap: () {
+                          HapticFeedback.lightImpact();
                           MaintenanceReceiptPdfService.viewReceiptPdf(
                             context,
                             bill,
                             societyName: widget.societyName,
                           );
                         },
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(10),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 5),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF0FDF4),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: const Color(0xFFA7F3D0)),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: const Color(0xFFA7F3D0),
+                              width: 1.2,
+                            ),
                           ),
                           child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.picture_as_pdf_rounded,
-                                  size: 13, color: Color(0xFF059669)),
-                              SizedBox(width: 4),
+                              const Icon(
+                                Icons.picture_as_pdf_rounded,
+                                size: 14,
+                                color: Color(0xFF059669),
+                              ),
+                              const SizedBox(width: 5),
                               Text(
                                 'જુઓ'.tr,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
                                   color: Color(0xFF059669),
                                 ),
                               ),
@@ -1401,35 +1533,54 @@ class _MemberMaintenanceSheetContentState
                           ),
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      // Download PDF
-                      InkWell(
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Download Receipt PDF
+                  Expanded(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
                         onTap: () {
+                          HapticFeedback.lightImpact();
                           MaintenanceReceiptPdfService.downloadReceiptPdf(
                             context,
                             bill,
                             societyName: widget.societyName,
                           );
                         },
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(10),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 5),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0F766E),
-                            borderRadius: BorderRadius.circular(6),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF0F766E), Color(0xFF0D9488)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0F766E).withValues(alpha: 0.25),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
                           child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.download_rounded,
-                                  size: 13, color: Colors.white),
-                              SizedBox(width: 4),
+                              const Icon(
+                                Icons.download_rounded,
+                                size: 14,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(width: 5),
                               Text(
                                 'ડાઉનલોડ'.tr,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
                                   color: Colors.white,
                                 ),
                               ),
@@ -1437,42 +1588,56 @@ class _MemberMaintenanceSheetContentState
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
             ] else if (isReview) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
                 ),
-                child: Text(
-                  'UTR: ${bill.utrNumber} • એડમિન ચકાસણી હેઠળ છે.'.tr,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.blue.shade900,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline_rounded,
+                        size: 14, color: Colors.blue.shade800),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'UTR: ${bill.utrNumber} • એડમિન ચકાસણી હેઠળ છે.'.tr,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.blue.shade900,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ] else ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () {
+                    HapticFeedback.lightImpact();
                     _tabController.animateTo(0);
                   },
-                  icon: const Icon(Icons.payment_rounded, size: 14),
+                  icon: const Icon(Icons.payment_rounded, size: 15),
                   label: Text('હમણાં ચૂકવો (Pay Now)'.tr),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red.shade700,
-                    side: BorderSide(color: Colors.red.shade300),
-                    visualDensity: VisualDensity.compact,
+                    side: BorderSide(color: Colors.red.shade300, width: 1.2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 9),
                   ),
                 ),
               ),

@@ -46,7 +46,10 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
       _defaultAmtController.text = (settings['defaultAmount'] ?? 1500).toString();
       _dueDayController.text = (settings['dueDay'] ?? 10).toString();
       _signatoryNameController.text = settings['signatoryName']?.toString() ?? '';
-      _signatoryTitleController.text = settings['signatoryTitle']?.toString() ?? 'સોસાયટી પ્રમુખ / ચેરમેન'.tr;
+      final rawTitle = settings['signatoryTitle']?.toString();
+      _signatoryTitleController.text = (rawTitle != null && rawTitle.trim().isNotEmpty)
+          ? rawTitle.trim().tr
+          : 'સોસાયટી પ્રમુખ / ચેરમેન'.tr;
       _signatureBase64 = settings['signatureBase64']?.toString();
     } catch (_) {}
     if (mounted) {
@@ -687,7 +690,7 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  '✓ માન્ય UPI ફોર્મેટ • ${bankInfo?.name ?? "માન્ય બેંક VPA"}'.tr,
+                                  '${"માન્ય UPI ફોર્મેટ".tr} • ${bankInfo?.name ?? "માન્ય બેંક VPA".tr}',
                                   style: const TextStyle(
                                     fontSize: 11.5,
                                     color: Color(0xFF15803D),
@@ -747,7 +750,8 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                             keyboardType: TextInputType.number,
                             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                             decoration: _inputDeco(
-                              labelText: 'ડિફૉલ્ટ માસિક રકમ'.tr,
+                              labelText: 'માસિક રકમ'.tr,
+                              hintText: 'દા.ત. 1500'.tr,
                               prefixText: '₹ ',
                             ),
                           ),
@@ -929,29 +933,36 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFECFDF5),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: const Color(0xFFA7F3D0)),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.verified_rounded, color: Color(0xFF059669), size: 14),
-                                      SizedBox(width: 5),
-                                      Text(
-                                        'સહી સેટ થયેલી છે (Active)'.tr,
-                                        style: TextStyle(
-                                          fontSize: 11.5,
-                                          color: Color(0xFF059669),
-                                          fontWeight: FontWeight.bold,
+                                Flexible(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFECFDF5),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: const Color(0xFFA7F3D0)),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.verified_rounded, color: Color(0xFF059669), size: 14),
+                                        const SizedBox(width: 5),
+                                        Flexible(
+                                          child: Text(
+                                            'સહી સેટ થયેલી છે (Active)'.tr,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Color(0xFF059669),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
+                                const SizedBox(width: 8),
                                 Material(
                                   color: Colors.transparent,
                                   child: InkWell(
@@ -967,12 +978,12 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 15),
-                                          SizedBox(width: 4),
+                                          const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 14),
+                                          const SizedBox(width: 4),
                                           Text(
                                             'સહી હટાવો'.tr,
-                                            style: TextStyle(
-                                              fontSize: 11.5,
+                                            style: const TextStyle(
+                                              fontSize: 11,
                                               fontWeight: FontWeight.bold,
                                               color: Color(0xFFDC2626),
                                             ),
@@ -1051,14 +1062,15 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                                   height: 44,
                                   child: OutlinedButton.icon(
                                     onPressed: _openSignaturePad,
-                                    icon: const Icon(Icons.draw_rounded, size: 17),
+                                    icon: const Icon(Icons.draw_rounded, size: 16),
                                     label: Text(
                                       hasSignature ? 'સહી ફરી દોરો'.tr : 'સહી દોરો'.tr,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
                                     ),
                                     style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8),
                                       foregroundColor: const Color(0xFF0D9488),
                                       backgroundColor: const Color(0xFF0D9488).withValues(alpha: 0.05),
                                       side: const BorderSide(color: Color(0xFF0D9488), width: 1.2),
@@ -1073,14 +1085,15 @@ class _AdminSocietyBankSettingsScreenState extends State<AdminSocietyBankSetting
                                   height: 44,
                                   child: OutlinedButton.icon(
                                     onPressed: _pickSignatureImage,
-                                    icon: const Icon(Icons.photo_library_outlined, size: 17),
+                                    icon: const Icon(Icons.photo_library_outlined, size: 16),
                                     label: Text(
                                       hasSignature ? 'ફોટો બદલો'.tr : 'ફોટો અપલોડ'.tr,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
                                     ),
                                     style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8),
                                       foregroundColor: const Color(0xFF4338CA),
                                       backgroundColor: const Color(0xFF4338CA).withValues(alpha: 0.05),
                                       side: const BorderSide(color: Color(0xFF4338CA), width: 1.2),

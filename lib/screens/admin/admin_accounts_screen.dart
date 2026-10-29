@@ -358,15 +358,21 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
                                 children: [
                                   const Icon(Icons.arrow_downward_rounded, size: 13, color: Color(0xFF34D399)),
                                   const SizedBox(width: 4),
-                                  Text(
-                                    "કુલ જમા આવક".tr,
-                                    style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700),
+                                  Flexible(
+                                    child: Text(
+                                      "કુલ જમા આવક".tr,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700),
+                                    ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 3),
                               Text(
                                 currencyFmt.format(_summary.totalIncome),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w800,
@@ -386,15 +392,21 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
                                 children: [
                                   const Icon(Icons.arrow_upward_rounded, size: 13, color: Color(0xFFF87171)),
                                   const SizedBox(width: 4),
-                                  Text(
-                                    "કુલ થયેલ ખર્ચ".tr,
-                                    style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700),
+                                  Flexible(
+                                    child: Text(
+                                      "કુલ થયેલ ખર્ચ".tr,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700),
+                                    ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 3),
                               Text(
                                 currencyFmt.format(_summary.totalExpenses),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w800,
@@ -424,7 +436,7 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
             onTap: _showAddExpenseDialog,
             borderRadius: BorderRadius.circular(14),
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 11),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
@@ -441,11 +453,15 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.add_circle_outline_rounded, color: Colors.white, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    "નવો ખર્ચ નોંધો".tr,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
+                  const Icon(Icons.add_circle_outline_rounded, color: Colors.white, size: 17),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      "નવો ખર્ચ નોંધો".tr,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12.5),
+                    ),
                   ),
                 ],
               ),
@@ -458,7 +474,7 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
             onTap: _openPdfStatement,
             borderRadius: BorderRadius.circular(14),
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 11),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
@@ -474,14 +490,18 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF0F766E), size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    "હિસાબ સ્ટેટમેન્ટ PDF".tr,
-                    style: const TextStyle(
-                      color: Color(0xFF0F172A),
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
+                  const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF0F766E), size: 17),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      "હિસાબ સ્ટેટમેન્ટ PDF".tr,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12.5,
+                      ),
                     ),
                   ),
                 ],
@@ -619,18 +639,41 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
 
   Widget _buildExpenseCard(SocietyExpense exp) {
     final cat = exp.category;
+    final modeLower = exp.paymentMode.toLowerCase();
+    IconData modeIcon = Icons.payment_rounded;
+    Color modeColor = const Color(0xFF475569);
+    Color modeBg = const Color(0xFFF1F5F9);
+
+    if (modeLower.contains('cash')) {
+      modeIcon = Icons.payments_rounded;
+      modeColor = const Color(0xFFB45309);
+      modeBg = const Color(0xFFFEF3C7);
+    } else if (modeLower.contains('online') || modeLower.contains('upi')) {
+      modeIcon = Icons.account_balance_rounded;
+      modeColor = const Color(0xFF0284C7);
+      modeBg = const Color(0xFFE0F2FE);
+    } else if (modeLower.contains('cheque')) {
+      modeIcon = Icons.receipt_long_rounded;
+      modeColor = const Color(0xFF7E22CE);
+      modeBg = const Color(0xFFF3E8FF);
+    }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: cat.color.withValues(alpha: 0.18), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: cat.color.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -638,7 +681,7 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _showExpenseDetailsSheet(exp),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Row(
@@ -648,8 +691,15 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: cat.color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+                    gradient: LinearGradient(
+                      colors: [
+                        cat.color.withValues(alpha: 0.18),
+                        cat.color.withValues(alpha: 0.06),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(13),
                   ),
                   child: Icon(cat.icon, color: cat.color, size: 22),
                 ),
@@ -662,9 +712,10 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
                       Text(
                         exp.title,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 14.5,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF0F172A),
+                          letterSpacing: -0.2,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -681,32 +732,40 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
                                 color: Color(0xFF475569),
                               ),
                             ),
-                            Text(" • ", style: TextStyle(color: Color(0xFF94A3B8))),
+                            const Text(" • ", style: TextStyle(color: Color(0xFF94A3B8))),
                           ],
                           Text(
                             dateFmt.format(exp.expenseDate),
                             style: const TextStyle(
                               fontSize: 11.5,
                               color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 5),
                       // Payment Mode Tag
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
+                          color: modeBg,
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text(
-                          exp.paymentModeLabel,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF475569),
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(modeIcon, size: 10, color: modeColor),
+                            const SizedBox(width: 3.5),
+                            Text(
+                              exp.paymentModeLabel,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: modeColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -720,9 +779,10 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
                     Text(
                       "- ${currencyFmt.format(exp.amount)}",
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 16,
                         fontWeight: FontWeight.w900,
                         color: Color(0xFFDC2626),
+                        letterSpacing: -0.3,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -795,317 +855,618 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setDlgState) => Container(
-          padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(context).viewInsets.bottom + 24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: SingleChildScrollView(
+        builder: (context, setDlgState) {
+          InputDecoration fieldDecor({
+            required String label,
+            String? hint,
+            Widget? prefixIcon,
+          }) {
+            return InputDecoration(
+              labelText: label,
+              hintText: hint,
+              labelStyle: const TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+              hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              prefixIcon: prefixIcon,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFF0D9488), width: 1.8),
+              ),
+            );
+          }
+
+          return Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.90,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 1. Drag Handle
+                const SizedBox(height: 12),
                 Center(
                   child: Container(
-                    width: 40,
-                    height: 4,
+                    width: 44,
+                    height: 4.5,
                     decoration: BoxDecoration(
                       color: const Color(0xFFCBD5E1),
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Icon(Icons.add_card_rounded, color: Color(0xFF0F766E), size: 22),
-                    SizedBox(width: 8),
-                    Text(
-                      "સોસાયટી નવો ખર્ચ નોંધો".tr,
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 12),
 
-                // Presets Quick Select
-                Text("ઝડપી પસંદગી (Presets):".tr, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
-                const SizedBox(height: 6),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
+                // 2. Executive Header Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
-                    children: presets.map((p) {
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: ActionChip(
-                          label: Text(p.$1, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-                          backgroundColor: selectedCategory == p.$2 ? const Color(0xFFCCFBF1) : const Color(0xFFF1F5F9),
-                          side: BorderSide(color: selectedCategory == p.$2 ? const Color(0xFF0D9488) : const Color(0xFFE2E8F0)),
-                          onPressed: () {
-                            setDlgState(() {
-                              titleC.text = p.$1;
-                              selectedCategory = p.$2;
-                            });
-                          },
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Category Dropdown
-                DropdownButtonFormField<String>(
-                  initialValue: selectedCategory,
-                  decoration: InputDecoration(
-                    labelText: "ખર્ચ કેટેગરી (Category)".tr,
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  ),
-                  items: SocietyExpenseCategory.all.map((c) {
-                    return DropdownMenuItem(
-                      value: c.key,
-                      child: Row(
-                        children: [
-                          Icon(c.icon, size: 16, color: c.color),
-                          const SizedBox(width: 8),
-                          Text(c.titleGujarati, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) setDlgState(() => selectedCategory = val);
-                  },
-                ),
-                const SizedBox(height: 12),
-
-                // Title
-                TextField(
-                  controller: titleC,
-                  decoration: InputDecoration(
-                    labelText: "ખર્ચ શીર્ષક (Title)".tr,
-                    hintText: "દા.ત. ઓક્ટોબર વોચમેન પગાર".tr,
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Amount
-                TextField(
-                  controller: amountC,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: "રકમ (Amount ₹)".tr,
-                    prefixText: "₹ ",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
-
-                // Paid To Payee Name
-                TextField(
-                  controller: payeeC,
-                  decoration: InputDecoration(
-                    labelText: "કોને ચૂકવ્યા? (Payee Name)".tr,
-                    hintText: "દા.ત. રમેશભાઈ વોચમેન, ટોરેન્ટ પાવર, ઓટીસ".tr,
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
-
-                // Payment Mode Selector
-                Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        initialValue: selectedPaymentMode,
-                        decoration: InputDecoration(
-                          labelText: "ચુકવણી મોડ".tr,
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        ),
-                        items: [
-                          DropdownMenuItem(value: 'cash', child: Text('રોકડ (Cash)'.tr)),
-                          DropdownMenuItem(value: 'upi', child: Text('UPI / QR')),
-                          DropdownMenuItem(value: 'bank_transfer', child: Text('બેંક ટ્રાન્સફર'.tr)),
-                          DropdownMenuItem(value: 'cheque', child: Text('ચેક (Cheque)'.tr)),
-                        ],
-                        onChanged: (val) {
-                          if (val != null) setDlgState(() => selectedPaymentMode = val);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: InkWell(
-                        onTap: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime(2024),
-                            lastDate: DateTime.now().add(const Duration(days: 30)),
-                          );
-                          if (picked != null) {
-                            setDlgState(() => selectedDate = picked);
-                          }
-                        },
-                        child: InputDecorator(
-                          decoration: InputDecoration(
-                            labelText: "તારીખ (Date)".tr,
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(9),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                          child: Text(
-                            DateFormat('dd/MM/yyyy').format(selectedDate),
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                          ),
+                          borderRadius: BorderRadius.circular(13),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0F766E).withValues(alpha: 0.25),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "સોસાયટી નવો ખર્ચ નોંધો".tr,
+                              style: const TextStyle(
+                                fontSize: 16.5,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF0F172A),
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                            const SizedBox(height: 1.5),
+                            Text(
+                              "સોસાયટી તિજોરીમાંથી ખર્ચ અને ચુકવણી નોંધો".tr,
+                              style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Notes
-                TextField(
-                  controller: notesC,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    labelText: "વિશેષ નોંધ (Optional Notes)".tr,
-                    border: OutlineInputBorder(),
+                      InkWell(
+                        onTap: () => Navigator.pop(ctx),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF64748B)),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const Divider(height: 20, color: Color(0xFFF1F5F9)),
 
-                // Scope selector (Common vs Block-specific)
-                Text(
-                  "ખર્ચ કાર્યક્ષેત્ર (Scope):".tr,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ChoiceChip(
-                        avatar: const Icon(Icons.domain_rounded, size: 14),
-                        label: Text('સમગ્ર પરિસર (કોમન)'.tr, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-                        selected: selectedScope == 'common',
-                        selectedColor: const Color(0xFFCCFBF1),
-                        onSelected: (val) {
-                          if (val) setDlgState(() => selectedScope = 'common');
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ChoiceChip(
-                        avatar: const Icon(Icons.apartment_rounded, size: 14),
-                        label: Text('ચોક્કસ વિંગ/શેરી'.tr, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-                        selected: selectedScope == 'wing',
-                        selectedColor: const Color(0xFFCCFBF1),
-                        onSelected: (val) {
-                          if (val) setDlgState(() => selectedScope = 'wing');
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                if (selectedScope == 'wing' && _availableBlocks.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<String>(
-                    initialValue: _availableBlocks.contains(selectedTargetBlock) ? selectedTargetBlock : _availableBlocks.first,
-                    decoration: InputDecoration(
-                      labelText: "કઈ વિંગ / શેરીનો ખર્ચ છે?".tr,
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    ),
-                    items: _availableBlocks.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
-                    onChanged: (val) {
-                      if (val != null) setDlgState(() => selectedTargetBlock = val);
-                    },
-                  ),
-                ],
-                const SizedBox(height: 20),
+                // 3. Scrollable Form Content
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(20, 2, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Presets Quick Select
+                        Row(
+                          children: [
+                            const Icon(Icons.auto_awesome_rounded, size: 14, color: Color(0xFF0D9488)),
+                            const SizedBox(width: 5),
+                            Text(
+                              "ઝડપી પસંદગી (Presets):".tr,
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF475569)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          child: Row(
+                            children: presets.map((p) {
+                              final isSel = selectedCategory == p.$2;
+                              final catInfo = SocietyExpenseCategory.fromKey(p.$2);
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: InkWell(
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    setDlgState(() {
+                                      titleC.text = p.$1;
+                                      selectedCategory = p.$2;
+                                    });
+                                  },
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 180),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7.5),
+                                    decoration: BoxDecoration(
+                                      color: isSel ? const Color(0xFF0F766E) : const Color(0xFFF8FAFC),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isSel ? const Color(0xFF0F766E) : const Color(0xFFCBD5E1),
+                                        width: isSel ? 1.4 : 1.0,
+                                      ),
+                                      boxShadow: isSel
+                                          ? [
+                                              BoxShadow(
+                                                color: const Color(0xFF0F766E).withValues(alpha: 0.25),
+                                                blurRadius: 6,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ]
+                                          : null,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          catInfo.icon,
+                                          size: 13,
+                                          color: isSel ? Colors.white : catInfo.color,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          p.$1,
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            fontWeight: isSel ? FontWeight.w800 : FontWeight.w700,
+                                            color: isSel ? Colors.white : const Color(0xFF334155),
+                                          ),
+                                        ),
+                                        if (isSel) ...[
+                                          const SizedBox(width: 5),
+                                          const Icon(Icons.check_rounded, size: 12, color: Colors.white),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
 
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F766E),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    icon: const Icon(Icons.check_circle_rounded),
-                    label: Text(
-                      "ખર્ચ સફળતાપૂર્વક સાચવો".tr,
-                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
-                    ),
-                    onPressed: () async {
-                      final title = titleC.text.trim();
-                      final amt = double.tryParse(amountC.text.trim()) ?? 0;
-                      final payee = payeeC.text.trim();
-
-                      if (title.isEmpty || amt <= 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('કૃપા કરીને માન્ય શીર્ષક અને રકમ દાખલ કરો'.tr)),
-                        );
-                        return;
-                      }
-
-                      final messenger = ScaffoldMessenger.of(context);
-                      Navigator.pop(ctx);
-
-                      try {
-                        context.read<SocietyAccountsBloc>().add(
-                              AccountsRecordExpenseRequested(
-                                title: title,
-                                categoryKey: selectedCategory,
-                                amount: amt,
-                                expenseDate: selectedDate,
-                                paidTo: payee,
-                                paymentMode: selectedPaymentMode,
-                                notes: notesC.text.trim(),
-                                scope: selectedScope,
-                                targetBlock: selectedScope == 'common' ? 'ALL' : selectedTargetBlock,
+                        // Category Dropdown
+                        DropdownButtonFormField<String>(
+                          initialValue: selectedCategory,
+                          decoration: fieldDecor(
+                            label: "ખર્ચ કેટેગરી (Category)".tr,
+                            prefixIcon: const Icon(Icons.category_rounded, size: 18, color: Color(0xFF0D9488)),
+                          ),
+                          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+                          dropdownColor: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          items: SocietyExpenseCategory.all.map((c) {
+                            return DropdownMenuItem(
+                              value: c.key,
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(5),
+                                    decoration: BoxDecoration(
+                                      color: c.color.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(c.icon, size: 14, color: c.color),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    c.title,
+                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                                  ),
+                                ],
                               ),
                             );
-                        await _accountsService.recordExpense(
-                          title: title,
-                          categoryKey: selectedCategory,
-                          amount: amt,
-                          expenseDate: selectedDate,
-                          paidTo: payee,
-                          paymentMode: selectedPaymentMode,
-                          notes: notesC.text.trim(),
-                          scope: selectedScope,
-                          targetBlock: selectedScope == 'common' ? 'ALL' : selectedTargetBlock,
-                        );
-                        await _loadSummary();
-                        if (mounted) {
-                          messenger.showSnackBar(
-                            SnackBar(
-                              content: Text('ખર્ચ સફળતાપૂર્વક ઉમેરાઈ ગયો!'.tr),
-                              backgroundColor: Color(0xFF059669),
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) setDlgState(() => selectedCategory = val);
+                          },
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Title
+                        TextField(
+                          controller: titleC,
+                          style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                          decoration: fieldDecor(
+                            label: "ખર્ચ શીર્ષક (Title)".tr,
+                            hint: "દા.ત. ઓક્ટોબર વોચમેન પગાર".tr,
+                            prefixIcon: const Icon(Icons.edit_note_rounded, size: 20, color: Color(0xFF0D9488)),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Amount
+                        TextField(
+                          controller: amountC,
+                          keyboardType: TextInputType.number,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                          decoration: fieldDecor(
+                            label: "રકમ (Amount ₹)".tr,
+                            prefixIcon: Container(
+                              width: 32,
+                              alignment: Alignment.center,
+                              child: const Text(
+                                '₹',
+                                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF0F766E)),
+                              ),
                             ),
-                          );
-                        }
-                      } catch (e) {
-                        if (mounted) {
-                          messenger.showSnackBar(
-                            SnackBar(content: Text('ભૂલ: $e'.tr), backgroundColor: Colors.red),
-                          );
-                        }
-                      }
-                    },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Paid To Payee Name
+                        TextField(
+                          controller: payeeC,
+                          style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                          decoration: fieldDecor(
+                            label: "કોને ચૂકવ્યા? (Payee Name)".tr,
+                            hint: "દા.ત. રમેશભાઈ વોચમેન, ટોરેન્ટ પાવર, ઓટીસ".tr,
+                            prefixIcon: const Icon(Icons.person_rounded, size: 19, color: Color(0xFF0D9488)),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Payment Mode & Date
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                initialValue: selectedPaymentMode,
+                                decoration: fieldDecor(
+                                  label: "ચુકવણી મોડ".tr,
+                                  prefixIcon: const Icon(Icons.payments_rounded, size: 18, color: Color(0xFF0D9488)),
+                                ),
+                                icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+                                dropdownColor: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                items: [
+                                  DropdownMenuItem(value: 'cash', child: Text('રોકડ (Cash)'.tr, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700))),
+                                  DropdownMenuItem(value: 'upi', child: const Text('UPI / QR', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700))),
+                                  DropdownMenuItem(value: 'bank_transfer', child: Text('બેંક ટ્રાન્સફર'.tr, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700))),
+                                  DropdownMenuItem(value: 'cheque', child: Text('ચેક (Cheque)'.tr, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700))),
+                                ],
+                                onChanged: (val) {
+                                  if (val != null) setDlgState(() => selectedPaymentMode = val);
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: InkWell(
+                                onTap: () async {
+                                  final picked = await showDatePicker(
+                                    context: context,
+                                    initialDate: selectedDate,
+                                    firstDate: DateTime(2024),
+                                    lastDate: DateTime.now().add(const Duration(days: 30)),
+                                  );
+                                  if (picked != null) {
+                                    setDlgState(() => selectedDate = picked);
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(14),
+                                child: InputDecorator(
+                                  decoration: fieldDecor(
+                                    label: "તારીખ (Date)".tr,
+                                    prefixIcon: const Icon(Icons.calendar_month_rounded, size: 18, color: Color(0xFF0D9488)),
+                                  ),
+                                  child: Text(
+                                    DateFormat('dd/MM/yyyy').format(selectedDate),
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF0F172A)),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Notes
+                        TextField(
+                          controller: notesC,
+                          maxLines: 2,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                          decoration: fieldDecor(
+                            label: "વિશેષ નોંધ (Optional Notes)".tr,
+                            prefixIcon: const Padding(
+                              padding: EdgeInsets.only(bottom: 24),
+                              child: Icon(Icons.notes_rounded, size: 19, color: Color(0xFF64748B)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Scope Selector (Executive 2-card toggle)
+                        Text(
+                          "ખર્ચ કાર્યક્ષેત્ર (Scope):".tr,
+                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Color(0xFF475569)),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            // 1. Common Premises Card
+                            Expanded(
+                              child: InkWell(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  setDlgState(() => selectedScope = 'common');
+                                },
+                                borderRadius: BorderRadius.circular(14),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: selectedScope == 'common' ? const Color(0xFFF0FDFA) : const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: selectedScope == 'common' ? const Color(0xFF0D9488) : const Color(0xFFE2E8F0),
+                                      width: selectedScope == 'common' ? 1.8 : 1.0,
+                                    ),
+                                    boxShadow: selectedScope == 'common'
+                                        ? [
+                                            BoxShadow(
+                                              color: const Color(0xFF0D9488).withValues(alpha: 0.15),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.domain_rounded,
+                                        size: 16,
+                                        color: selectedScope == 'common' ? const Color(0xFF0F766E) : const Color(0xFF64748B),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Flexible(
+                                        child: Text(
+                                          'સમગ્ર પરિસર (કોમન)'.tr,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            fontWeight: selectedScope == 'common' ? FontWeight.w900 : FontWeight.w700,
+                                            color: selectedScope == 'common' ? const Color(0xFF0F766E) : const Color(0xFF475569),
+                                          ),
+                                        ),
+                                      ),
+                                      if (selectedScope == 'common') ...[
+                                        const SizedBox(width: 4),
+                                        const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF0D9488)),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+
+                            // 2. Specific Wing Card
+                            Expanded(
+                              child: InkWell(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  setDlgState(() => selectedScope = 'wing');
+                                },
+                                borderRadius: BorderRadius.circular(14),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: selectedScope == 'wing' ? const Color(0xFFF0FDFA) : const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: selectedScope == 'wing' ? const Color(0xFF0D9488) : const Color(0xFFE2E8F0),
+                                      width: selectedScope == 'wing' ? 1.8 : 1.0,
+                                    ),
+                                    boxShadow: selectedScope == 'wing'
+                                        ? [
+                                            BoxShadow(
+                                              color: const Color(0xFF0D9488).withValues(alpha: 0.15),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.apartment_rounded,
+                                        size: 16,
+                                        color: selectedScope == 'wing' ? const Color(0xFF0F766E) : const Color(0xFF64748B),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Flexible(
+                                        child: Text(
+                                          'ચોક્કસ વિંગ/શેરી'.tr,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            fontWeight: selectedScope == 'wing' ? FontWeight.w900 : FontWeight.w700,
+                                            color: selectedScope == 'wing' ? const Color(0xFF0F766E) : const Color(0xFF475569),
+                                          ),
+                                        ),
+                                      ),
+                                      if (selectedScope == 'wing') ...[
+                                        const SizedBox(width: 4),
+                                        const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF0D9488)),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (selectedScope == 'wing' && _availableBlocks.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<String>(
+                            initialValue: _availableBlocks.contains(selectedTargetBlock) ? selectedTargetBlock : _availableBlocks.first,
+                            decoration: fieldDecor(
+                              label: "કઈ વિંગ / શેરીનો ખર્ચ છે?".tr,
+                              prefixIcon: const Icon(Icons.location_city_rounded, size: 18, color: Color(0xFF0D9488)),
+                            ),
+                            icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+                            dropdownColor: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            items: _availableBlocks
+                                .map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(fontWeight: FontWeight.w700))))
+                                .toList(),
+                            onChanged: (val) {
+                              if (val != null) setDlgState(() => selectedTargetBlock = val);
+                            },
+                          ),
+                        ],
+                        const SizedBox(height: 22),
+
+                        // Submit Button
+                        Container(
+                          width: double.infinity,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0F766E).withValues(alpha: 0.35),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () async {
+                                final title = titleC.text.trim();
+                                final amt = double.tryParse(amountC.text.trim()) ?? 0;
+                                final payee = payeeC.text.trim();
+
+                                if (title.isEmpty || amt <= 0) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('કૃપા કરીને માન્ય શીર્ષક અને રકમ દાખલ કરો'.tr)),
+                                  );
+                                  return;
+                                }
+
+                                final messenger = ScaffoldMessenger.of(context);
+                                Navigator.pop(ctx);
+
+                                try {
+                                  context.read<SocietyAccountsBloc>().add(
+                                        AccountsRecordExpenseRequested(
+                                          title: title,
+                                          categoryKey: selectedCategory,
+                                          amount: amt,
+                                          expenseDate: selectedDate,
+                                          paidTo: payee,
+                                          paymentMode: selectedPaymentMode,
+                                          notes: notesC.text.trim(),
+                                          scope: selectedScope,
+                                          targetBlock: selectedScope == 'common' ? 'ALL' : selectedTargetBlock,
+                                        ),
+                                      );
+                                  await _accountsService.recordExpense(
+                                    title: title,
+                                    categoryKey: selectedCategory,
+                                    amount: amt,
+                                    expenseDate: selectedDate,
+                                    paidTo: payee,
+                                    paymentMode: selectedPaymentMode,
+                                    notes: notesC.text.trim(),
+                                    scope: selectedScope,
+                                    targetBlock: selectedScope == 'common' ? 'ALL' : selectedTargetBlock,
+                                  );
+                                  await _loadSummary();
+                                  if (mounted) {
+                                    messenger.showSnackBar(
+                                      SnackBar(
+                                        content: Text('ખર્ચ સફળતાપૂર્વક ઉમેરાઈ ગયો!'.tr),
+                                        backgroundColor: const Color(0xFF059669),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    messenger.showSnackBar(
+                                      SnackBar(content: Text('ભૂલ: $e'.tr), backgroundColor: Colors.red),
+                                    );
+                                  }
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(16),
+                              child: Center(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      "ખર્ચ સાચવો".tr,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 15,
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -1405,41 +1766,73 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('શરૂઆતની સિલક'.tr, style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 2),
-                  Text('₹ 0', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
-                ],
-              ),
-              Container(width: 1, height: 28, color: const Color(0xFFCBD5E1)),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text('કુલ જમા / ખર્ચ'.tr, style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 2),
-                  Text(
-                    '+${currencyFmt.format(_summary.totalIncome)} / -${currencyFmt.format(_summary.totalExpenses)}',
-                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
-                  ),
-                ],
-              ),
-              Container(width: 1, height: 28, color: const Color(0xFFCBD5E1)),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text('વર્તમાન આખર સિલક'.tr, style: TextStyle(fontSize: 11, color: Color(0xFF0F766E), fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  Text(
-                    currencyFmt.format(_summary.currentSavings),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: _summary.currentSavings >= 0 ? const Color(0xFF047857) : const Color(0xFFDC2626),
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'શરૂઆતની સિલક'.tr,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    const Text('₹ 0', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                  ],
+                ),
+              ),
+              Container(width: 1, height: 28, color: const Color(0xFFCBD5E1)),
+              const SizedBox(width: 6),
+              Expanded(
+                flex: 4,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'કુલ જમા / ખર્ચ'.tr,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        '+${currencyFmt.format(_summary.totalIncome)} / -${currencyFmt.format(_summary.totalExpenses)}',
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(width: 1, height: 28, color: const Color(0xFFCBD5E1)),
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'વર્તમાન આખર સિલક'.tr,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF0F766E), fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        currencyFmt.format(_summary.currentSavings),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: _summary.currentSavings >= 0 ? const Color(0xFF047857) : const Color(0xFFDC2626),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -1468,27 +1861,59 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
 
   Widget _buildPassbookEntryCard(SocietyLedgerEntry entry) {
     final isCredit = entry.isCredit;
+    final cat = SocietyExpenseCategory.fromKey(entry.categoryKey.isNotEmpty ? entry.categoryKey : null);
+    final isBalPositive = entry.runningBalance >= 0;
+
+    // Helper for payment mode badge
+    final modeLower = entry.paymentMode.toLowerCase().trim();
+    IconData modeIcon = Icons.payment_rounded;
+    Color modeColor = const Color(0xFF475569);
+    Color modeBg = const Color(0xFFF1F5F9);
+
+    if (modeLower.contains('cash')) {
+      modeIcon = Icons.payments_rounded;
+      modeColor = const Color(0xFFB45309);
+      modeBg = const Color(0xFFFEF3C7);
+    } else if (modeLower.contains('online') || modeLower.contains('upi')) {
+      modeIcon = Icons.account_balance_rounded;
+      modeColor = const Color(0xFF0284C7);
+      modeBg = const Color(0xFFE0F2FE);
+    } else if (modeLower.contains('cheque')) {
+      modeIcon = Icons.receipt_long_rounded;
+      modeColor = const Color(0xFF7E22CE);
+      modeBg = const Color(0xFFF3E8FF);
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isCredit ? const Color(0xFFA7F3D0).withValues(alpha: 0.6) : const Color(0xFFFECACA).withValues(alpha: 0.6),
+          color: isCredit
+              ? const Color(0xFFA7F3D0).withValues(alpha: 0.8)
+              : const Color(0xFFFECACA).withValues(alpha: 0.8),
+          width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: isCredit
+                ? const Color(0xFF10B981).withValues(alpha: 0.05)
+                : const Color(0xFFEF4444).withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1498,104 +1923,169 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(6),
+                          width: 34,
+                          height: 34,
                           decoration: BoxDecoration(
-                            color: isCredit ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
-                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: isCredit
+                                  ? const [Color(0xFFDCFCE7), Color(0xFFBBF7D0)]
+                                  : const [Color(0xFFFEE2E2), Color(0xFFFECACA)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
                             isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                            size: 14,
-                            color: isCredit ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                            size: 17,
+                            color: isCredit ? const Color(0xFF059669) : const Color(0xFFDC2626),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          dateFmt.format(entry.date),
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF334155),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            entry.paymentMode,
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
-                          ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              dateFmt.format(entry.date),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: modeBg,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(modeIcon, size: 10, color: modeColor),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    entry.paymentMode.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: modeColor,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                     Text(
                       '${isCredit ? "+" : "-"} ${currencyFmt.format(entry.amount)}',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 17,
                         fontWeight: FontWeight.w900,
-                        color: isCredit ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                        color: isCredit ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                        letterSpacing: -0.3,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
                   entry.title,
                   style: const TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
                     color: Color(0xFF0F172A),
+                    letterSpacing: -0.1,
                   ),
                 ),
                 if (entry.subtitle.isNotEmpty && entry.subtitle != '-') ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    entry.subtitle,
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  const SizedBox(height: 4),
+                  Builder(
+                    builder: (context) {
+                      String sub = entry.subtitle;
+                      if (sub.startsWith('ચૂકવ્યા: ')) {
+                        sub = '${"ચૂકવ્યા:".tr} ${sub.substring(8)}';
+                      }
+                      return Row(
+                        children: [
+                          const Icon(Icons.person_pin_circle_outlined, size: 13, color: Color(0xFF64748B)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              sub,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF64748B),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: cat.color.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    border: Border.all(color: cat.color.withValues(alpha: 0.2)),
                   ),
-                  child: Text(
-                    entry.categoryLabel,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(cat.icon, size: 12, color: cat.color),
+                      const SizedBox(width: 5),
+                      Text(
+                        cat.title,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: cat.color,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          // Running Balance bar on that exact date
+          // Running Balance bar with dynamic positive / negative styling
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8.5),
             decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
+              color: isBalPositive ? const Color(0xFFF0FDF4) : const Color(0xFFFFF1F2),
               borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(15),
-                bottomRight: Radius.circular(15),
+                bottomLeft: Radius.circular(17),
+                bottomRight: Radius.circular(17),
               ),
               border: Border(
-                top: BorderSide(color: const Color(0xFFDCFCE7).withValues(alpha: 0.8)),
+                top: BorderSide(
+                  color: isBalPositive ? const Color(0xFFDCFCE7) : const Color(0xFFFECDD3),
+                ),
               ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.account_balance_wallet_rounded, size: 14, color: Color(0xFF059669)),
+                Icon(
+                  isBalPositive ? Icons.account_balance_wallet_rounded : Icons.account_balance_wallet_outlined,
+                  size: 14,
+                  color: isBalPositive ? const Color(0xFF059669) : const Color(0xFFE11D48),
+                ),
                 const SizedBox(width: 6),
                 Text(
                   'તે તારીખે તિજોરી સિલક (Balance):'.tr,
                   style: TextStyle(
                     fontSize: 11.5,
-                    color: Color(0xFF065F46),
+                    color: isBalPositive ? const Color(0xFF065F46) : const Color(0xFF9F1239),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1604,8 +2094,8 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
                   currencyFmt.format(entry.runningBalance),
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: entry.runningBalance >= 0 ? const Color(0xFF047857) : const Color(0xFFDC2626),
+                    fontWeight: FontWeight.w900,
+                    color: isBalPositive ? const Color(0xFF047857) : const Color(0xFFE11D48),
                   ),
                 ),
               ],

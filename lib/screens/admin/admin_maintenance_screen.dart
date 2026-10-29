@@ -2508,138 +2508,175 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}".tr : "
         break;
     }
 
-    final displayName = bill.memberName.trim().isNotEmpty
-        ? bill.memberName
-        : 'ફ્લેટ ${bill.cleanFlatDisplay}'.tr;
+    final hasMemberName = bill.memberName.trim().isNotEmpty;
+    final hasPhone = bill.memberPhone.trim().isNotEmpty;
+    final cardBorderColor = bill.status == MaintenanceStatus.underReview
+        ? const Color(0xFF93C5FD)
+        : (bill.status == MaintenanceStatus.overdue
+            ? const Color(0xFFFECDD3)
+            : const Color(0xFFE2E8F0));
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 13),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: bill.status == MaintenanceStatus.underReview
-              ? const Color(0xFF93C5FD)
-              : const Color(0xFFE2E8F0),
-          width: bill.status == MaintenanceStatus.underReview ? 1.5 : 1.0,
-        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: cardBorderColor, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.035),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: statusColor.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         child: IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Smooth Rounded Left Status Bar
               Container(
-                width: 4,
-                color: statusColor,
+                width: 4.5,
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    bottomLeft: Radius.circular(20),
+                  ),
+                ),
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
                   child: Column(
                     children: [
+                      // Header Row: Flat Badge + Resident Info + Amount & Status
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          InkWell(
-                            onTap: () => _showMemberDetailsSheet(bill),
-                            borderRadius: BorderRadius.circular(10),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(10),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF0F172A).withValues(alpha: 0.18),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
+                          // Luxury Unit Doorplate Badge
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => _showMemberDetailsSheet(bill),
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5.5),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
                                   ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.domain_rounded, size: 12, color: Color(0xFF94A3B8)),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    bill.cleanFlatDisplay,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 12,
-                                      color: Colors.white,
-                                      letterSpacing: 0.3,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFF334155), width: 1),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF0F172A).withValues(alpha: 0.16),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.apartment_rounded, size: 12.5, color: Color(0xFF38BDF8)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      bill.cleanFlatDisplay,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 12.5,
+                                        color: Colors.white,
+                                        letterSpacing: 0.4,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 11),
+
+                          // Resident Name & Contact Details
                           Expanded(
                             child: InkWell(
                               onTap: () => _showMemberDetailsSheet(bill),
                               borderRadius: BorderRadius.circular(8),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Row(
                                     children: [
                                       Flexible(
                                         child: Text(
-                                          displayName,
+                                          hasMemberName ? bill.memberName.trim() : 'સભ્ય નોંધાયેલ નથી'.tr,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w800,
+                                          style: TextStyle(
+                                            fontWeight: hasMemberName ? FontWeight.w800 : FontWeight.w600,
                                             fontSize: 14.5,
-                                            color: Color(0xFF0F172A),
+                                            color: hasMemberName ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
+                                            fontStyle: hasMemberName ? FontStyle.normal : FontStyle.italic,
                                           ),
                                         ),
                                       ),
                                       const SizedBox(width: 4),
-                                      const Icon(Icons.info_outline_rounded, size: 13, color: Color(0xFF0F766E)),
+                                      Icon(
+                                        Icons.info_outline_rounded,
+                                        size: 13,
+                                        color: hasMemberName ? const Color(0xFF0D9488) : const Color(0xFF94A3B8),
+                                      ),
                                     ],
                                   ),
-                                  if (bill.memberPhone.isNotEmpty)
+                                  if (hasPhone) ...[
+                                    const SizedBox(height: 2),
                                     Row(
                                       children: [
-                                        const Icon(Icons.phone_outlined, size: 11, color: Color(0xFF94A3B8)),
-                                        const SizedBox(width: 3),
+                                        const Icon(Icons.phone_rounded, size: 11, color: Color(0xFF64748B)),
+                                        const SizedBox(width: 3.5),
                                         Text(
                                           bill.memberPhone,
                                           style: const TextStyle(
-                                            fontSize: 11,
+                                            fontSize: 11.5,
                                             fontWeight: FontWeight.w600,
                                             color: Color(0xFF64748B),
+                                            letterSpacing: 0.2,
                                           ),
                                         ),
                                       ],
                                     ),
+                                  ],
                                 ],
                               ),
                             ),
                           ),
+                          const SizedBox(width: 8),
+
+                          // Amount & Status Badge
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 _currencyFormat.format(bill.totalPayable),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w900,
-                                  fontSize: 16.5,
-                                  color: Color(0xFF0F172A),
+                                  fontSize: 17,
+                                  color: bill.status == MaintenanceStatus.paid
+                                      ? const Color(0xFF047857)
+                                      : (bill.status == MaintenanceStatus.overdue
+                                          ? const Color(0xFFBE123C)
+                                          : const Color(0xFF0F172A)),
                                   letterSpacing: -0.4,
                                 ),
                               ),
@@ -2655,7 +2692,7 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}".tr : "
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(statusIcon, size: 11, color: statusColor),
-                                    const SizedBox(width: 3),
+                                    const SizedBox(width: 3.5),
                                     Text(
                                       statusText,
                                       style: TextStyle(
@@ -2671,74 +2708,140 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}".tr : "
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+
+                      // Metadata Ribbon (Due/Paid Date, Penalty / Festival tags, Quick Call)
+                      Container(
+                        margin: const EdgeInsets.symmetric(vertical: 11),
+                        padding: const EdgeInsets.symmetric(horizontal: 9.5, vertical: 5.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFF1F5F9)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              bill.status == MaintenanceStatus.paid ? Icons.event_available_rounded : Icons.event_outlined,
+                              size: 13,
+                              color: bill.status == MaintenanceStatus.paid ? const Color(0xFF059669) : const Color(0xFF64748B),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.event_outlined, size: 12, color: Color(0xFF94A3B8)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  bill.status == MaintenanceStatus.paid && bill.paidAt != null
-                                      ? 'ચૂકવ્યા: ${DateFormat('dd/MM/yyyy').format(bill.paidAt!)}'
-                                      : 'ડ્યુ: ${DateFormat('dd/MM/yyyy').format(bill.dueDate)}',
-                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (bill.memberPhone.isNotEmpty && bill.status != MaintenanceStatus.paid)
-                            InkWell(
-                              onTap: () => _makePhoneCall(bill.memberPhone),
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFECFDF5),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: const Color(0xFFA7F3D0)),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.call_rounded, size: 13, color: Color(0xFF059669)),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      bill.memberPhone,
-                                      style: const TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
+                            const SizedBox(width: 4.5),
+                            Flexible(
+                              child: Text(
+                                bill.status == MaintenanceStatus.paid && bill.paidAt != null
+                                    ? '${'ચૂકવ્યા'.tr}: ${DateFormat('dd/MM/yyyy').format(bill.paidAt!)}'
+                                    : '${'ડ્યુ'.tr}: ${DateFormat('dd/MM/yyyy').format(bill.dueDate)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: bill.status == MaintenanceStatus.paid ? const Color(0xFF059669) : const Color(0xFF64748B),
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
-                        ],
+                            if (bill.penaltyAmount > 0) ...[
+                              const SizedBox(width: 5),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF1F2),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: const Color(0xFFFECDD3)),
+                                ),
+                                child: Text(
+                                  '+₹${bill.penaltyAmount.toInt()} ${'પેનલ્ટી'.tr}',
+                                  style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: Color(0xFFBE123C)),
+                                ),
+                              ),
+                            ],
+                            if (bill.festivalCharge > 0) ...[
+                              const SizedBox(width: 5),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFAF5FF),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: const Color(0xFFE9D5FF)),
+                                ),
+                                child: Text(
+                                  '+₹${bill.festivalCharge.toInt()} ${'ઉત્સવ ફાળો'.tr}',
+                                  style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: Color(0xFF7E22CE)),
+                                ),
+                              ),
+                            ],
+                            const Spacer(),
+                            if (hasPhone && bill.status != MaintenanceStatus.paid)
+                              InkWell(
+                                onTap: () => _makePhoneCall(bill.memberPhone),
+                                borderRadius: BorderRadius.circular(6),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFECFDF5),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.call_rounded, size: 11, color: Color(0xFF059669)),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        'કૉલ'.tr,
+                                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF059669), fontWeight: FontWeight.w800),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            if (bill.status == MaintenanceStatus.paid && bill.paymentMode.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  bill.paymentMode.toUpperCase(),
+                                  style: const TextStyle(fontSize: 9.5, color: Color(0xFF475569), fontWeight: FontWeight.w800),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 10),
 
-                      // Responsive Action Row
+                      // Action Console
                       if (bill.status == MaintenanceStatus.paid)
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: OutlinedButton.icon(
-                            onPressed: () => _showReceiptDialog(bill),
-                            icon: const Icon(Icons.receipt_long_rounded, size: 14, color: Color(0xFF047857)),
-                            label: Text('રસીદ (Receipt)'.tr, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF047857))),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFFA7F3D0)),
-                              backgroundColor: const Color(0xFFF0FDF4),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => _showReceiptDialog(bill),
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 8.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF0FDF4),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFA7F3D0), width: 1.2),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.receipt_long_rounded, size: 15, color: Color(0xFF047857)),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'રસીદ જુઓ / ડાઉનલોડ કરો'.tr,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF047857),
+                                      letterSpacing: 0.1,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         )
@@ -2747,30 +2850,33 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}".tr : "
                           children: [
                             // QR Pay button
                             Expanded(
-                              child: InkWell(
-                                onTap: () => _showBillQrDialog(bill),
-                                borderRadius: BorderRadius.circular(10),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 7.5),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF0FDFA),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: const Color(0xFF99F6E4)),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.qr_code_2_rounded, size: 14, color: Color(0xFF0D9488)),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'QR પે'.tr,
-                                        style: TextStyle(
-                                          color: Color(0xFF0F766E),
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 11.5,
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () => _showBillQrDialog(bill),
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF0FDFA),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFF99F6E4), width: 1.2),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.qr_code_2_rounded, size: 14.5, color: Color(0xFF0D9488)),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'QR પે'.tr,
+                                          style: const TextStyle(
+                                            color: Color(0xFF0F766E),
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 11.5,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -2779,33 +2885,36 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}".tr : "
 
                             // WhatsApp Reminder button
                             Expanded(
-                              child: InkWell(
-                                onTap: () => SmartMaintenanceReminderSheet.showSingle(
-                                  context: context,
-                                  bill: bill,
-                                ),
-                                borderRadius: BorderRadius.circular(10),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 7.5),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFDCFCE7),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: const Color(0xFF86EFAC)),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () => SmartMaintenanceReminderSheet.showSingle(
+                                    context: context,
+                                    bill: bill,
                                   ),
-                                  child: const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.chat_bubble_rounded, size: 13, color: Color(0xFF16A34A)),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'WhatsApp',
-                                        style: TextStyle(
-                                          color: Color(0xFF16A34A),
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 11.5,
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF0FDF4),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFF86EFAC), width: 1.2),
+                                    ),
+                                    child: const Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.chat_bubble_rounded, size: 13, color: Color(0xFF16A34A)),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'WhatsApp',
+                                          style: TextStyle(
+                                            color: Color(0xFF16A34A),
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 11.5,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -2815,31 +2924,88 @@ ${bill.chequeNumber.isNotEmpty ? "ચેક નં: ${bill.chequeNumber}".tr : "
                             // Verify or Mark Paid Button
                             if (bill.status == MaintenanceStatus.underReview)
                               Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () => _showVerifyUpiDialog(bill),
-                                  icon: const Icon(Icons.verified_rounded, size: 13),
-                                  label: Text('વેરિફાય'.tr, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF2563EB),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 7.5),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    elevation: 1,
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () => _showVerifyUpiDialog(bill),
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [Color(0xFF2563EB), Color(0xFF3B82F6)],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFF2563EB).withValues(alpha: 0.25),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(Icons.verified_rounded, size: 13.5, color: Colors.white),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'વેરિફાય'.tr,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                 ),
                               )
                             else
                               Expanded(
-                                child: ElevatedButton(
-                                  onPressed: () => _showOfflinePaymentDialog(bill),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF4338CA),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 7.5),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    elevation: 1,
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () => _showOfflinePaymentDialog(bill),
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFF4F46E5).withValues(alpha: 0.25),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(Icons.check_circle_outline_rounded, size: 13.5, color: Colors.white),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'માર્ક પેઇડ'.tr,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                  child: Text('Mark Paid', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
                                 ),
                               ),
                           ],

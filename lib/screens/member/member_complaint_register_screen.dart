@@ -56,6 +56,24 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
     ('અન્ય સામાન્ય'.tr, Icons.more_horiz_rounded, Color(0xFF64748B)),
   ];
 
+  (IconData, Color) _getCategoryMeta(String category) {
+    final lower = category.toLowerCase();
+    if (category.contains('પાણી') || lower.contains('water')) {
+      return (Icons.water_drop_rounded, const Color(0xFF0284C7));
+    } else if (category.contains('લાઈટ') || category.contains('વીજળી') || lower.contains('bolt') || lower.contains('electric')) {
+      return (Icons.bolt_rounded, const Color(0xFFD97706));
+    } else if (category.contains('લિફ્ટ') || lower.contains('lift') || lower.contains('elevator')) {
+      return (Icons.elevator_rounded, const Color(0xFF4F46E5));
+    } else if (category.contains('સફાઈ') || category.contains('કચરો') || lower.contains('clean')) {
+      return (Icons.cleaning_services_rounded, const Color(0xFF0D9488));
+    } else if (category.contains('પાર્કિંગ') || lower.contains('parking')) {
+      return (Icons.local_parking_rounded, const Color(0xFF7C3AED));
+    } else if (category.contains('સિક્યોરિટી') || lower.contains('security')) {
+      return (Icons.shield_rounded, const Color(0xFFDC2626));
+    }
+    return (Icons.report_problem_rounded, const Color(0xFF64748B));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -844,12 +862,29 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
                 separatorBuilder: (_, index) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final c = complaints[index];
-                  final title = c.title;
                   final desc = c.description;
                   final category = c.category;
                   final photoUrl = c.photoUrl;
                   final status = c.status;
                   final dateStr = DateFormat('dd MMM, hh:mm a').format(c.createdAt);
+
+                  // Clean title: remove [category] prefix if already embedded
+                  String cleanTitle = c.title;
+                  if (category.isNotEmpty && cleanTitle.startsWith('[$category]')) {
+                    cleanTitle = cleanTitle.substring('[$category]'.length).trim();
+                  } else if (category.isNotEmpty && cleanTitle.startsWith('[$category ]')) {
+                    cleanTitle = cleanTitle.substring('[$category ]'.length).trim();
+                  } else if (cleanTitle.startsWith('[')) {
+                    final closeBracket = cleanTitle.indexOf(']');
+                    if (closeBracket != -1 && closeBracket < 30) {
+                      cleanTitle = cleanTitle.substring(closeBracket + 1).trim();
+                    }
+                  }
+                  if (cleanTitle.isEmpty) cleanTitle = c.title;
+
+                  final catMeta = _getCategoryMeta(category);
+                  final catIcon = catMeta.$1;
+                  final catColor = catMeta.$2;
 
                   Color statusColor = const Color(0xFFD97706);
                   Color statusBg = const Color(0xFFFFFBEB);
@@ -872,113 +907,252 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
                   }
 
                   return Container(
-                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: statusColor.withValues(alpha: 0.22),
+                        width: 1.2,
+                      ),
                       boxShadow: [
                         BoxShadow(
+                          color: statusColor.withValues(alpha: 0.06),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
+                        ),
+                        BoxShadow(
                           color: Colors.black.withValues(alpha: 0.02),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
                         ),
                       ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            // Category Tag
-                            if (category.isNotEmpty) ...[
+                    child: Padding(
+                      padding: const EdgeInsets.all(15),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Top Row: Category Avatar + Category Pill + Urgent Badge + Status Pill
+                          Row(
+                            children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                width: 36,
+                                height: 36,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(6),
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      catColor.withValues(alpha: 0.18),
+                                      catColor.withValues(alpha: 0.06),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: Text(
-                                  category,
-                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                                child: Icon(catIcon, size: 18, color: catColor),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Wrap(
+                                  spacing: 6,
+                                  runSpacing: 4,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    if (category.isNotEmpty)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: catColor.withValues(alpha: 0.08),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(color: catColor.withValues(alpha: 0.2)),
+                                        ),
+                                        child: Text(
+                                          category,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                            color: catColor,
+                                          ),
+                                        ),
+                                      ),
+                                    if (c.isUrgent)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFEE2E2),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(color: const Color(0xFFFECACA)),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.flash_on_rounded, size: 11, color: Color(0xFFDC2626)),
+                                            const SizedBox(width: 3),
+                                            Text(
+                                              'ઇમરજન્સી'.tr,
+                                              style: const TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w800,
+                                                color: Color(0xFFDC2626),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                               const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                                decoration: BoxDecoration(
+                                  color: statusBg,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: statusBorder),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(statusIcon, size: 12, color: statusColor),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      statusLabel,
+                                      style: TextStyle(
+                                        color: statusColor,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
-                            const Spacer(),
-                            // Status Pill
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Clean Subject Title
+                          Text(
+                            cleanTitle,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                              color: Color(0xFF0F172A),
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+
+                          // Description in bubble if not empty
+                          if (desc.isNotEmpty) ...[
+                            const SizedBox(height: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                               decoration: BoxDecoration(
-                                color: statusBg,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: statusBorder),
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFF1F5F9)),
+                              ),
+                              child: Text(
+                                desc,
+                                style: const TextStyle(
+                                  color: Color(0xFF475569),
+                                  fontSize: 12.5,
+                                  height: 1.4,
+                                ),
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+
+                          if (c.resolutionNotes != null && c.resolutionNotes!.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF0FDF4),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFBBF7D0)),
                               ),
                               child: Row(
-                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(statusIcon, size: 12, color: statusColor),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    statusLabel,
-                                    style: TextStyle(color: statusColor, fontWeight: FontWeight.w800, fontSize: 11),
+                                  const Icon(Icons.check_circle_outline_rounded, size: 14, color: Color(0xFF16A34A)),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      '${'ઉકેલ નોંધ: '.tr}${c.resolutionNotes}',
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF15803D),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                           ],
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          title,
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: Color(0xFF0F172A)),
-                        ),
-                        if (desc.isNotEmpty) ...[
-                          const SizedBox(height: 5),
-                          Text(
-                            desc,
-                            style: const TextStyle(color: Color(0xFF475569), fontSize: 12.5, height: 1.4),
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            if (dateStr.isNotEmpty) ...[
-                              const Icon(Icons.access_time_rounded, size: 13, color: Color(0xFF94A3B8)),
-                              const SizedBox(width: 4),
-                              Text(dateStr, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500)),
-                            ],
-                            const Spacer(),
-                            if (photoUrl.isNotEmpty) ...[
-                              InkWell(
-                                onTap: () => _showImagePreviewDialog(photoUrl),
-                                borderRadius: BorderRadius.circular(6),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFEDE9FE),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.image_rounded, size: 13, color: Color(0xFF7C3AED)),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'ફોટો જુઓ'.tr,
-                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF7C3AED)),
-                                      ),
-                                    ],
+
+                          const SizedBox(height: 12),
+
+                          // Bottom Footer: Date & Photo Button
+                          Row(
+                            children: [
+                              if (dateStr.isNotEmpty) ...[
+                                const Icon(Icons.schedule_rounded, size: 13, color: Color(0xFF94A3B8)),
+                                const SizedBox(width: 5),
+                                Text(
+                                  dateStr,
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    color: Color(0xFF64748B),
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                              ),
+                              ],
+                              const Spacer(),
+                              if (photoUrl.isNotEmpty) ...[
+                                Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      _showImagePreviewDialog(photoUrl);
+                                    },
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFEDE9FE),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: const Color(0xFFDDD6FE)),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.image_rounded, size: 14, color: Color(0xFF7C3AED)),
+                                          const SizedBox(width: 5),
+                                          Text(
+                                            'ફોટો જુઓ'.tr,
+                                            style: const TextStyle(
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w800,
+                                              color: Color(0xFF7C3AED),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },

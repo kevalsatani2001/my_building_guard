@@ -187,11 +187,13 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
       setState(() => _isAdding = true);
       try {
         final occSnap = await ParkingSlotService.instance.streamOccupiedSlots(societyId).first;
-        if (ParkingSlotService.instance.isSlotAlreadyTakenByOther(
+        if (ParkingSlotService.instance.isSlotAlreadyTaken(
           slotName: chosenSlot,
           occupiedSlots: occSnap,
+          currentVehiclePlate: plate,
         )) {
-          final occInfo = occSnap[chosenSlot];
+          final normKey = ParkingSlotService.normalizeSlotKey(chosenSlot);
+          final occInfo = occSnap[chosenSlot] ?? occSnap[normKey];
           setState(() => _isAdding = false);
           if (!mounted) return;
           _showSlotAlreadyTakenDialog(chosenSlot, occInfo);
@@ -280,18 +282,19 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
 
   void _showSlotAlreadyTakenDialog(String slot, OccupiedSlotInfo? occInfo) {
     HapticFeedback.heavyImpact();
+    final bool isMyOwn = occInfo?.isCurrentMember == true;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 28),
-            SizedBox(width: 8),
+            Icon(Icons.warning_amber_rounded, color: isMyOwn ? const Color(0xFFD97706) : const Color(0xFFDC2626), size: 28),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'સ્લોટ પહેલેથી બુક છે!'.tr,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                isMyOwn ? 'સ્લોટ તમારા અન્ય વાહન પાસે છે!'.tr : 'સ્લોટ પહેલેથી બુક છે!'.tr,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
               ),
             ),
           ],
@@ -301,7 +304,9 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'પાર્કિંગ સ્લોટ "$slot" પહેલેથી અન્ય સભ્યને ફાળવાયેલો છે. સોસાયટી નિયમ મુજબ એક સ્લોટ માત્ર એક જ વાહનને ફાળવી શકાય છે.'.tr,
+              isMyOwn
+                  ? 'પાર્કિંગ સ્લોટ "$slot" પહેલેથી તમારા વાહન (${occInfo?.vehicleNumber}) માટે ફાળવાયેલો છે. સોસાયટી નિયમ મુજબ એક સ્લોટ માત્ર એક જ વાહનને ફાળવી શકાય છે.'.tr
+                  : 'પાર્કિંગ સ્લોટ "$slot" પહેલેથી અન્ય સભ્યને ફાળવાયેલો છે. સોસાયટી નિયમ મુજબ એક સ્લોટ માત્ર એક જ વાહનને ફાળવી શકાય છે.'.tr,
               style: const TextStyle(fontSize: 13.5, color: Color(0xFF334155), height: 1.4),
             ),
             const SizedBox(height: 12),
@@ -309,9 +314,9 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEF2F2),
+                  color: isMyOwn ? const Color(0xFFFFFBEB) : const Color(0xFFFEF2F2),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFFECACA)),
+                  border: Border.all(color: isMyOwn ? const Color(0xFFFDE68A) : const Color(0xFFFECACA)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -675,20 +680,21 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'વાહનનો પ્રકાર:'.tr,
-                                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                                      'વાહનનો પ્રકાર પસંદ કરો:'.tr,
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
                                     ),
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: 10),
                                     GridView.count(
                                       crossAxisCount: 2,
                                       shrinkWrap: true,
                                       physics: const NeverScrollableScrollPhysics(),
-                                      mainAxisSpacing: 8,
-                                      crossAxisSpacing: 8,
-                                      childAspectRatio: 2.3,
+                                      mainAxisSpacing: 10,
+                                      crossAxisSpacing: 10,
+                                      childAspectRatio: 1.52,
                                       children: _vehicleTypeOptions.map((t) {
                                         final (name, subtitle, iconData, color) = t;
-                                        final isSelected = _selectedType == name || (name.contains('ઇલેક્ટ્રિક'.tr) && _selectedType.contains('ઇલેક્ટ્રિક'.tr));
+                                        final isSelected = _selectedType == name ||
+                                            (name.contains('ઇલેક્ટ્રિક'.tr) && _selectedType.contains('ઇલેક્ટ્રિક'.tr));
                                         return Material(
                                           color: Colors.transparent,
                                           child: InkWell(
@@ -696,71 +702,98 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                               HapticFeedback.lightImpact();
                                               setState(() => _selectedType = name);
                                             },
-                                            borderRadius: BorderRadius.circular(14),
+                                            borderRadius: BorderRadius.circular(16),
                                             child: AnimatedContainer(
                                               duration: const Duration(milliseconds: 180),
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                              padding: const EdgeInsets.all(12),
                                               decoration: BoxDecoration(
                                                 color: isSelected ? color.withValues(alpha: 0.08) : Colors.white,
-                                                borderRadius: BorderRadius.circular(14),
+                                                borderRadius: BorderRadius.circular(16),
                                                 border: Border.all(
                                                   color: isSelected ? color : const Color(0xFFE2E8F0),
-                                                  width: isSelected ? 1.8 : 1.0,
+                                                  width: isSelected ? 1.8 : 1.2,
                                                 ),
                                                 boxShadow: [
                                                   BoxShadow(
-                                                    color: isSelected ? color.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.02),
-                                                    blurRadius: 6,
-                                                    offset: const Offset(0, 2),
+                                                    color: isSelected
+                                                        ? color.withValues(alpha: 0.18)
+                                                        : const Color(0xFF0F172A).withValues(alpha: 0.03),
+                                                    blurRadius: isSelected ? 10 : 4,
+                                                    offset: const Offset(0, 3),
                                                   ),
                                                 ],
                                               ),
-                                              child: Row(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                 children: [
-                                                  Container(
-                                                    width: 34,
-                                                    height: 34,
-                                                    decoration: BoxDecoration(
-                                                      color: isSelected ? color : color.withValues(alpha: 0.12),
-                                                      borderRadius: BorderRadius.circular(10),
-                                                    ),
-                                                    child: Icon(
-                                                      iconData,
-                                                      size: 18,
-                                                      color: isSelected ? Colors.white : color,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                      children: [
-                                                        Text(
-                                                          name,
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow.ellipsis,
-                                                          style: TextStyle(
-                                                            fontSize: 11,
-                                                            fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
-                                                            color: isSelected ? color : const Color(0xFF0F172A),
+                                                  Row(
+                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                    children: [
+                                                      Container(
+                                                        width: 36,
+                                                        height: 36,
+                                                        decoration: BoxDecoration(
+                                                          gradient: LinearGradient(
+                                                            colors: [color, color.withValues(alpha: 0.8)],
+                                                            begin: Alignment.topLeft,
+                                                            end: Alignment.bottomRight,
+                                                          ),
+                                                          borderRadius: BorderRadius.circular(11),
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                              color: color.withValues(alpha: 0.25),
+                                                              blurRadius: 6,
+                                                              offset: const Offset(0, 2),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        child: Icon(iconData, size: 20, color: Colors.white),
+                                                      ),
+                                                      AnimatedContainer(
+                                                        duration: const Duration(milliseconds: 180),
+                                                        width: 18,
+                                                        height: 18,
+                                                        decoration: BoxDecoration(
+                                                          color: isSelected ? color : Colors.transparent,
+                                                          shape: BoxShape.circle,
+                                                          border: Border.all(
+                                                            color: isSelected ? color : const Color(0xFFCBD5E1),
+                                                            width: 1.5,
                                                           ),
                                                         ),
-                                                        Text(
-                                                          subtitle,
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow.ellipsis,
-                                                          style: TextStyle(
-                                                            fontSize: 9.5,
-                                                            fontWeight: FontWeight.w500,
-                                                            color: isSelected ? color.withValues(alpha: 0.85) : const Color(0xFF64748B),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
+                                                        child: isSelected
+                                                            ? const Icon(Icons.check, size: 12, color: Colors.white)
+                                                            : null,
+                                                      ),
+                                                    ],
                                                   ),
-                                                  if (isSelected)
-                                                    Icon(Icons.check_circle_rounded, size: 15, color: color),
+                                                  Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        name,
+                                                        maxLines: 1,
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight: isSelected ? FontWeight.w900 : FontWeight.w800,
+                                                          color: isSelected ? color : const Color(0xFF0F172A),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 2),
+                                                      Text(
+                                                        subtitle,
+                                                        maxLines: 1,
+                                                        style: TextStyle(
+                                                          fontSize: 10,
+                                                          fontWeight: FontWeight.w500,
+                                                          color: isSelected
+                                                              ? color.withValues(alpha: 0.85)
+                                                              : const Color(0xFF64748B),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ],
                                               ),
                                             ),
@@ -770,231 +803,547 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                     ),
                                     const SizedBox(height: 16),
 
-                                    // Number Plate Input
-                                    TextFormField(
-                                      controller: _plateC,
-                                      textCapitalization: TextCapitalization.characters,
-                                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                                      inputFormatters: [
-                                        UpperCaseTextFormatter(),
-                                        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s\-]')),
-                                        LengthLimitingTextInputFormatter(16),
-                                      ],
-                                      style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.8),
-                                      decoration: InputDecoration(
-                                        labelText: 'વાહન નંબર પ્લેટ *'.tr,
-                                        hintText: 'દા.ત. GJ 01 AB 1234'.tr,
-                                        helperText: 'ફોર્મેટ: GJ 01 AB 1234 અથવા 22 BH 1234 AA'.tr,
-                                        helperStyle: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                                        prefixIcon: const Icon(Icons.pin_rounded, color: Color(0xFF0284C7)),
-                                        filled: true,
-                                        fillColor: const Color(0xFFF8FAFC),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(14),
-                                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                                        ),
-                                      ),
-                                      validator: (v) {
-                                        final res = VehiclePlateValidator.validate(v);
-                                        if (!res.isValid) {
-                                          return res.errorMessage;
-                                        }
-                                        final cleanPlate = res.cleanPlate!;
-                                        final isDuplicate = vehicles.any((item) {
-                                          final existingClean = VehiclePlateValidator.clean((item['number'] ?? '').toString());
-                                          return existingClean == cleanPlate;
-                                        });
-                                        if (isDuplicate) {
-                                          return 'આ નંબર પ્લેટવાળું વાહન તમે પહેલેથી જ ઉમેરેલું છે!'.tr;
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                    const SizedBox(height: 12),
-
-                                    // Model / Company Input
-                                    TextFormField(
-                                      controller: _modelC,
-                                      decoration: InputDecoration(
-                                        labelText: 'વાહન મોડેલ / કંપની'.tr,
-                                        hintText: 'દા.ત. Swift / Activa / Nexon EV'.tr,
-                                        prefixIcon: const Icon(Icons.car_repair_rounded, color: Color(0xFF0284C7)),
-                                        filled: true,
-                                        fillColor: const Color(0xFFF8FAFC),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(14),
-                                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-
-                                    // 3. INTELLIGENT ARCHITECTURE-AWARE PARKING ALLOCATION
-                                    if (isStreet) ...[
-                                      // === શેરી / રો-હાઉસ સોસાયટી: ઘર આંગણે ડિફોલ્ટ ફાળવણી ===
-                                      Text(
-                                        'સોસાયટી પાર્કિંગ વ્યવસ્થા:'.tr,
-                                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                                      ),
-                                      const SizedBox(height: 8),
-
-                                      // Primary Home Front Card
-                                      Container(
-                                        padding: const EdgeInsets.all(14),
-                                        decoration: BoxDecoration(
-                                          color: (_selectedSlot == null ||
-                                                  _selectedSlot!.isEmpty ||
-                                                  ParkingSlotService.instance.isFlexibleStreetParking(_selectedSlot!))
-                                              ? const Color(0xFFF0FDF4)
-                                              : const Color(0xFFF8FAFC),
-                                          borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(
-                                            color: (_selectedSlot == null ||
-                                                    _selectedSlot!.isEmpty ||
-                                                    ParkingSlotService.instance.isFlexibleStreetParking(_selectedSlot!))
-                                                ? const Color(0xFF86EFAC)
-                                                : const Color(0xFFCBD5E1),
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: Row(
+                                    // 1. Authentic HSRP Number Plate Input
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
                                           children: [
-                                            Container(
-                                              padding: const EdgeInsets.all(10),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF15803D).withValues(alpha: 0.12),
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: const Icon(Icons.home_work_rounded, color: Color(0xFF15803D), size: 24),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
-                                                    children: [
-                                                      Text(
-                                                        'ઘર આંગણે પાર્કિંગ (Home Front)'.tr,
-                                                        style: TextStyle(
-                                                          fontWeight: FontWeight.w800,
-                                                          fontSize: 13.5,
-                                                          color: Color(0xFF0F172A),
-                                                        ),
-                                                      ),
-                                                      const Spacer(),
-                                                      if (_selectedSlot == null ||
-                                                          _selectedSlot!.isEmpty ||
-                                                          ParkingSlotService.instance.isFlexibleStreetParking(_selectedSlot!))
-                                                        const Icon(Icons.check_circle_rounded, color: Color(0xFF15803D), size: 20),
-                                                    ],
-                                                  ),
-                                                  const SizedBox(height: 3),
-                                                  Text(
-                                                    'તમારા પોતાના મકાન/પ્લોટ ($flatDisplay) ની સામે વાહન પાર્ક થશે.'.tr,
-                                                    style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569)),
-                                                  ),
-                                                  const SizedBox(height: 2),
-                                                  Text(
-                                                    '✓ શેરી સોસાયટી: કોઈ સ્લોટ નંબર પસંદ કરવાની જરૂર નથી.'.tr,
-                                                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
-                                                  ),
-                                                ],
-                                              ),
+                                            const Text('🇮🇳', style: TextStyle(fontSize: 14)),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              'વાહન નંબર પ્લેટ (HSRP) *'.tr,
+                                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
                                             ),
                                           ],
                                         ),
-                                      ),
+                                        const SizedBox(height: 8),
+                                        TextFormField(
+                                          controller: _plateC,
+                                          textCapitalization: TextCapitalization.characters,
+                                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                                          inputFormatters: [
+                                            UpperCaseTextFormatter(),
+                                            FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s\-]')),
+                                            LengthLimitingTextInputFormatter(16),
+                                          ],
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: 2.0,
+                                            fontSize: 16,
+                                            color: Color(0xFF0F172A),
+                                          ),
+                                          decoration: InputDecoration(
+                                            hintText: 'GJ 01 AB 1234',
+                                            hintStyle: const TextStyle(
+                                              color: Color(0xFF94A3B8),
+                                              letterSpacing: 1.5,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14.5,
+                                            ),
+                                            prefixIcon: Padding(
+                                              padding: const EdgeInsets.only(left: 12, right: 10),
+                                              child: Container(
+                                                width: 44,
+                                                height: 32,
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFF002B49),
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: Row(
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [
+                                                    Container(
+                                                      width: 5,
+                                                      height: 5,
+                                                      decoration: const BoxDecoration(
+                                                        color: Color(0xFF38BDF8),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 3.5),
+                                                    const Text(
+                                                      'IND',
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 10,
+                                                        fontWeight: FontWeight.w900,
+                                                        letterSpacing: 0.5,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                            prefixIconConstraints: const BoxConstraints(minWidth: 56, minHeight: 44),
+                                            filled: true,
+                                            fillColor: const Color(0xFFF8FAFC),
+                                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(14),
+                                              borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(14),
+                                              borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.8),
+                                            ),
+                                          ),
+                                          validator: (v) {
+                                            final res = VehiclePlateValidator.validate(v);
+                                            if (!res.isValid) {
+                                              return res.errorMessage;
+                                            }
+                                            final cleanPlate = res.cleanPlate!;
+                                            final isDuplicate = vehicles.any((item) {
+                                              final existingClean = VehiclePlateValidator.clean((item['number'] ?? '').toString());
+                                              return existingClean == cleanPlate;
+                                            });
+                                            if (isDuplicate) {
+                                              return 'આ નંબર પ્લેટવાળું વાહન તમે પહેલેથી જ ઉમેરેલું છે!'.tr;
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFF1F5F9),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.info_outline_rounded, size: 12.5, color: Color(0xFF0284C7)),
+                                              const SizedBox(width: 5),
+                                              Text(
+                                                'માન્ય ફોર્મેટ: GJ 01 AB 1234 અથવા 22 BH 1234 AA'.tr,
+                                                style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 14),
 
-                                      // Optional Common Plot Section (Appears ONLY IF Admin created real common plot slots in Firestore)
+                                    // 2. Vehicle Model Input
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'વાહન મોડેલ / બ્રાન્ડ (વૈકલ્પિક)'.tr,
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        TextFormField(
+                                          controller: _modelC,
+                                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5, color: Color(0xFF0F172A)),
+                                          decoration: InputDecoration(
+                                            hintText: 'દા.ત. Tata Nexon / Activa 6G / Creta'.tr,
+                                            hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
+                                            prefixIcon: Padding(
+                                              padding: const EdgeInsets.only(left: 12, right: 10),
+                                              child: Container(
+                                                width: 36,
+                                                height: 32,
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: Icon(
+                                                  _selectedType.contains('૨'.tr) || _selectedType.toLowerCase().contains('bike')
+                                                      ? Icons.two_wheeler_rounded
+                                                      : (_selectedType.contains('EV') || _selectedType.contains('ઇલેક્ટ્રિક'.tr)
+                                                          ? Icons.electric_car_rounded
+                                                          : (_selectedType.contains('અન્ય'.tr)
+                                                              ? Icons.local_shipping_rounded
+                                                              : Icons.directions_car_rounded)),
+                                                  color: const Color(0xFF0284C7),
+                                                  size: 20,
+                                                ),
+                                              ),
+                                            ),
+                                            prefixIconConstraints: const BoxConstraints(minWidth: 54, minHeight: 44),
+                                            filled: true,
+                                            fillColor: const Color(0xFFF8FAFC),
+                                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(14),
+                                              borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(14),
+                                              borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.8),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 18),
+
+                                    // 3. INTELLIGENT ARCHITECTURE-AWARE PARKING ALLOCATION
+                                    if (isStreet) ...[
+                                      // === શેરી / રો-હાઉસ સોસાયટી: ઘર આંગણે vs કોમન પ્લોટ ===
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'સોસાયટી પાર્કિંગ વ્યવસ્થા:'.tr,
+                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                                          ),
+                                          const Spacer(),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF0FDF4),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: const Color(0xFFBBF7D0)),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(Icons.home_work_rounded, size: 12, color: Color(0xFF15803D)),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  'શેરી / રો-હાઉસ સોસાયટી'.tr,
+                                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF15803D)),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+
                                       StreamBuilder<List<ParkingSlotModel>>(
                                         stream: ParkingSlotService.instance.streamRealCommonPlotSlots(societyId),
                                         builder: (context, slotSnap) {
                                           final commonSlots = slotSnap.data ?? [];
-                                          if (commonSlots.isEmpty) {
-                                            // Admin has NOT created Common Plot slots in Firestore.
-                                            // Absolutely no fake static lists shown!
-                                            return const SizedBox.shrink();
-                                          }
-
                                           final isCpChosen = _selectedSlot != null &&
                                               (_selectedSlot!.startsWith('CP-') || _selectedSlot!.startsWith('વાડી-'.tr));
+                                          final isHomeFrontActive = !isCpChosen;
 
-                                          return Padding(
-                                            padding: const EdgeInsets.only(top: 10),
-                                            child: Container(
-                                              padding: const EdgeInsets.all(12),
-                                              decoration: BoxDecoration(
-                                                color: isCpChosen ? const Color(0xFFF0FDF4) : Colors.white,
-                                                borderRadius: BorderRadius.circular(14),
-                                                border: Border.all(
-                                                  color: isCpChosen ? const Color(0xFF86EFAC) : const Color(0xFFE2E8F0),
-                                                ),
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.park_rounded,
-                                                    size: 20,
-                                                    color: isCpChosen ? const Color(0xFF15803D) : const Color(0xFF0284C7),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Text(
-                                                          isCpChosen
-                                                              ? 'કોમન પ્લોટ સ્લોટ: $_selectedSlot (પસંદ કરેલ)'.tr
-                                                              : 'સોસાયટી કોમન પ્લોટ / વાડી સ્લોટ'.tr,
-                                                          style: TextStyle(
-                                                            fontWeight: FontWeight.bold,
-                                                            fontSize: 12.5,
-                                                            color: isCpChosen ? const Color(0xFF15803D) : const Color(0xFF334155),
-                                                          ),
+                                          return Column(
+                                            children: [
+                                              // Option 1: ઘર આંગણે પાર્કિંગ (Home Front) - Tap to Select
+                                              Material(
+                                                color: Colors.transparent,
+                                                child: InkWell(
+                                                  onTap: () {
+                                                    HapticFeedback.selectionClick();
+                                                    setState(() => _selectedSlot = null);
+                                                  },
+                                                  borderRadius: BorderRadius.circular(18),
+                                                  child: AnimatedContainer(
+                                                    duration: const Duration(milliseconds: 200),
+                                                    padding: const EdgeInsets.all(14),
+                                                    decoration: BoxDecoration(
+                                                      color: isHomeFrontActive ? const Color(0xFFF0FDF4) : Colors.white,
+                                                      borderRadius: BorderRadius.circular(18),
+                                                      border: Border.all(
+                                                        color: isHomeFrontActive ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
+                                                        width: isHomeFrontActive ? 1.8 : 1.2,
+                                                      ),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: isHomeFrontActive
+                                                              ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                                                              : const Color(0xFF0F172A).withValues(alpha: 0.03),
+                                                          blurRadius: isHomeFrontActive ? 10 : 4,
+                                                          offset: const Offset(0, 3),
                                                         ),
-                                                        Text(
-                                                          isCpChosen
-                                                              ? 'સોસાયટી કોમન પ્લોટમાં સ્લોટ સુરક્ષિત છે.'.tr
-                                                              : 'એડમિન દ્વારા મંજૂર થયેલ ${commonSlots.length} સ્લોટ્સ ઉપલબ્ધ (વૈકલ્પિક)'.tr,
-                                                          style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                                      ],
+                                                    ),
+                                                    child: Row(
+                                                      children: [
+                                                        Container(
+                                                          width: 44,
+                                                          height: 44,
+                                                          decoration: BoxDecoration(
+                                                            gradient: LinearGradient(
+                                                              colors: isHomeFrontActive
+                                                                  ? [const Color(0xFF059669), const Color(0xFF10B981)]
+                                                                  : [const Color(0xFF94A3B8), const Color(0xFFCBD5E1)],
+                                                              begin: Alignment.topLeft,
+                                                              end: Alignment.bottomRight,
+                                                            ),
+                                                            borderRadius: BorderRadius.circular(13),
+                                                            boxShadow: [
+                                                              if (isHomeFrontActive)
+                                                                BoxShadow(
+                                                                  color: const Color(0xFF10B981).withValues(alpha: 0.28),
+                                                                  blurRadius: 8,
+                                                                  offset: const Offset(0, 3),
+                                                                ),
+                                                            ],
+                                                          ),
+                                                          child: const Icon(Icons.home_work_rounded, color: Colors.white, size: 22),
+                                                        ),
+                                                        const SizedBox(width: 12),
+                                                        Expanded(
+                                                          child: Column(
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            children: [
+                                                              Row(
+                                                                children: [
+                                                                  Text(
+                                                                    'ઘર આંગણે પાર્કિંગ (Home Front)'.tr,
+                                                                    style: TextStyle(
+                                                                      fontWeight: FontWeight.w900,
+                                                                      fontSize: 13.5,
+                                                                      color: isHomeFrontActive ? const Color(0xFF065F46) : const Color(0xFF1E293B),
+                                                                    ),
+                                                                  ),
+                                                                  const Spacer(),
+                                                                  AnimatedContainer(
+                                                                    duration: const Duration(milliseconds: 180),
+                                                                    width: 20,
+                                                                    height: 20,
+                                                                    decoration: BoxDecoration(
+                                                                      color: isHomeFrontActive ? const Color(0xFF10B981) : Colors.transparent,
+                                                                      shape: BoxShape.circle,
+                                                                      border: Border.all(
+                                                                        color: isHomeFrontActive ? const Color(0xFF10B981) : const Color(0xFFCBD5E1),
+                                                                        width: 1.5,
+                                                                      ),
+                                                                    ),
+                                                                    child: isHomeFrontActive
+                                                                        ? const Icon(Icons.check, size: 13, color: Colors.white)
+                                                                        : null,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              const SizedBox(height: 3),
+                                                              Text(
+                                                                'તમારા પોતાના મકાન/પ્લોટ ($flatDisplay) ની સામે વાહન પાર્ક થશે.'.tr,
+                                                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), height: 1.3),
+                                                              ),
+                                                              const SizedBox(height: 5),
+                                                              Container(
+                                                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                                                decoration: BoxDecoration(
+                                                                  color: isHomeFrontActive ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
+                                                                  borderRadius: BorderRadius.circular(6),
+                                                                ),
+                                                                child: Text(
+                                                                  isHomeFrontActive ? '✓ સક્રિય • કોઈ સ્લોટ નંબર પસંદ કરવાની જરૂર નથી'.tr : 'ટેપ કરીને પસંદ કરો'.tr,
+                                                                  style: TextStyle(
+                                                                    fontSize: 10,
+                                                                    fontWeight: FontWeight.w700,
+                                                                    color: isHomeFrontActive ? const Color(0xFF15803D) : const Color(0xFF64748B),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
                                                         ),
                                                       ],
                                                     ),
                                                   ),
-                                                  if (isCpChosen)
-                                                    TextButton(
-                                                      onPressed: () => setState(() => _selectedSlot = null),
-                                                      child: Text('ઘર આંગણે રાખો'.tr, style: TextStyle(fontSize: 11, color: Color(0xFFDC2626))),
-                                                    )
-                                                  else
-                                                    OutlinedButton(
-                                                      onPressed: () => _openSlotPicker(
-                                                        targetBlock: 'કોમન પ્લોટ'.tr,
-                                                        isCommonPlotOnly: true,
-                                                      ),
-                                                      style: OutlinedButton.styleFrom(
-                                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                                        side: const BorderSide(color: Color(0xFF0284C7)),
-                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                                      ),
-                                                      child: Text('સ્લોટ પસંદ કરો'.tr, style: TextStyle(fontSize: 11, color: Color(0xFF0284C7))),
-                                                    ),
-                                                ],
+                                                ),
                                               ),
-                                            ),
+
+                                              // Option 2: સોસાયટી કોમન પ્લોટ / વાડી સ્લોટ (Only if slots configured by Admin)
+                                              if (commonSlots.isNotEmpty) ...[
+                                                const SizedBox(height: 10),
+                                                Material(
+                                                  color: Colors.transparent,
+                                                  child: InkWell(
+                                                    onTap: () => _openSlotPicker(
+                                                      targetBlock: 'કોમન પ્લોટ'.tr,
+                                                      isCommonPlotOnly: true,
+                                                    ),
+                                                    borderRadius: BorderRadius.circular(18),
+                                                    child: AnimatedContainer(
+                                                      duration: const Duration(milliseconds: 200),
+                                                      padding: const EdgeInsets.all(14),
+                                                      decoration: BoxDecoration(
+                                                        color: isCpChosen ? const Color(0xFFF0F9FF) : Colors.white,
+                                                        borderRadius: BorderRadius.circular(18),
+                                                        border: Border.all(
+                                                          color: isCpChosen ? const Color(0xFF0284C7) : const Color(0xFFE2E8F0),
+                                                          width: isCpChosen ? 1.8 : 1.2,
+                                                        ),
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color: isCpChosen
+                                                                ? const Color(0xFF0284C7).withValues(alpha: 0.14)
+                                                                : const Color(0xFF0F172A).withValues(alpha: 0.03),
+                                                            blurRadius: isCpChosen ? 10 : 4,
+                                                            offset: const Offset(0, 3),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      child: Row(
+                                                        children: [
+                                                          Container(
+                                                            width: 44,
+                                                            height: 44,
+                                                            decoration: BoxDecoration(
+                                                              gradient: LinearGradient(
+                                                                colors: isCpChosen
+                                                                    ? [const Color(0xFF0284C7), const Color(0xFF38BDF8)]
+                                                                    : [const Color(0xFF94A3B8), const Color(0xFFCBD5E1)],
+                                                                begin: Alignment.topLeft,
+                                                                end: Alignment.bottomRight,
+                                                              ),
+                                                              borderRadius: BorderRadius.circular(13),
+                                                              boxShadow: [
+                                                                if (isCpChosen)
+                                                                  BoxShadow(
+                                                                    color: const Color(0xFF0284C7).withValues(alpha: 0.28),
+                                                                    blurRadius: 8,
+                                                                    offset: const Offset(0, 3),
+                                                                  ),
+                                                              ],
+                                                            ),
+                                                            child: const Icon(Icons.park_rounded, color: Colors.white, size: 22),
+                                                          ),
+                                                          const SizedBox(width: 12),
+                                                          Expanded(
+                                                            child: Column(
+                                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                                              children: [
+                                                                Row(
+                                                                  children: [
+                                                                    Text(
+                                                                      'સોસાયટી કોમન પ્લોટ / વાડી સ્લોટ'.tr,
+                                                                      style: TextStyle(
+                                                                        fontWeight: FontWeight.w900,
+                                                                        fontSize: 13.5,
+                                                                        color: isCpChosen ? const Color(0xFF0369A1) : const Color(0xFF1E293B),
+                                                                      ),
+                                                                    ),
+                                                                    const Spacer(),
+                                                                    AnimatedContainer(
+                                                                      duration: const Duration(milliseconds: 180),
+                                                                      width: 20,
+                                                                      height: 20,
+                                                                      decoration: BoxDecoration(
+                                                                        color: isCpChosen ? const Color(0xFF0284C7) : Colors.transparent,
+                                                                        shape: BoxShape.circle,
+                                                                        border: Border.all(
+                                                                          color: isCpChosen ? const Color(0xFF0284C7) : const Color(0xFFCBD5E1),
+                                                                          width: 1.5,
+                                                                        ),
+                                                                      ),
+                                                                      child: isCpChosen
+                                                                          ? const Icon(Icons.check, size: 13, color: Colors.white)
+                                                                          : null,
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                                const SizedBox(height: 3),
+                                                                Text(
+                                                                  isCpChosen
+                                                                      ? 'કોમન પ્લોટમાં પસંદ કરેલ સ્લોટ નંબર સુરક્ષિત રહેશે.'.tr
+                                                                      : 'એડમિન દ્વારા મંજૂર થયેલ ${commonSlots.length} સ્લોટ્સ ઉપલબ્ધ (વૈકલ્પિક)'.tr,
+                                                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), height: 1.3),
+                                                                ),
+                                                                const SizedBox(height: 5),
+                                                                Row(
+                                                                  children: [
+                                                                    Container(
+                                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                                      decoration: BoxDecoration(
+                                                                        color: isCpChosen ? const Color(0xFFE0F2FE) : const Color(0xFFF1F5F9),
+                                                                        borderRadius: BorderRadius.circular(6),
+                                                                        border: Border.all(
+                                                                          color: isCpChosen ? const Color(0xFFBAE6FD) : const Color(0xFFE2E8F0),
+                                                                          width: 0.8,
+                                                                        ),
+                                                                      ),
+                                                                      child: Row(
+                                                                        mainAxisSize: MainAxisSize.min,
+                                                                        children: [
+                                                                          Icon(
+                                                                            isCpChosen ? Icons.local_parking_rounded : Icons.touch_app_rounded,
+                                                                            size: 11,
+                                                                            color: isCpChosen ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                                                                          ),
+                                                                          const SizedBox(width: 4),
+                                                                          Text(
+                                                                            isCpChosen
+                                                                                ? 'સ્લોટ: $_selectedSlot (ક્લિક કરી બદલો)'.tr
+                                                                                : 'સ્લોટ પસંદ કરો (${commonSlots.length} ઉપલબ્ધ) →'.tr,
+                                                                            style: TextStyle(
+                                                                              fontSize: 10,
+                                                                              fontWeight: FontWeight.w800,
+                                                                              color: isCpChosen ? const Color(0xFF0284C7) : const Color(0xFF475569),
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ),
+                                                                    if (isCpChosen) ...[
+                                                                      const SizedBox(width: 8),
+                                                                      InkWell(
+                                                                        onTap: () {
+                                                                          HapticFeedback.lightImpact();
+                                                                          setState(() => _selectedSlot = null);
+                                                                        },
+                                                                        child: Padding(
+                                                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                                                          child: Text(
+                                                                            'કાઢી નાખો'.tr,
+                                                                            style: const TextStyle(
+                                                                              fontSize: 10.5,
+                                                                              fontWeight: FontWeight.bold,
+                                                                              color: Color(0xFFEF4444),
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ],
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
                                           );
                                         },
                                       ),
                                     ] else ...[
                                       // === ફ્લેટ / એપાર્ટમેન્ટ: વિંગ સ્લોટ સિલેક્શન ફરજિયાત ===
-                                      Text(
-                                        'વિંગ $memberBlock પાર્કિંગ સ્લોટ:'.tr,
-                                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'વિંગ $memberBlock પાર્કિંગ સ્લોટ:'.tr,
+                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                                          ),
+                                          const Spacer(),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFE0F2FE),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: const Color(0xFFBAE6FD)),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(Icons.apartment_rounded, size: 12, color: Color(0xFF0284C7)),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  'બિલ્ડિંગ / એપાર્ટમેન્ટ વિંગ'.tr,
+                                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF0284C7)),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(height: 6),
+                                      const SizedBox(height: 8),
                                       Material(
                                         color: Colors.transparent,
                                         child: InkWell(
@@ -1002,30 +1351,31 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                             targetBlock: memberBlock,
                                             isCommonPlotOnly: false,
                                           ),
-                                          borderRadius: BorderRadius.circular(14),
+                                          borderRadius: BorderRadius.circular(16),
                                           child: Ink(
-                                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
                                             decoration: BoxDecoration(
                                               color: _selectedSlot != null && _selectedSlot!.isNotEmpty
                                                   ? const Color(0xFFF0FDF4)
                                                   : const Color(0xFFF8FAFC),
-                                              borderRadius: BorderRadius.circular(14),
+                                              borderRadius: BorderRadius.circular(16),
                                               border: Border.all(
                                                 color: _selectedSlot != null && _selectedSlot!.isNotEmpty
                                                     ? const Color(0xFF86EFAC)
                                                     : const Color(0xFFCBD5E1),
-                                                width: 1.4,
+                                                width: 1.5,
                                               ),
                                             ),
                                             child: Row(
                                               children: [
                                                 Container(
-                                                  padding: const EdgeInsets.all(7),
+                                                  width: 40,
+                                                  height: 40,
                                                   decoration: BoxDecoration(
                                                     color: _selectedSlot != null && _selectedSlot!.isNotEmpty
                                                         ? const Color(0xFF15803D).withValues(alpha: 0.12)
                                                         : const Color(0xFF0284C7).withValues(alpha: 0.1),
-                                                    shape: BoxShape.circle,
+                                                    borderRadius: BorderRadius.circular(12),
                                                   ),
                                                   child: Icon(
                                                     Icons.local_parking_rounded,
@@ -1045,11 +1395,11 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                                             ? 'સ્લોટ: $_selectedSlot (લૉક માટે પસંદ કરેલ)'.tr
                                                             : 'વિંગ $memberBlock સ્લોટ પસંદ કરો (Tap to Select)'.tr,
                                                         style: TextStyle(
-                                                          fontWeight: FontWeight.bold,
+                                                          fontWeight: FontWeight.w900,
                                                           fontSize: 13.5,
                                                           color: _selectedSlot != null && _selectedSlot!.isNotEmpty
                                                               ? const Color(0xFF15803D)
-                                                              : const Color(0xFF334155),
+                                                              : const Color(0xFF0F172A),
                                                         ),
                                                       ),
                                                       const SizedBox(height: 2),
@@ -1078,10 +1428,25 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
 
                                     const SizedBox(height: 20),
 
-                                    // Save Vehicle Button
-                                    SizedBox(
+                                    // 4. Save Vehicle Button
+                                    Container(
                                       width: double.infinity,
-                                      height: 48,
+                                      height: 54,
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(18),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFF0284C7).withValues(alpha: 0.38),
+                                            blurRadius: 16,
+                                            offset: const Offset(0, 6),
+                                          ),
+                                        ],
+                                      ),
                                       child: ElevatedButton.icon(
                                         onPressed: _isAdding
                                             ? null
@@ -1097,21 +1462,20 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                             ? const SizedBox(
                                                 width: 20,
                                                 height: 20,
-                                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.2),
                                               )
-                                            : const Icon(Icons.add_task_rounded, color: Colors.white),
+                                            : const Icon(Icons.verified_rounded, color: Colors.white, size: 21),
                                         label: Text(
                                           _isAdding ? 'નોંધાઈ રહ્યું છે...'.tr : 'વાહન & સ્લોટ સાચવો'.tr,
-                                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 15),
+                                          style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 15.5, letterSpacing: 0.4),
                                         ),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF0284C7),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                          elevation: 0,
+                                          backgroundColor: Colors.transparent,
+                                          shadowColor: Colors.transparent,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ),                                  ],
                                 ),
                               ),
                             ),
@@ -1352,7 +1716,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: vehicles.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            separatorBuilder: (context, index) => const SizedBox(height: 14),
             itemBuilder: (context, index) {
               final v = Map<String, dynamic>.from(vehicles[index] as Map);
               final number = (v['number'] ?? '').toString();
@@ -1366,47 +1730,144 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                   ? Icons.electric_car_rounded
                   : (isBike ? Icons.two_wheeler_rounded : Icons.directions_car_rounded);
 
+              final primaryCardColor = isEV
+                  ? const Color(0xFF0D9488)
+                  : (isBike ? const Color(0xFF4F46E5) : const Color(0xFF0284C7));
+
               return Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                    BoxShadow(
+                      color: primaryCardColor.withValues(alpha: 0.035),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
                 child: Column(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16),
+                    // Digital Parking Pass Header Ribbon
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8.5),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(21)),
+                        border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
+                      ),
                       child: Row(
                         children: [
-                          // Vehicle Type Avatar
                           Container(
-                            width: 52,
-                            height: 52,
+                            padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: isEV
-                                    ? [const Color(0xFF0D9488), const Color(0xFF14B8A6)]
-                                    : [const Color(0xFF0284C7), const Color(0xFF0369A1)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
+                              color: primaryCardColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Icon(Icons.verified_user_rounded, size: 12, color: primaryCardColor),
+                          ),
+                          const SizedBox(width: 7),
+                          Text(
+                            'ડિજિટલ પાર્કિંગ પાસ'.tr,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF475569),
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: slot.isNotEmpty ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: slot.isNotEmpty ? const Color(0xFF86EFAC) : const Color(0xFFFDE68A),
+                                width: 0.8,
                               ),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF0284C7).withValues(alpha: 0.25),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 5.5,
+                                  height: 5.5,
+                                  decoration: BoxDecoration(
+                                    color: slot.isNotEmpty ? const Color(0xFF16A34A) : const Color(0xFFD97706),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 4.5),
+                                Text(
+                                  slot.isNotEmpty ? 'સક્રિય પાસ'.tr : 'સ્લોટ બાકી'.tr,
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: slot.isNotEmpty ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                                  ),
                                 ),
                               ],
                             ),
-                            child: Icon(vehicleIcon, color: Colors.white, size: 26),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Main Vehicle Info Body
+                    Padding(
+                      padding: const EdgeInsets.all(15),
+                      child: Row(
+                        children: [
+                          // Vehicle Type Squircle Avatar with Glow
+                          Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                width: 54,
+                                height: 54,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: isEV
+                                        ? [const Color(0xFF0D9488), const Color(0xFF14B8A6)]
+                                        : (isBike
+                                            ? [const Color(0xFF4F46E5), const Color(0xFF6366F1)]
+                                            : [const Color(0xFF0284C7), const Color(0xFF0369A1)]),
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(17),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: primaryCardColor.withValues(alpha: 0.28),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(vehicleIcon, color: Colors.white, size: 28),
+                              ),
+                              if (isEV)
+                                Positioned(
+                                  right: -3,
+                                  bottom: -3,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(2.5),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white, width: 1.5),
+                                    ),
+                                    child: const Icon(Icons.bolt_rounded, size: 10, color: Colors.white),
+                                  ),
+                                ),
+                            ],
                           ),
                           const SizedBox(width: 14),
 
@@ -1415,7 +1876,7 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Realistic License Plate Badge with 1-Tap Copy
+                                // Authentic HSRP License Plate Badge with 1-Tap Copy
                                 InkWell(
                                   onTap: () {
                                     Clipboard.setData(ClipboardData(text: number));
@@ -1444,66 +1905,111 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                   child: Tooltip(
                                     message: 'નંબર કોપી કરવા માટે ક્લિક કરો'.tr,
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFF1F5F9),
+                                        color: const Color(0xFFF8FAFC),
                                         borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                                        border: Border.all(color: const Color(0xFF94A3B8), width: 1.2),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.03),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 1),
+                                          ),
+                                        ],
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
+                                          // HSRP Blue Strip
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF1D4ED8),
-                                              borderRadius: BorderRadius.circular(4),
+                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFF002B49),
+                                              borderRadius: BorderRadius.only(
+                                                topLeft: Radius.circular(6.8),
+                                                bottomLeft: Radius.circular(6.8),
+                                              ),
                                             ),
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Container(
+                                                  width: 4,
+                                                  height: 4,
+                                                  decoration: const BoxDecoration(
+                                                    color: Color(0xFF38BDF8),
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 1),
+                                                const Text(
+                                                  'IND',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 8,
+                                                    fontWeight: FontWeight.w900,
+                                                    letterSpacing: 0.4,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                                             child: Text(
-                                              'IND',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 8.5,
+                                              number,
+                                              style: const TextStyle(
                                                 fontWeight: FontWeight.w900,
+                                                fontSize: 14.5,
+                                                letterSpacing: 1.1,
+                                                color: Color(0xFF0F172A),
                                               ),
                                             ),
                                           ),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            number,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w900,
-                                              fontSize: 14.5,
-                                              letterSpacing: 0.6,
-                                              color: Color(0xFF0F172A),
+                                          Padding(
+                                            padding: const EdgeInsets.only(right: 6),
+                                            child: Icon(
+                                              Icons.copy_rounded,
+                                              size: 13,
+                                              color: Colors.grey.shade500,
                                             ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          const Icon(
-                                            Icons.copy_rounded,
-                                            size: 13,
-                                            color: Color(0xFF64748B),
                                           ),
                                         ],
                                       ),
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 5),
-                                Row(
+                                const SizedBox(height: 6),
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 4,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
                                   children: [
                                     if (model.isNotEmpty) ...[
                                       Text(
                                         model,
-                                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                                        style: const TextStyle(
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF334155),
+                                        ),
                                       ),
-                                      const SizedBox(width: 6),
-                                      Text('•', style: TextStyle(color: Color(0xFF94A3B8))),
-                                      const SizedBox(width: 6),
+                                      const Text('•', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 12)),
                                     ],
-                                    Text(
-                                      type,
-                                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF1F5F9),
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                      child: Text(
+                                        type,
+                                        style: const TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF64748B),
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -1511,11 +2017,19 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                             ),
                           ),
 
-                          // Delete Action
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 22),
-                            tooltip: 'વાહન કાઢી નાખો'.tr,
-                            onPressed: () => _confirmDeleteVehicle(societyId, v),
+                          // Delete Action with soft rounded button
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF2F2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 20),
+                              tooltip: 'વાહન કાઢી નાખો'.tr,
+                              padding: const EdgeInsets.all(8),
+                              constraints: const BoxConstraints(),
+                              onPressed: () => _confirmDeleteVehicle(societyId, v),
+                            ),
                           ),
                         ],
                       ),
@@ -1525,41 +2039,77 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       decoration: const BoxDecoration(
-                        color: Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFF8FAFC), Color(0xFFF1F5F9)],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                        borderRadius: BorderRadius.vertical(bottom: Radius.circular(21)),
                         border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
                       ),
                       child: Column(
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.local_parking_rounded, size: 16, color: Color(0xFF059669)),
-                              const SizedBox(width: 6),
+                              Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: slot.isNotEmpty
+                                        ? [const Color(0xFF059669), const Color(0xFF10B981)]
+                                        : [const Color(0xFF94A3B8), const Color(0xFF64748B)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Center(
+                                  child: Icon(Icons.local_parking_rounded, color: Colors.white, size: 16),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
                               Expanded(
-                                child: Row(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      slot.isNotEmpty ? 'સ્લોટ: $slot'.tr : 'કોઈ સ્લોટ ફાળવેલ નથી'.tr,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w800,
-                                        color: slot.isNotEmpty ? const Color(0xFF059669) : const Color(0xFF94A3B8),
-                                      ),
+                                      'ફાળવેલ પાર્કિંગ સ્લોટ'.tr,
+                                      style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                                     ),
-                                    if (slot.isNotEmpty) ...[
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFDCFCE7),
-                                          borderRadius: BorderRadius.circular(5),
+                                    const SizedBox(height: 1),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          slot.isNotEmpty ? slot : 'કોઈ સ્લોટ ફાળવેલ નથી'.tr,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w900,
+                                            color: slot.isNotEmpty ? const Color(0xFF065F46) : const Color(0xFF94A3B8),
+                                          ),
                                         ),
-                                        child: Text(
-                                          'સુરક્ષિત લૉક'.tr,
-                                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
-                                        ),
-                                      ),
-                                    ],
+                                        if (slot.isNotEmpty) ...[
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFDCFCE7),
+                                              borderRadius: BorderRadius.circular(5),
+                                              border: Border.all(color: const Color(0xFFA7F3D0), width: 0.6),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(Icons.lock_rounded, size: 9, color: Color(0xFF15803D)),
+                                                const SizedBox(width: 2.5),
+                                                Text(
+                                                  'સુરક્ષિત લૉક'.tr,
+                                                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                                   ],
                                 ),
                               ),
@@ -1573,21 +2123,22 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                                   userName: userName,
                                   vehicle: v,
                                 ),
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(9),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5.5),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFE0F2FE),
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(9),
+                                    border: Border.all(color: const Color(0xFFBAE6FD), width: 1),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.swap_horiz_rounded, size: 13, color: Color(0xFF0284C7)),
-                                      SizedBox(width: 4),
+                                      const Icon(Icons.swap_horiz_rounded, size: 14, color: Color(0xFF0284C7)),
+                                      const SizedBox(width: 4),
                                       Text(
                                         'સ્લોટ બદલો'.tr,
-                                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0284C7)),
                                       ),
                                     ],
                                   ),
@@ -1609,22 +2160,23 @@ class _MemberVehiclesScreenState extends State<MemberVehiclesScreen> {
                               ),
                               borderRadius: BorderRadius.circular(10),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6.5),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFFEF2F2),
+                                  color: const Color(0xFFFFF1F2),
                                   borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0xFFFECACA), width: 0.8),
+                                  border: Border.all(color: const Color(0xFFFECDD3), width: 0.9),
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.report_problem_rounded, size: 14, color: Color(0xFFDC2626)),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      'સ્લોટમાં સમસ્યા છે? (અન્ય વાહન / ફરિયાદ)'.tr,
-                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
+                                    const Icon(Icons.report_problem_rounded, size: 14, color: Color(0xFFDC2626)),
+                                    const SizedBox(width: 7),
+                                    Expanded(
+                                      child: Text(
+                                        'સ્લોટમાં સમસ્યા છે? (અન્ય વાહન / ફરિયાદ)'.tr,
+                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
+                                      ),
                                     ),
-                                    Spacer(),
-                                    Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFFDC2626)),
+                                    const Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFFDC2626)),
                                   ],
                                 ),
                               ),

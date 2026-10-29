@@ -481,7 +481,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        "કુલ: $total".tr,
+                        "${"કુલ:".tr} $total",
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 11.5,
@@ -774,7 +774,7 @@ class _AdminVisitorReportScreenState extends State<AdminVisitorReportScreen> {
                 )
               else
                 Text(
-                  "પરિણામ: $filteredCount".tr,
+                  "${"પરિણામ:".tr} $filteredCount",
                   style: const TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,

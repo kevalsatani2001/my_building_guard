@@ -552,14 +552,31 @@ class ParkingSlotService {
     }, SetOptions(merge: true));
   }
 
+  /// સ્લોટ નંબરનું માનકીકરણ (Normalization) - e.g. 'cp 01' -> 'CP-01', 'CP-1' -> 'CP-01', 'વાડી 1' -> 'વાડી-01'
+  static String normalizeSlotKey(String raw) {
+    if (raw.isEmpty) return '';
+    var s = raw.trim().toUpperCase();
+    // હાઈફન આજુબાજુની વધારાની સ્પેસ કાઢવી
+    s = s.replaceAll(RegExp(r'\s*-\s*'), '-').replaceAll(RegExp(r'\s+'), '-');
+    // સિંગલ ડિજિટ પેડિંગ (e.g. CP-1 -> CP-01, વાડી-1 -> વાડી-01)
+    final match = RegExp(r'^(.+?)-?(\d+)$').firstMatch(s);
+    if (match != null) {
+      final prefix = match.group(1)!;
+      final numStr = match.group(2)!;
+      final numPadded = numStr.length == 1 ? '0$numStr' : numStr;
+      return '$prefix-$numPadded';
+    }
+    return s;
+  }
+
   /// સોસાયટીમાં તમામ વપરાશકર્તાઓના વાહનો પરથી હાલ રોકાયેલા (Occupied) સ્લોટ્સનો રીઅલ-ટાઇમ મેપ
+  /// સોસાયટીના તમામ રોલ (admin, member, committee, resident) ને સમાવી લે છે
   Stream<Map<String, OccupiedSlotInfo>> streamOccupiedSlots(String societyId) {
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     return AppFirestore.instance
         .collection('users')
         .where('societyId', isEqualTo: societyId)
-        .where('role', isEqualTo: 'member')
         .snapshots()
         .map((snap) {
       final occupiedMap = <String, OccupiedSlotInfo>{};
@@ -577,9 +594,9 @@ class ParkingSlotService {
 
         for (final v in vehicles) {
           if (v is Map) {
-            final slotRaw = (v['slot'] ?? '').toString().trim().toUpperCase();
+            final slotRaw = (v['slot'] ?? '').toString().trim();
             if (slotRaw.isNotEmpty) {
-              occupiedMap[slotRaw] = OccupiedSlotInfo(
+              final occInfo = OccupiedSlotInfo(
                 slotName: slotRaw,
                 vehicleNumber: (v['number'] ?? '').toString().toUpperCase(),
                 vehicleModel: (v['model'] ?? '').toString(),
@@ -590,6 +607,11 @@ class ParkingSlotService {
                 ownerUid: doc.id,
                 isCurrentMember: isMe,
               );
+              // Store both exact uppercase and normalized key
+              final upper = slotRaw.toUpperCase();
+              final norm = normalizeSlotKey(slotRaw);
+              occupiedMap[upper] = occInfo;
+              occupiedMap[norm] = occInfo;
             }
           }
         }
@@ -613,11 +635,13 @@ class ParkingSlotService {
       return ParkingSlotStatus.available;
     }
 
-    final info = occupiedSlots[clean];
+    final normKey = normalizeSlotKey(clean);
+    final info = occupiedSlots[clean] ?? occupiedSlots[normKey];
     if (info == null) return ParkingSlotStatus.available;
 
     if (info.isCurrentMember) {
       if (currentVehiclePlate != null &&
+          currentVehiclePlate.trim().isNotEmpty &&
           VehiclePlateValidator.clean(currentVehiclePlate) ==
               VehiclePlateValidator.clean(info.vehicleNumber)) {
         return ParkingSlotStatus.mySlot;
@@ -650,10 +674,39 @@ class ParkingSlotService {
     // ઘર આંગણે કોઈનું બ્લૉક ન થાય
     if (isFlexibleStreetParking(clean)) return false;
 
-    final info = occupiedSlots[clean];
+    final normKey = normalizeSlotKey(clean);
+    final info = occupiedSlots[clean] ?? occupiedSlots[normKey];
     if (info == null) return false;
 
     return !info.isCurrentMember;
+  }
+
+  /// શું આ સ્લોટ અન્ય કોઈ વાહને લીધેલો છે? (સભ્યનું બીજું વાહન કે અન્ય સભ્ય)
+  bool isSlotAlreadyTaken({
+    required String slotName,
+    required Map<String, OccupiedSlotInfo> occupiedSlots,
+    String? currentVehiclePlate,
+  }) {
+    final clean = slotName.trim().toUpperCase();
+    if (clean.isEmpty) return false;
+
+    if (isFlexibleStreetParking(clean)) return false;
+
+    final normKey = normalizeSlotKey(clean);
+    final info = occupiedSlots[clean] ?? occupiedSlots[normKey];
+    if (info == null) return false;
+
+    if (info.isCurrentMember) {
+      if (currentVehiclePlate != null && currentVehiclePlate.trim().isNotEmpty) {
+        if (VehiclePlateValidator.clean(currentVehiclePlate) ==
+            VehiclePlateValidator.clean(info.vehicleNumber)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    return true;
   }
 }
 

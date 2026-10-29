@@ -734,261 +734,513 @@ class _MemberVisitorsScreenState extends State<MemberVisitorsScreen> {
     );
   }
 
+  (IconData, Color, Color) _getVisitorTypeMeta(String purpose) {
+    final p = purpose.toLowerCase();
+    if (p.contains('pre-approved') || p.contains('પ્રી-એપ્રૂવ')) {
+      return (Icons.how_to_reg_rounded, const Color(0xFF0F766E), const Color(0xFFCCFBF1));
+    }
+    if (p.contains('merchant') || p.contains('shop') || p.contains('દુકાન') || p.contains('વેપારી')) {
+      return (Icons.storefront_rounded, const Color(0xFF0284C7), const Color(0xFFE0F2FE));
+    }
+    if (p.contains('delivery') ||
+        p.contains('courier') ||
+        p.contains('amazon') ||
+        p.contains('flipkart') ||
+        p.contains('zomato') ||
+        p.contains('swiggy') ||
+        p.contains('parcel') ||
+        p.contains('પાર્સલ'.tr) ||
+        p.contains('ડિલિવરી'.tr)) {
+      return (Icons.local_shipping_rounded, const Color(0xFFD97706), const Color(0xFFFEF3C7));
+    }
+    if (p.contains('cab') ||
+        p.contains('taxi') ||
+        p.contains('uber') ||
+        p.contains('ola') ||
+        p.contains('auto') ||
+        p.contains('ટેક્સી'.tr) ||
+        p.contains('રીક્ષા'.tr)) {
+      return (Icons.local_taxi_rounded, const Color(0xFF2563EB), const Color(0xFFEFF6FF));
+    }
+    if (p.contains('service') ||
+        p.contains('repair') ||
+        p.contains('plumber') ||
+        p.contains('electric') ||
+        p.contains('maid') ||
+        p.contains('કામવાળા'.tr) ||
+        p.contains('રીપેરિંગ'.tr)) {
+      return (Icons.handyman_rounded, const Color(0xFF7C3AED), const Color(0xFFF5F3FF));
+    }
+    return (Icons.people_alt_rounded, const Color(0xFF0D9488), const Color(0xFFCCFBF1));
+  }
+
+  String _getLocalizedPurpose(String purpose) {
+    if (purpose.isEmpty) return 'અતિથિ (Guest)'.tr;
+    final lower = purpose.toLowerCase().trim();
+    if (lower == 'pre-approved guest' || lower.contains('pre-approved') || lower.contains('પ્રી-એપ્રૂવ')) {
+      return 'Pre-Approved Guest'.tr;
+    }
+    if (lower == 'merchant / shop staff' || lower.contains('merchant') || lower.contains('shop staff') || lower.contains('વેપારી')) {
+      return 'Merchant / Shop Staff'.tr;
+    }
+    if (lower == 'guest' || lower == 'અતિથિ' || lower.contains('guest')) {
+      return 'Guest'.tr;
+    }
+    if (lower == 'delivery' || lower == 'ડિલિવરી' || lower.contains('delivery') || lower.contains('courier') || lower.contains('parcel')) {
+      return 'Delivery'.tr;
+    }
+    if (lower == 'cab' || lower == 'taxi' || lower == 'ટેક્સી' || lower.contains('cab') || lower.contains('uber') || lower.contains('ola')) {
+      return 'Cab'.tr;
+    }
+    if (lower == 'service / repair' || lower.contains('repair') || lower.contains('service') || lower.contains('રીપેરિંગ')) {
+      return 'Service / Repair'.tr;
+    }
+    return purpose.tr;
+  }
+
   Widget _buildVisitorCard(VisitorModel visitor, {required bool isMyFlat}) {
     final isPending = visitor.status == 'pending';
+    final (typeIcon, typeColor, typeBg) = _getVisitorTypeMeta(visitor.purpose);
     final canAction = isPending && isMyFlat;
 
-    final (statusColor, statusBg, statusText) = switch (visitor.status) {
-      'approved' => (const Color(0xFF059669), const Color(0xFFECFDF5), 'મંજૂર કરેલ'.tr),
-      'rejected' => (const Color(0xFFDC2626), const Color(0xFFFEF2F2), 'અસ્વીકાર'.tr),
-      'checked_out' => (const Color(0xFF475569), const Color(0xFFF1F5F9), 'બહાર ગયા'.tr),
-      _ => (const Color(0xFFD97706), const Color(0xFFFFFBEB), 'પેન્ડિંગ'.tr),
+    final (statusColor, statusBg, statusBorder, statusText, statusIcon) = switch (visitor.status) {
+      'approved' => (
+          const Color(0xFF059669),
+          const Color(0xFFECFDF5),
+          const Color(0xFFA7F3D0),
+          'મંજૂર કરેલ'.tr,
+          Icons.check_circle_rounded,
+        ),
+      'rejected' => (
+          const Color(0xFFDC2626),
+          const Color(0xFFFEF2F2),
+          const Color(0xFFFECDD3),
+          'અસ્વીકાર'.tr,
+          Icons.cancel_rounded,
+        ),
+      'checked_out' => (
+          const Color(0xFF475569),
+          const Color(0xFFF1F5F9),
+          const Color(0xFFCBD5E1),
+          'બહાર ગયા'.tr,
+          Icons.output_rounded,
+        ),
+      _ => (
+          const Color(0xFFD97706),
+          const Color(0xFFFFFBEB),
+          const Color(0xFFFDE68A),
+          'પેન્ડિંગ'.tr,
+          Icons.hourglass_top_rounded,
+        ),
     };
+
+    final cardBorderColor = isPending
+        ? const Color(0xFFFDE68A)
+        : (visitor.status == 'rejected' ? const Color(0xFFFECDD3) : const Color(0xFFE2E8F0));
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isPending ? const Color(0xFFFDE68A) : const Color(0xFFE2E8F0),
+          color: cardBorderColor,
           width: isPending ? 1.5 : 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: isPending
-                ? const Color(0xFFF59E0B).withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: statusColor.withValues(alpha: isPending ? 0.08 : 0.025),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            VisitorDetailSheet.show(
-              context,
-              visitor: visitor,
-              isMyFlat: isMyFlat,
-              onStatusUpdate: _updateStatus,
-            );
-          },
-          borderRadius: BorderRadius.circular(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (canAction) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFEF3C7),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(19),
-                      topRight: Radius.circular(19),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.hourglass_top_rounded, color: Color(0xFFD97706), size: 14),
-                      SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          'ગેટ પર મંજૂરીની રાહ જુએ છે (Action Required)'.tr,
-                          style: TextStyle(color: Color(0xFF92400E), fontSize: 11, fontWeight: FontWeight.bold),
-                        ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              VisitorDetailSheet.show(
+                context,
+                visitor: visitor,
+                isMyFlat: isMyFlat,
+                onStatusUpdate: _updateStatus,
+              );
+            },
+            borderRadius: BorderRadius.circular(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (canAction) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7.5),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(19),
+                        topRight: Radius.circular(19),
                       ),
-                      Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Color(0xFF92400E)),
-                    ],
-                  ),
-                ),
-              ],
-
-              Padding(
-                padding: const EdgeInsets.all(14),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Photo
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: visitor.photoUrl.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: visitor.photoUrl,
-                              width: 54,
-                              height: 54,
-                              fit: BoxFit.cover,
-                              errorWidget: (context, url, error) => _fallbackAvatar(),
-                            )
-                          : _fallbackAvatar(),
                     ),
-                    const SizedBox(width: 14),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.hourglass_top_rounded, color: Color(0xFFD97706), size: 14),
+                        const SizedBox(width: 7),
+                        Expanded(
+                          child: Text(
+                            'ગેટ પર મંજૂરીની રાહ જુએ છે (Action Required)'.tr,
+                            style: const TextStyle(
+                              color: Color(0xFF92400E),
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Color(0xFF92400E)),
+                      ],
+                    ),
+                  ),
+                ],
 
-                    // Middle Column (Safe from overflow via Wrap and Flexible)
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                Padding(
+                  padding: const EdgeInsets.all(13),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Visitor Photo with luxury squircle & purpose icon badge
+                      Stack(
+                        clipBehavior: Clip.none,
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  visitor.name.isNotEmpty ? visitor.name : "અનામી મુલાકાતી".tr,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 15,
-                                    color: Color(0xFF0F172A),
-                                  ),
-                                ),
-                              ),
-                              if (visitor.phone.isNotEmpty) ...[
-                                const SizedBox(width: 6),
-                                InkWell(
-                                  onTap: () => _makeCall(visitor.phone),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(5),
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFECFDF5),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(Icons.phone_rounded, size: 14, color: Color(0xFF059669)),
-                                  ),
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(17),
+                              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
-                            ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(15.8),
+                              child: visitor.photoUrl.isNotEmpty
+                                  ? CachedNetworkImage(
+                                      imageUrl: visitor.photoUrl,
+                                      width: 56,
+                                      height: 56,
+                                      fit: BoxFit.cover,
+                                      errorWidget: (context, url, error) => _fallbackAvatar(visitor.name),
+                                    )
+                                  : _fallbackAvatar(visitor.name),
+                            ),
                           ),
-                          const SizedBox(height: 5),
-
-                          // Badges in Wrap to avoid any pixel overflow
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 4,
-                            children: [
-                              if (visitor.purpose.isNotEmpty)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF1F5F9),
-                                    borderRadius: BorderRadius.circular(6),
+                          Positioned(
+                            right: -3,
+                            bottom: -3,
+                            child: Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: typeBg,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.12),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
                                   ),
-                                  child: Text(
-                                    visitor.purpose,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
-                                  ),
-                                ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  visitor.flatDisplay,
-                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                                ),
+                                ],
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 5),
-
-                          Row(
-                            children: [
-                              Icon(Icons.schedule_rounded, size: 12, color: Colors.grey.shade500),
-                              const SizedBox(width: 4),
-                              Text(
-                                DateFormat('hh:mm a').format(visitor.entryTime),
-                                style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+                              child: Center(
+                                child: Icon(typeIcon, size: 11.5, color: typeColor),
                               ),
-                              if (visitor.status == 'checked_out' && visitor.exitTime != null) ...[
-                                const SizedBox(width: 6),
-                                Text(
-                                  "• બહાર: ${DateFormat('hh:mm a').format(visitor.exitTime!)}".tr,
-                                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ],
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 8),
+                      const SizedBox(width: 13),
 
-                    // Status Pill
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusBg,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        statusText,
-                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: statusColor),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              if (canAction) ...[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                  child: Row(
-                    children: [
+                      // Middle Column
                       Expanded(
-                        child: SizedBox(
-                          height: 40,
-                          child: ElevatedButton.icon(
-                            onPressed: () => _updateStatus(visitor.id, 'approved'),
-                            icon: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
-                            label: Text('પ્રવેશ મંજૂર'.tr, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF059669),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              elevation: 0,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    visitor.name.isNotEmpty ? visitor.name : "અનામી મુલાકાતી".tr,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 15,
+                                      color: Color(0xFF0F172A),
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                ),
+                                if (visitor.purpose.toLowerCase().contains('pre-approved')) ...[
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF0D9488)),
+                                ],
+                              ],
                             ),
-                          ),
+                            const SizedBox(height: 5),
+
+                            // Badges
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                if (visitor.purpose.isNotEmpty)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 7.5, vertical: 2.5),
+                                    decoration: BoxDecoration(
+                                      color: typeBg,
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: typeColor.withValues(alpha: 0.25), width: 0.8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(typeIcon, size: 10.5, color: typeColor),
+                                        const SizedBox(width: 3.5),
+                                        ConstrainedBox(
+                                          constraints: const BoxConstraints(maxWidth: 130),
+                                          child: Text(
+                                            _getLocalizedPurpose(visitor.purpose),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w800,
+                                              color: typeColor,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.apartment_rounded, size: 10.5, color: Color(0xFF64748B)),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        visitor.flatDisplay,
+                                        style: const TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF475569),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 5),
+
+                            Row(
+                              children: [
+                                const Icon(Icons.schedule_rounded, size: 12, color: Color(0xFF64748B)),
+                                const SizedBox(width: 3.5),
+                                Text(
+                                  DateFormat('hh:mm a').format(visitor.entryTime),
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                                ),
+                                if (visitor.status == 'checked_out' && visitor.exitTime != null) ...[
+                                  const SizedBox(width: 6),
+                                  const Text('•', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+                                  const SizedBox(width: 6),
+                                  const Icon(Icons.logout_rounded, size: 11.5, color: Color(0xFF64748B)),
+                                  const SizedBox(width: 3),
+                                  Flexible(
+                                    child: Text(
+                                      "બહાર: ${DateFormat('hh:mm a').format(visitor.exitTime!)}".tr,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: SizedBox(
-                          height: 40,
-                          child: OutlinedButton.icon(
-                            onPressed: () => _updateStatus(visitor.id, 'rejected'),
-                            icon: const Icon(Icons.close_rounded, color: Color(0xFFDC2626), size: 16),
-                            label: Text('નકારો'.tr, style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFFFECACA)),
-                              backgroundColor: const Color(0xFFFEF2F2),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      const SizedBox(width: 8),
+
+                      // Right Action Column (Call button + Status Badge)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (visitor.phone.isNotEmpty) ...[
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () => _makeCall(visitor.phone),
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  padding: const EdgeInsets.all(7),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFECFDF5),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: const Color(0xFFA7F3D0), width: 1.2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF059669).withValues(alpha: 0.1),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(Icons.phone_rounded, size: 14, color: Color(0xFF059669)),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
+                            const SizedBox(height: 6),
+                          ],
+                          if (!canAction)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8.5, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: statusBg,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: statusBorder, width: 1),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(statusIcon, size: 11, color: statusColor),
+                                  const SizedBox(width: 3.5),
+                                  Text(
+                                    statusText,
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: statusColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
                 ),
+
+                if (canAction) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 42,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF059669), Color(0xFF10B981)],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF059669).withValues(alpha: 0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: ElevatedButton.icon(
+                                onPressed: () => _updateStatus(visitor.id, 'approved'),
+                                icon: const Icon(Icons.check_rounded, color: Colors.white, size: 17),
+                                label: Text(
+                                  'પ્રવેશ મંજૂર'.tr,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: SizedBox(
+                            height: 42,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _updateStatus(visitor.id, 'rejected'),
+                              icon: const Icon(Icons.close_rounded, color: Color(0xFFDC2626), size: 17),
+                              label: Text(
+                                'નકારો'.tr,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFDC2626)),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFEF2F2),
+                                side: const BorderSide(color: Color(0xFFFECACA), width: 1.2),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _fallbackAvatar() {
+  Widget _fallbackAvatar([String name = 'V']) {
     return Container(
-      width: 54,
-      height: 54,
-      decoration: BoxDecoration(
-        color: const Color(0xFF0D9488).withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(16),
+      width: 56,
+      height: 56,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0F766E), Color(0xFF0D9488)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
-      child: const Icon(Icons.person_rounded, size: 28, color: Color(0xFF0D9488)),
+      child: Center(
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : 'V',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
     );
   }
 
