@@ -73,8 +73,14 @@ class SuperAdminService {
       }
 
       // ૩. એકમો (Units) લાવો
-      final unitSnap = await _firestore.collection('units').get();
-      final totalUnits = unitSnap.docs.length;
+      int totalUnits = 0;
+      try {
+        final countSnap = await _firestore.collection('units').count().get();
+        totalUnits = countSnap.count ?? 0;
+      } catch (_) {
+        final unitSnap = await _firestore.collection('units').get();
+        totalUnits = unitSnap.docs.length;
+      }
 
       // ૪. મેન્ટેનન્સ બિલિંગ & GST લાવો
       final billSnap = await _firestore.collection('maintenance_bills').get();
@@ -107,28 +113,48 @@ class SuperAdminService {
       final startOfDay = DateTime(now.year, now.month, now.day);
       int todayVisitors = 0;
       try {
-        final vSnap = await _firestore
+        final vCountSnap = await _firestore
             .collection('visitors')
             .where('checkInTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+            .count()
             .get();
-        todayVisitors = vSnap.docs.length;
+        todayVisitors = vCountSnap.count ?? 0;
       } catch (_) {
-        // Fallback જો ઇન્ડેક્સ ન હોય તો કુલ વિઝિટર્સ લાવો
-        final vSnap = await _firestore.collection('visitors').limit(100).get();
-        todayVisitors = vSnap.docs.length;
+        try {
+          final vCountSnap = await _firestore
+              .collection('visitors')
+              .where('entryTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+              .count()
+              .get();
+          todayVisitors = vCountSnap.count ?? 0;
+        } catch (_) {
+          final vSnap = await _firestore.collection('visitors').limit(100).get();
+          todayVisitors = vSnap.docs.length;
+        }
       }
 
       // ૬. ફરિયાદો
       int totalComplaints = 0;
       int resolvedComplaints = 0;
       try {
-        final cSnap = await _firestore.collection('complaints').get();
-        totalComplaints = cSnap.docs.length;
-        for (final doc in cSnap.docs) {
-          final s = (doc.data()['status'] ?? '').toString().toLowerCase();
-          if (s == 'resolved' || s == 'closed') resolvedComplaints++;
-        }
-      } catch (_) {}
+        final cTotalSnap = await _firestore.collection('complaints').count().get();
+        totalComplaints = cTotalSnap.count ?? 0;
+        final cResolvedSnap = await _firestore
+            .collection('complaints')
+            .where('status', isEqualTo: 'resolved')
+            .count()
+            .get();
+        resolvedComplaints = cResolvedSnap.count ?? 0;
+      } catch (_) {
+        try {
+          final cSnap = await _firestore.collection('complaints').limit(200).get();
+          totalComplaints = cSnap.docs.length;
+          for (final doc in cSnap.docs) {
+            final s = (doc.data()['status'] ?? '').toString().toLowerCase();
+            if (s == 'resolved' || s == 'closed') resolvedComplaints++;
+          }
+        } catch (_) {}
+      }
 
       return GlobalPlatformStats(
         totalSocieties: societiesMap.length,
@@ -161,8 +187,8 @@ class SuperAdminService {
       final userSnap = await _firestore.collection('users').get();
       final unitSnap = await _firestore.collection('units').get();
       final billSnap = await _firestore.collection('maintenance_bills').get();
-      final complaintSnap = await _firestore.collection('complaints').get();
-      final visitorSnap = await _firestore.collection('visitors').get();
+      final complaintSnap = await _firestore.collection('complaints').limit(300).get();
+      final visitorSnap = await _firestore.collection('visitors').limit(300).get();
 
       final list = <SocietyOverview>[];
 

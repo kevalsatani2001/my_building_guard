@@ -43,7 +43,9 @@ class NoticeBloc extends Bloc<NoticeEvent, NoticeState> {
 
     Query query = _firestore
         .collection('notices')
-        .where('societyId', isEqualTo: event.societyId.trim());
+        .where('societyId', isEqualTo: event.societyId.trim())
+        .orderBy('createdAt', descending: true)
+        .limit(50);
 
     _noticesSubscription = query.snapshots().listen(
       (snapshot) {

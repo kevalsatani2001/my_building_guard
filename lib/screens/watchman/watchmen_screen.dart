@@ -1185,11 +1185,18 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                     const SizedBox(height: 8),
 
                     StreamBuilder<QuerySnapshot>(
-                      stream: AppFirestore.instance
-                          .collection('daily_staff')
-                          .orderBy('createdAt', descending: true)
-                          .limit(100)
-                          .snapshots(),
+                      stream: (SocietyService.instance.societyId.isNotEmpty)
+                          ? AppFirestore.instance
+                              .collection('daily_staff')
+                              .where('societyId', isEqualTo: SocietyService.instance.societyId)
+                              .orderBy('createdAt', descending: true)
+                              .limit(50)
+                              .snapshots()
+                          : AppFirestore.instance
+                              .collection('daily_staff')
+                              .orderBy('createdAt', descending: true)
+                              .limit(50)
+                              .snapshots(),
                       builder: (context, snap) {
                         if (!snap.hasData) {
                           return const Center(
@@ -2870,9 +2877,14 @@ class _WatchmanScreenState extends State<WatchmanScreen>
                 else ...[
                   // Mode 2: Individual Flat Selection (Spacious & Premium View)
                   StreamBuilder<QuerySnapshot>(
-                    stream: AppFirestore.instance
-                        .collection('blocks')
-                        .snapshots(),
+                    stream: (SocietyService.instance.societyId.isNotEmpty)
+                        ? AppFirestore.instance
+                            .collection('blocks')
+                            .where('societyId', isEqualTo: SocietyService.instance.societyId)
+                            .snapshots()
+                        : AppFirestore.instance
+                            .collection('blocks')
+                            .snapshots(),
                     builder: (context, snap) {
                       final blockDocs = (snap.data?.docs ?? [])
                           .where(
@@ -3890,15 +3902,26 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       DateTime.now().day,
     );
     return StreamBuilder<QuerySnapshot>(
-      stream: AppFirestore.instance
-          .collection('visitors')
-          .where(
-            'entryTime',
-            isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
-          )
-          .orderBy('entryTime', descending: true)
-          .limit(250)
-          .snapshots(),
+      stream: (SocietyService.instance.societyId.isNotEmpty)
+          ? AppFirestore.instance
+              .collection('visitors')
+              .where('societyId', isEqualTo: SocietyService.instance.societyId)
+              .where(
+                'entryTime',
+                isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
+              )
+              .orderBy('entryTime', descending: true)
+              .limit(100)
+              .snapshots()
+          : AppFirestore.instance
+              .collection('visitors')
+              .where(
+                'entryTime',
+                isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
+              )
+              .orderBy('entryTime', descending: true)
+              .limit(100)
+              .snapshots(),
       builder: (context, snap) {
         final docs = snap.hasData
             ? snap.data!.docs.where((d) {
@@ -4965,17 +4988,30 @@ class _WatchmanScreenState extends State<WatchmanScreen>
         // 📜 StreamBuilder for Visitor List
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: AppFirestore.instance
-                .collection('visitors')
-                .where(
-                  'entryTime',
-                  isGreaterThanOrEqualTo: Timestamp.fromDate(
-                    DateTime.now().subtract(const Duration(days: 30)),
-                  ),
-                )
-                .orderBy('entryTime', descending: true)
-                .limit(250)
-                .snapshots(),
+            stream: (SocietyService.instance.societyId.isNotEmpty)
+                ? AppFirestore.instance
+                    .collection('visitors')
+                    .where('societyId', isEqualTo: SocietyService.instance.societyId)
+                    .where(
+                      'entryTime',
+                      isGreaterThanOrEqualTo: Timestamp.fromDate(
+                        DateTime.now().subtract(const Duration(days: 30)),
+                      ),
+                    )
+                    .orderBy('entryTime', descending: true)
+                    .limit(100)
+                    .snapshots()
+                : AppFirestore.instance
+                    .collection('visitors')
+                    .where(
+                      'entryTime',
+                      isGreaterThanOrEqualTo: Timestamp.fromDate(
+                        DateTime.now().subtract(const Duration(days: 30)),
+                      ),
+                    )
+                    .orderBy('entryTime', descending: true)
+                    .limit(100)
+                    .snapshots(),
             builder: (context, snap) {
               if (snap.hasError) {
                 return Center(

@@ -75,13 +75,15 @@ class _MemberScreenState extends State<MemberScreen> {
       _cachedVisitorsStream = AppFirestore.instance
           .collection('visitors')
           .where('societyId', isEqualTo: societyId)
-          .limit(150)
+          .orderBy('entryTime', descending: true)
+          .limit(80)
           .snapshots();
     } else {
       _cachedVisitorsStream = AppFirestore.instance
           .collection('visitors')
           .where('memberId', isEqualTo: currentUserId)
-          .limit(100)
+          .orderBy('entryTime', descending: true)
+          .limit(50)
           .snapshots();
     }
     return _cachedVisitorsStream!;

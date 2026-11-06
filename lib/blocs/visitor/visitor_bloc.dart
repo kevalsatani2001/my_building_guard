@@ -46,7 +46,9 @@ class VisitorBloc extends Bloc<VisitorEvent, VisitorState> {
 
     Query query = _firestore
         .collection('visitors')
-        .where('societyId', isEqualTo: event.societyId.trim());
+        .where('societyId', isEqualTo: event.societyId.trim())
+        .orderBy('entryTime', descending: true)
+        .limit(event.scope == 'my_flat' ? 75 : 120);
 
     _visitorSubscription = query.snapshots().listen(
       (snapshot) {

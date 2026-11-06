@@ -44,6 +44,12 @@ class ComplaintsBloc extends Bloc<ComplaintsEvent, ComplaintsState> {
         .collection('complaints')
         .where('societyId', isEqualTo: event.societyId.trim());
 
+    if (event.scope == 'member' && event.memberId != null && event.memberId!.isNotEmpty) {
+      query = query.where('memberId', isEqualTo: event.memberId);
+    } else {
+      query = query.limit(100);
+    }
+
     _complaintsSubscription = query.snapshots().listen(
       (snapshot) {
         final all = snapshot.docs.map((d) => ComplaintModel.fromFirestore(d)).toList();

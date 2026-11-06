@@ -138,7 +138,12 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
     HapticFeedback.lightImpact();
     try {
       final picker = ImagePicker();
-      final photo = await picker.pickImage(source: source, imageQuality: 75);
+      final photo = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 70,
+      );
       if (photo != null) {
         setState(() => _pickedImage = photo);
       }

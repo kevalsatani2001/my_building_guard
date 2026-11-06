@@ -52,7 +52,8 @@ class MaintenanceBloc extends Bloc<MaintenanceEvent, MaintenanceState> {
 
     Query query = _firestore
         .collection('maintenance_bills')
-        .where('societyId', isEqualTo: event.societyId.trim());
+        .where('societyId', isEqualTo: event.societyId.trim())
+        .limit(300);
 
     _billsSubscription = query.snapshots().listen(
       (snapshot) {
