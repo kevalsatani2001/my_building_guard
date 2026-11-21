@@ -27,6 +27,7 @@ import '../../services/guard_patrol_service.dart';
 import 'watchman_patrol_screen.dart';
 import '../../widgets/app_navigation_drawer.dart';
 import '../../widgets/animated_bottom_nav_bar.dart';
+import '../../services/auto_translation_service.dart';
 
 /// Cloud Functions v2 `sendMemberPush` નું રીજન — [GCP Console] → Functions માં ચેક કરો (ઘણી વખત `us-central1`).
 const String _kSendMemberPushRegion = 'us-central1';
@@ -624,11 +625,18 @@ class _WatchmanScreenState extends State<WatchmanScreen>
       bool isPreApproved = _purposeController.text == "Pre-Approved Guest";
       final guestName = _nameController.text.trim();
 
+      // 🌐 Auto-convert visitor purpose to active language
+      var purposeText = _purposeController.text.trim();
+      final target = AutoTranslationService.instance.activeLanguageCode;
+      if (purposeText.isNotEmpty && !isPreApproved) {
+        purposeText = await AutoTranslationService.instance.translate(purposeText, targetLanguage: target);
+      }
+
       if (isAllSociety) {
         await AppFirestore.instance.collection('visitors').add({
           'name': guestName,
           'phone': _phoneController.text.trim(),
-          'purpose': _purposeController.text.trim(),
+          'purpose': purposeText,
           'watchmanId': FirebaseAuth.instance.currentUser!.uid,
           'photoUrl': photoUrl,
           'memberId': 'all_society',
@@ -655,7 +663,7 @@ class _WatchmanScreenState extends State<WatchmanScreen>
           batch.set(docRef, {
             'name': guestName,
             'phone': _phoneController.text.trim(),
-            'purpose': _purposeController.text.trim(),
+            'purpose': purposeText,
             'watchmanId': FirebaseAuth.instance.currentUser!.uid,
             'photoUrl': photoUrl,
             'memberId': m.uid,

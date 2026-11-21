@@ -28,6 +28,7 @@ import 'member_accounts_screen.dart';
 import 'member_polls_screen.dart';
 import 'member_amenities_screen.dart';
 import '../../services/amenity_booking_service.dart';
+import '../../services/auto_translation_service.dart';
 import '../../models/patrol_model.dart';
 import '../../services/guard_patrol_service.dart';
 import '../../widgets/visitor_detail_sheet.dart';
@@ -3745,13 +3746,13 @@ class _MemberScreenState extends State<MemberScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AutoTranslatedText(
                         title,
                         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                       ),
                       if (body.isNotEmpty) ...[
                         const SizedBox(height: 10),
-                        Text(
+                        AutoTranslatedText(
                           body,
                           style: const TextStyle(fontSize: 13, height: 1.5, color: Color(0xFF475569)),
                         ),
@@ -3847,8 +3848,8 @@ class _MemberScreenState extends State<MemberScreen> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  Text(
-                    title.tr,
+                  AutoTranslatedText(
+                    title,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14.5,
@@ -3858,7 +3859,7 @@ class _MemberScreenState extends State<MemberScreen> {
                   ),
                   if (body.isNotEmpty) ...[
                     const SizedBox(height: 4),
-                    Text(
+                    AutoTranslatedText(
                       body,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

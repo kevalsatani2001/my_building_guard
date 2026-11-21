@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../blocs/complaints/complaints_bloc.dart';
 import '../../models/complaint_model.dart';
 import '../../services/society_service.dart';
+import '../../services/auto_translation_service.dart';
 import '../../widgets/premium_ui.dart';
 
 /// Admin: list member complaints and mark resolved with modern filters and cards using ComplaintsBloc.
@@ -232,7 +233,7 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(
+                  child: AutoTranslatedText(
                     title.isNotEmpty ? title : 'ફરિયાદ'.tr,
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
@@ -310,7 +311,7 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: Colors.grey.shade200),
                 ),
-                child: Text(
+                child: AutoTranslatedText(
                   desc,
                   style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4),
                 ),

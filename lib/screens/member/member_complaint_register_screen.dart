@@ -11,6 +11,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/complaints/complaints_bloc.dart';
 import '../../models/complaint_model.dart';
 import '../../services/society_service.dart';
+import '../../services/auto_translation_service.dart';
 import '../../widgets/premium_app_bar.dart';
 
 class MemberComplaintRegisterScreen extends StatefulWidget {
@@ -179,12 +180,20 @@ class _MemberComplaintRegisterScreenState extends State<MemberComplaintRegisterS
         photoUrl = await uploadTask.ref.getDownloadURL();
       }
 
-      final fullTitle = '[$_selectedCategory] ${_titleC.text.trim()}';
+      var rawTitle = _titleC.text.trim();
+      var rawDesc = _descC.text.trim();
+
+      // 🌐 Auto-convert to active language (e.g. Gujarati if selected)
+      final target = AutoTranslationService.instance.activeLanguageCode;
+      final convertedTitle = await AutoTranslationService.instance.translate(rawTitle, targetLanguage: target);
+      final convertedDesc = await AutoTranslationService.instance.translate(rawDesc, targetLanguage: target);
+
+      final fullTitle = '[$_selectedCategory] $convertedTitle';
 
       await AppFirestore.instance.collection('complaints').add({
         'title': fullTitle,
         'category': _selectedCategory,
-        'description': _descC.text.trim(),
+        'description': convertedDesc,
         'photoUrl': photoUrl,
         'memberId': currentUserId,
         'memberName': _resolvedName.isNotEmpty ? _resolvedName : 'મેમ્બર'.tr,

@@ -10,7 +10,7 @@ import '../../services/society_service.dart';
 import '../../services/session_guard_service.dart';
 import '../../services/localization_service.dart';
 import '../../l10n/app_strings.dart';
-import '../admin/admin_dashboard.dart';
+import 'auth_wrapper.dart';
 
 class AdminSuspendedScreen extends StatefulWidget {
   final String societyId;
@@ -78,7 +78,7 @@ class _AdminSuspendedScreenState extends State<AdminSuspendedScreen> {
 
     if (isUserActive && isSocActive && !isAdminBlocked && !isSuspended && mounted) {
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const AdminDashboard()),
+        MaterialPageRoute(builder: (_) => const AuthWrapper()),
         (route) => false,
       );
     }

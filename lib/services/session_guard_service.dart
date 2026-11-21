@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/app_firestore.dart';
-import '../screens/auth/login_screen.dart';
+import '../screens/auth/auth_wrapper.dart';
 import 'society_service.dart';
 import 'package:building_guard/l10n/app_strings.dart';
 
@@ -27,10 +27,12 @@ class SessionGuardService {
   StreamSubscription<DocumentSnapshot>? _subscription;
   StreamSubscription<DocumentSnapshot>? _societySubscription;
   String? _listeningUid;
+  String? _inMemoryLocalSessionId;
+  DateTime? _lastSessionRegistrationTime;
   bool _isEvicting = false;
   bool _isSuspended = false;
 
-  /// Complete, unified app logout that cleans all state and immediately resets Navigator to LoginScreen
+  /// Complete, unified app logout that cleans all state and immediately resets Navigator to AuthWrapper
   static Future<void> performAppLogout([BuildContext? context]) async {
     try {
       await SessionGuardService.instance.clearSession();
@@ -44,12 +46,12 @@ class SessionGuardService {
     final nav = rootNavigatorKey.currentState;
     if (nav != null) {
       nav.pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(builder: (_) => const AuthWrapper()),
         (route) => false,
       );
     } else if (context != null && context.mounted) {
       Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(builder: (_) => const AuthWrapper()),
         (route) => false,
       );
     }
@@ -57,9 +59,13 @@ class SessionGuardService {
 
   /// Retrieves the locally stored session ID for this device
   Future<String?> getLocalSessionId() async {
+    if (_inMemoryLocalSessionId != null && _inMemoryLocalSessionId!.isNotEmpty) {
+      return _inMemoryLocalSessionId;
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getString(_kSessionKey);
+      _inMemoryLocalSessionId = prefs.getString(_kSessionKey);
+      return _inMemoryLocalSessionId;
     } catch (_) {
       return null;
     }
@@ -67,6 +73,7 @@ class SessionGuardService {
 
   /// Persists the active session ID locally
   Future<void> saveLocalSessionId(String sessionId) async {
+    _inMemoryLocalSessionId = sessionId;
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_kSessionKey, sessionId);
@@ -75,6 +82,8 @@ class SessionGuardService {
 
   /// Clears local session on manual logout
   Future<void> clearSession() async {
+    _inMemoryLocalSessionId = null;
+    _lastSessionRegistrationTime = null;
     stopListening();
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -96,6 +105,8 @@ class SessionGuardService {
   Future<String> registerNewLoginSession(String uid) async {
     final randomSuffix = Random().nextInt(900000) + 100000;
     final sessionId = '${DateTime.now().millisecondsSinceEpoch}_$randomSuffix';
+    _inMemoryLocalSessionId = sessionId;
+    _lastSessionRegistrationTime = DateTime.now();
     await saveLocalSessionId(sessionId);
 
     try {
@@ -121,8 +132,13 @@ class SessionGuardService {
     final remoteSessionId = userData?['currentSessionId'] as String?;
     final localSessionId = await getLocalSessionId();
 
+    final isRecentLogin = _lastSessionRegistrationTime != null &&
+        DateTime.now().difference(_lastSessionRegistrationTime!).inSeconds < 15;
+
     // If remote has a different session ID than local, user logged in on another device!
-    if (remoteSessionId != null &&
+    // Never kick out during the 15-second grace period right after this device registered a session.
+    if (!isRecentLogin &&
+        remoteSessionId != null &&
         localSessionId != null &&
         remoteSessionId != localSessionId) {
       _triggerDeviceKickout();
@@ -157,12 +173,22 @@ class SessionGuardService {
         .snapshots()
         .listen((snap) async {
       if (!snap.exists || snap.data() == null) return;
+      if (snap.metadata.hasPendingWrites) {
+        // Writes from this device are pending locally, skip kickout checks
+        return;
+      }
+
       final data = snap.data() as Map<String, dynamic>;
       final remoteSessionId = data['currentSessionId'] as String?;
       final localSessionId = await getLocalSessionId();
 
+      final isRecentLogin = _lastSessionRegistrationTime != null &&
+          DateTime.now().difference(_lastSessionRegistrationTime!).inSeconds < 15;
+
       // Another device has logged in and changed the session ID!
-      if (remoteSessionId != null &&
+      // Grace period protects against stale offline cache snapshot on fresh login.
+      if (!isRecentLogin &&
+          remoteSessionId != null &&
           localSessionId != null &&
           remoteSessionId != localSessionId) {
         _triggerDeviceKickout();
@@ -272,7 +298,7 @@ class SessionGuardService {
 
       if (nav.mounted) {
         nav.pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          MaterialPageRoute(builder: (_) => const AuthWrapper()),
           (route) => false,
         );
       }

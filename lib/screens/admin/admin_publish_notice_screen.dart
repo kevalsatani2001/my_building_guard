@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/notice/notice_bloc.dart';
 import '../../l10n/app_strings.dart';
 import '../../services/localization_service.dart';
+import '../../services/auto_translation_service.dart';
 
 class AdminPublishNoticeScreen extends StatefulWidget {
   const AdminPublishNoticeScreen({super.key});
@@ -19,6 +20,7 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
   final _titleC = TextEditingController();
   final _bodyC = TextEditingController();
 
+  bool _isAutoTranslating = false;
   String _selectedCategory = 'સામાન્ય'.tr;
   String _targetBlock = 'ALL';
   List<String> _availableBlocks = [];
@@ -187,9 +189,40 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
     super.dispose();
   }
 
-  Future<void> _publishNotice() async {
+  Future<void> _autoTranslateInputs() async {
     final title = _titleC.text.trim();
     final body = _bodyC.text.trim();
+    if (title.isEmpty && body.isEmpty) return;
+
+    setState(() => _isAutoTranslating = true);
+    final target = AutoTranslationService.instance.activeLanguageCode;
+    try {
+      if (title.isNotEmpty) {
+        final t = await AutoTranslationService.instance.translate(title, targetLanguage: target);
+        _titleC.text = t;
+      }
+      if (body.isNotEmpty) {
+        final b = await AutoTranslationService.instance.translate(body, targetLanguage: target);
+        _bodyC.text = b;
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("પસંદ કરેલ ભાષામાં સફળતાપૂર્વક રૂપાંતરિત થઈ ગયું!".tr),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _isAutoTranslating = false);
+    }
+  }
+
+  Future<void> _publishNotice() async {
+    var title = _titleC.text.trim();
+    var body = _bodyC.text.trim();
 
     if (title.isEmpty || body.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -204,6 +237,12 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
     setState(() => _isPublishing = true);
 
     try {
+      final target = AutoTranslationService.instance.activeLanguageCode;
+      title = await AutoTranslationService.instance.translate(title, targetLanguage: target);
+      body = await AutoTranslationService.instance.translate(body, targetLanguage: target);
+
+      if (!mounted) return;
+
       context.read<NoticeBloc>().add(
             NoticePublishRequested(
               title: title,
@@ -457,6 +496,59 @@ class _AdminPublishNoticeScreenState extends State<AdminPublishNoticeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.translate_rounded, size: 16, color: Color(0xFF4338CA)),
+                          const SizedBox(width: 6),
+                          Text(
+                            "ઓટો-ટ્રાન્સલેશન સક્રિય".tr,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF4338CA),
+                            ),
+                          ),
+                        ],
+                      ),
+                      InkWell(
+                        onTap: _isAutoTranslating ? null : _autoTranslateInputs,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEF2FF),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFC7D2FE)),
+                          ),
+                          child: _isAutoTranslating
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.auto_fix_high_rounded, size: 13, color: Color(0xFF4338CA)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      "અહીં ભાષાંતર જુઓ".tr,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF4338CA),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   TextField(
                     controller: _titleC,
                     decoration: InputDecoration(

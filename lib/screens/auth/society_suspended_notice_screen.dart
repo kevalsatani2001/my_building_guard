@@ -5,8 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/app_firestore.dart';
 import '../../services/society_service.dart';
 import '../../services/session_guard_service.dart';
-import '../member/member_screen.dart';
-import '../watchman/watchmen_screen.dart';
+import 'auth_wrapper.dart';
 import '../../l10n/app_strings.dart';
 import '../../services/localization_service.dart';
 
@@ -44,10 +43,9 @@ class _SocietySuspendedNoticeScreenState extends State<SocietySuspendedNoticeScr
       final bool isAdminBlocked = socData['isAdminBlocked'] == true;
       final bool isSuspended = socData['isSuspendedBySuperAdmin'] == true;
       if (isSocActive && !isAdminBlocked && !isSuspended && mounted) {
-        final isGuard = SocietyService.instance.isGuard;
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
-            builder: (_) => isGuard ? const WatchmanScreen() : const MemberScreen(),
+            builder: (_) => const AuthWrapper(),
           ),
           (route) => false,
         );
@@ -68,10 +66,9 @@ class _SocietySuspendedNoticeScreenState extends State<SocietySuspendedNoticeScr
           final bool isAdminBlocked = socData['isAdminBlocked'] == true;
           final bool isSuspended = socData['isSuspendedBySuperAdmin'] == true;
           if (isSocActive && !isAdminBlocked && !isSuspended && mounted) {
-            final isGuard = SocietyService.instance.isGuard;
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
-                builder: (_) => isGuard ? const WatchmanScreen() : const MemberScreen(),
+                builder: (_) => const AuthWrapper(),
               ),
               (route) => false,
             );

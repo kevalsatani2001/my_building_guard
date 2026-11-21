@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8">
+  <title>My Building Guard — Unique 3D Ecosystem Banner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Noto+Sans+Gujarati:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      width: 2560px;
+      height: 1440px;
+      background: #070913;
+      font-family: 'Plus Jakarta Sans', 'Noto Sans Gujarati', sans-serif;
+      color: #ffffff;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Ambient Luxury Lighting & Cyber-Grid Mesh */
+    .bg-canvas {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 50% -10%, rgba(67, 56, 202, 0.45) 0%, transparent 60%),
+        radial-gradient(circle at 15% 45%, rgba(13, 148, 136, 0.35) 0%, transparent 50%),
+        radial-gradient(circle at 85% 55%, rgba(124, 58, 237, 0.35) 0%, transparent 50%),
+        radial-gradient(circle at 50% 110%, rgba(16, 185, 129, 0.25) 0%, transparent 55%),
+        linear-gradient(180deg, #060811 0%, #0c1020 100%);
+      z-index: 1;
+    }
+
+    /* Subtle Architectural Floor Grid */
+    .grid-overlay {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse at 50% 50%, black 40%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 40%, transparent 80%);
+      z-index: 2;
+    }
+
+    .banner-wrapper {
+      position: relative;
+      z-index: 10;
+      width: 2560px;
+      height: 1440px;
+      padding: 45px 80px 35px 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* ================= 1. HEADER SECTION ================= */
+    .banner-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand-identity {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .logo-emblem {
+      width: 76px;
+      height: 76px;
+      background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+      box-shadow: 0 12px 30px rgba(79, 70, 229, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .brand-titles h1 {
+      font-size: 46px;
+      font-weight: 900;
+      letter-spacing: -1.2px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .brand-titles h1 span.gradient-text {
+      background: linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-titles .tagline {
+      font-size: 21px;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-top: 6px;
+    }
+
+    .ecosystem-pill {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(25px);
+      border-radius: 100px;
+      padding: 12px 30px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 20px;
+      font-weight: 800;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    .live-pulse {
+      width: 14px;
+      height: 14px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 16px #10b981, 0 0 30px #10b981;
+    }
+
+    /* ================= 2. HERO HEADLINE ================= */
+    .hero-center-strip {
+      text-align: center;
+      margin-top: -5px;
+    }
+    .hero-title-main {
+      font-size: 48px;
+      font-weight: 900;
+      letter-spacing: -0.8px;
+      line-height: 1.2;
+    }
+    .hero-title-main span.highlight-emerald {
+      background: linear-gradient(135deg, #34d399 0%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-sync-subline {
+      font-size: 20px;
+      font-weight: 700;
+      color: #cbd5e1;
+      margin-top: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+    }
+    .sync-arrow {
+      color: #38bdf8;
+      font-size: 22px;
+    }
+
+    /* ================= 3. 3D FLOATING SHOWCASE STAGE ================= */
+    .showcase-stage {
+      position: relative;
+      height: 890px;
+      perspective: 1800px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Glowing Connection Arc behind phones */
+    .laser-sync-arc {
+      position: absolute;
+      top: 260px;
+      width: 1800px;
+      height: 2px;
+      background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(56, 189, 248, 0.7) 20%, 
+        rgba(52, 211, 153, 0.9) 50%, 
+        rgba(167, 139, 250, 0.7) 80%, 
+        transparent 100%);
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.8), 0 0 50px rgba(52, 211, 153, 0.6);
+      z-index: 4;
+    }
+
+    /* 3D Phone Container Deck */
+    .phones-3d-deck {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 60px;
+      transform-style: preserve-3d;
+      z-index: 10;
+    }
+
+    /* Phone Shell Styling */
+    .phone-device {
+      width: 440px;
+      height: 830px;
+      background: #0f172a;
+      border-radius: 54px;
+      padding: 13px;
+      position: relative;
+      transition: transform 0.4s ease;
+      transform-style: preserve-3d;
+    }
+
+    /* Left Phone: Watchman (Angled Left 3D) */
+    .phone-device.left-phone {
+      transform: rotateY(14deg) rotateZ(-2deg) translateZ(-40px);
+      box-shadow: -25px 35px 80px rgba(0, 0, 0, 0.8), 0 0 0 3px rgba(56, 189, 248, 0.35);
+    }
+
+    /* Center Phone: Resident & Maintenance (Elevated, Facing Forward, Crown Jewel) */
+    .phone-device.center-phone {
+      transform: translateY(-28px) translateZ(60px) scale(1.05);
+      box-shadow: 0 40px 100px rgba(67, 56, 202, 0.6), 0 0 0 4px rgba(52, 211, 153, 0.65), 0 0 40px rgba(52, 211, 153, 0.3);
+      z-index: 20;
+    }
+
+    /* Right Phone: Admin Dashboard (Angled Right 3D) */
+    .phone-device.right-phone {
+      transform: rotateY(-14deg) rotateZ(2deg) translateZ(-40px);
+      box-shadow: 25px 35px 80px rgba(0, 0, 0, 0.8), 0 0 0 3px rgba(167, 139, 250, 0.35);
+    }
+
+    /* Dynamic Island Bezel */
+    .phone-island {
+      position: absolute;
+      top: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 24px;
+      background: #000000;
+      border-radius: 20px;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 14px;
+    }
+    .island-lens {
+      width: 10px;
+      height: 10px;
+      background: #1e293b;
+      border-radius: 50%;
+      box-shadow: inset 0 0 2px #38bdf8;
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      background: #f8fafc;
+      border-radius: 42px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      color: #0f172a;
+      position: relative;
+    }
+
+    .phone-top-floating-badge {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 7px 22px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 800;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+      z-index: 30;
+    }
+    .badge-watchman {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      color: #ffffff;
+    }
+    .badge-member {
+      background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
+      color: #ffffff;
+      font-size: 15px;
+      padding: 9px 26px;
+      box-shadow: 0 10px 30px rgba(16, 185, 129, 0.5);
+    }
+    .badge-admin {
+      background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+      color: #ffffff;
+    }
+
+    /* Inner Screen Scroll View */
+    .screen-body-flow {
+      flex: 1;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+
+    /* ================= 4. FLOATING POPOUT CARDS (BENTO GLASS) ================= */
+    .popout-card {
+      position: absolute;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(28px);
+      border-radius: 20px;
+      padding: 16px 22px;
+      color: #ffffff;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      z-index: 35;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      animation: floatSmooth 4s ease-in-out infinite alternate;
+    }
+
+    /* Card 1: Instant Vehicle Lookup (Left Top) */
+    .popout-vehicle {
+      top: 130px;
+      left: 120px;
+      border-left: 5px solid #38bdf8;
+    }
+    .popout-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .icon-blue { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
+    .icon-green { background: rgba(52, 211, 153, 0.2); color: #34d399; }
+    .icon-purple { background: rgba(167, 139, 250, 0.2); color: #c084fc; }
+    .icon-amber { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+
+    .popout-text h4 {
+      font-size: 17px;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .popout-text p {
+      font-size: 13px;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-top: 3px;
+    }
+
+    /* Card 2: 1-Click PDF Receipt (Center Top-Right) */
+    .popout-receipt {
+      top: 80px;
+      right: 560px;
+      border-left: 5px solid #10b981;
+      background: rgba(6, 78, 59, 0.9);
+      box-shadow: 0 20px 60px rgba(16, 185, 129, 0.4);
+    }
+
+    /* Card 3: 1-Tap Quick Delivery (Left Bottom) */
+    .popout-delivery {
+      bottom: 80px;
+      left: 140px;
+      border-left: 5px solid #f59e0b;
+    }
+
+    /* Card 4: 100% Night Patrol Log (Right Top) */
+    .popout-patrol {
+      top: 140px;
+      right: 110px;
+      border-left: 5px solid #a855f7;
+    }
+
+    /* ================= 5. FOOTER SECTION ================= */
+    .banner-footer-strip {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: center;
+    }
+    .pills-deck {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .pill-card-glass {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(20px);
+      padding: 13px 26px;
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 18px;
+      font-weight: 800;
+      color: #f8fafc;
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+    }
+    .pill-card-glass:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .bottom-trust-meta {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      color: #64748b;
+      font-size: 16px;
+      font-weight: 600;
+      padding: 0 30px;
+    }
+    .bottom-trust-meta span strong {
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-canvas"></div>
+  <div class="grid-overlay"></div>
+
+  <div class="banner-wrapper">
+    
+    <!-- 1. TOP HEADER -->
+    <header class="banner-top-bar">
+      <div class="brand-identity">
+        <div class="logo-emblem">🏢</div>
+        <div class="brand-titles">
+          <h1>My Building <span class="gradient-text">Guard</span> <span style="font-size: 24px; color: #64748b; font-weight: 700;">• સોસાયટી મેનેજર</span></h1>
+          <p class="tagline">સત્તાવાર Flutter એપ્લિકેશન • સ્માર્ટ સિક્યોરિટી અને ૧૦૦% પારદર્શક મેનેજમેન્ટ</p>
+        </div>
+      </div>
+
+      <div class="ecosystem-pill">
+        <span class="live-pulse"></span>
+        <span>૧૦૦% Ad-Free • Safe & Secure Cloud • Made for Gujarat Housing</span>
+      </div>
+    </header>
+
+    <!-- 2. HERO HEADLINE -->
+    <div class="hero-center-strip">
+      <h2 class="hero-title-main">
+        સોસાયટીનું તમામ સંચાલન, <span class="highlight-emerald">હવે ૧૦૦% ડિજિટલ અને પેપરલેસ</span>
+      </h2>
+      <div class="hero-sync-subline">
+        <span>🛡️ વોચમેન ગેટ એન્ટ્રી</span>
+        <span class="sync-arrow">➔</span>
+        <span>📱 સભ્યને તુરંત નોટિફિકેશન</span>
+        <span class="sync-arrow">➔</span>
+        <span>📄 ૧-ક્લિક PDF રસીદ</span>
+        <span class="sync-arrow">➔</span>
+        <span>🏛️ એડમિન લાઈવ એકાઉન્ટ્સ</span>
+      </div>
+    </div>
+
+    <!-- 3. 3D FLOATING SHOWCASE STAGE -->
+    <div class="showcase-stage">
+
+      <!-- Real-time Synchronization Laser Beam -->
+      <div class="laser-sync-arc"></div>
+
+      <!-- ================= POPOUT 1: VEHICLE SEARCH ================= -->
+      <div class="popout-card popout-vehicle">
+        <div class="popout-icon-box icon-blue">🚗</div>
+        <div class="popout-text">
+          <h4>GJ-01-BK-9821 ➔ ફ્લેટ A-402</h4>
+          <p>વાહન નંબર પરથી ૧ સેકન્ડમાં ફ્લેટ અને માલિકની શોધ</p>
+        </div>
+      </div>
+
+      <!-- ================= POPOUT 2: 1-CLICK PDF RECEIPT ================= -->
+      <div class="popout-card popout-receipt">
+        <div class="popout-icon-box icon-green">📄</div>
+        <div class="popout-text">
+          <h4>₹ ૨,૫૦૦ સફળ • સત્તાવાર રસીદ</h4>
+          <p>ડિજિટલ સહી સાથે WhatsApp પર ૧-ક્લિક PDF ડાઉનલોડ</p>
+        </div>
+      </div>
+
+      <!-- ================= POPOUT 3: 1-TAP DELIVERY PASS ================= -->
+      <div class="popout-card popout-delivery">
+        <div class="popout-icon-box icon-amber">⚡</div>
+        <div class="popout-text">
+          <h4>Zomato / Swiggy ૧-ટેપ એન્ટ્રી</h4>
+          <p>ડિલિવરી બોય માટે ફાસ્ટ-ટ્રેક ગેટ પાસ સિસ્ટમ</p>
+        </div>
+      </div>
+
+      <!-- ================= POPOUT 4: QR GUARD PATROL ================= -->
+      <div class="popout-card popout-patrol">
+        <div class="popout-icon-box icon-purple">🛡️</div>
+        <div class="popout-text">
+          <h4>૧૦૦% નાઈટ પેટ્રોલિંગ સ્કોર</h4>
+          <p>QR ચેકપોઇન્ટ્સથી ગાર્ડનું લાઈવ પેટ્રોલિંગ ટ્રેકિંગ</p>
+        </div>
+      </div>
+
+      <!-- ================= 3 PHONES 3D DECK ================= -->
+      <div class="phones-3d-deck">
+
+        <!-- PHONE 1: WATCHMAN SCREEN (Angled Left) -->
+        <div class="phone-device left-phone">
+          <div class="phone-top-floating-badge badge-watchman">🛡️ વોચમેન ગેટ કન્ટ્રોલ (Gate 1)</div>
+          <div class="phone-island"><div class="island-lens"></div></div>
+
+          <div class="phone-screen">
+            <!-- Watchman Header -->
+            <div class="watchman-royal-header" style="padding-top: 36px;">
+              <div class="w-header-top-row">
+                <div class="w-title-wrap">
+                  <button class="w-btn-menu">☰</button>
+                  <h3>ગેટ કન્ટ્રોલ</h3>
+                  <div class="live-pill"><span class="live-green-dot"></span> LIVE</div>
+                </div>
+                <div class="w-header-actions">
+                  <button class="w-action-circle">🚗</button>
+                  <button class="w-action-circle">📞</button>
+                  <button class="w-action-circle sos-amber">⚠️</button>
+                </div>
+              </div>
+              <div class="watchman-segmented-bar">
+                <button class="w-seg-btn active"><span>👤</span> નવી એન્ટ્રી</button>
+                <button class="w-seg-btn"><span>📋</span> હિસ્ટ્રી</button>
+              </div>
+            </div>
+
+            <div class="screen-body-flow">
+              <!-- Quick 1-Tap Delivery Strip -->
+              <div class="quick-delivery-strip" style="margin-top: -4px;">
+                <div class="strip-label">⚡ ૧-ટેપ ક્વિક ડિલિવરી એન્ટ્રી</div>
+                <div class="quick-partners-row">
+                  <button class="q-btn zomato">🔴 Zomato</button>
+                  <button class="q-btn swiggy">🟠 Swiggy</button>
+                  <button class="q-btn blinkit">🟡 Blinkit</button>
+                  <button class="q-btn amazon">📦 Amazon</button>
+                </div>
+              </div>
+
+              <!-- Live Camera Visitor Entry -->
+              <div class="flutter-card">
+                <div class="camera-card-wrap">
+                  <div class="camera-lens-box" style="height: 175px;">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80" alt="Visitor Photo" style="object-fit: cover;">
+                    <span class="live-lens-indicator">● LIVE GATE CAMERA</span>
+                  </div>
+                </div>
+
+                <div class="form-row" style="margin-top:10px; display: flex; gap: 8px;">
+                  <div class="form-group" style="flex: 2;">
+                    <label style="font-size: 11px; font-weight: 700; color: #64748b;">મુલાકાતીનું નામ:</label>
+                    <div class="input-styled" style="font-size: 12px; font-weight: 700; padding: 6px 10px;">કિશનભાઈ ત્રિવેદી</div>
+                  </div>
+                  <div class="form-group" style="flex: 1.4;">
+                    <label style="font-size: 11px; font-weight: 700; color: #64748b;">ટાર્ગેટ ફ્લેટ:</label>
+                    <div class="input-styled" style="font-size: 12px; font-weight: 800; color: #4338ca; padding: 6px 10px;">A-402</div>
+                  </div>
+                </div>
+
+                <div class="form-row" style="margin-top: 8px; display: flex; gap: 8px;">
+                  <div class="form-group" style="flex: 1;">
+                    <label style="font-size: 11px; font-weight: 700; color: #64748b;">વાહન નંબર:</label>
+                    <div class="input-styled" style="font-size: 11px; font-weight: 700; padding: 6px 10px;">GJ-01-BK-9821</div>
+                  </div>
+                  <div class="form-group" style="flex: 1;">
+                    <label style="font-size: 11px; font-weight: 700; color: #64748b;">હેતુ:</label>
+                    <div class="input-styled" style="font-size: 11px; font-weight: 700; padding: 6px 10px;">Guest / મહેમાન</div>
+                  </div>
+                </div>
+
+                <button class="btn-royal-block" style="margin-top: 10px; padding: 10px; font-size: 13px; font-weight: 800;">
+                  ✓ વિઝિટર એન્ટ્રી કન્ફર્મ કરો
+                </button>
+              </div>
+
+              <!-- Vehicle Lookup Banner -->
+              <div class="flutter-card" style="padding: 10px 14px; background: #e0f2fe; border-color: #bae6fd;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 12px; font-weight: 800; color: #0284c7;">🚗 વાહન નંબર સર્ચ (નંબર પરથી ફ્લેટ)</span>
+                  <span style="font-size: 11px; font-weight: 800; color: #0369a1; background: #ffffff; padding: 2px 8px; border-radius: 12px;">સક્રિય</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PHONE 2: MEMBER & MAINTENANCE (Center Stage - Crown Jewel) -->
+        <div class="phone-device center-phone">
+          <div class="phone-top-floating-badge badge-member">⭐ સભ્ય & ૧-ક્લિક PDF રસીદ (Resident)</div>
+          <div class="phone-island"><div class="island-lens"></div></div>
+
+          <div class="phone-screen">
+            <!-- Member App Bar -->
+            <header class="flutter-app-bar" style="padding-top: 36px;">
+              <div class="appbar-leading">
+                <button class="appbar-btn-icon"><span class="icon-menu">☰</span></button>
+              </div>
+              <div class="appbar-title-wrap">
+                <div class="appbar-brand-icon">🏠</div>
+                <div class="appbar-title-column">
+                  <div class="title-row-flex">
+                    <h2 class="appbar-title" style="font-size: 16px;">સોસાયટી મેનેજર</h2>
+                    <span class="title-sub-tag" style="display:inline-block; font-size: 10px;">A-402</span>
+                  </div>
+                  <span class="appbar-subtitle" style="font-size: 11px;">શ્રી શ્યામ રેસીડેન્સી</span>
+                </div>
+              </div>
+              <div class="appbar-actions">
+                <button class="appbar-btn-icon"><span class="icon-bell">🔔</span></button>
+              </div>
+            </header>
+
+            <div class="screen-body-flow">
+              <!-- Member Profile Hero -->
+              <div class="member-profile-hero" style="padding: 12px;">
+                <div class="mem-avatar-wrap">
+                  <div class="mem-avatar-big" style="width: 44px; height: 44px; font-size: 20px;">R</div>
+                  <span class="mem-online-dot"></span>
+                </div>
+                <div class="mem-details">
+                  <div class="flat-badge-row">
+                    <span class="flat-badge" style="font-size: 11px; padding: 2px 8px;">ફ્લેટ A-402</span>
+                    <span class="owner-badge" style="font-size: 11px; padding: 2px 8px;">માલિક (Owner)</span>
+                  </div>
+                  <h3 class="mem-name" style="font-size: 15px;">રાજેશભાઈ ડી. પટેલ</h3>
+                  <p class="mem-society" style="font-size: 11px;">શ્રી શ્યામ રેસીડેન્સી • વિંગ A</p>
+                </div>
+              </div>
+
+              <!-- Maintenance Paid Card with Verified Seal -->
+              <div class="flutter-card" style="border: 2px solid #10b981; background: #f0fdf4; padding: 14px; position: relative;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 12px; font-weight: 800; color: #166534; background: #dcfce7; padding: 4px 10px; border-radius: 20px;">
+                    ● મેન્ટેનન્સ ચૂકવાઈ ગયેલ (PAID)
+                  </span>
+                  <span style="font-size: 11px; font-weight: 700; color: #15803d;">ઓક્ટોબર ૨૦૨૬</span>
+                </div>
+
+                <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: baseline;">
+                  <div>
+                    <div style="font-size: 28px; font-weight: 900; color: #0f172a;">₹ ૨,૫૦૦</div>
+                    <div style="font-size: 11px; color: #64748b; font-weight: 600;">રસીદ નં: SSR-2026-OCT-A402</div>
+                  </div>
+                  <button style="background: #10b981; color: #ffffff; border: none; font-size: 12px; font-weight: 800; padding: 8px 14px; border-radius: 10px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45);">
+                    <span>📄</span> PDF રસીદ
+                  </button>
+                </div>
+                <div style="margin-top: 8px; font-size: 11px; color: #166534; font-weight: 700;">
+                  ✓ 0% ગેટવે ફી • ડિજિટલ સહી સાથે માન્ય સત્તાવાર રસીદ
+                </div>
+              </div>
+
+              <!-- Pre-Approve Visitor Card -->
+              <div class="flutter-card" style="padding: 12px; border-left: 4px solid #4338ca;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 22px;">🎫</span>
+                    <div>
+                      <h4 style="font-size: 13px; font-weight: 800; color: #0f172a;">વિઝિટર પ્રી-અપ્રૂવલ પાસ</h4>
+                      <span style="font-size: 11px; color: #64748b;">મહેમાન માટે QR એન્ટ્રી પાસ બનાવો</span>
+                    </div>
+                  </div>
+                  <button class="btn-royal-block" style="padding: 6px 12px; font-size: 11px; font-weight: 800; border-radius: 8px;">
+                    + પાસ આપો
+                  </button>
+                </div>
+              </div>
+
+              <!-- Digital Notice Board Ticker -->
+              <div class="notice-ticker-card" style="padding: 12px;">
+                <div class="ticker-head">
+                  <span class="ticker-badge" style="font-size: 10px;">📢 તાજો પરિપત્ર</span>
+                  <span class="ticker-date" style="font-size: 10px;">૨૭-૧૦-૨૦૨૬</span>
+                </div>
+                <h4 class="ticker-title" style="font-size: 13px;">દિવાળી સ્નેહમિલન & રંગોળી સ્પર્ધા ૨૦૨૬</h4>
+                <p class="ticker-desc" style="font-size: 11px;">તારીખ ૩૧-૧૦ ના રોજ સોસાયટી ક્લબહાઉસ ખાતે ભવ્ય સ્નેહમિલન...</p>
+              </div>
+
+              <!-- Emergency SOS Card -->
+              <div class="emergency-card-crimson" style="padding: 10px 14px;">
+                <div class="sos-icon-circle" style="width: 32px; height: 32px; font-size: 16px;">🚨</div>
+                <div class="sos-text">
+                  <strong style="font-size: 12px;">ઇમરજન્સી SOS મદદ</strong>
+                  <span style="font-size: 10px;">ગેટ સિક્યોરિટી અને એડમિનને તાત્કાલિક એલર્ટ</span>
+                </div>
+                <span class="sos-arrow">➔</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PHONE 3: ADMIN DASHBOARD (Angled Right) -->
+        <div class="phone-device right-phone">
+          <div class="phone-top-floating-badge badge-admin">🏛️ સોસાયટી એડમિન કમિટી (Admin)</div>
+          <div class="phone-island"><div class="island-lens"></div></div>
+
+          <div class="phone-screen">
+            <!-- Admin App Bar -->
+            <header class="flutter-app-bar" style="padding-top: 36px;">
+              <div class="appbar-leading">
+                <button class="appbar-btn-icon"><span class="icon-menu">☰</span></button>
+              </div>
+              <div class="appbar-title-wrap">
+                <div class="appbar-brand-icon">🏛️</div>
+                <div class="appbar-title-column">
+                  <h2 class="appbar-title" style="font-size: 16px;">એડમિન કમિટી</h2>
+                  <span class="appbar-subtitle" style="font-size: 11px;">શ્રી શ્યામ રેસીડેન્સી • ચેરમેન</span>
+                </div>
+              </div>
+              <div class="appbar-actions">
+                <button class="appbar-btn-icon"><span class="icon-bell">🔔</span></button>
+              </div>
+            </header>
+
+            <div class="screen-body-flow">
+              <!-- Society Header Hero -->
+              <div class="society-header-hero" style="padding: 14px;">
+                <div class="soc-hero-badge" style="font-size: 11px;">🏛️ શ્રી શ્યામ રેસીડેન્સી (Ahmedabad)</div>
+                <h3 class="soc-hero-name" style="font-size: 15px;">હરેશભાઈ પટેલ (ચેરમેન)</h3>
+                <p class="soc-hero-info" style="font-size: 11px;">વિંગ A, B, C • ૫૦ ફ્લેટ્સ • ઓક્ટોબર ૨૦૨૬</p>
+                <div class="soc-hero-tags" style="gap: 4px; margin-top: 6px;">
+                  <span class="hero-chip" style="font-size: 10px; padding: 2px 8px;">● કલેક્શન ૯૨%</span>
+                  <span class="hero-chip" style="font-size: 10px; padding: 2px 8px;">● ૨ ગાર્ડ્સ ઓન-ડ્યુટી</span>
+                </div>
+              </div>
+
+              <!-- KPI Metrics Grid -->
+              <div class="kpi-grid-row" style="gap: 8px;">
+                <div class="kpi-tile" style="padding: 10px 8px;">
+                  <span class="kpi-icon" style="font-size: 18px;">💰</span>
+                  <span class="kpi-val" style="font-size: 16px;">₹ ૪.૮૫L</span>
+                  <span class="kpi-lbl" style="font-size: 10px;">કુલ કલેક્શન (૯૨%)</span>
+                </div>
+                <div class="kpi-tile" style="padding: 10px 8px;">
+                  <span class="kpi-icon" style="font-size: 18px;">🛡️</span>
+                  <span class="kpi-val" style="font-size: 16px;">૧૦૦%</span>
+                  <span class="kpi-lbl" style="font-size: 10px;">QR પેટ્રોલિંગ સ્કોર</span>
+                </div>
+                <div class="kpi-tile" style="padding: 10px 8px;">
+                  <span class="kpi-icon" style="font-size: 18px;">👥</span>
+                  <span class="kpi-val" style="font-size: 16px;">૫૦/૫૦</span>
+                  <span class="kpi-lbl" style="font-size: 10px;">રજીસ્ટર્ડ સભ્યો</span>
+                </div>
+                <div class="kpi-tile" style="padding: 10px 8px;">
+                  <span class="kpi-icon" style="font-size: 18px;">🏦</span>
+                  <span class="kpi-val" style="font-size: 16px;">₹ ૧૪.૮૨L</span>
+                  <span class="kpi-lbl" style="font-size: 10px;">બેંક બેલેન્સ</span>
+                </div>
+              </div>
+
+              <!-- Visitor Insights Card -->
+              <div class="flutter-card" style="padding: 12px;">
+                <div class="card-head-row">
+                  <div class="head-left-group">
+                    <span class="card-icon-emblem" style="font-size: 14px;">📊</span>
+                    <h4 style="font-size: 12px; font-weight: 800;">મુલાકાતી એનાલિટિક્સ</h4>
+                  </div>
+                  <span class="badge-approved" style="font-size: 10px; padding: 2px 6px;">આ મહિને</span>
+                </div>
+                <div class="chart-stats-summary" style="margin-top: 8px; font-size: 11px;">
+                  <div><strong style="font-size: 14px;">૪૨૮</strong> <span>કુલ મુલાકાતી</span></div>
+                  <div><strong style="font-size: 14px;">૩૮૫</strong> <span>અગાઉથી મંજૂર</span></div>
+                  <div><strong style="font-size: 14px;">૧૮</strong> <span>નકારેલ</span></div>
+                </div>
+                <div class="mini-bar-chart" style="height: 60px; margin-top: 8px;">
+                  <div class="bar-col"><div class="bar-fill" style="height:60%;"></div><span style="font-size: 9px;">સોમ</span></div>
+                  <div class="bar-col"><div class="bar-fill" style="height:75%;"></div><span style="font-size: 9px;">મંગળ</span></div>
+                  <div class="bar-col"><div class="bar-fill" style="height:50%;"></div><span style="font-size: 9px;">બુધ</span></div>
+                  <div class="bar-col"><div class="bar-fill" style="height:90%;"></div><span style="font-size: 9px;">ગુરુ</span></div>
+                  <div class="bar-col"><div class="bar-fill" style="height:85%;"></div><span style="font-size: 9px;">શુક્ર</span></div>
+                  <div class="bar-col active"><div class="bar-fill" style="height:100%;"></div><span style="font-size: 9px;">શનિ</span></div>
+                  <div class="bar-col"><div class="bar-fill" style="height:70%;"></div><span style="font-size: 9px;">રવિ</span></div>
+                </div>
+              </div>
+
+              <!-- Alert Card -->
+              <div class="alert-banner-card warning" style="padding: 8px 10px;">
+                <div class="alert-banner-icon" style="font-size: 16px;">⚠️</div>
+                <div class="alert-banner-text" style="font-size: 11px;">
+                  <strong>૧ રહીશ ફરિયાદ પેન્ડિંગ છે!</strong>
+                  <span style="font-size: 10px;">વિંગ A ૪થા માળે લિફ્ટ ડોરનો અવાજ</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- 4. BOTTOM PILLS & TRUST BAR -->
+    <footer class="banner-footer-strip">
+      <div class="pills-deck">
+        <div class="pill-card-glass">
+          <span style="font-size: 22px;">💰</span>
+          <span>મેન્ટેનન્સ કલેક્શન & ૧-ક્લિક PDF રસીદ</span>
+        </div>
+        <div class="pill-card-glass">
+          <span style="font-size: 22px;">🛡️</span>
+          <span>વિઝિટર ગેટ એન્ટ્રી & પ્રી-અપ્રૂવલ પાસ</span>
+        </div>
+        <div class="pill-card-glass">
+          <span style="font-size: 22px;">🚗</span>
+          <span>વાહન નંબર પ્લેટ પરથી ફ્લેટ સર્ચ</span>
+        </div>
+        <div class="pill-card-glass">
+          <span style="font-size: 22px;">👮</span>
+          <span>વોચમેન QR નાઈટ પેટ્રોલિંગ</span>
+        </div>
+        <div class="pill-card-glass">
+          <span style="font-size: 22px;">📢</span>
+          <span>ડિજિટલ નોટિસ & ફરિયાદ નિવારણ</span>
+        </div>
+      </div>
+
+      <div class="bottom-trust-meta">
+        <span>🔒 <strong>Firebase Cloud Security:</strong> ૧૦૦% એન્ક્રિપ્ટેડ, ક્લાઉડ બેકઅપ સાથે સુરક્ષિત ડેટા</span>
+        <span>📱 <strong>Cross-Platform Ready:</strong> Android સ્માર્ટફોન, ટેબ્લેટ અને વેબ સપોર્ટેડ</span>
+        <span>🌐 <strong>ગુજરાતી ભાષા સપોર્ટ:</strong> સોસાયટીના વડીલો અને સિક્યોરિટી ગાર્ડ માટે અત્યંત સરળ</span>
+      </div>
+    </footer>
+
+  </div>
+
+</body>
+</html>

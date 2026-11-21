@@ -8,6 +8,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../services/society_service.dart';
 import '../../services/localization_service.dart';
+import '../../services/session_guard_service.dart';
+import 'auth_wrapper.dart';
 import '../../l10n/app_strings.dart';
 
 enum CyberToastType { info, warning, error, success }
@@ -606,6 +608,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 TextField(
                                   controller: _passwordController,
                                   obscureText: _obscurePassword,
+                                  textInputAction: TextInputAction.done,
+                                  onSubmitted: (_) => _login(),
                                   style: const TextStyle(
                                     fontSize: 14.5,
                                     fontWeight: FontWeight.w600,
@@ -685,6 +689,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                         context,
                                         message: state.errorMessage,
                                         type: CyberToastType.error,
+                                      );
+                                    } else if (state is Authenticated) {
+                                      final nav = rootNavigatorKey.currentState ?? Navigator.of(context, rootNavigator: true);
+                                      nav.pushAndRemoveUntil(
+                                        MaterialPageRoute(builder: (_) => const AuthWrapper()),
+                                        (route) => false,
                                       );
                                     }
                                   },
